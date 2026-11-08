@@ -8,5 +8,5 @@ export const BFF_BASE_URL: string =
   Platform.OS === 'web'
     ? ''
     : (process.env['EXPO_PUBLIC_BFF_NATIVE_URL'] ??
-       process.env['EXPO_PUBLIC_BFF_BASE_URL'] ??
-       'http://10.0.2.2:8081');
+      process.env['EXPO_PUBLIC_BFF_BASE_URL'] ??
+      'http://10.0.2.2:8081');

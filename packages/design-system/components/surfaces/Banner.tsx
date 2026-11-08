@@ -14,25 +14,25 @@
  *   <Banner tone="error" testID="login-error-banner" marginBottom={24} align="center">{error}</Banner>
  */
 
-import React from 'react'
-import { View, useTheme, type ViewProps } from '@tamagui/core'
-import { Text } from '../primitives/Text'
+import React from 'react';
+import { View, useTheme, type ViewProps } from '@tamagui/core';
+import { Text } from '../primitives/Text';
 
 export interface BannerProps extends ViewProps {
-  tone:      'success' | 'error'
-  children:  React.ReactNode      // message text
-  align?:    'left' | 'center'    // text alignment (default 'left')
-  emphasis?: boolean              // SemiBold (600) message text (default false)
-  testID?:   string
+  tone: 'success' | 'error';
+  children: React.ReactNode; // message text
+  align?: 'left' | 'center'; // text alignment (default 'left')
+  emphasis?: boolean; // SemiBold (600) message text (default false)
+  testID?: string;
 }
 
 export const Banner = React.forwardRef<any, BannerProps>(function Banner(
   { tone, children, align = 'left', emphasis = false, testID, ...rest },
   ref,
 ) {
-  const theme = useTheme()
-  const bg = tone === 'success' ? theme.successContainer?.val : theme.errorContainer?.val
-  const fg = tone === 'success' ? theme.onSuccessContainer?.val : theme.onErrorContainer?.val
+  const theme = useTheme();
+  const bg = tone === 'success' ? theme.successContainer?.val : theme.errorContainer?.val;
+  const fg = tone === 'success' ? theme.onSuccessContainer?.val : theme.onErrorContainer?.val;
 
   return (
     <View
@@ -54,7 +54,7 @@ export const Banner = React.forwardRef<any, BannerProps>(function Banner(
         {children}
       </Text>
     </View>
-  )
-})
+  );
+});
 
-Banner.displayName = 'MCM.Banner'
+Banner.displayName = 'MCM.Banner';

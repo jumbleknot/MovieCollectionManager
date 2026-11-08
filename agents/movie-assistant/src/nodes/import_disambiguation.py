@@ -227,9 +227,7 @@ def render_question(prompt: ImportPrompt, remaining: int = 0) -> str:
     return f"{prompt.question} ({remaining} decisions left — {others} more {noun} after this.)"
 
 
-def to_selection_options(
-    prompt: ImportPrompt, unresolved_replies: int = 0
-) -> list[dict[str, str]]:
+def to_selection_options(prompt: ImportPrompt, unresolved_replies: int = 0) -> list[dict[str, str]]:
     """Map an ImportPrompt to `render_selection` button props `[{label, value, kind}]`.
 
     `value` is the option's title — the canonical text a tap posts back through the dock, which

@@ -159,9 +159,7 @@ def _extract_search(text: str) -> dict[str, Any]:
     return {"title": title, "collection_ref": ref, "current": current, "year": year}
 
 
-def split_trailing_collection(
-    title: str, collections: Sequence[dict[str, Any]]
-) -> tuple[str, str]:
+def split_trailing_collection(title: str, collections: Sequence[dict[str, Any]]) -> tuple[str, str]:
     """Peel a trailing "in <collection name>" off `title`, matched against REAL collections.
 
     `_CLAUSE_NAMED_RE` only recognises the qualified form ("… in my Favorites **collection**"), so
@@ -427,16 +425,13 @@ def build_search_node(
 ) -> Any:
     """Build the unified search node from injected downscoped reads (movie-mcp) + web search."""
 
-    async def _run_owned(
-        query: str, collection: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def _run_owned(query: str, collection: dict[str, Any]) -> dict[str, Any]:
         cid = str(collection["collectionId"])
         name = str(collection.get("name") or "your collection")
         matches = await _owned_matches(query, cid, list_movies)
         if not matches:
             return _selection(
-                f'I couldn\'t find "{query}" in your "{name}" collection. '
-                "Want to look elsewhere?",
+                f'I couldn\'t find "{query}" in your "{name}" collection. Want to look elsewhere?',
                 _control_options(on_web=False),
                 call_id="search-none",
                 search_stage="awaiting_pick",

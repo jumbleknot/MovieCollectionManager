@@ -36,10 +36,7 @@ describe('createRefreshingFetch', () => {
 
   it('refreshes and retries once on an agent 401, returning the retry result', async () => {
     const refresh = jest.fn().mockResolvedValue(true);
-    const base = jest
-      .fn()
-      .mockResolvedValueOnce(resp(401))
-      .mockResolvedValueOnce(resp(200));
+    const base = jest.fn().mockResolvedValueOnce(resp(401)).mockResolvedValueOnce(resp(200));
     const f = createRefreshingFetch(base as never, { isAgentRequest, refresh });
     const r = (await f('/bff-api/agent/run', { method: 'POST' })) as unknown as Resp;
     expect(refresh).toHaveBeenCalledTimes(1);
@@ -69,10 +66,7 @@ describe('createRefreshingFetch', () => {
 
   it('resolves the URL from a Request-like object', async () => {
     const refresh = jest.fn().mockResolvedValue(true);
-    const base = jest
-      .fn()
-      .mockResolvedValueOnce(resp(401))
-      .mockResolvedValueOnce(resp(200));
+    const base = jest.fn().mockResolvedValueOnce(resp(401)).mockResolvedValueOnce(resp(200));
     const f = createRefreshingFetch(base as never, { isAgentRequest, refresh });
     const r = (await f({ url: 'http://x/bff-api/agent/run' } as never)) as unknown as Resp;
     expect(refresh).toHaveBeenCalledTimes(1);
@@ -118,10 +112,7 @@ describe('createRefreshingFetch — transport-drop retry', () => {
   it('propagates the error when both the initial call and the single retry throw (bounded, no loop)', async () => {
     const refresh = jest.fn();
     const err2 = new TypeError('still down');
-    const base = jest
-      .fn()
-      .mockRejectedValueOnce(new TypeError('down'))
-      .mockRejectedValueOnce(err2);
+    const base = jest.fn().mockRejectedValueOnce(new TypeError('down')).mockRejectedValueOnce(err2);
     const f = createRefreshingFetch(base as never, { isAgentRequest, refresh, retryDelayMs: 0 });
     await expect(f('/bff-api/agent/run')).rejects.toBe(err2);
     expect(base).toHaveBeenCalledTimes(2);

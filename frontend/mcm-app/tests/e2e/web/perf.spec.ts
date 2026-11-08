@@ -115,8 +115,13 @@ async function measureJs(page: Page, run: () => Promise<void>): Promise<JsTraffi
     if (m && !chunkNames.includes(m[1])) chunkNames.push(m[1]);
     try {
       const sizes = await res.request().sizes();
-      bytes += sizes.responseBodySize > 0 ? sizes.responseBodySize : Number(res.headers()['content-length'] ?? 0);
-    } catch { /* a response whose sizes are gone contributes nothing; the ceiling errs low, never high */ }
+      bytes +=
+        sizes.responseBodySize > 0
+          ? sizes.responseBodySize
+          : Number(res.headers()['content-length'] ?? 0);
+    } catch {
+      /* a response whose sizes are gone contributes nothing; the ceiling errs low, never high */
+    }
   };
   page.on('response', onResponse);
   await run();
@@ -137,8 +142,14 @@ async function measureJs(page: Page, run: () => Promise<void>): Promise<JsTraffi
 async function waitHome(page: Page): Promise<boolean> {
   try {
     await Promise.race([
-      page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: TTI_CEILING_MS }),
-      page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: TTI_CEILING_MS }),
+      page.waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: TTI_CEILING_MS,
+      }),
+      page.waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: TTI_CEILING_MS,
+      }),
     ]);
     return true;
   } catch {
@@ -147,7 +158,9 @@ async function waitHome(page: Page): Promise<boolean> {
 }
 
 /** Cold-load /home under Slow-3G and report what crossed the wire before interactive. */
-async function coldLoadHome(page: Page): Promise<{ tti: number; interactive: boolean } & JsTraffic> {
+async function coldLoadHome(
+  page: Page,
+): Promise<{ tti: number; interactive: boolean } & JsTraffic> {
   const client = await page.context().newCDPSession(page);
   await client.send('Network.enable');
   await client.send('Network.emulateNetworkConditions', SLOW_3G);
@@ -165,7 +178,9 @@ async function coldLoadHome(page: Page): Promise<{ tti: number; interactive: boo
 const nonEntryChunks = (names: string[]): string[] => names.filter((n) => !n.startsWith('entry-'));
 
 test.describe('cold-load budget (T040; feature 077)', () => {
-  test('/home reaches interactive within the JS and Slow-3G TTI budgets', async ({ page }, testInfo) => {
+  test('/home reaches interactive within the JS and Slow-3G TTI budgets', async ({
+    page,
+  }, testInfo) => {
     test.setTimeout(180_000);
 
     const { tti, interactive, bytes, chunkNames } = await coldLoadHome(page);
@@ -182,14 +197,19 @@ test.describe('cold-load budget (T040; feature 077)', () => {
       deferredChunkStayedDeferred: unexpected.length === 0,
       reachedInteractive: interactive,
     };
-    await testInfo.attach('perf-metrics', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+    await testInfo.attach('perf-metrics', {
+      body: JSON.stringify(report, null, 2),
+      contentType: 'application/json',
+    });
     // eslint-disable-next-line no-console
     console.log(
       `[T040] /home cold load — JS ${jsKB} KB (ceiling ${JS_CEILING_KB}); Slow-3G TTI ${(tti / 1000).toFixed(1)} s ` +
         `(ceiling ${TTI_CEILING_MS / 1000} s); chunks before interactive: ${chunkNames.join(', ') || 'none'}`,
     );
 
-    expect(jsKB, `transferred JS for a cold /home (chunks: ${chunkNames.join(', ')})`).toBeLessThan(JS_CEILING_KB);
+    expect(jsKB, `transferred JS for a cold /home (chunks: ${chunkNames.join(', ')})`).toBeLessThan(
+      JS_CEILING_KB,
+    );
     expect(
       interactive,
       `/home never became interactive within ${TTI_CEILING_MS} ms — it transferred ${jsKB} KB of JS ` +
@@ -203,5 +223,4 @@ test.describe('cold-load budget (T040; feature 077)', () => {
         'actually deferred past interactive (boundary too high, or the prefetch is not on idle)',
     ).toEqual([]);
   });
-
 });

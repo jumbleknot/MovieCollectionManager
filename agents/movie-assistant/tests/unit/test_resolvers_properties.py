@@ -30,11 +30,15 @@ from src.nodes.supervisor import resolve_option
 # titles, so we only generate realistic trimmed titles to stay within the designed input domain.
 # We allow short titles (even < 4 chars) so we can test the length-guard behaviour;
 # strategies that need ≥ 4-char titles constrain at use-site.
-_title_st = st.text(
-    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd", "Zs", "Po", "Pd")),
-    min_size=1,
-    max_size=60,
-).map(str.strip).filter(lambda t: t != "")
+_title_st = (
+    st.text(
+        alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd", "Zs", "Po", "Pd")),
+        min_size=1,
+        max_size=60,
+    )
+    .map(str.strip)
+    .filter(lambda t: t != "")
+)
 
 # Years: plausible movie release range, plus some edge values at the boundary.
 _year_int_st = st.integers(min_value=1900, max_value=2030)
@@ -44,6 +48,7 @@ _year_st: st.SearchStrategy[int | str] = st.one_of(
     _year_int_st,
     _year_int_st.map(str),
 )
+
 
 # Option dict — mirrors TMDB enrichment shape used by resolve_option.
 def _option_st(title: str, year: int | str | None = None) -> dict[str, Any]:
@@ -121,9 +126,7 @@ def test_resolve_option_exact_title_returns_that_option(
     for target_opt in options:
         picked_title = str(target_opt["title"])
         result = resolve_option(picked_title, options)
-        assert result is not None, (
-            f"Expected match for exact title {picked_title!r} but got None"
-        )
+        assert result is not None, f"Expected match for exact title {picked_title!r} but got None"
         assert result is target_opt, (
             f"Expected option with title {picked_title!r} but got {result!r}"
         )
@@ -136,6 +139,7 @@ def test_resolve_option_exact_title_returns_that_option(
 #   option with that year.
 # ---------------------------------------------------------------------------
 
+
 @given(
     years=st.lists(
         st.integers(min_value=1920, max_value=2020),
@@ -146,9 +150,7 @@ def test_resolve_option_exact_title_returns_that_option(
     titles=st.lists(_title_st, min_size=2, max_size=5),
 )
 @settings(max_examples=150, suppress_health_check=[HealthCheck.too_slow])
-def test_resolve_option_year_pick_resolves_uniquely(
-    years: list[int], titles: list[str]
-) -> None:
+def test_resolve_option_year_pick_resolves_uniquely(years: list[int], titles: list[str]) -> None:
     """A pick text containing exactly one option's year returns the option with that year."""
     n = min(len(years), len(titles))
     years = years[:n]
@@ -162,10 +164,9 @@ def test_resolve_option_year_pick_resolves_uniquely(
         # We do this by constructing text like "the <year> one" — no other 4-digit tokens.
         pick = f"the {target_year} one"
         result = resolve_option(pick, options)
-        assert result is not None, (
-            f"Expected year-based match for year {target_year} but got None"
-        )
+        assert result is not None, f"Expected year-based match for year {target_year} but got None"
         from src.nodes.supervisor import _as_int as _sup_as_int
+
         assert _sup_as_int(result.get("year")) == target_year, (
             f"Expected year {target_year} but result has year {result.get('year')!r}"
         )
@@ -179,15 +180,29 @@ def test_resolve_option_year_pick_resolves_uniquely(
 
 # A pick text strategy that is unlikely to accidentally contain a year or ordinal.
 # We use short words with no 4-digit runs and none of the ordinal keywords.
-_ordinal_words = frozenset({
-    "first", "1st", "second", "2nd", "third", "3rd", "fourth", "4th",
-    "fifth", "5th", "last", "number", "option",
-})
+_ordinal_words = frozenset(
+    {
+        "first",
+        "1st",
+        "second",
+        "2nd",
+        "third",
+        "3rd",
+        "fourth",
+        "4th",
+        "fifth",
+        "5th",
+        "last",
+        "number",
+        "option",
+    }
+)
 
 
 def _is_safe_unresolvable(text: str) -> bool:
     """True if text cannot accidentally trigger year/ordinal/index resolution."""
     import re
+
     # No 4-digit token in the plausible year range
     for tok in re.findall(r"\d{4}", text.lower()):
         yr = int(tok)
@@ -220,9 +235,7 @@ def _is_safe_unresolvable(text: str) -> bool:
     max_examples=150,
     suppress_health_check=[HealthCheck.too_slow, HealthCheck.filter_too_much],
 )
-def test_resolve_option_unresolvable_returns_none(
-    titles: list[str], pick: str
-) -> None:
+def test_resolve_option_unresolvable_returns_none(titles: list[str], pick: str) -> None:
     """A pick text that doesn't match any title, year, ordinal, or index → None."""
     options = [_option_st(t, None) for t in titles]
 
@@ -259,9 +272,7 @@ def test_match_movie_closure(op_title: str, movies: list[dict[str, Any]]) -> Non
     """If _match_movie returns a value it must be one of the input movie objects."""
     result = _match_movie(op_title, movies)
     if result is not None:
-        assert any(result is m for m in movies), (
-            f"result {result!r} is not one of the input movies"
-        )
+        assert any(result is m for m in movies), f"result {result!r} is not one of the input movies"
 
 
 # ---------------------------------------------------------------------------
@@ -269,11 +280,13 @@ def test_match_movie_closure(op_title: str, movies: list[dict[str, Any]]) -> Non
 #   A non-None result must have a casefold-matching title to the bare op title.
 # ---------------------------------------------------------------------------
 
+
 @given(op_title=_title_st, movies=_movie_list_st)
 @settings(max_examples=200, suppress_health_check=[HealthCheck.too_slow])
 def test_match_movie_title_agreement(op_title: str, movies: list[dict[str, Any]]) -> None:
     """Result (when present) must have the same casefolded bare title as the op."""
     from src.nodes.organizer import _split_title_year
+
     bare, _ = _split_title_year(op_title)
     result = _match_movie(op_title, movies)
     if result is not None:
@@ -287,6 +300,7 @@ def test_match_movie_title_agreement(op_title: str, movies: list[dict[str, Any]]
 #   If the op specifies a year, any non-None result must NOT have a different (present) year.
 #   i.e. result.year is None OR result.year == op_year.
 # ---------------------------------------------------------------------------
+
 
 @given(
     bare_title=_title_st,
@@ -320,6 +334,7 @@ def test_match_movie_year_agreement(
 #   the op exactly, _match_movie must return that movie (not None, not the wrong one).
 # ---------------------------------------------------------------------------
 
+
 @given(
     titles=st.lists(
         # strip().casefold() uniqueness: _match_movie compares casefold of the stripped op
@@ -339,9 +354,7 @@ def test_match_movie_year_agreement(
     ),
 )
 @settings(max_examples=150, suppress_health_check=[HealthCheck.too_slow])
-def test_match_movie_unique_title_year_resolves(
-    titles: list[str], years: list[int | None]
-) -> None:
+def test_match_movie_unique_title_year_resolves(titles: list[str], years: list[int | None]) -> None:
     """An op naming exactly one (title, year) pair from a list with all-distinct pairs resolves.
 
     Note: Hypothesis found that this invariant requires stored titles to be trimmed — the
@@ -388,6 +401,7 @@ def test_match_movie_unique_title_year_resolves(
 #   (no year) must return None.
 # ---------------------------------------------------------------------------
 
+
 @given(
     title=_title_st,
     year_a=_year_int_st,
@@ -415,8 +429,7 @@ def test_match_movie_ambiguous_same_title_returns_none(
 
     # Build the ambiguous pair, then filter extras so none have this same casefolded title.
     filtered_extras = [
-        m for m in extra_movies
-        if str(m.get("title", "")).casefold() != title.casefold()
+        m for m in extra_movies if str(m.get("title", "")).casefold() != title.casefold()
     ]
     movie_a = _movie_st(title, year_a)
     movie_b = _movie_st(title, year_b)
@@ -447,9 +460,7 @@ _op_movie_list_st = st.lists(
 
 @given(movies=_op_movie_list_st, query=st.text(min_size=0, max_size=40))
 @settings(max_examples=200, suppress_health_check=[HealthCheck.too_slow])
-def test_resolve_op_movie_result_drawn_from_input(
-    movies: list[dict[str, Any]], query: str
-) -> None:
+def test_resolve_op_movie_result_drawn_from_input(movies: list[dict[str, Any]], query: str) -> None:
     """Closure: a 'one'/'many' resolution only ever returns movies from the input list."""
     from src.nodes.organizer import _resolve_op_movie
 
@@ -513,8 +524,11 @@ _result_list_st = st.lists(
 )
 
 
-@given(results=_result_list_st, query=st.text(min_size=0, max_size=40),
-       year=st.one_of(st.none(), _year_int_st))
+@given(
+    results=_result_list_st,
+    query=st.text(min_size=0, max_size=40),
+    year=st.one_of(st.none(), _year_int_st),
+)
 @settings(max_examples=250, suppress_health_check=[HealthCheck.too_slow])
 def test_unique_exact_match_returned_value_is_correct(
     results: list[dict[str, Any]], query: str, year: int | None
@@ -564,11 +578,15 @@ def test_unique_exact_match_finds_a_unique_exact_title(
 # ---------------------------------------------------------------------------
 
 # Titles with no digits at all, so a generated title can never be read as a year token.
-_yearless_title_st = st.text(
-    alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Zs", "Pd")),
-    min_size=4,
-    max_size=40,
-).map(str.strip).filter(lambda t: len(t) >= 4 and not any(c.isdigit() for c in t))
+_yearless_title_st = (
+    st.text(
+        alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Zs", "Pd")),
+        min_size=4,
+        max_size=40,
+    )
+    .map(str.strip)
+    .filter(lambda t: len(t) >= 4 and not any(c.isdigit() for c in t))
+)
 
 # Surrounding whitespace a member's reply (or an option label) might carry.
 _padding_st = st.sampled_from(["", " ", "  ", "\t", " \t "])
@@ -631,8 +649,11 @@ def test_resolve_option_normalized_equality_always_resolves(
 
 @given(
     options=st.lists(
-        st.builds(lambda t, y: _option_st(t, y), t=_title_st.filter(lambda t: len(t) >= 4),
-                  y=st.one_of(st.none(), _year_st)),
+        st.builds(
+            lambda t, y: _option_st(t, y),
+            t=_title_st.filter(lambda t: len(t) >= 4),
+            y=st.one_of(st.none(), _year_st),
+        ),
         min_size=1,
         max_size=5,
         unique_by=lambda o: str(o["title"]).strip().casefold(),
@@ -772,9 +793,7 @@ _nav_title_st = st.text(
 
 @given(titles=st.lists(_nav_title_st, min_size=1, max_size=6, unique=True), noise=_nav_title_st)
 @settings(suppress_health_check=[HealthCheck.function_scoped_fixture], max_examples=200)
-def test_nav_match_movie_result_is_always_one_of_the_inputs(
-    titles: list[str], noise: str
-) -> None:
+def test_nav_match_movie_result_is_always_one_of_the_inputs(titles: list[str], noise: str) -> None:
     """A non-None result is ALWAYS one of the movies passed in — never a fabrication."""
     movies = [{"movieId": f"m{i}", "title": t} for i, t in enumerate(titles)]
     result = _nav_match_movie(f"open {noise}", movies)

@@ -5,12 +5,7 @@
  */
 
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { Banner, Button } from '@mcm/design-system';
 import { Link } from 'expo-router';
@@ -42,7 +37,13 @@ export function LoginScreen({
       </View>
 
       {verifiedSuccess ? (
-        <Banner tone="success" align="center" emphasis marginBottom={16} testID="login-verified-banner">
+        <Banner
+          tone="success"
+          align="center"
+          emphasis
+          marginBottom={16}
+          testID="login-verified-banner"
+        >
           Email verified! You can now log in.
         </Banner>
       ) : null}
@@ -61,7 +62,11 @@ export function LoginScreen({
           disabled={isLoading}
           // Preserve the `login-loading` spinner testID (asserted by the auth E2E) as the
           // Button's leading icon while keeping the DS Button shell (FR-013 / SC-006).
-          icon={isLoading ? <ActivityIndicator color={theme.onPrimary?.val} testID="login-loading" /> : undefined}
+          icon={
+            isLoading ? (
+              <ActivityIndicator color={theme.onPrimary?.val} testID="login-loading" />
+            ) : undefined
+          }
           testID="btn-login-with-keycloak"
           accessibilityLabel="Login with Keycloak"
         />
@@ -89,50 +94,51 @@ export function LoginScreen({
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.background?.val,
-    padding: 32,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  appName: {
-    fontFamily: 'Outfit-Bold',
-    fontSize: 28,
-    fontWeight: '700',
-    color: theme.onSurface?.val,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  tagline: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    color: theme.onSurfaceVariant?.val,
-    textAlign: 'center',
-    // Android clips the edge glyphs of centered Inter text ('Y'…'y' in "Your … library") when the
-    // measured width is a hair under the ink width; horizontal room prevents the side-bearing clip.
-    paddingHorizontal: 6,
-  },
-  actions: {
-    gap: 16,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: theme.outlineVariant?.val,
-  },
-  dividerText: {
-    color: theme.onSurfaceVariant?.val,
-    fontFamily: 'Inter',
-    fontSize: 14,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.background?.val,
+      padding: 32,
+      justifyContent: 'center',
+    },
+    header: {
+      alignItems: 'center',
+      marginBottom: 48,
+    },
+    appName: {
+      fontFamily: 'Outfit-Bold',
+      fontSize: 28,
+      fontWeight: '700',
+      color: theme.onSurface?.val,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+    tagline: {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      color: theme.onSurfaceVariant?.val,
+      textAlign: 'center',
+      // Android clips the edge glyphs of centered Inter text ('Y'…'y' in "Your … library") when the
+      // measured width is a hair under the ink width; horizontal room prevents the side-bearing clip.
+      paddingHorizontal: 6,
+    },
+    actions: {
+      gap: 16,
+    },
+    divider: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: theme.outlineVariant?.val,
+    },
+    dividerText: {
+      color: theme.onSurfaceVariant?.val,
+      fontFamily: 'Inter',
+      fontSize: 14,
+    },
+  });

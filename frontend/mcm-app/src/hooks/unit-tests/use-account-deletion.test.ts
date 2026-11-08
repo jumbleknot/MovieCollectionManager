@@ -155,9 +155,7 @@ describe('native', () => {
   });
 
   it('posts the code and the DEVICE verifier back, and reports the deletion', async () => {
-    mockPost
-      .mockResolvedValueOnce(challenge)
-      .mockResolvedValueOnce({ data: { deleted: true } });
+    mockPost.mockResolvedValueOnce(challenge).mockResolvedValueOnce({ data: { deleted: true } });
     mockPromptAsync.mockResolvedValue({ type: 'success', params: { code: 'the-code' } });
 
     const { result } = await renderHook(() => useAccountDeletion());

@@ -43,21 +43,41 @@ const AMBIGUOUS_TITLE = 'Pirates of the Caribbean';
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
     return;
   }
-  if (!result) throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
+  if (!result)
+    throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 async function send(page: Page, text: string): Promise<void> {
@@ -75,55 +95,56 @@ test.describe('Assistant ambiguous add flow (feature 012, US1 / T069)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('ambiguous title → ordinal pick → approve adds exactly one movie', { tag: '@gate' }, async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(360_000);
-    const collectionName = `t069-amb-${Date.now()}`;
-    ownCollection(collectionName); // create-if-missing: the assistant makes it on approve
-    await gotoHome(page);
-    await openDock(page);
+  test(
+    'ambiguous title → ordinal pick → approve adds exactly one movie',
+    { tag: '@gate' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const collectionName = `t069-amb-${Date.now()}`;
+      ownCollection(collectionName); // create-if-missing: the assistant makes it on approve
+      await gotoHome(page);
+      await openDock(page);
 
-    // Turn 1: ambiguous title → the assistant offers matches, builds NO proposal yet.
-    //
-    // Wait for a REPLY, not for a SENTENCE (item #323). This required the word "matches"; the model
-    // answered with a raw JSON blob instead and the @gate tier — the one that blocks a merge — went
-    // red on a run where nothing was broken. The locator polled 283 times against a present, stable
-    // element: it was never waiting for the app, only for a particular phrasing.
-    //
-    // What this turn must establish is asserted immediately below and is model-invariant: the
-    // assistant replied, it built NO proposal, and it wrote nothing.
-    const repliesBefore = await page.locator('[data-testid="assistant-msg-assistant"]').count();
-    await send(page, `add ${AMBIGUOUS_TITLE} to my collection ${collectionName}`);
-    await expect
-      .poll(() => page.locator('[data-testid="assistant-msg-assistant"]').count(), {
-        timeout: OFFER_TIMEOUT,
-      })
-      .toBeGreaterThan(repliesBefore);
-    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
-    expect(await findCollection(request, collectionName)).toBeUndefined();
+      // Turn 1: ambiguous title → the assistant offers matches, builds NO proposal yet.
+      //
+      // Wait for a REPLY, not for a SENTENCE (item #323). This required the word "matches"; the model
+      // answered with a raw JSON blob instead and the @gate tier — the one that blocks a merge — went
+      // red on a run where nothing was broken. The locator polled 283 times against a present, stable
+      // element: it was never waiting for the app, only for a particular phrasing.
+      //
+      // What this turn must establish is asserted immediately below and is model-invariant: the
+      // assistant replied, it built NO proposal, and it wrote nothing.
+      const repliesBefore = await page.locator('[data-testid="assistant-msg-assistant"]').count();
+      await send(page, `add ${AMBIGUOUS_TITLE} to my collection ${collectionName}`);
+      await expect
+        .poll(() => page.locator('[data-testid="assistant-msg-assistant"]').count(), {
+          timeout: OFFER_TIMEOUT,
+        })
+        .toBeGreaterThan(repliesBefore);
+      await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
+      expect(await findCollection(request, collectionName)).toBeUndefined();
 
-    // Turn 2: pick by ordinal → resolves a single film → approval card appears.
-    await send(page, 'the first one');
-    // 040 US4: the resolved add asks "Do you own this movie?" before the proposal is built.
-    // 059 US2: the children's question now opens the chain, ahead of ownership.
-    await answerChildrens(page);
-    await answerOwnership(page);
-    const approval = page.locator('[data-testid="approval-request"]');
-    await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
-    await expect(approval).toContainText('Pirates');
-    expect(await findCollection(request, collectionName)).toBeUndefined();
+      // Turn 2: pick by ordinal → resolves a single film → approval card appears.
+      await send(page, 'the first one');
+      // 040 US4: the resolved add asks "Do you own this movie?" before the proposal is built.
+      // 059 US2: the children's question now opens the chain, ahead of ownership.
+      await answerChildrens(page);
+      await answerOwnership(page);
+      const approval = page.locator('[data-testid="approval-request"]');
+      await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
+      await expect(approval).toContainText('Pirates');
+      expect(await findCollection(request, collectionName)).toBeUndefined();
 
-    // Approve → the create-if-missing collection + the chosen movie are applied exactly once.
-    await page.click('[data-testid="approval-approve"]');
-    // Wait for the WRITE, not for the model's confirmation wording (item #323) — and for the write
-    // this test is ABOUT, which is the movie, not the collection that create-if-missing necessarily
-    // makes first (item #568; the ordering and the measured failure are documented on the helper).
-    const { movies } = await waitForAddedMovies(request, collectionName, 1, DONE_TIMEOUT);
-    // Restated rather than implied: "adds exactly one movie" is this test's headline property, and
-    // the helper is only trustworthy for it while the count it was asked for is visible here.
-    expect(movies).toHaveLength(1);
-    expect(movies[0].title).toContain('Pirates');
-  });
+      // Approve → the create-if-missing collection + the chosen movie are applied exactly once.
+      await page.click('[data-testid="approval-approve"]');
+      // Wait for the WRITE, not for the model's confirmation wording (item #323) — and for the write
+      // this test is ABOUT, which is the movie, not the collection that create-if-missing necessarily
+      // makes first (item #568; the ordering and the measured failure are documented on the helper).
+      const { movies } = await waitForAddedMovies(request, collectionName, 1, DONE_TIMEOUT);
+      // Restated rather than implied: "adds exactly one movie" is this test's headline property, and
+      // the helper is only trustworthy for it while the count it was asked for is visible here.
+      expect(movies).toHaveLength(1);
+      expect(movies[0].title).toContain('Pirates');
+    },
+  );
 });

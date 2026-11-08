@@ -49,9 +49,7 @@ describe('NavigationBar theme toggle', () => {
 
     await fireEvent.press(getByTestId('theme-toggle'));
 
-    await waitFor(async () =>
-      expect(await AsyncStorage.getItem('mcm.theme')).toBe('light'),
-    );
+    await waitFor(async () => expect(await AsyncStorage.getItem('mcm.theme')).toBe('light'));
   });
 
   it('preserves the existing navigation-bar selectors', async () => {

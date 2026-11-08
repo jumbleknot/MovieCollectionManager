@@ -105,8 +105,10 @@ def _auth(admin: str) -> dict[str, str]:
 
 def find_client(admin: str, client_id: str) -> dict[str, Any] | None:
     resp = httpx.get(
-        f"{ADMIN_BASE}/clients", params={"clientId": client_id},
-        headers={"Authorization": f"Bearer {admin}"}, timeout=15.0,
+        f"{ADMIN_BASE}/clients",
+        params={"clientId": client_id},
+        headers={"Authorization": f"Bearer {admin}"},
+        timeout=15.0,
     )
     resp.raise_for_status()
     items = resp.json()
@@ -145,7 +147,8 @@ def gateway_secret(admin: str) -> str | None:
     return str(
         httpx.get(
             f"{ADMIN_BASE}/clients/{gateway['id']}/client-secret",
-            headers={"Authorization": f"Bearer {admin}"}, timeout=15.0,
+            headers={"Authorization": f"Bearer {admin}"},
+            timeout=15.0,
         ).json()["value"]
     )
 
@@ -154,9 +157,12 @@ def ropc_token(username: str, password: str) -> httpx.Response:
     return httpx.post(
         TOKEN_EP,
         data={
-            "grant_type": "password", "client_id": ROPC_CLIENT_ID,
-            "client_secret": ROPC_CLIENT_SECRET, "username": username,
-            "password": password, "scope": "openid",
+            "grant_type": "password",
+            "client_id": ROPC_CLIENT_ID,
+            "client_secret": ROPC_CLIENT_SECRET,
+            "username": username,
+            "password": password,
+            "scope": "openid",
         },
         timeout=15.0,
     )
@@ -168,25 +174,39 @@ def ropc_token(username: str, password: str) -> httpx.Response:
 def create_user(admin: str, username: str, password: str) -> str:
     """Create an enabled realm user with a permanent password; return its id (idempotent-ish)."""
     httpx.post(
-        f"{ADMIN_BASE}/users", headers=_auth(admin), timeout=15.0,
-        json={"username": username, "enabled": True, "emailVerified": True,
-              "email": f"{username}@test.local", "firstName": "T045", "lastName": "Other",
-              "requiredActions": []},
+        f"{ADMIN_BASE}/users",
+        headers=_auth(admin),
+        timeout=15.0,
+        json={
+            "username": username,
+            "enabled": True,
+            "emailVerified": True,
+            "email": f"{username}@test.local",
+            "firstName": "T045",
+            "lastName": "Other",
+            "requiredActions": [],
+        },
     )
     resp = httpx.get(
-        f"{ADMIN_BASE}/users", params={"username": username, "exact": "true"},
-        headers=_auth(admin), timeout=15.0,
+        f"{ADMIN_BASE}/users",
+        params={"username": username, "exact": "true"},
+        headers=_auth(admin),
+        timeout=15.0,
     )
     resp.raise_for_status()
     uid = str(resp.json()[0]["id"])
     # Clear any realm-default required actions (e.g. VERIFY_EMAIL) that would 400 the ROPC grant
     # with "Account is not fully set up".
     httpx.put(
-        f"{ADMIN_BASE}/users/{uid}", headers=_auth(admin), timeout=15.0,
+        f"{ADMIN_BASE}/users/{uid}",
+        headers=_auth(admin),
+        timeout=15.0,
         json={"enabled": True, "emailVerified": True, "requiredActions": []},
     ).raise_for_status()
     httpx.put(
-        f"{ADMIN_BASE}/users/{uid}/reset-password", headers=_auth(admin), timeout=15.0,
+        f"{ADMIN_BASE}/users/{uid}/reset-password",
+        headers=_auth(admin),
+        timeout=15.0,
         json={"type": "password", "value": password, "temporary": False},
     ).raise_for_status()
     return uid
@@ -202,7 +222,9 @@ def assign_app_role(admin: str, uid: str, role_name: str) -> None:
     role.raise_for_status()
     httpx.post(
         f"{ADMIN_BASE}/users/{uid}/role-mappings/clients/{mcm['id']}",
-        headers=_auth(admin), json=[role.json()], timeout=15.0,
+        headers=_auth(admin),
+        json=[role.json()],
+        timeout=15.0,
     ).raise_for_status()
 
 

@@ -52,9 +52,7 @@ describe('deleteCollections', () => {
 
   it('counts a 404 as success, so a retry completes', async () => {
     mockGet.mockResolvedValue({ data: [{ id: 'a' }, { id: 'gone' }] });
-    mockDelete
-      .mockResolvedValueOnce({ status: 204 })
-      .mockRejectedValueOnce(httpError(404));
+    mockDelete.mockResolvedValueOnce({ status: 204 }).mockRejectedValueOnce(httpError(404));
 
     await expect(defaultSteps.deleteCollections('user-1', 'token')).resolves.toBe(2);
   });
@@ -82,9 +80,7 @@ describe('deleteCollections', () => {
 
   it('stops at the first real failure rather than carrying on', async () => {
     mockGet.mockResolvedValue({ data: [{ id: 'a' }, { id: 'b' }, { id: 'c' }] });
-    mockDelete
-      .mockResolvedValueOnce({ status: 204 })
-      .mockRejectedValueOnce(httpError(500));
+    mockDelete.mockResolvedValueOnce({ status: 204 }).mockRejectedValueOnce(httpError(500));
 
     await expect(defaultSteps.deleteCollections('user-1', 'token')).rejects.toThrow();
     expect(mockDelete).toHaveBeenCalledTimes(2);

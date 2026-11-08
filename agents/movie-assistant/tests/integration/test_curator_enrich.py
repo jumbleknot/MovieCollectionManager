@@ -67,8 +67,14 @@ def _enrichers() -> tuple[Any, Any]:
             args["year"] = year
         with tmdb_key_scope(TMDB_KEY):
             out = await invoke_tool(
-                agent="curator", tool_name="search_title", arguments=args, server=WEB,
-                subject_token=None, call=call_mcp_tool, limiter=limiter, acquire_token=_no_token,
+                agent="curator",
+                tool_name="search_title",
+                arguments=args,
+                server=WEB,
+                subject_token=None,
+                call=call_mcp_tool,
+                limiter=limiter,
+                acquire_token=_no_token,
             )
         assert out.ok, out.error
         return out.data
@@ -76,8 +82,13 @@ def _enrichers() -> tuple[Any, Any]:
     async def details(source_id: str) -> dict[str, Any]:
         with tmdb_key_scope(TMDB_KEY):
             out = await invoke_tool(
-                agent="curator", tool_name="get_movie_details", arguments={"sourceId": source_id},
-                server=WEB, subject_token=None, call=call_mcp_tool, limiter=limiter,
+                agent="curator",
+                tool_name="get_movie_details",
+                arguments={"sourceId": source_id},
+                server=WEB,
+                subject_token=None,
+                call=call_mcp_tool,
+                limiter=limiter,
                 acquire_token=_no_token,
             )
         assert out.ok, out.error

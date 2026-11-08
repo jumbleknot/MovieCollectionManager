@@ -38,7 +38,10 @@ const describeViolation = (v: PolicyViolation): string =>
   `${v.directive} blocked ${v.blockedURI || '(no URI)'} from ${v.source || '(inline)'} on ${v.documentUrl}`;
 
 /** Start watching. Call before the first navigation, or an early violation is missed. */
-export async function watchSecurityPolicy(context: BrowserContext, baseUrl: string): Promise<SecurityPolicyWatch> {
+export async function watchSecurityPolicy(
+  context: BrowserContext,
+  baseUrl: string,
+): Promise<SecurityPolicyWatch> {
   const violations: PolicyViolation[] = [];
   const pageErrors: string[] = [];
   const isAppUrl = (url: string): boolean => url.startsWith(baseUrl);
@@ -81,12 +84,16 @@ export async function watchSecurityPolicy(context: BrowserContext, baseUrl: stri
       });
       await expect
         .poll(() => violations.some((v) => v.blockedURI === 'inline'), {
-          message: 'an injected inline script was not reported, so a clean result from this watch would mean nothing',
+          message:
+            'an injected inline script was not reported, so a clean result from this watch would mean nothing',
           timeout: 5_000,
         })
         .toBe(true);
       // Only the probe's own line goes. Anything else stays counted.
-      violations.splice(violations.findLastIndex((v) => v.blockedURI === 'inline'), 1);
+      violations.splice(
+        violations.findLastIndex((v) => v.blockedURI === 'inline'),
+        1,
+      );
     },
 
     assertClean(step: string): void {
@@ -109,6 +116,7 @@ export function assertRightServer(response: Response | null): void {
   const right = Boolean(csp) && /-container$/.test(source);
   if (right) return;
   const why = `not the BFF container: Content-Security-Policy ${csp ? 'present' : 'absent'}, X-BFF-Source "${source}"`;
-  if (process.env['CI']) throw new Error(`The security policy walk must run against a container, but this is ${why}`);
+  if (process.env['CI'])
+    throw new Error(`The security policy walk must run against a container, but this is ${why}`);
   test.skip(true, `Needs E2E_BFF_TARGET=dev-container: this is ${why}`);
 }

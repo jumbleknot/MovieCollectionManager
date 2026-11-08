@@ -94,8 +94,11 @@ function makeAxiosError(status: number, data: unknown): Error {
 
 const mockPayload = { sub: 'user-1', exp: 99999999999 };
 const mockUserProfile = {
-  id: 'user-1', username: 'tuser', roles: ['mc-user'],
-  accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z',
+  id: 'user-1',
+  username: 'tuser',
+  roles: ['mc-user'],
+  accountStatus: 'active' as const,
+  createdAt: '2026-01-01T00:00:00.000Z',
 };
 const noRoleUserProfile = { ...mockUserProfile, roles: [] };
 
@@ -143,7 +146,11 @@ const mockMovieResponse = {
 describe('POST /bff-api/collections/:id/movies', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValue({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     mockMcClient.post.mockResolvedValue({ status: 201, data: mockMovieResponse });
   });
 
@@ -165,7 +172,11 @@ describe('POST /bff-api/collections/:id/movies', () => {
   });
 
   it('creates mc-service client with the extracted raw JWT', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: mockUserProfile, accessToken: 'post-jwt' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'post-jwt',
+    });
     await POST(...makePostRequest(createMovieBody));
     expect(createMcServiceClient).toHaveBeenCalledWith('post-jwt');
   });
@@ -177,7 +188,11 @@ describe('POST /bff-api/collections/:id/movies', () => {
   });
 
   it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: noRoleUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     const res = await POST(...makePostRequest(createMovieBody));
     expect(res.status).toBe(403);
   });
@@ -238,7 +253,11 @@ const mockMovieListResponse = {
 describe('GET /bff-api/collections/:id/movies', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValue({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     mockMcClient.get.mockResolvedValue({ status: 200, data: mockMovieListResponse });
   });
 
@@ -284,11 +303,13 @@ describe('GET /bff-api/collections/:id/movies', () => {
   });
 
   it('forwards all list query params to mc-service', async () => {
-    await GET(...makeGetRequest(
-      'cursor=c1&search=star&contentType=Movie&genre=Action&genre=Drama' +
-      '&childrens=false&rated=PG-13&language=English&decade=1990' +
-      '&owned=true&ownedMedia=Blu-Ray&ripped=true&ripQuality=Blu-Ray',
-    ));
+    await GET(
+      ...makeGetRequest(
+        'cursor=c1&search=star&contentType=Movie&genre=Action&genre=Drama' +
+          '&childrens=false&rated=PG-13&language=English&decade=1990' +
+          '&owned=true&ownedMedia=Blu-Ray&ripped=true&ripQuality=Blu-Ray',
+      ),
+    );
     const callParams = (mockMcClient.get as jest.Mock).mock.calls[0][1].params;
     expect(callParams.cursor).toBe('c1');
     expect(callParams.search).toBe('star');
@@ -297,7 +318,11 @@ describe('GET /bff-api/collections/:id/movies', () => {
   });
 
   it('creates mc-service client with the extracted raw JWT', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: mockUserProfile, accessToken: 'get-list-jwt' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'get-list-jwt',
+    });
     await GET(...makeGetRequest());
     expect(createMcServiceClient).toHaveBeenCalledWith('get-list-jwt');
   });
@@ -309,7 +334,11 @@ describe('GET /bff-api/collections/:id/movies', () => {
   });
 
   it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: noRoleUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     const res = await GET(...makeGetRequest());
     expect(res.status).toBe(403);
   });

@@ -197,9 +197,7 @@ async def test_runtime_curator_bridges_agent_config_into_the_contextvar() -> Non
 
     nodes = build_runtime_nodes(_minimal_cfg(extract_stub))
     agent_config = {"provider": "ollama", "ollamaBaseUrl": "http://h:11434", "tmdbKey": "k"}
-    config = {
-        "configurable": {"agent_config": agent_config, "user_id": "u", "subject_token": "s"}
-    }
+    config = {"configurable": {"agent_config": agent_config, "user_id": "u", "subject_token": "s"}}
     await nodes["curator"]({"messages": [("user", "hi")]}, config)
     assert captured["cfg"] == agent_config
 

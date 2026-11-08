@@ -47,7 +47,7 @@ async function renderCard(collection: CollectionSummary, overrides = {}) {
       onSetDefault={onSetDefault}
       onDelete={onDelete}
       {...overrides}
-    />
+    />,
   );
   return { ...utils, onOpen, onEdit, onSetDefault, onDelete };
 }

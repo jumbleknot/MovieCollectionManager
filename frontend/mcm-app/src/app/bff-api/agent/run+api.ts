@@ -33,7 +33,10 @@ import { requireMcUser } from '@/bff-server/role-check';
 import { withRequestContext } from '@/bff-server/request-context';
 import { handleMcApiError } from '@/bff-server/mc-api-error';
 import { createMovieAssistantAgent } from '@/bff-server/agent-gateway-client';
-import { mintSubjectToken, isSubjectTokenExchangeConfigured } from '@/bff-server/agent-subject-token';
+import {
+  mintSubjectToken,
+  isSubjectTokenExchangeConfigured,
+} from '@/bff-server/agent-subject-token';
 import {
   checkAgentRequestRateLimit,
   enforceAgentCostCeiling,

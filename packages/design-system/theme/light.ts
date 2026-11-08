@@ -7,35 +7,35 @@
  * available as named theme tokens for component-level styling.
  */
 
-import { lightColors } from '../tokens/colors'
+import { lightColors } from '../tokens/colors';
 
 export const lightTheme = {
   // ── MD3 Color Roles (spread first so the Tamagui built-ins below override) ──
   ...lightColors,
 
   // ── Tamagui built-ins (required for default Tamagui behaviour) ──────────
-  background:             lightColors.background,
-  backgroundHover:        lightColors.surface1,
-  backgroundPress:        lightColors.surface2,
-  backgroundFocus:        lightColors.surface1,
-  backgroundStrong:       lightColors.surface,
-  backgroundTransparent:  'transparent',
+  background: lightColors.background,
+  backgroundHover: lightColors.surface1,
+  backgroundPress: lightColors.surface2,
+  backgroundFocus: lightColors.surface1,
+  backgroundStrong: lightColors.surface,
+  backgroundTransparent: 'transparent',
 
-  color:                  lightColors.onBackground,
-  colorHover:             lightColors.onSurface,
-  colorPress:             lightColors.onSurface,
-  colorFocus:             lightColors.onSurface,
-  colorTransparent:       'transparent',
+  color: lightColors.onBackground,
+  colorHover: lightColors.onSurface,
+  colorPress: lightColors.onSurface,
+  colorFocus: lightColors.onSurface,
+  colorTransparent: 'transparent',
 
-  borderColor:            lightColors.outlineVariant,
-  borderColorHover:       lightColors.outline,
-  borderColorFocus:       lightColors.primary,
-  borderColorPress:       lightColors.primary,
+  borderColor: lightColors.outlineVariant,
+  borderColorHover: lightColors.outline,
+  borderColorFocus: lightColors.primary,
+  borderColorPress: lightColors.primary,
 
-  shadowColor:            lightColors.shadow,
-  shadowColorHover:       lightColors.shadow,
+  shadowColor: lightColors.shadow,
+  shadowColorHover: lightColors.shadow,
 
-  placeholderColor:       lightColors.onSurfaceVariant,
-} as const
+  placeholderColor: lightColors.onSurfaceVariant,
+} as const;
 
-export type LightTheme = typeof lightTheme
+export type LightTheme = typeof lightTheme;

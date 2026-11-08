@@ -30,7 +30,9 @@ const E2E_WORKERS = Math.max(1, Math.min(MAX_E2E_WORKERS, Math.floor(os.cpus().l
 // apart. A diagnostic that floods the channel it reports through is a diagnostic people learn to
 // scroll past.
 if (process.env['TEST_WORKER_INDEX'] === undefined) {
-  console.log(`[playwright] cores=${os.cpus().length} maxWorkers=${MAX_E2E_WORKERS} → workers=${E2E_WORKERS}`);
+  console.log(
+    `[playwright] cores=${os.cpus().length} maxWorkers=${MAX_E2E_WORKERS} → workers=${E2E_WORKERS}`,
+  );
 }
 
 // Feature 007: target the BFF Docker container instead of Metro for the FINAL E2E run.
@@ -41,9 +43,11 @@ if (process.env['TEST_WORKER_INDEX'] === undefined) {
 // container already serves the app + BFF); prod additionally ignores the self-signed cert.
 const TARGET = process.env['E2E_BFF_TARGET'];
 const CONTAINER_BASE_URL =
-  TARGET === 'dev-container' ? 'http://localhost:8082'
-  : TARGET === 'prod-container' ? 'https://localhost:8443'
-  : null;
+  TARGET === 'dev-container'
+    ? 'http://localhost:8082'
+    : TARGET === 'prod-container'
+      ? 'https://localhost:8443'
+      : null;
 const baseURL = CONTAINER_BASE_URL ?? 'http://localhost:8081';
 
 // 056 (item #170) — which tier this invocation runs.
@@ -72,13 +76,13 @@ export default defineConfig({
   // it never tested. No-ops under CI, where the host-side contention gate already measures this and
   // the Playwright container has no Docker CLI.
   globalTeardown: './tests/e2e/web/setup/global-teardown.ts',
-  timeout: 90000,   // 90 s: ~15-20 s login (popup + BFF + collections) + 60-70 s test body
+  timeout: 90000, // 90 s: ~15-20 s login (popup + BFF + collections) + 60-70 s test body
   expect: { timeout: 10000 },
   fullyParallel: false,
   forbidOnly: !!process.env['CI'],
   // Bounded by the machine and the login rate limit — see MAX_E2E_WORKERS above.
   workers: E2E_WORKERS,
-  retries: 1,  // SSO timing races between parallel workers cause intermittent login timeouts
+  retries: 1, // SSO timing races between parallel workers cause intermittent login timeouts
   // 'dot' = one char per test; combined with RTK keeps a passing run to a compact summary (T005, FR-002)
   reporter: 'dot',
   use: {

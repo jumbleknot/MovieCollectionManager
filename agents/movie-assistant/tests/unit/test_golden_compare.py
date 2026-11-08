@@ -76,6 +76,7 @@ def test_extraction_ignores_extra_actual_keys():
 
 # ── plan (organize) — collection (ci) + order-insensitive (op, title) set ──────
 
+
 def _plan(collection, *ops):
     return {"collection": collection, "operations": [{"op": o, "title": t} for o, t in ops]}
 
@@ -102,6 +103,7 @@ def test_plan_mismatch_on_wrong_collection():
 
 
 # ── plan: move destination is gated (ci), update `changes` is not (T070) ───────
+
 
 def _move_plan(collection, title, to):
     return {"collection": collection, "operations": [{"op": "move", "title": title, "to": to}]}

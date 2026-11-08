@@ -67,7 +67,10 @@ test.describe('Admin settings area — visibility and enforcement', () => {
   });
 
   test.describe('minted mc-admin', () => {
-    test.skip(!keycloakAdminEnabled(), 'KEYCLOAK_SERVICE_CLIENT_SECRET not set (admin user seeding)');
+    test.skip(
+      !keycloakAdminEnabled(),
+      'KEYCLOAK_SERVICE_CLIENT_SECRET not set (admin user seeding)',
+    );
 
     let admin: AdminUser;
     let adminCtx: BrowserContext;
@@ -89,7 +92,9 @@ test.describe('Admin settings area — visibility and enforcement', () => {
 
     test('sees the Admin entry and reaches the admin settings screen through it', async () => {
       await adminPage.goto(`${BASE}/(app)/settings`);
-      await expect(adminPage.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 30000 });
+      await expect(adminPage.getByTestId('settings-profile-screen')).toBeVisible({
+        timeout: 30000,
+      });
       const entry = adminPage.getByTestId('settings-nav-admin');
       await expect(entry).toBeVisible({ timeout: 15000 });
       await entry.click();
@@ -102,7 +107,9 @@ test.describe('Admin settings area — visibility and enforcement', () => {
       await expect(adminPage.getByTestId('toggle-self-registration')).toBeVisible();
     });
 
-    test('the address itself admits an admin and refuses an mc-user, sub-navigation never rendered', async ({ page }) => {
+    test('the address itself admits an admin and refuses an mc-user, sub-navigation never rendered', async ({
+      page,
+    }) => {
       // THE PAIR. Both halves go straight to the address — neither renders the sub-navigation
       // first — so what is being tested is the route's own guard, not the entry's visibility.
 

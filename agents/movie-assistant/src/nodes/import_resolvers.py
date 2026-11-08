@@ -154,10 +154,7 @@ def resolve_column(header: str, sample_values: list[str] | None = None) -> Colum
 
 def resolve_columns(columns: list[dict[str, Any]]) -> list[ColumnMapping]:
     """Resolve every `{header, sampleValues}` column of a parsed tab."""
-    return [
-        resolve_column(col.get("header", ""), col.get("sampleValues"))
-        for col in columns
-    ]
+    return [resolve_column(col.get("header", ""), col.get("sampleValues")) for col in columns]
 
 
 def override_column_mapping(header: str, attribute: str) -> ColumnMapping | None:

@@ -43,8 +43,8 @@ def _normalize(model_input: Any) -> list[tuple[str, str]]:
 
 def cassette_key(model_id: str, model_input: Any) -> str:
     """Stable sha256 over model id + serialized prompt."""
-    payload = model_id + "\n" + "\n".join(
-        f"{role}: {text}" for role, text in _normalize(model_input)
+    payload = (
+        model_id + "\n" + "\n".join(f"{role}: {text}" for role, text in _normalize(model_input))
     )
     return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 

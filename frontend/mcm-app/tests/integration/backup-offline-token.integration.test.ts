@@ -12,11 +12,7 @@
  * REAL KEYCLOAK, REAL TOKENS, A REAL AUTHORIZATION-CODE ROUND TRIP. No part of this can be
  * mocked and still mean anything: the claim under test is about what a third party will accept.
  */
-import {
-  createTestUser,
-  deleteTestUser,
-  type TestUser,
-} from './helpers/keycloak-test-client';
+import { createTestUser, deleteTestUser, type TestUser } from './helpers/keycloak-test-client';
 import {
   acquireOfflineRefreshToken,
   offlineTokenStillWorks,
@@ -28,7 +24,11 @@ import * as destinationStore from '@/bff-server/backup-destination-store';
 import * as jobStore from '@/bff-server/backup-job-store';
 import * as snapshotReader from '@/bff-server/backup-snapshot-reader';
 import { runScheduledBackup } from '@/bff-server/backup-runner';
-import { decryptSecret, offlineTokenAad, backupEncryptionKey } from '@/bff-server/agent-config-crypto';
+import {
+  decryptSecret,
+  offlineTokenAad,
+  backupEncryptionKey,
+} from '@/bff-server/agent-config-crypto';
 import { getAgentConfigCollection } from '@/bff-server/mongo-client';
 import {
   getBackupDestinationsCollection,
@@ -107,7 +107,11 @@ describeLive('offline token custody', () => {
       // And it really is this user's: decrypting under another user's AAD must fail, not
       // quietly return something. Two users' blobs must not be interchangeable.
       expect(() =>
-        decryptSecret(doc!.offlineRefreshEnc!, backupEncryptionKey(), offlineTokenAad('someone-else')),
+        decryptSecret(
+          doc!.offlineRefreshEnc!,
+          backupEncryptionKey(),
+          offlineTokenAad('someone-else'),
+        ),
       ).toThrow();
       expect(
         decryptSecret(doc!.offlineRefreshEnc!, backupEncryptionKey(), offlineTokenAad(user.userId)),
@@ -181,9 +185,9 @@ describeLive('offline token custody', () => {
       const accessToken = await offlineToken.mintUserAccessToken(user.userId);
 
       expect(typeof accessToken).toBe('string');
-      const claims = JSON.parse(
-        Buffer.from(accessToken.split('.')[1], 'base64url').toString(),
-      ) as { sub: string };
+      const claims = JSON.parse(Buffer.from(accessToken.split('.')[1], 'base64url').toString()) as {
+        sub: string;
+      };
       // FR-021: the run acts AS THE USER. A service identity here would mean mc-service's DAC
       // was being bypassed rather than satisfied.
       expect(claims.sub).toBe(user.userId);
@@ -195,8 +199,12 @@ describeLive('offline token custody', () => {
       const token = await acquireOfflineRefreshToken(user.username, user.password);
       await offlineToken.storeOfflineToken(user.userId, token);
 
-      await expect(offlineToken.mintUserAccessToken(user.userId)).resolves.toEqual(expect.any(String));
-      await expect(offlineToken.mintUserAccessToken(user.userId)).resolves.toEqual(expect.any(String));
+      await expect(offlineToken.mintUserAccessToken(user.userId)).resolves.toEqual(
+        expect.any(String),
+      );
+      await expect(offlineToken.mintUserAccessToken(user.userId)).resolves.toEqual(
+        expect.any(String),
+      );
     });
   });
 

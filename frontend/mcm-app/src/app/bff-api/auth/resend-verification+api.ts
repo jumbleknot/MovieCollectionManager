@@ -62,7 +62,8 @@ async function _post(request: Request): Promise<Response> {
       const messages: Record<string, string> = {
         [AuthErrorCode.ALREADY_VERIFIED]: 'Your email address has already been verified.',
         [AuthErrorCode.RATE_LIMIT_EXCEEDED]: 'Too many requests. Please try again later.',
-        [AuthErrorCode.KEYCLOAK_UNAVAILABLE]: 'The authentication service is temporarily unavailable. Please try again later.',
+        [AuthErrorCode.KEYCLOAK_UNAVAILABLE]:
+          'The authentication service is temporarily unavailable. Please try again later.',
       };
       return Response.json(
         { error: messages[err.code] ?? 'An unexpected error occurred.', code: err.code },

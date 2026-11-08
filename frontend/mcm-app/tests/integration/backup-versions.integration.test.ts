@@ -73,7 +73,12 @@ const healthyBytes = (jobId: string) =>
 beforeAll(async () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { env } = require('@/config/env') as { env: { backupAllowedDestinationHosts: string } };
-  const hosts = new Set(env.backupAllowedDestinationHosts.split(',').map((h) => h.trim()).filter(Boolean));
+  const hosts = new Set(
+    env.backupAllowedDestinationHosts
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean),
+  );
   hosts.add(new URL(S3_ENDPOINT).hostname);
   env.backupAllowedDestinationHosts = [...hosts].join(',');
 
@@ -100,9 +105,15 @@ beforeAll(async () => {
   await d.put(`${PREFIX}/${job._id}/2026-09-20T03:00:00.000Z.json.gz`, healthyBytes(job._id));
   // Present but unusable, two different ways.
   await d.put(`${PREFIX}/${job._id}/2026-09-21T03:00:00.000Z.json.gz`, Buffer.alloc(0));
-  await d.put(`${PREFIX}/${job._id}/2026-09-22T03:00:00.000Z.json.gz`, Buffer.from('this is not gzip'));
+  await d.put(
+    `${PREFIX}/${job._id}/2026-09-22T03:00:00.000Z.json.gz`,
+    Buffer.from('this is not gzip'),
+  );
   // Belongs to a different job, at the same destination.
-  await d.put(`${PREFIX}/${otherJob._id}/2026-09-20T03:00:00.000Z.json.gz`, healthyBytes(otherJob._id));
+  await d.put(
+    `${PREFIX}/${otherJob._id}/2026-09-20T03:00:00.000Z.json.gz`,
+    healthyBytes(otherJob._id),
+  );
 }, 180_000);
 
 afterAll(async () => {
@@ -111,9 +122,12 @@ afterAll(async () => {
   await closeMongo();
 });
 
-itBackupTargets('has the backup destinations up — otherwise every case below is one failure', () => {
-  assertBackupTargetsPresent();
-});
+itBackupTargets(
+  'has the backup destinations up — otherwise every case below is one failure',
+  () => {
+    assertBackupTargetsPresent();
+  },
+);
 
 describeBackupTargets('what is listed', () => {
   it('lists this job’s versions NEWEST FIRST', async () => {
@@ -174,7 +188,9 @@ describeBackupTargets('corruption that a size check alone would miss', () => {
   it('marks a gzip whose CONTENTS fail verification unusable', async () => {
     // Non-zero, valid gzip, parses as JSON — and its digest does not match. Only opening it
     // catches this, which is why usability is not decided on size alone.
-    const artifact = JSON.parse(JSON.stringify(buildArtifact(job._id, [{ id: 'c1', name: 'One', movies: [] }])));
+    const artifact = JSON.parse(
+      JSON.stringify(buildArtifact(job._id, [{ id: 'c1', name: 'One', movies: [] }])),
+    );
     artifact.manifest.sha256 = '0'.repeat(64);
     const d = await driver();
     const key = `${PREFIX}/${job._id}/2026-09-23T03:00:00.000Z.json.gz`;

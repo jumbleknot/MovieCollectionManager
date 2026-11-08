@@ -26,12 +26,11 @@ import {
   backupSecretAad,
   backupEncryptionKey,
 } from '@/bff-server/agent-config-crypto';
-import { getBackupDestinationsCollection, getBackupJobsCollection } from '@/bff-server/mongo-client';
-import type {
-  BackupDestination,
-  BackupDestinationView,
-  BackupTestResult,
-} from '@/types/backups';
+import {
+  getBackupDestinationsCollection,
+  getBackupJobsCollection,
+} from '@/bff-server/mongo-client';
+import type { BackupDestination, BackupDestinationView, BackupTestResult } from '@/types/backups';
 
 /** Thrown for input the store refuses outright, as distinct from "not found" (which is null). */
 export class BackupDestinationInputError extends Error {
@@ -95,7 +94,13 @@ export async function createDestination(
         }
       : { username: input.username ?? '' }),
     ...(input.secret
-      ? { secretEnc: encryptSecret(input.secret, backupEncryptionKey(), backupSecretAad(userId, _id)) }
+      ? {
+          secretEnc: encryptSecret(
+            input.secret,
+            backupEncryptionKey(),
+            backupSecretAad(userId, _id),
+          ),
+        }
       : {}),
     createdAt: now,
     updatedAt: now,
@@ -147,7 +152,11 @@ export async function getDestinationSecret(
   const doc = await collection.findOne({ _id: destinationId, userId });
   if (!doc) return null;
   if (!doc.secretEnc) return null;
-  return decryptSecret(doc.secretEnc, backupEncryptionKey(), backupSecretAad(userId, destinationId));
+  return decryptSecret(
+    doc.secretEnc,
+    backupEncryptionKey(),
+    backupSecretAad(userId, destinationId),
+  );
 }
 
 export async function updateDestination(
@@ -178,10 +187,14 @@ export async function updateDestination(
   }
 
   try {
-    const doc = await collection.findOneAndUpdate({ _id: destinationId, userId }, { $set }, {
-      returnDocument: 'after',
-      projection: { secretEnc: 0 },
-    });
+    const doc = await collection.findOneAndUpdate(
+      { _id: destinationId, userId },
+      { $set },
+      {
+        returnDocument: 'after',
+        projection: { secretEnc: 0 },
+      },
+    );
     return doc ? toView(doc as Omit<BackupDestination, 'secretEnc'>) : null;
   } catch (err) {
     if ((err as { code?: number }).code === 11000) {

@@ -23,42 +23,42 @@
  *   />
  */
 
-import React, { useState, useCallback } from 'react'
-import { TextInput, Animated, type TextInputInstance, type TextInputProps } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { XStack, YStack } from '@tamagui/stacks'
+import React, { useState, useCallback } from 'react';
+import { TextInput, Animated, type TextInputInstance, type TextInputProps } from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { XStack, YStack } from '@tamagui/stacks';
 
-export type TextFieldVariant = 'filled' | 'outlined'
+export type TextFieldVariant = 'filled' | 'outlined';
 
 export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
-  variant?:        TextFieldVariant
-  label:           string
-  value?:          string
-  error?:          boolean
-  errorText?:      string
-  supportingText?: string
-  leadingIcon?:    React.ReactNode
-  trailingIcon?:   React.ReactNode
-  maxCount?:       number          // enables character counter
-  disabled?:       boolean
-  required?:       boolean
-  containerProps?: object
+  variant?: TextFieldVariant;
+  label: string;
+  value?: string;
+  error?: boolean;
+  errorText?: string;
+  supportingText?: string;
+  leadingIcon?: React.ReactNode;
+  trailingIcon?: React.ReactNode;
+  maxCount?: number; // enables character counter
+  disabled?: boolean;
+  required?: boolean;
+  containerProps?: object;
 }
 
 export const TextField = React.forwardRef<TextInputInstance, TextFieldProps>(function TextField(
   {
-    variant        = 'filled',
+    variant = 'filled',
     label,
-    value          = '',
-    error          = false,
+    value = '',
+    error = false,
     errorText,
     supportingText,
     leadingIcon,
     trailingIcon,
     maxCount,
-    disabled       = false,
-    required       = false,
+    disabled = false,
+    required = false,
     containerProps,
     onFocus,
     onBlur,
@@ -66,74 +66,75 @@ export const TextField = React.forwardRef<TextInputInstance, TextFieldProps>(fun
   },
   ref,
 ) {
-  const theme = useTheme()
-  const [focused, setFocused] = useState(false)
+  const theme = useTheme();
+  const [focused, setFocused] = useState(false);
 
-  const labelAnim = useState(() => new Animated.Value(value ? 1 : 0))[0]
+  const labelAnim = useState(() => new Animated.Value(value ? 1 : 0))[0];
 
-  const floatLabel = useCallback((toValue: number) => {
-    Animated.timing(labelAnim, {
-      toValue,
-      duration:       150,
-      useNativeDriver: false,
-    }).start()
-  }, [labelAnim])
+  const floatLabel = useCallback(
+    (toValue: number) => {
+      Animated.timing(labelAnim, {
+        toValue,
+        duration: 150,
+        useNativeDriver: false,
+      }).start();
+    },
+    [labelAnim],
+  );
 
   // Derive the handler param type from TextInputProps so it tracks the installed
   // React Native version (RN 0.85 changed onFocus/onBlur from NativeSyntheticEvent<…>
   // to FocusEvent/BlurEvent). `e` and the passthrough onFocus/onBlur stay in sync.
   const handleFocus: NonNullable<TextInputProps['onFocus']> = (e) => {
-    setFocused(true)
-    floatLabel(1)
-    onFocus?.(e)
-  }
+    setFocused(true);
+    floatLabel(1);
+    onFocus?.(e);
+  };
 
   const handleBlur: NonNullable<TextInputProps['onBlur']> = (e) => {
-    setFocused(false)
-    if (!value) floatLabel(0)
-    onBlur?.(e)
-  }
+    setFocused(false);
+    if (!value) floatLabel(0);
+    onBlur?.(e);
+  };
 
   // ── Colours ───────────────────────────────────────────────────────────────
-  const activeColor  = error ? theme.error?.val    : theme.primary?.val
-  const borderColor  = error
+  const activeColor = error ? theme.error?.val : theme.primary?.val;
+  const borderColor = error ? theme.error?.val : focused ? theme.primary?.val : theme.outline?.val;
+  const labelColor = error
     ? theme.error?.val
     : focused
-    ? theme.primary?.val
-    : theme.outline?.val
-  const labelColor   = error
-    ? theme.error?.val
-    : focused
-    ? theme.primary?.val
-    : theme.onSurfaceVariant?.val
-  const bgColor      = disabled
-    ? theme.onSurface?.val + '0F'   // 6% opacity on disabled
+      ? theme.primary?.val
+      : theme.onSurfaceVariant?.val;
+  const bgColor = disabled
+    ? theme.onSurface?.val + '0F' // 6% opacity on disabled
     : variant === 'filled'
-    ? theme.surfaceVariant?.val
-    : 'transparent'
+      ? theme.surfaceVariant?.val
+      : 'transparent';
 
   // ── Animated label ────────────────────────────────────────────────────────
-  const hasLeading = !!leadingIcon
+  const hasLeading = !!leadingIcon;
 
   const labelStyle = {
-    position:   'absolute' as const,
-    left:       hasLeading ? 48 : 16,
+    position: 'absolute' as const,
+    left: hasLeading ? 48 : 16,
     // Static resting baseline; the float is driven by translateY below.
-    top:        18,
-    transform: [{
-      translateY: labelAnim.interpolate({
-        inputRange:  [0, 1],
-        outputRange: [0, -24],
-      }),
-    }],
+    top: 18,
+    transform: [
+      {
+        translateY: labelAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, -24],
+        }),
+      },
+    ],
     fontSize: labelAnim.interpolate({
-      inputRange:  [0, 1],
+      inputRange: [0, 1],
       outputRange: [16, 12],
     }),
-    color:     labelColor,
-  }
+    color: labelColor,
+  };
 
-  const isFilled   = variant === 'filled'
+  const isFilled = variant === 'filled';
 
   return (
     <YStack gap={4} opacity={disabled ? 0.38 : 1} {...containerProps}>
@@ -142,7 +143,7 @@ export const TextField = React.forwardRef<TextInputInstance, TextFieldProps>(fun
         position="relative"
         height={56}
         backgroundColor={bgColor}
-        borderRadius={isFilled ? 4 : 4}  // top corners rounded for filled, all for outlined
+        borderRadius={isFilled ? 4 : 4} // top corners rounded for filled, all for outlined
         borderTopLeftRadius={isFilled ? 4 : 4}
         borderTopRightRadius={isFilled ? 4 : 4}
         borderBottomLeftRadius={isFilled ? 0 : 4}
@@ -177,7 +178,10 @@ export const TextField = React.forwardRef<TextInputInstance, TextFieldProps>(fun
         {/* State layer */}
         <View
           position="absolute"
-          top={0} right={0} bottom={0} left={0}
+          top={0}
+          right={0}
+          bottom={0}
+          left={0}
           backgroundColor={theme.onSurface?.val}
           opacity={focused ? 0.08 : 0}
           pointerEvents="none"
@@ -185,30 +189,34 @@ export const TextField = React.forwardRef<TextInputInstance, TextFieldProps>(fun
 
         {/* Leading icon */}
         {leadingIcon && (
-          <View
-            width={48}
-            height={48}
-            alignItems="center"
-            justifyContent="center"
-            flexShrink={0}
-          >
+          <View width={48} height={48} alignItems="center" justifyContent="center" flexShrink={0}>
             {leadingIcon}
           </View>
         )}
 
         {/* Label + input stacked */}
-        <View flex={1} position="relative" height="100%" justifyContent="flex-end" paddingBottom={8}>
+        <View
+          flex={1}
+          position="relative"
+          height="100%"
+          justifyContent="flex-end"
+          paddingBottom={8}
+        >
           {/* Floating label */}
           <Animated.Text
-            style={[labelStyle, {
-              position:       'absolute',
-              pointerEvents:  'none',
-              fontFamily:     'Inter, system-ui',
-              zIndex:         1,
-            }]}
+            style={[
+              labelStyle,
+              {
+                position: 'absolute',
+                pointerEvents: 'none',
+                fontFamily: 'Inter, system-ui',
+                zIndex: 1,
+              },
+            ]}
             numberOfLines={1}
           >
-            {label}{required ? ' *' : ''}
+            {label}
+            {required ? ' *' : ''}
           </Animated.Text>
 
           {/* Actual TextInput */}
@@ -218,17 +226,19 @@ export const TextField = React.forwardRef<TextInputInstance, TextFieldProps>(fun
             onFocus={handleFocus}
             onBlur={handleBlur}
             editable={!disabled}
-            style={{
-              fontFamily:    'Inter, system-ui, sans-serif',
-              fontSize:      16,
-              color:         theme.onSurface?.val,
-              paddingLeft:   hasLeading ? 0 : 0,
-              paddingTop:    20,
-              paddingBottom: 4,
-              margin:        0,
-              height:        48,
-              outlineStyle:  'none',  // web: remove native input ring (we style it)
-            } as any}
+            style={
+              {
+                fontFamily: 'Inter, system-ui, sans-serif',
+                fontSize: 16,
+                color: theme.onSurface?.val,
+                paddingLeft: hasLeading ? 0 : 0,
+                paddingTop: 20,
+                paddingBottom: 4,
+                margin: 0,
+                height: 48,
+                outlineStyle: 'none', // web: remove native input ring (we style it)
+              } as any
+            }
             placeholderTextColor={theme.onSurfaceVariant?.val as string}
             {...textInputProps}
           />
@@ -236,13 +246,7 @@ export const TextField = React.forwardRef<TextInputInstance, TextFieldProps>(fun
 
         {/* Trailing icon */}
         {trailingIcon && (
-          <View
-            width={48}
-            height={48}
-            alignItems="center"
-            justifyContent="center"
-            flexShrink={0}
-          >
+          <View width={48} height={48} alignItems="center" justifyContent="center" flexShrink={0}>
             {trailingIcon}
           </View>
         )}
@@ -277,7 +281,7 @@ export const TextField = React.forwardRef<TextInputInstance, TextFieldProps>(fun
         )}
       </XStack>
     </YStack>
-  )
-})
+  );
+});
 
-TextField.displayName = 'MCM.TextField'
+TextField.displayName = 'MCM.TextField';

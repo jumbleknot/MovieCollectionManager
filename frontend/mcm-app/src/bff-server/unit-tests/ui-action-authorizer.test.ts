@@ -27,17 +27,19 @@ function user(roles: string[]): UserProfile {
 
 describe('authorizeUiAction', () => {
   it('allows an mc-user to navigate to an allowlisted target', () => {
-    expect(authorizeUiAction({ type: 'navigate', target: 'home' }, user([ClientRole.MCUser])).allowed).toBe(
-      true,
-    );
     expect(
-      authorizeUiAction({ type: 'navigate', target: 'collection' }, user([ClientRole.MCUser])).allowed,
+      authorizeUiAction({ type: 'navigate', target: 'home' }, user([ClientRole.MCUser])).allowed,
+    ).toBe(true);
+    expect(
+      authorizeUiAction({ type: 'navigate', target: 'collection' }, user([ClientRole.MCUser]))
+        .allowed,
     ).toBe(true);
   });
 
   it('allows an mc-admin (admin implies user) to navigate', () => {
     expect(
-      authorizeUiAction({ type: 'navigate', target: 'movie-detail' }, user([ClientRole.MCAdmin])).allowed,
+      authorizeUiAction({ type: 'navigate', target: 'movie-detail' }, user([ClientRole.MCAdmin]))
+        .allowed,
     ).toBe(true);
   });
 
@@ -57,7 +59,8 @@ describe('authorizeUiAction', () => {
 
   it('allows an allowlisted prefill action for an mc-user', () => {
     expect(
-      authorizeUiAction({ type: 'prefill', target: 'add-movie' }, user([ClientRole.MCUser])).allowed,
+      authorizeUiAction({ type: 'prefill', target: 'add-movie' }, user([ClientRole.MCUser]))
+        .allowed,
     ).toBe(true);
   });
 

@@ -16,11 +16,19 @@ import { useSessionTimeout } from '@/hooks/use-session-timeout';
 import { AssistantConfigProvider, useAssistantConfig } from '@/hooks/use-assistant-config';
 import { AssistantDock } from '@/components/agent/assistant-dock';
 
-const DEV_IDLE_OVERRIDE_MS = parseInt(process.env['EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS'] ?? '', 10);
+const DEV_IDLE_OVERRIDE_MS = parseInt(
+  process.env['EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS'] ?? '',
+  10,
+);
 const DEV_IDLE_TIMEOUT_MS = Number.isNaN(DEV_IDLE_OVERRIDE_MS) ? undefined : DEV_IDLE_OVERRIDE_MS;
 
-const DEV_ABSOLUTE_OVERRIDE_MS = parseInt(process.env['EXPO_PUBLIC_DEV_ABSOLUTE_TIMEOUT_OVERRIDE_MS'] ?? '', 10);
-const DEV_ABSOLUTE_TIMEOUT_MS = Number.isNaN(DEV_ABSOLUTE_OVERRIDE_MS) ? undefined : DEV_ABSOLUTE_OVERRIDE_MS;
+const DEV_ABSOLUTE_OVERRIDE_MS = parseInt(
+  process.env['EXPO_PUBLIC_DEV_ABSOLUTE_TIMEOUT_OVERRIDE_MS'] ?? '',
+  10,
+);
+const DEV_ABSOLUTE_TIMEOUT_MS = Number.isNaN(DEV_ABSOLUTE_OVERRIDE_MS)
+  ? undefined
+  : DEV_ABSOLUTE_OVERRIDE_MS;
 
 function SessionTimeoutHandler(): null {
   const { isAuthenticated, logoutWithTimeout } = useAuth();
@@ -69,7 +77,10 @@ export default function AppLayout(): React.JSX.Element {
           AuthGuard so the config fetch is authenticated and re-mounts fresh per session. */}
       <AssistantConfigProvider>
         {/* edges={['top']} so the nav bar background fills behind the status bar */}
-        <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.surface2?.val }]} edges={['top']}>
+        <SafeAreaView
+          style={[styles.safeArea, { backgroundColor: theme.surface2?.val }]}
+          edges={['top']}
+        >
           <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
             <SessionTimeoutHandler />
             <NavigationBar />

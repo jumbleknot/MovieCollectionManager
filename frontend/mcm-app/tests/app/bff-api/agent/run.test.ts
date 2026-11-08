@@ -21,7 +21,13 @@ jest.mock('@/bff-server/request-context', () => ({
   withRequestContext: jest.fn((fn: () => unknown) => fn()),
 }));
 jest.mock('@/bff-server/logger', () => ({
-  logger: { error: jest.fn(), warn: jest.fn(), info: jest.fn(), debug: jest.fn(), audit: jest.fn() },
+  logger: {
+    error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+    audit: jest.fn(),
+  },
 }));
 jest.mock('@/bff-server/audit-sink', () => ({ audit: jest.fn() }));
 jest.mock('@/bff-server/agent-gateway-client', () => ({
@@ -43,7 +49,9 @@ jest.mock('@/bff-server/agent-resume', () => ({
   extractThreadId: jest.fn(() => undefined),
 }));
 jest.mock('@/bff-server/cache-service', () => ({
-  getAgentUiSnapshot: jest.fn(), getAgentImportFile: jest.fn(), clearAgentImportFile: jest.fn(),
+  getAgentUiSnapshot: jest.fn(),
+  getAgentImportFile: jest.fn(),
+  clearAgentImportFile: jest.fn(),
 }));
 jest.mock('@/bff-server/agent-config-service', () => ({ resolveForRun: jest.fn() }));
 
@@ -56,7 +64,13 @@ import {
   recordEstimatedTurnCost,
 } from '@/bff-server/agent-rate-limiter';
 
-const mockUser = { id: 'user-1', username: 'u', roles: ['mc-user'], accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z' };
+const mockUser = {
+  id: 'user-1',
+  username: 'u',
+  roles: ['mc-user'],
+  accountStatus: 'active' as const,
+  createdAt: '2026-01-01T00:00:00.000Z',
+};
 
 function makePost(): Parameters<typeof POST>[0] {
   return {
@@ -86,7 +100,9 @@ describe('/bff-api/agent/run — assistant_not_configured short-circuit (US1)', 
 
   it('proceeds to the gateway when the config is runnable', async () => {
     (resolveForRun as jest.Mock).mockResolvedValue({
-      provider: 'ollama', ollamaBaseUrl: 'http://localhost:11434', tmdbKey: 'k',
+      provider: 'ollama',
+      ollamaBaseUrl: 'http://localhost:11434',
+      tmdbKey: 'k',
     });
 
     const res = await POST(makePost());

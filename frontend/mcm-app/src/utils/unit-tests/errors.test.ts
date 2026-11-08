@@ -27,9 +27,7 @@ describe('getAuthErrorMessage', () => {
   });
 
   it('returns fallback message for undefined code', () => {
-    expect(getAuthErrorMessage(undefined)).toBe(
-      'An unexpected error occurred. Please try again.',
-    );
+    expect(getAuthErrorMessage(undefined)).toBe('An unexpected error occurred. Please try again.');
   });
 
   it('returns fallback message for unknown code', () => {
@@ -51,7 +49,10 @@ describe('extractErrorCode', () => {
   it('extracts code from Axios error response', () => {
     const error = {
       response: {
-        data: { code: AuthErrorCode.DUPLICATE_EMAIL, error: 'An account with that email already exists.' },
+        data: {
+          code: AuthErrorCode.DUPLICATE_EMAIL,
+          error: 'An account with that email already exists.',
+        },
         status: 409,
       },
     };
@@ -84,9 +85,7 @@ describe('getErrorMessage', () => {
   });
 
   it('returns fallback for plain error', () => {
-    expect(getErrorMessage(new Error())).toBe(
-      'An unexpected error occurred. Please try again.',
-    );
+    expect(getErrorMessage(new Error())).toBe('An unexpected error occurred. Please try again.');
   });
 });
 

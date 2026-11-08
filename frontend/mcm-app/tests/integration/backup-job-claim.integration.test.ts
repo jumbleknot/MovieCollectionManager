@@ -66,7 +66,9 @@ async function makeDueJob(
     keepLast: 7,
     enabled: overrides.enabled ?? true,
   });
-  await (await getBackupJobsCollection()).updateOne(
+  await (
+    await getBackupJobsCollection()
+  ).updateOne(
     { _id: job.id },
     {
       $set: {
@@ -113,7 +115,10 @@ describe('exactly one concurrent caller claims a due job', () => {
 
     const results = await Promise.all(attempts);
 
-    const claimedIds = results.filter((r) => r !== null).map((r) => r!._id).sort();
+    const claimedIds = results
+      .filter((r) => r !== null)
+      .map((r) => r!._id)
+      .sort();
     expect(claimedIds).toEqual([...jobIds].sort());
   });
 });

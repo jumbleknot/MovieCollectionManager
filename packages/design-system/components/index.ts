@@ -1,17 +1,17 @@
 // ─── Primitives ───────────────────────────────────────────────────────────────
-export * from './primitives'
+export * from './primitives';
 
 // ─── Inputs ───────────────────────────────────────────────────────────────────
-export * from './inputs'
+export * from './inputs';
 
 // ─── Surfaces ─────────────────────────────────────────────────────────────────
-export * from './surfaces'
+export * from './surfaces';
 
 // ─── Navigation ───────────────────────────────────────────────────────────────
-export * from './navigation'
+export * from './navigation';
 
 // ─── Domain ───────────────────────────────────────────────────────────────────
-export * from './domain'
+export * from './domain';
 
 // ─── Assistant ────────────────────────────────────────────────────────────────
-export * from './assistant'
+export * from './assistant';

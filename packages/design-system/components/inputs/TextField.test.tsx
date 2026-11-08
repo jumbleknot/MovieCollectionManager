@@ -43,9 +43,7 @@ describe('TextField', () => {
   });
 
   it('renders the character counter from value length and maxCount', async () => {
-    const { getByText } = await renderDS(
-      <TextField label="Email" value="ab" maxCount={10} />,
-    );
+    const { getByText } = await renderDS(<TextField label="Email" value="ab" maxCount={10} />);
     expect(getByText('2/10')).toBeTruthy();
   });
 
@@ -59,9 +57,7 @@ describe('TextField', () => {
   });
 
   it('is not editable when disabled', async () => {
-    const { getByTestId } = await renderDS(
-      <TextField label="Email" testID="tf-input" disabled />,
-    );
+    const { getByTestId } = await renderDS(<TextField label="Email" testID="tf-input" disabled />);
     expect(getByTestId('tf-input').props.editable).toBe(false);
   });
 });

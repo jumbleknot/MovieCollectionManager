@@ -56,15 +56,28 @@ async function gotoHome(page: Page): Promise<void> {
   // never appears → 60 s timeout). With the create-button signal, a default deterministically
   // resolves to 'collection' below and is recovered. 60 s budget covers Metro's cold compile.
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]).catch(() => null);
 
   if (result === 'collection') {
     // FR-009 redirected to the default collection (fires at most once per session via a
     // module flag + localStorage), so a second /home now reveals the list + create button.
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
     return;
   }
   if (!result) {
@@ -86,11 +99,7 @@ async function openCreateForm(page: Page): Promise<void> {
   await page.waitForSelector('[data-testid="home-screen-create-modal"]', { timeout: 5000 });
 }
 
-async function createCollection(
-  page: Page,
-  name: string,
-  description?: string,
-): Promise<void> {
+async function createCollection(page: Page, name: string, description?: string): Promise<void> {
   await openCreateForm(page);
   await page.fill('[data-testid="collection-form-name-input"]', name);
   if (description) {
@@ -197,7 +206,9 @@ test.describe('Collection browse', () => {
     await expect(page.getByTestId('movie-search-input')).toBeVisible();
   });
 
-  test('"My Collections" nav link shows collection list without error after navigating from a collection screen', async ({ page }) => {
+  test('"My Collections" nav link shows collection list without error after navigating from a collection screen', async ({
+    page,
+  }) => {
     // This test exercises the useFocusEffect fix in home-screen.tsx.
     // Previously, navigating back to home via the nav bar would NOT call refresh(),
     // so if the collections hook had an error from a prior failed fetch (or stale
@@ -219,10 +230,14 @@ test.describe('Collection browse', () => {
     await page.click('[data-testid="nav-home"]');
     const homeScreen = page.locator('[data-testid="home-route"]').last();
     // Wait for create-button — it only appears when isLoading=false
-    await homeScreen.locator('[data-testid="home-screen-create-button"]').waitFor({ state: 'visible', timeout: 15000 });
+    await homeScreen
+      .locator('[data-testid="home-screen-create-button"]')
+      .waitFor({ state: 'visible', timeout: 15000 });
 
     // No error banner on the foreground home-screen
-    await expect(homeScreen.locator('[data-testid="home-screen-error"]')).not.toBeVisible({ timeout: 3000 });
+    await expect(homeScreen.locator('[data-testid="home-screen-error"]')).not.toBeVisible({
+      timeout: 3000,
+    });
 
     // Collection list visible in the foreground home-screen.
     // We created a collection so the list (not empty state) must appear.
@@ -259,7 +274,9 @@ test.describe('FR-009 auto-navigation', () => {
     await gotoHome(page);
   });
 
-  test('"My Collections" nav link shows collection list — not auto-redirected to default collection again', async ({ page }) => {
+  test('"My Collections" nav link shows collection list — not auto-redirected to default collection again', async ({
+    page,
+  }) => {
     // After login, FR-009 may have already redirected to the default collection.
     // Clicking "My Collections" should always land on the collection list (home-route),
     // never re-trigger the redirect a second time.
@@ -272,7 +289,10 @@ test.describe('FR-009 auto-navigation', () => {
     // Should NOT immediately redirect away to a collection screen.
     // Give 3 s for any erroneous redirect to fire — if it fires, the test fails.
     const redirected = await page
-      .waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 3000 })
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 3000,
+      })
       .then(() => true)
       .catch(() => false);
     expect(redirected).toBe(false);
@@ -284,7 +304,9 @@ test.describe('FR-009 auto-navigation', () => {
     await expect(navLink).toHaveText('My Collections');
   });
 
-  test('FR-009 fires on login: redirects to default collection when one is set', async ({ page }) => {
+  test('FR-009 fires on login: redirects to default collection when one is set', async ({
+    page,
+  }) => {
     // Create a collection and mark it as default so FR-009 has something to redirect to.
     // (If the user already has a default collection this also verifies the redirect fired.)
     const name = `FR009 Test ${Date.now()}`;
@@ -307,7 +329,10 @@ test.describe('FR-009 auto-navigation', () => {
     // FR-009 is working correctly. Waiting only for collection-screen-add-movie
     // with a generous timeout is the correct, race-free assertion.
     const onCollectionScreen = await page
-      .waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 15000 })
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 15000,
+      })
       .then(() => true)
       .catch(() => false);
 
@@ -334,7 +359,9 @@ test.describe('Set as default', () => {
     await expect(page.getByTestId('collection-card-default-badge')).toBeVisible({ timeout: 5000 });
   });
 
-  test('setting new default removes "Default" badge from previously default card', async ({ page }) => {
+  test('setting new default removes "Default" badge from previously default card', async ({
+    page,
+  }) => {
     // Create two collections so we can transfer the default between them.
     const nameA = `DefaultA ${Date.now()}`;
     ownCollection(nameA);
@@ -357,7 +384,9 @@ test.describe('Set as default', () => {
     await expect(cardB.getByTestId('collection-card-default-badge')).toBeVisible({ timeout: 5000 });
 
     // A must NO LONGER show the Default badge (the stale-badge bug)
-    await expect(cardA.getByTestId('collection-card-default-badge')).not.toBeVisible({ timeout: 5000 });
+    await expect(cardA.getByTestId('collection-card-default-badge')).not.toBeVisible({
+      timeout: 5000,
+    });
   });
 });
 

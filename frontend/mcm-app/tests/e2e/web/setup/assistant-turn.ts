@@ -73,15 +73,19 @@ export async function awaitTurn(page: Page, before: number, timeout = TURN_TIMEO
     .poll(() => replyCount(page), {
       timeout,
       message:
-        'the assistant did not answer this turn at all — this is a TURN failure, not a branch '
-        + 'failure. The gateway logs one `turn routed: intent=… node=… thread=…` line per turn '
-        + '(064 US2); no line means no turn arrived, which is what a dropped client send looks like.',
+        'the assistant did not answer this turn at all — this is a TURN failure, not a branch ' +
+        'failure. The gateway logs one `turn routed: intent=… node=… thread=…` line per turn ' +
+        '(064 US2); no line means no turn arrived, which is what a dropped client send looks like.',
     })
     .toBeGreaterThan(before);
 }
 
 /** Send a message through the dock and wait for the reply, in one step. */
-export async function sendAndAwaitTurn(page: Page, text: string, timeout = TURN_TIMEOUT): Promise<void> {
+export async function sendAndAwaitTurn(
+  page: Page,
+  text: string,
+  timeout = TURN_TIMEOUT,
+): Promise<void> {
   const before = await beginTurn(page);
   await page.fill('[data-testid="assistant-dock-input"]', text);
   await page.click('[data-testid="assistant-dock-send"]');
@@ -130,14 +134,14 @@ export async function offeredSelection(page: Page, grace = OFFER_GRACE): Promise
  */
 export function branchNotOffered(what: string): string {
   return (
-    `the assistant answered this turn, but did not offer ${what} within ${OFFER_GRACE} ms.\n`
-    + 'The turn ARRIVED (the reply count rose), so this is not the dropped-send defect of item #337. '
-    + 'Read the gateway line `turn routed: intent=… node=… thread=…` for the turn at this timestamp '
-    + 'before concluding anything — there are three distinct causes and they look identical here:\n'
-    + '  1. a different `intent=` — the supervisor classified the utterance differently. A model '
-    + 'decision; belongs in @model-decision, not in the gate.\n'
-    + '  2. the expected `intent=` — the node took its other branch. That branch is PURE CODE in all '
-    + 'three of these flows, so this is a real defect, not drift.\n'
-    + '  3. no line at all — no turn reached the gateway, i.e. the client dropped the send.'
+    `the assistant answered this turn, but did not offer ${what} within ${OFFER_GRACE} ms.\n` +
+    'The turn ARRIVED (the reply count rose), so this is not the dropped-send defect of item #337. ' +
+    'Read the gateway line `turn routed: intent=… node=… thread=…` for the turn at this timestamp ' +
+    'before concluding anything — there are three distinct causes and they look identical here:\n' +
+    '  1. a different `intent=` — the supervisor classified the utterance differently. A model ' +
+    'decision; belongs in @model-decision, not in the gate.\n' +
+    '  2. the expected `intent=` — the node took its other branch. That branch is PURE CODE in all ' +
+    'three of these flows, so this is a real defect, not drift.\n' +
+    '  3. no line at all — no turn reached the gateway, i.e. the client dropped the send.'
   );
 }

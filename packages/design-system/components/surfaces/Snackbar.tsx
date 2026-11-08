@@ -13,23 +13,23 @@
  *   // Trigger: showSnackbar({ message: 'Movie added to collection', action: { label: 'Undo', onPress: ... } })
  */
 
-import React, { useCallback, useState, useEffect } from 'react'
-import { Animated, Platform } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { XStack } from '@tamagui/stacks'
+import React, { useCallback, useState, useEffect } from 'react';
+import { Animated, Platform } from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { XStack } from '@tamagui/stacks';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface SnackbarConfig {
-  message:   string
-  action?:   { label: string; onPress: () => void }
-  duration?: number   // ms; default 4000
+  message: string;
+  action?: { label: string; onPress: () => void };
+  duration?: number; // ms; default 4000
 }
 
 export interface SnackbarProps extends SnackbarConfig {
-  visible:   boolean
-  onDismiss: () => void
+  visible: boolean;
+  onDismiss: () => void;
 }
 
 // ─── Snackbar component ───────────────────────────────────────────────────────
@@ -41,43 +41,43 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
   duration = 4000,
   onDismiss,
 }) {
-  const theme   = useTheme()
-  const slideY  = useState(() => new Animated.Value(100))[0]
-  const opacity = useState(() => new Animated.Value(0))[0]
+  const theme = useTheme();
+  const slideY = useState(() => new Animated.Value(100))[0];
+  const opacity = useState(() => new Animated.Value(0))[0];
 
   useEffect(() => {
     if (visible) {
       Animated.parallel([
-        Animated.timing(slideY,  { toValue: 0,   duration: 300, useNativeDriver: true }),
-        Animated.timing(opacity, { toValue: 1,   duration: 300, useNativeDriver: true }),
-      ]).start()
+        Animated.timing(slideY, { toValue: 0, duration: 300, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
+      ]).start();
       const t = setTimeout(() => {
         Animated.parallel([
-          Animated.timing(slideY,  { toValue: 100, duration: 200, useNativeDriver: true }),
-          Animated.timing(opacity, { toValue: 0,   duration: 200, useNativeDriver: true }),
-        ]).start(() => onDismiss())
-      }, duration)
-      return () => clearTimeout(t)
+          Animated.timing(slideY, { toValue: 100, duration: 200, useNativeDriver: true }),
+          Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }),
+        ]).start(() => onDismiss());
+      }, duration);
+      return () => clearTimeout(t);
     }
     // opacity/slideY are stable refs; re-run only when visibility toggles so an
     // inline onDismiss/duration prop doesn't restart the auto-dismiss timer
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible])
+  }, [visible]);
 
-  if (!visible) return null
+  if (!visible) return null;
 
   return (
     <Animated.View
       style={{
-        position:        'absolute',
-        bottom:          Platform.OS === 'ios' ? 40 : 24,
-        left:            16,
-        right:           16,
-        transform:       [{ translateY: slideY }],
+        position: 'absolute',
+        bottom: Platform.OS === 'ios' ? 40 : 24,
+        left: 16,
+        right: 16,
+        transform: [{ translateY: slideY }],
         opacity,
-        zIndex:          500,
-        borderRadius:    4,
-        overflow:        'hidden',
+        zIndex: 500,
+        borderRadius: 4,
+        overflow: 'hidden',
       }}
     >
       <XStack
@@ -109,7 +109,10 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
         {action && (
           <View
             paddingLeft={8}
-            onPress={() => { action.onPress(); onDismiss() }}
+            onPress={() => {
+              action.onPress();
+              onDismiss();
+            }}
             cursor="pointer"
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           >
@@ -126,32 +129,31 @@ export const Snackbar = React.memo<SnackbarProps>(function Snackbar({
         )}
       </XStack>
     </Animated.View>
-  )
-})
+  );
+});
 
-Snackbar.displayName = 'MCM.Snackbar'
+Snackbar.displayName = 'MCM.Snackbar';
 
 // ─── useSnackbar hook ─────────────────────────────────────────────────────────
 
 export function useSnackbar() {
-  const [config,  setConfig]  = useState<SnackbarConfig | null>(null)
-  const [visible, setVisible] = useState(false)
+  const [config, setConfig] = useState<SnackbarConfig | null>(null);
+  const [visible, setVisible] = useState(false);
 
   const showSnackbar = useCallback((c: SnackbarConfig) => {
-    setConfig(c)
-    setVisible(true)
-  }, [])
+    setConfig(c);
+    setVisible(true);
+  }, []);
 
   const dismiss = useCallback(() => {
-    setVisible(false)
-    setTimeout(() => setConfig(null), 300)
-  }, [])
+    setVisible(false);
+    setTimeout(() => setConfig(null), 300);
+  }, []);
 
-  const SnackbarHost = useCallback(() => (
-    config
-      ? <Snackbar {...config} visible={visible} onDismiss={dismiss} />
-      : null
-  ), [config, visible, dismiss])
+  const SnackbarHost = useCallback(
+    () => (config ? <Snackbar {...config} visible={visible} onDismiss={dismiss} /> : null),
+    [config, visible, dismiss],
+  );
 
-  return { showSnackbar, dismiss, SnackbarHost }
+  return { showSnackbar, dismiss, SnackbarHost };
 }

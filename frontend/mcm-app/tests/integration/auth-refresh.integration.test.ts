@@ -11,12 +11,14 @@
  */
 import { randomUUID } from 'node:crypto';
 import { createBffClient } from './helpers/bff-test-server';
+import { bffSeedSession, bffCleanupUser, closeBffRedis } from './helpers/bff-redis-client';
 import {
-  bffSeedSession,
-  bffCleanupUser,
-  closeBffRedis,
-} from './helpers/bff-redis-client';
-import { assignRole, createTestUser, deleteTestUser, getTestTokens, type TestUser } from './helpers/keycloak-test-client';
+  assignRole,
+  createTestUser,
+  deleteTestUser,
+  getTestTokens,
+  type TestUser,
+} from './helpers/keycloak-test-client';
 import { loginSession } from './helpers/bff-session';
 import type { Session } from '@/types/auth';
 
@@ -93,13 +95,17 @@ describe("/bff-api/auth/refresh — the caller's own session only (feature 085, 
   // US2 under server-held tokens (FR-021): the refresh token is the SESSION's, so a client cannot
   // present someone else's. B's genuine, live refresh token sent as a cookie is simply not read —
   // A's session renews with A's own tokens and stays A's.
-  it("a refresh-token cookie from another member is ignored: the session renews as its own owner (US2, FR-021)", async () => {
+  it('a refresh-token cookie from another member is ignored: the session renews as its own owner (US2, FR-021)', async () => {
     const a = await loginSession(memberA.username, memberA.password);
     const { refreshToken: bRefresh } = await getTestTokens(memberB.username, memberB.password);
 
-    const res = await bff.post('/bff-api/auth/refresh', {}, {
-      headers: { Cookie: `${a.cookie}; mcm_refresh_token=${bRefresh}` },
-    });
+    const res = await bff.post(
+      '/bff-api/auth/refresh',
+      {},
+      {
+        headers: { Cookie: `${a.cookie}; mcm_refresh_token=${bRefresh}` },
+      },
+    );
     expect(res.status).toBe(200);
 
     const user = await bff.get('/bff-api/auth/user', { headers: { Cookie: a.cookie } });
@@ -112,7 +118,9 @@ describe("/bff-api/auth/refresh — the caller's own session only (feature 085, 
     const res = await bff.post('/bff-api/auth/refresh', {}, { headers: { Cookie: a.cookie } });
     expect(res.status).toBe(200);
     expect(res.data.success).toBe(true);
-    const live = ((res.headers['set-cookie'] as string[] | undefined) ?? []).filter((c) => !/Max-Age=0/.test(c));
+    const live = ((res.headers['set-cookie'] as string[] | undefined) ?? []).filter(
+      (c) => !/Max-Age=0/.test(c),
+    );
     expect(live.map((c) => c.split('=')[0])).toEqual(['mcm_session_id']);
   });
 });

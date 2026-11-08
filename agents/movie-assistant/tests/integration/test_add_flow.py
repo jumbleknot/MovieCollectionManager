@@ -61,10 +61,15 @@ async def _require_movie_mcp() -> None:
 def _candidate() -> EnrichedMovieCandidate:
     return EnrichedMovieCandidate.model_validate(
         {
-            "source": "tmdb", "sourceId": "tmdb:603", "title": "The Matrix", "year": 1999,
+            "source": "tmdb",
+            "sourceId": "tmdb:603",
+            "title": "The Matrix",
+            "year": 1999,
             "overview": "A hacker learns the truth about his reality.",
-            "genres": ["Science Fiction"], "posterUrl": "http://img/p.jpg",
-            "language": "English", "matchConfidence": "exact",
+            "genres": ["Science Fiction"],
+            "posterUrl": "http://img/p.jpg",
+            "language": "English",
+            "matchConfidence": "exact",
         }
     )
 
@@ -128,9 +133,7 @@ _CHAIN_ANSWERS = {
 }
 
 
-async def _add_and_own(
-    graph: Any, config: dict[str, Any], name: str, answer: str = "yes"
-) -> Any:
+async def _add_and_own(graph: Any, config: dict[str, Any], name: str, answer: str = "yes") -> Any:
     """Drive the add through the whole ownership chain to the approval interrupt.
 
     040 US4 made the add ask "Do you own this?" BEFORE the approval gate; 047 US4 extended that
@@ -271,9 +274,7 @@ async def test_added_tmdb_movie_carries_external_id_url(
             await _delete_collection(cleanup_token, cid)
 
 
-async def test_reject_persists_nothing(
-    subject_token: str, reexchange_env: dict[str, str]
-) -> None:
+async def test_reject_persists_nothing(subject_token: str, reexchange_env: dict[str, str]) -> None:
     await _require_movie_mcp()
     cfg = _live_cfg(reexchange_env)
     name = f"t036-reject-{uuid.uuid4().hex[:8]}"

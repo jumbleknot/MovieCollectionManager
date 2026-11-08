@@ -10,7 +10,16 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Card, CardHeader, CardContent, CardActions, FilledButton, TextButton, Badge, Text } from '@mcm/design-system';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardActions,
+  FilledButton,
+  TextButton,
+  Badge,
+  Text,
+} from '@mcm/design-system';
 
 import type { BackupVersion } from '@/types/backups';
 
@@ -27,14 +36,24 @@ function sizeLabel(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function VersionList({ versions, busy = false, onRestore, downloadUrl }: VersionListProps): React.JSX.Element {
+export function VersionList({
+  versions,
+  busy = false,
+  onRestore,
+  downloadUrl,
+}: VersionListProps): React.JSX.Element {
   const theme = useTheme();
 
   if (versions.length === 0) {
     return (
       <Card testID="backup-version-list-empty">
         <CardContent>
-          <Text fontFamily="body" fontSize={14} lineHeight="20px" color={theme.onSurfaceVariant?.val}>
+          <Text
+            fontFamily="body"
+            fontSize={14}
+            lineHeight="20px"
+            color={theme.onSurfaceVariant?.val}
+          >
             No backups at this destination yet. Run this job once and its versions appear here.
           </Text>
         </CardContent>
@@ -54,7 +73,12 @@ export function VersionList({ versions, busy = false, onRestore, downloadUrl }: 
             {!version.usable ? (
               <CardContent>
                 <View style={styles.statusRow}>
-                  <Badge inline count="Unreadable" colorScheme="error" testID={`backup-version-unusable-${version.key}`} />
+                  <Badge
+                    inline
+                    count="Unreadable"
+                    colorScheme="error"
+                    testID={`backup-version-unusable-${version.key}`}
+                  />
                   <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val}>
                     This file is at your destination but cannot be read, so it cannot be restored.
                     You can still download it.
@@ -75,7 +99,8 @@ export function VersionList({ versions, busy = false, onRestore, downloadUrl }: 
                 label="Download"
                 onPress={() => {
                   // A plain navigation so the browser's own download handling takes over.
-                  if (typeof window !== 'undefined') window.location.assign(downloadUrl(version.key));
+                  if (typeof window !== 'undefined')
+                    window.location.assign(downloadUrl(version.key));
                 }}
                 disabled={busy}
                 testID={`backup-version-download-${version.key}`}

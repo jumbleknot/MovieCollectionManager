@@ -141,7 +141,9 @@ describe('cacheSession', () => {
     const session = makeSession();
     await cacheSession(session);
 
-    const call = mockRedis.expire.mock.calls.find((c) => c[0] === `user-sessions:${session.userId}`);
+    const call = mockRedis.expire.mock.calls.find(
+      (c) => c[0] === `user-sessions:${session.userId}`,
+    );
     expect(call).toBeDefined();
     expect(call![1] as number).toBeGreaterThan(86_000);
   });
@@ -303,10 +305,7 @@ describe('incrementRateLimit', () => {
 
     await incrementRateLimit('register', 'user@example.com', 86400);
 
-    expect(mockRedis.expire).toHaveBeenCalledWith(
-      'rate-limit:register:user@example.com',
-      86400,
-    );
+    expect(mockRedis.expire).toHaveBeenCalledWith('rate-limit:register:user@example.com', 86400);
   });
 
   it('does not reset TTL on subsequent increments (count > 1)', async () => {
@@ -365,10 +364,12 @@ describe('Redis connection unavailable', () => {
 // ─── Server-held session tokens (feature 085 US6, data-model.md) ──────────────
 
 describe('session tokens storage (feature 085)', () => {
-  it('stores the sealed record under session-tokens:{id}, with the session\'s own TTL', async () => {
+  it("stores the sealed record under session-tokens:{id}, with the session's own TTL", async () => {
     const session = makeSession();
     await cacheSessionTokens(session, '{"v":1,"blob":"sealed"}');
-    const call = mockRedis.set.mock.calls.find((c) => c[0] === `session-tokens:${session.sessionId}`);
+    const call = mockRedis.set.mock.calls.find(
+      (c) => c[0] === `session-tokens:${session.sessionId}`,
+    );
     expect(call).toBeDefined();
     expect(call![1]).toBe('{"v":1,"blob":"sealed"}');
     expect(call![2]).toBe('EX');
@@ -384,8 +385,14 @@ describe('session tokens storage (feature 085)', () => {
   it('reads the session and its tokens in ONE round trip (no added latency per request)', async () => {
     const session = makeSession();
     mockRedis.mget.mockResolvedValueOnce([JSON.stringify(session), '{"v":1}']);
-    await expect(getSessionWithTokens(session.sessionId)).resolves.toEqual({ session, tokensRaw: '{"v":1}' });
-    expect(mockRedis.mget).toHaveBeenCalledWith(`session:${session.sessionId}`, `session-tokens:${session.sessionId}`);
+    await expect(getSessionWithTokens(session.sessionId)).resolves.toEqual({
+      session,
+      tokensRaw: '{"v":1}',
+    });
+    expect(mockRedis.mget).toHaveBeenCalledWith(
+      `session:${session.sessionId}`,
+      `session-tokens:${session.sessionId}`,
+    );
     expect(mockRedis.get).not.toHaveBeenCalled();
   });
 
@@ -394,7 +401,10 @@ describe('session tokens storage (feature 085)', () => {
     await expect(getSessionWithTokens('gone')).resolves.toEqual({ session: null, tokensRaw: null });
     const session = makeSession();
     mockRedis.mget.mockResolvedValueOnce([JSON.stringify(session), null]);
-    await expect(getSessionWithTokens(session.sessionId)).resolves.toEqual({ session, tokensRaw: null });
+    await expect(getSessionWithTokens(session.sessionId)).resolves.toEqual({
+      session,
+      tokensRaw: null,
+    });
   });
 
   it('a touch updates ONLY the session record, only if it still exists (SET … XX)', async () => {
@@ -411,6 +421,8 @@ describe('session tokens storage (feature 085)', () => {
   it('deleting a session deletes its tokens too (FR-020)', async () => {
     await deleteSession('sess-abc-123', 'user-123');
     const deleted = mockRedis.del.mock.calls.flat();
-    expect(deleted).toEqual(expect.arrayContaining(['session:sess-abc-123', 'session-tokens:sess-abc-123']));
+    expect(deleted).toEqual(
+      expect.arrayContaining(['session:sess-abc-123', 'session-tokens:sess-abc-123']),
+    );
   });
 });

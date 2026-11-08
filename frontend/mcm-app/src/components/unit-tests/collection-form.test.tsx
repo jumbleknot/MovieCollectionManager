@@ -21,19 +21,14 @@ async function renderCreateForm(overrides = {}) {
   const onCancel = jest.fn();
 
   const utils = await render(
-    <CollectionForm
-      mode="create"
-      onSubmit={onSubmit}
-      onCancel={onCancel}
-      {...overrides}
-    />
+    <CollectionForm mode="create" onSubmit={onSubmit} onCancel={onCancel} {...overrides} />,
   );
   return { ...utils, onSubmit, onCancel };
 }
 
 async function renderEditForm(
   initial = { name: 'Existing Collection', description: 'Some desc' },
-  overrides = {}
+  overrides = {},
 ) {
   const onSubmit = jest.fn().mockResolvedValue(undefined);
   const onCancel = jest.fn();
@@ -45,7 +40,7 @@ async function renderEditForm(
       onSubmit={onSubmit}
       onCancel={onCancel}
       {...overrides}
-    />
+    />,
   );
   return { ...utils, onSubmit, onCancel };
 }
@@ -67,7 +62,10 @@ describe('CollectionForm — create mode', () => {
     const { getByTestId, onSubmit } = await renderCreateForm();
 
     await fireEvent.changeText(getByTestId('collection-form-name-input'), 'New Collection');
-    await fireEvent.changeText(getByTestId('collection-form-description-input'), 'Some description');
+    await fireEvent.changeText(
+      getByTestId('collection-form-description-input'),
+      'Some description',
+    );
     await fireEvent.press(getByTestId('collection-form-submit-button'));
 
     await waitFor(() => {
@@ -110,10 +108,7 @@ describe('CollectionForm — create mode', () => {
 
   it('shows validation error when name exceeds 50 chars', async () => {
     const { getByTestId, findByText } = await renderCreateForm();
-    await fireEvent.changeText(
-      getByTestId('collection-form-name-input'),
-      'a'.repeat(51)
-    );
+    await fireEvent.changeText(getByTestId('collection-form-name-input'), 'a'.repeat(51));
     await fireEvent.press(getByTestId('collection-form-submit-button'));
 
     expect(await findByText(/50 characters/i)).toBeTruthy();

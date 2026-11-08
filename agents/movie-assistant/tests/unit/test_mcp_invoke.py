@@ -50,8 +50,14 @@ async def test_disallowed_tool_blocked_before_any_call() -> None:
 
     # curator may not call the write tool add_movie (deny-by-default allowlist).
     outcome = await invoke_tool(
-        agent="curator", tool_name="add_movie", arguments={}, server=MOVIE,
-        subject_token="subj", call=call, limiter=_limiter(), acquire_token=_grant_token,
+        agent="curator",
+        tool_name="add_movie",
+        arguments={},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
+        acquire_token=_grant_token,
     )
     assert not outcome.ok
     assert not called
@@ -66,8 +72,13 @@ async def test_rate_limit_breach_degrades_gracefully_without_calling() -> None:
         return McpCallResult(is_error=False, data={}, text="")
 
     outcome = await invoke_tool(
-        agent="curator", tool_name="get_collection", arguments={"collectionId": "x"},
-        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(max_calls=0),
+        agent="curator",
+        tool_name="get_collection",
+        arguments={"collectionId": "x"},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(max_calls=0),
         acquire_token=_grant_token,
     )
     assert not outcome.ok
@@ -86,9 +97,15 @@ async def test_skip_rate_limit_lets_an_approved_write_through_a_full_bucket() ->
         return McpCallResult(is_error=False, data={"movieId": "m1"}, text="")
 
     outcome = await invoke_tool(
-        agent="organizer", tool_name="add_movie", arguments={"collectionId": "c", "movie": {}},
-        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(max_calls=0),
-        acquire_token=_grant_token, skip_rate_limit=True,
+        agent="organizer",
+        tool_name="add_movie",
+        arguments={"collectionId": "c", "movie": {}},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(max_calls=0),
+        acquire_token=_grant_token,
+        skip_rate_limit=True,
     )
     assert outcome.ok
     assert called  # the limiter did NOT block the approved write
@@ -108,8 +125,14 @@ async def test_movie_tool_acquires_token_per_call_and_forwards_it() -> None:
         return "downscoped-tok"
 
     outcome = await invoke_tool(
-        agent="curator", tool_name="get_collection", arguments={"collectionId": "x"},
-        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(), acquire_token=acquire,
+        agent="curator",
+        tool_name="get_collection",
+        arguments={"collectionId": "x"},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
+        acquire_token=acquire,
     )
     assert outcome.ok and outcome.data == {"collectionId": "abc"}
     assert seen["token"] == "downscoped-tok"  # downscoped token forwarded, not the subject token
@@ -130,8 +153,14 @@ async def test_web_tool_skips_token_acquisition() -> None:
         return "x"
 
     outcome = await invoke_tool(
-        agent="curator", tool_name="search_title", arguments={"query": "Matrix"},
-        server=WEB, subject_token="subj", call=call, limiter=_limiter(), acquire_token=acquire,
+        agent="curator",
+        tool_name="search_title",
+        arguments={"query": "Matrix"},
+        server=WEB,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
+        acquire_token=acquire,
     )
     assert outcome.ok
     assert seen["token"] is None  # web-api-mcp carries no user token
@@ -147,8 +176,13 @@ async def test_opa_denial_blocks_the_call() -> None:
         return McpCallResult(is_error=False, data={}, text="")
 
     outcome = await invoke_tool(
-        agent="curator", tool_name="get_collection", arguments={"collectionId": "x"},
-        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
+        agent="curator",
+        tool_name="get_collection",
+        arguments={"collectionId": "x"},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
         acquire_token=_deny_token,
     )
     assert not outcome.ok
@@ -164,8 +198,14 @@ async def test_missing_subject_token_blocks_movie_tool() -> None:
         return McpCallResult(is_error=False, data={}, text="")
 
     outcome = await invoke_tool(
-        agent="curator", tool_name="get_collection", arguments={"collectionId": "x"},
-        server=MOVIE, subject_token=None, call=call, limiter=_limiter(), acquire_token=_grant_token,
+        agent="curator",
+        tool_name="get_collection",
+        arguments={"collectionId": "x"},
+        server=MOVIE,
+        subject_token=None,
+        call=call,
+        limiter=_limiter(),
+        acquire_token=_grant_token,
     )
     assert not outcome.ok
     assert not called
@@ -176,8 +216,13 @@ async def test_tool_error_surfaces_as_failed_outcome() -> None:
         return McpCallResult(is_error=True, data=None, text="not found")
 
     outcome = await invoke_tool(
-        agent="curator", tool_name="get_collection", arguments={"collectionId": "x"},
-        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
+        agent="curator",
+        tool_name="get_collection",
+        arguments={"collectionId": "x"},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
         acquire_token=_grant_token,
     )
     assert not outcome.ok
@@ -192,8 +237,14 @@ async def test_injection_in_tool_output_is_flagged() -> None:
         )
 
     outcome = await invoke_tool(
-        agent="curator", tool_name="get_movie_details", arguments={"sourceId": "tmdb:603"},
-        server=WEB, subject_token=None, call=call, limiter=_limiter(), acquire_token=_grant_token,
+        agent="curator",
+        tool_name="get_movie_details",
+        arguments={"sourceId": "tmdb:603"},
+        server=WEB,
+        subject_token=None,
+        call=call,
+        limiter=_limiter(),
+        acquire_token=_grant_token,
     )
     assert outcome.injection  # guard_tool_output flagged the injection attempt
 
@@ -218,9 +269,15 @@ async def test_upstream_409_status_is_surfaced_for_classification() -> None:
         return McpCallResult(is_error=True, data=None, text="mc-service-status:409 Duplicate movie")
 
     outcome = await invoke_tool(
-        agent="organizer", tool_name="add_movie", arguments={"collectionId": "c1"},
-        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
-        acquire_token=_grant_token, sleep=_no_sleep,
+        agent="organizer",
+        tool_name="add_movie",
+        arguments={"collectionId": "c1"},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
+        acquire_token=_grant_token,
+        sleep=_no_sleep,
     )
     assert not outcome.ok
     assert outcome.status == 409
@@ -240,9 +297,16 @@ async def test_transient_transport_error_is_retried_then_succeeds() -> None:
         return McpCallResult(is_error=False, data={"movieId": "m1"}, text="ok")
 
     outcome = await invoke_tool(
-        agent="organizer", tool_name="add_movie", arguments={"collectionId": "c1"},
-        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
-        acquire_token=_grant_token, max_retries=2, sleep=_no_sleep,
+        agent="organizer",
+        tool_name="add_movie",
+        arguments={"collectionId": "c1"},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
+        acquire_token=_grant_token,
+        max_retries=2,
+        sleep=_no_sleep,
     )
     assert outcome.ok and outcome.data == {"movieId": "m1"}
     assert attempts == 3  # two transient failures, then success — idempotency key keeps it safe
@@ -259,9 +323,16 @@ async def test_transient_5xx_is_retried_then_succeeds() -> None:
         return McpCallResult(is_error=False, data={"movieId": "m1"}, text="ok")
 
     outcome = await invoke_tool(
-        agent="organizer", tool_name="add_movie", arguments={"collectionId": "c1"},
-        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
-        acquire_token=_grant_token, max_retries=2, sleep=_no_sleep,
+        agent="organizer",
+        tool_name="add_movie",
+        arguments={"collectionId": "c1"},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
+        acquire_token=_grant_token,
+        max_retries=2,
+        sleep=_no_sleep,
     )
     assert outcome.ok
     assert attempts == 2  # one transient 5xx, then success
@@ -283,9 +354,16 @@ async def test_exhausted_retries_dead_letter_to_user_facing_failure(
 
     with caplog.at_level(logging.ERROR):
         outcome = await invoke_tool(
-            agent="organizer", tool_name="add_movie", arguments={"collectionId": "c1"},
-            server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
-            acquire_token=_grant_token, max_retries=2, sleep=_no_sleep,
+            agent="organizer",
+            tool_name="add_movie",
+            arguments={"collectionId": "c1"},
+            server=MOVIE,
+            subject_token="subj",
+            call=call,
+            limiter=_limiter(),
+            acquire_token=_grant_token,
+            max_retries=2,
+            sleep=_no_sleep,
         )
 
     assert not outcome.ok
@@ -301,14 +379,21 @@ async def test_validation_detail_is_surfaced_as_the_failure_reason() -> None:
     # status sentinel; invoke_tool surfaces it as the error reason so the import report says WHY.
     async def call(*_a: Any) -> McpCallResult:
         return McpCallResult(
-            is_error=True, data=None,
+            is_error=True,
+            data=None,
             text="mc-service-status:422 Year must be a 4-digit number",
         )
 
     outcome = await invoke_tool(
-        agent="organizer", tool_name="update_movie", arguments={"x": 1},
-        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
-        acquire_token=_grant_token, skip_rate_limit=True,
+        agent="organizer",
+        tool_name="update_movie",
+        arguments={"x": 1},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
+        acquire_token=_grant_token,
+        skip_rate_limit=True,
     )
     assert not outcome.ok
     assert outcome.status == 422
@@ -323,9 +408,15 @@ async def test_non_validation_error_detail_stays_generic() -> None:
         )
 
     outcome = await invoke_tool(
-        agent="organizer", tool_name="update_movie", arguments={"x": 1},
-        server=MOVIE, subject_token="subj", call=call, limiter=_limiter(),
-        acquire_token=_grant_token, skip_rate_limit=True,
+        agent="organizer",
+        tool_name="update_movie",
+        arguments={"x": 1},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
+        acquire_token=_grant_token,
+        skip_rate_limit=True,
     )
     assert outcome.status == 403
     assert outcome.error == "That request couldn't be completed."
@@ -345,8 +436,14 @@ async def test_allowlist_rejection_error_is_member_safe() -> None:
         return McpCallResult(is_error=False, data={}, text="")
 
     outcome = await invoke_tool(
-        agent="curator", tool_name="add_movie", arguments={}, server=MOVIE,
-        subject_token="subj", call=call, limiter=_limiter(), acquire_token=_grant_token,
+        agent="curator",
+        tool_name="add_movie",
+        arguments={},
+        server=MOVIE,
+        subject_token="subj",
+        call=call,
+        limiter=_limiter(),
+        acquire_token=_grant_token,
     )
 
     assert not outcome.ok
@@ -365,8 +462,14 @@ async def test_allowlist_rejection_logs_the_detail_it_no_longer_returns(
 
     with caplog.at_level(logging.WARNING, logger="src.tools.mcp_tools"):
         await invoke_tool(
-            agent="curator", tool_name="add_movie", arguments={}, server=MOVIE,
-            subject_token="subj", call=call, limiter=_limiter(), acquire_token=_grant_token,
+            agent="curator",
+            tool_name="add_movie",
+            arguments={},
+            server=MOVIE,
+            subject_token="subj",
+            call=call,
+            limiter=_limiter(),
+            acquire_token=_grant_token,
         )
 
     assert "add_movie" in caplog.text

@@ -18,7 +18,10 @@ import * as jobStore from '@/bff-server/backup-job-store';
 import { keyBelongsToJob } from '@/bff-server/backup-version-lister';
 import { withBackupRoute, problem, notFound } from '@/bff-server/backup-route-support';
 import { securityHeaders } from '@/bff-server/security-headers';
-import { getBackupDestinationsCollection, getBackupJobsCollection } from '@/bff-server/mongo-client';
+import {
+  getBackupDestinationsCollection,
+  getBackupJobsCollection,
+} from '@/bff-server/mongo-client';
 import { logger } from '@/bff-server/logger';
 import type { BackupDestination, BackupJob } from '@/types/backups';
 
@@ -31,8 +34,12 @@ export async function GET(req: Request, { jobId }: Params): Promise<Response> {
     const key = new URL(req.url).searchParams.get('key');
     if (!key) return problem('Invalid request', 400, 'A version key is required');
 
-    const job = (await (await getBackupJobsCollection()).findOne({ _id: jobId, userId })) as BackupJob;
-    const destinationDoc = (await (await getBackupDestinationsCollection()).findOne({
+    const job = (await (
+      await getBackupJobsCollection()
+    ).findOne({ _id: jobId, userId })) as BackupJob;
+    const destinationDoc = (await (
+      await getBackupDestinationsCollection()
+    ).findOne({
       _id: job.destinationId,
       userId,
     })) as BackupDestination | null;
@@ -40,7 +47,12 @@ export async function GET(req: Request, { jobId }: Params): Promise<Response> {
     if (!keyBelongsToJob(destinationDoc, job, key)) return notFound();
 
     const secret = await destinationStore.getDestinationSecret(userId, job.destinationId);
-    if (secret === null) return problem('Destination unavailable', 409, 'No credential is stored for that destination');
+    if (secret === null)
+      return problem(
+        'Destination unavailable',
+        409,
+        'No credential is stored for that destination',
+      );
 
     const driver = await createBackupDriver(destinationDoc, secret);
     const bytes = await driver.get(key);

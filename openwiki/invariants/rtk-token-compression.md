@@ -50,6 +50,13 @@ reaches the assistant.
   whose stderr notice survives. The trigger is removed at source and kept out by
   `scripts/__tests__/grep-nul-binary-trap.test.mjs`, which fails if any tracked *text* file contains a
   NUL — so write a NUL sentinel as the `\u0000` escape, never as a raw byte.
+- **RTK can rewrite a tool's answer into its opposite, not just shorten it.** Measured 2026-11-08
+  (spec 095): `npx prettier --file-info <file>` returned `{ "ignored": true, … }`, and RTK printed
+  `Prettier: All files formatted correctly`, which is a different command's success line and the reverse
+  of the finding (the file was being skipped). It hid the cause of 14 unformatted files until the command
+  was re-run as `rtk bypass npx prettier --file-info …`. When a result is surprising, or when a command is
+  a *query* rather than a check (`--file-info`, `--find-config-path`, `check-ignore`), re-run it under
+  `rtk bypass` before concluding anything from it.
 - **`rtk gain` is also the last item on the [feature validation checklist](./feature-validation-checklist.md)**, run after every other check specifically because it measures the token cost of the runs that preceded it.
 
 See [Feature validation checklist](./feature-validation-checklist.md) for where

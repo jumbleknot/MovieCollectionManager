@@ -25,9 +25,9 @@ async function _get(): Promise<Response> {
   // (keycloak.ts), so a URI left out of this list is never registered by this path — on a fresh
   // realm the app would keep working until someone hit the flow whose URI went missing.
   await ensureClientRedirectUris([
-    `${BASE_URL}/auth-callback`,        // web OAuth PKCE callback
-    `${BASE_URL}/login?verified=true`,  // email verification redirect
-    'mcm-app://native-auth-callback',   // native OAuth PKCE callback
+    `${BASE_URL}/auth-callback`, // web OAuth PKCE callback
+    `${BASE_URL}/login?verified=true`, // email verification redirect
+    'mcm-app://native-auth-callback', // native OAuth PKCE callback
     // Feature 073 (T056): the backup-schedule consent callback. A SEPARATE URI from the login
     // callback on purpose — its result is stored as a standing permission and never turned
     // into a session, and sharing the login URI would blur two flows that must stay distinct.
@@ -47,7 +47,10 @@ async function _get(): Promise<Response> {
   // Feature 083 (#702): when the consent runs on its own client, its callback must be registered
   // THERE too. The login client keeps it as well, for a deployment that has not configured one.
   if (env.backupConsentClientId !== env.keycloakClientId) {
-    await ensureClientRedirectUris([`${BASE_URL}/bff-api/backups/consent`], env.backupConsentClientId);
+    await ensureClientRedirectUris(
+      [`${BASE_URL}/bff-api/backups/consent`],
+      env.backupConsentClientId,
+    );
   }
   return Response.json({ ok: true }, { headers: securityHeaders() });
 }

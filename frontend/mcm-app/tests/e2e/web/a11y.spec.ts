@@ -21,19 +21,36 @@ type Theme = 'dark' | 'light';
 
 async function forceTheme(page: Page, theme: Theme): Promise<void> {
   await page.addInitScript((t) => {
-    try { window.localStorage.setItem('mcm.theme', t); } catch { /* ignore */ }
+    try {
+      window.localStorage.setItem('mcm.theme', t);
+    } catch {
+      /* ignore */
+    }
   }, theme);
 }
 
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
   } else if (!result) {
     throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
   }
@@ -52,7 +69,9 @@ async function gotoCollection(page: Page): Promise<void> {
   const id = await collectionId(page);
   await page.goto(`${BASE}/collections/${id}`);
   await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 30000 });
-  await page.waitForSelector('[data-testid="movie-list-container"]', { timeout: 30000 }).catch(() => {});
+  await page
+    .waitForSelector('[data-testid="movie-list-container"]', { timeout: 30000 })
+    .catch(() => {});
 }
 
 async function gotoMovieDetail(page: Page): Promise<void> {
@@ -85,7 +104,12 @@ const SUCCESS_RGB: Record<Theme, string> = {
 async function contrastViolations(page: Page) {
   const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
   return results.violations.flatMap((v) =>
-    v.nodes.map((n) => ({ rule: v.id, impact: v.impact, target: n.target.join(' '), summary: n.failureSummary })),
+    v.nodes.map((n) => ({
+      rule: v.id,
+      impact: v.impact,
+      target: n.target.join(' '),
+      summary: n.failureSummary,
+    })),
   );
 }
 
@@ -120,7 +144,9 @@ test.describe('a11y — contrast (SC-009)', () => {
     });
   }
 
-  test('the verified "Yes" state resolves the success colour (US1-AC3 / SC-004)', async ({ page }) => {
+  test('the verified "Yes" state resolves the success colour (US1-AC3 / SC-004)', async ({
+    page,
+  }) => {
     for (const theme of THEMES) {
       await forceTheme(page, theme);
       // Alpha is owned=true,ripped=true in the fixture → both value cells render "Yes".
@@ -177,7 +203,9 @@ test.describe('a11y — labels + focus (FR-020 / SC-004)', () => {
 
 // ─── Touch targets (informational — logged, soft WCAG-2.2 floor) ─────────────────
 test.describe('a11y — touch targets', () => {
-  test('key interactive controls render with a measurable target (sizes logged)', async ({ page }, testInfo) => {
+  test('key interactive controls render with a measurable target (sizes logged)', async ({
+    page,
+  }, testInfo) => {
     await gotoHome(page);
     const ids = ['theme-toggle', 'home-screen-create-button', 'assistant-dock-toggle'];
     const report: Record<string, { w: number; h: number }> = {};
@@ -191,7 +219,10 @@ test.describe('a11y — touch targets', () => {
       expect(box!.width, `${id} width`).toBeGreaterThan(0);
       expect(box!.height, `${id} height`).toBeGreaterThan(0);
     }
-    await testInfo.attach('touch-target-sizes', { body: JSON.stringify(report, null, 2), contentType: 'application/json' });
+    await testInfo.attach('touch-target-sizes', {
+      body: JSON.stringify(report, null, 2),
+      contentType: 'application/json',
+    });
     // eslint-disable-next-line no-console
     console.log('[T044] touch-target sizes (px):', JSON.stringify(report));
   });

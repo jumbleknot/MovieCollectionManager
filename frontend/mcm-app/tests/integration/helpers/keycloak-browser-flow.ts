@@ -173,7 +173,9 @@ export async function walkStepUpLogin(opts: {
    * step that has already completed — which looks like a rejected code.
    */
   const formAction = (html: string): string | null => {
-    const m = html.match(/<form[^>]*\baction="([^"]+)"[^>]*>/) ?? html.match(/<form[^>]*id="[^"]*login[^"]*"[^>]*action="([^"]+)"/);
+    const m =
+      html.match(/<form[^>]*\baction="([^"]+)"[^>]*>/) ??
+      html.match(/<form[^>]*id="[^"]*login[^"]*"[^>]*action="([^"]+)"/);
     return m ? m[1]!.replace(/&amp;/g, '&') : null;
   };
 

@@ -16,7 +16,8 @@ import { type APIRequestContext, type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
 
-const S3_ENDPOINT = process.env['BACKUP_TEST_S3_INTERNAL_ENDPOINT'] ?? 'http://mcm-bff-backup-rustfs:9000';
+const S3_ENDPOINT =
+  process.env['BACKUP_TEST_S3_INTERNAL_ENDPOINT'] ?? 'http://mcm-bff-backup-rustfs:9000';
 const S3_BUCKET = process.env['BACKUP_TEST_S3_BUCKET'] ?? 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env['BACKUP_TEST_S3_ACCESS_KEY'] ?? 'mcmbackuptest';
 const S3_SECRET = process.env['BACKUP_TEST_S3_SECRET_KEY'] ?? '';
@@ -35,14 +36,23 @@ async function openBackupsSettings(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
   await page.waitForSelector('[data-testid="nav-settings"]', { state: 'visible', timeout: 60000 });
   await page.click('[data-testid="nav-settings"]');
-  await page.waitForSelector('[data-testid="settings-nav-backups"]', { state: 'visible', timeout: 30000 });
+  await page.waitForSelector('[data-testid="settings-nav-backups"]', {
+    state: 'visible',
+    timeout: 30000,
+  });
   await page.click('[data-testid="settings-nav-backups"]');
-  await page.waitForSelector('[data-testid="settings-backups-screen"]', { state: 'visible', timeout: 30000 });
+  await page.waitForSelector('[data-testid="settings-backups-screen"]', {
+    state: 'visible',
+    timeout: 30000,
+  });
 }
 
 async function fillDestination(page: Page, label: string): Promise<void> {
   await page.click('[data-testid="backup-destination-add"]');
-  await page.waitForSelector('[data-testid="backup-destination-form"]', { state: 'visible', timeout: 15000 });
+  await page.waitForSelector('[data-testid="backup-destination-form"]', {
+    state: 'visible',
+    timeout: 15000,
+  });
   await page.fill('[data-testid="backup-destination-label"]', label);
   await page.fill('[data-testid="backup-destination-endpoint"]', S3_ENDPOINT);
   await page.fill('[data-testid="backup-destination-bucket"]', S3_BUCKET);
@@ -153,7 +163,9 @@ test.describe('Backup destinations (feature 073)', () => {
   /** The server-assigned id for a destination, so a locator names ONE row rather than the first. */
   async function destinationIdFor(page: Page, label: string): Promise<string> {
     const list = await (await page.request.get(`${BASE}/bff-api/backups/destinations`)).json();
-    const match = (Array.isArray(list) ? list : []).find((d: { label: string }) => d.label === label);
+    const match = (Array.isArray(list) ? list : []).find(
+      (d: { label: string }) => d.label === label,
+    );
     if (!match) throw new Error(`no destination named ${label} — it was not created`);
     return match.id;
   }
@@ -165,11 +177,16 @@ test.describe('Backup destinations (feature 073)', () => {
     // ── Add (US1-AC1) ────────────────────────────────────────────────────────
     await fillDestination(page, label);
     await page.click('[data-testid="backup-destination-save"]');
-    await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
+    await page.waitForSelector('[data-testid="backup-destination-list"]', {
+      state: 'visible',
+      timeout: 20000,
+    });
     await expect(page.getByText(label, { exact: true })).toBeVisible();
 
     // ── Verify (US1-AC2) — a real probe against a real server ────────────────
-    const row = page.locator('[data-testid="backup-destination-list"]').getByText(label, { exact: true });
+    const row = page
+      .locator('[data-testid="backup-destination-list"]')
+      .getByText(label, { exact: true });
     await expect(row).toBeVisible();
     // By ID, not `.first()`. The list can legitimately hold more than one destination, and a
     // positional locator silently acts on whichever happens to sort first.
@@ -183,10 +200,17 @@ test.describe('Backup destinations (feature 073)', () => {
     // ── Edit, WITHOUT retyping the secret (US1-AC3 / FR-003) ─────────────────
     const renamed = `${label}-renamed`;
     await page.click(`[data-testid="backup-destination-edit-${id}"]`);
-    await page.waitForSelector('[data-testid="backup-destination-form"]', { state: 'visible', timeout: 15000 });
+    await page.waitForSelector('[data-testid="backup-destination-form"]', {
+      state: 'visible',
+      timeout: 15000,
+    });
     // The secret field is EMPTY on edit — not a row of dots. A masked stand-in would say a
     // credential had been fetched into the page, and none was.
-    await expect(page.locator('[data-testid="backup-destination-secret"] input, [data-testid="backup-destination-secret"]')).toHaveValue('');
+    await expect(
+      page.locator(
+        '[data-testid="backup-destination-secret"] input, [data-testid="backup-destination-secret"]',
+      ),
+    ).toHaveValue('');
     await page.fill('[data-testid="backup-destination-label"]', renamed);
     await page.click('[data-testid="backup-destination-save"]');
     await expect(page.getByText(renamed, { exact: true })).toBeVisible({ timeout: 20000 });
@@ -203,49 +227,65 @@ test.describe('Backup destinations (feature 073)', () => {
     await expect(page.getByText(renamed, { exact: true })).toHaveCount(0, { timeout: 20000 });
   });
 
-  test('no response carries the stored secret back (US1-AC3)', { tag: '@gate' }, async ({ page }) => {
-    const label = unique();
-    await openBackupsSettings(page);
-    await fillDestination(page, label);
+  test(
+    'no response carries the stored secret back (US1-AC3)',
+    { tag: '@gate' },
+    async ({ page }) => {
+      const label = unique();
+      await openBackupsSettings(page);
+      await fillDestination(page, label);
 
-    // Watch the wire, not the screen. A secret absent from the rendered page but present in a
-    // response body has still left the server, and the next thing to read that body might not
-    // be this UI.
-    const bodies: string[] = [];
-    page.on('response', async (res) => {
-      if (!res.url().includes('/bff-api/backups/')) return;
-      try {
-        bodies.push(await res.text());
-      } catch {
-        /* a streamed or empty body is not a leak */
+      // Watch the wire, not the screen. A secret absent from the rendered page but present in a
+      // response body has still left the server, and the next thing to read that body might not
+      // be this UI.
+      const bodies: string[] = [];
+      page.on('response', async (res) => {
+        if (!res.url().includes('/bff-api/backups/')) return;
+        try {
+          bodies.push(await res.text());
+        } catch {
+          /* a streamed or empty body is not a leak */
+        }
+      });
+
+      await page.click('[data-testid="backup-destination-save"]');
+      await page.waitForSelector('[data-testid="backup-destination-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
+      const id = await destinationIdFor(page, label);
+      await page.click(`[data-testid="backup-destination-test-${id}"]`);
+      await expect(page.locator('[data-testid="backup-destination-test-result"]')).toBeVisible({
+        timeout: 30000,
+      });
+
+      expect(bodies.length).toBeGreaterThan(0); // a leak check over zero responses proves nothing
+      for (const body of bodies) {
+        expect(body).not.toContain(S3_SECRET);
+        expect(body).not.toContain('secretEnc');
       }
-    });
 
-    await page.click('[data-testid="backup-destination-save"]');
-    await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
-    const id = await destinationIdFor(page, label);
-    await page.click(`[data-testid="backup-destination-test-${id}"]`);
-    await expect(page.locator('[data-testid="backup-destination-test-result"]')).toBeVisible({ timeout: 30000 });
+      await page.click(`[data-testid="backup-destination-delete-${id}"]`);
+    },
+  );
 
-    expect(bodies.length).toBeGreaterThan(0); // a leak check over zero responses proves nothing
-    for (const body of bodies) {
-      expect(body).not.toContain(S3_SECRET);
-      expect(body).not.toContain('secretEnc');
-    }
+  test(
+    'a blocked address is refused with a reason the user can act on (US1-AC4)',
+    { tag: '@gate' },
+    async ({ page }) => {
+      await openBackupsSettings(page);
+      await fillDestination(page, unique());
+      await page.fill('[data-testid="backup-destination-endpoint"]', 'http://169.254.169.254/');
+      await page.click('[data-testid="backup-destination-save"]');
 
-    await page.click(`[data-testid="backup-destination-delete-${id}"]`);
-  });
-
-  test('a blocked address is refused with a reason the user can act on (US1-AC4)', { tag: '@gate' }, async ({ page }) => {
-    await openBackupsSettings(page);
-    await fillDestination(page, unique());
-    await page.fill('[data-testid="backup-destination-endpoint"]', 'http://169.254.169.254/');
-    await page.click('[data-testid="backup-destination-save"]');
-
-    await expect(page.locator('[data-testid="backup-error-banner"]')).toContainText(/not allowed/i, {
-      timeout: 20000,
-    });
-  });
+      await expect(page.locator('[data-testid="backup-error-banner"]')).toContainText(
+        /not allowed/i,
+        {
+          timeout: 20000,
+        },
+      );
+    },
+  );
 
   // ── US2: take a backup right now ─────────────────────────────────────────────
 
@@ -254,87 +294,135 @@ test.describe('Backup destinations (feature 073)', () => {
     await openBackupsSettings(page);
     await fillDestination(page, label);
     await page.click('[data-testid="backup-destination-save"]');
-    await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
+    await page.waitForSelector('[data-testid="backup-destination-list"]', {
+      state: 'visible',
+      timeout: 20000,
+    });
 
     await page.click('[data-testid="backup-job-add"]');
-    await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
+    await page.waitForSelector('[data-testid="backup-job-form"]', {
+      state: 'visible',
+      timeout: 15000,
+    });
     await page.fill('[data-testid="backup-job-label"]', `${label} job`);
     // No collections selected — every collection this user owns, resolved when the backup runs.
     await page.click('[data-testid="backup-job-save"]');
-    await page.waitForSelector('[data-testid="backup-job-list"]', { state: 'visible', timeout: 20000 });
+    await page.waitForSelector('[data-testid="backup-job-list"]', {
+      state: 'visible',
+      timeout: 20000,
+    });
 
     await page.locator('[data-testid^="backup-job-run-"]').first().click();
-    await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(/Backed up \d+ movies/i, {
-      timeout: 120000,
-    });
+    await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
+      /Backed up \d+ movies/i,
+      {
+        timeout: 120000,
+      },
+    );
 
     // The version the run just wrote is listed at the destination.
     await page.locator('[data-testid^="backup-job-versions-"]').first().click();
-    await expect(page.locator('[data-testid="backup-version-list"]')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('[data-testid="backup-version-list"]')).toBeVisible({
+      timeout: 30000,
+    });
     await expect(page.locator('[data-testid^="backup-version-restore-"]').first()).toBeEnabled();
   });
 
   // ── US3: recover without risking what I have now ─────────────────────────────
 
-  test('back up, change the data, restore, and confirm nothing was overwritten', { tag: '@gate' }, async ({ page, request }) => {
-    const label = unique();
-    await openBackupsSettings(page);
-    await fillDestination(page, label);
-    await page.click('[data-testid="backup-destination-save"]');
-    await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
+  test(
+    'back up, change the data, restore, and confirm nothing was overwritten',
+    { tag: '@gate' },
+    async ({ page, request }) => {
+      const label = unique();
+      await openBackupsSettings(page);
+      await fillDestination(page, label);
+      await page.click('[data-testid="backup-destination-save"]');
+      await page.waitForSelector('[data-testid="backup-destination-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
 
-    await page.click('[data-testid="backup-job-add"]');
-    await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
-    await page.fill('[data-testid="backup-job-label"]', `${label} restore job`);
-    await page.click('[data-testid="backup-job-save"]');
-    await page.waitForSelector('[data-testid="backup-job-list"]', { state: 'visible', timeout: 20000 });
+      await page.click('[data-testid="backup-job-add"]');
+      await page.waitForSelector('[data-testid="backup-job-form"]', {
+        state: 'visible',
+        timeout: 15000,
+      });
+      await page.fill('[data-testid="backup-job-label"]', `${label} restore job`);
+      await page.click('[data-testid="backup-job-save"]');
+      await page.waitForSelector('[data-testid="backup-job-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
 
-    await page.locator('[data-testid^="backup-job-run-"]').first().click();
-    await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(/Backed up/i, {
-      timeout: 120000,
-    });
+      await page.locator('[data-testid^="backup-job-run-"]').first().click();
+      await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
+        /Backed up/i,
+        {
+          timeout: 120000,
+        },
+      );
 
-    // Snapshot live state through the API, then CHANGE it, so the restore has something it
-    // could plausibly overwrite. Read through the same BFF the UI uses.
-    const before = await (await request.get(`${BASE}/bff-api/collections`)).json();
-    const beforeCount = (Array.isArray(before) ? before : before.items ?? []).length;
+      // Snapshot live state through the API, then CHANGE it, so the restore has something it
+      // could plausibly overwrite. Read through the same BFF the UI uses.
+      const before = await (await request.get(`${BASE}/bff-api/collections`)).json();
+      const beforeCount = (Array.isArray(before) ? before : (before.items ?? [])).length;
 
-    const added = await request.post(`${BASE}/bff-api/collections`, {
-      data: { name: `Mutated ${label}`.slice(0, 50) },
-    });
-    expect(added.ok()).toBeTruthy();
+      const added = await request.post(`${BASE}/bff-api/collections`, {
+        data: { name: `Mutated ${label}`.slice(0, 50) },
+      });
+      expect(added.ok()).toBeTruthy();
 
-    await page.reload();
-    await page.waitForSelector('[data-testid="settings-backups-screen"]', { state: 'visible', timeout: 30000 });
-    await page.locator('[data-testid^="backup-job-versions-"]').first().click();
-    await page.waitForSelector('[data-testid="backup-version-list"]', { state: 'visible', timeout: 30000 });
-    await page.locator('[data-testid^="backup-version-restore-"]').first().click();
+      await page.reload();
+      await page.waitForSelector('[data-testid="settings-backups-screen"]', {
+        state: 'visible',
+        timeout: 30000,
+      });
+      await page.locator('[data-testid^="backup-job-versions-"]').first().click();
+      await page.waitForSelector('[data-testid="backup-version-list"]', {
+        state: 'visible',
+        timeout: 30000,
+      });
+      await page.locator('[data-testid^="backup-version-restore-"]').first().click();
 
-    await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(/Restored \d+ movies/i, {
-      timeout: 120000,
-    });
+      await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
+        /Restored \d+ movies/i,
+        {
+          timeout: 120000,
+        },
+      );
 
-    // The collection created AFTER the backup must still be there: a restore adds, it never
-    // replaces. This is SC-003 seen from the outside.
-    const after = await (await request.get(`${BASE}/bff-api/collections`)).json();
-    const afterList = Array.isArray(after) ? after : after.items ?? [];
-    expect(afterList.some((c: { name: string }) => c.name.startsWith(`Mutated ${label}`.slice(0, 20)))).toBe(true);
-    // And the restore added collections rather than replacing any.
-    expect(afterList.length).toBeGreaterThan(beforeCount);
-  });
+      // The collection created AFTER the backup must still be there: a restore adds, it never
+      // replaces. This is SC-003 seen from the outside.
+      const after = await (await request.get(`${BASE}/bff-api/collections`)).json();
+      const afterList = Array.isArray(after) ? after : (after.items ?? []);
+      expect(
+        afterList.some((c: { name: string }) => c.name.startsWith(`Mutated ${label}`.slice(0, 20))),
+      ).toBe(true);
+      // And the restore added collections rather than replacing any.
+      expect(afterList.length).toBeGreaterThan(beforeCount);
+    },
+  );
 
-  test('an unreadable version is listed but cannot be restored (US3-AC5)', { tag: '@gate' }, async ({ page }) => {
-    // Not asserted by corrupting an object from the browser — nothing in the UI can do that.
-    // The integration tier covers the corrupt cases against a real destination; what this
-    // asserts is the UI contract: `usable: false` renders as visibly non-restorable rather
-    // than silently absent, so a user is never offered a version that will fail.
-    await openBackupsSettings(page);
-    const unusable = page.locator('[data-testid^="backup-version-unusable-"]');
-    if ((await unusable.count()) > 0) {
-      const key = (await unusable.first().getAttribute('data-testid'))!.replace('backup-version-unusable-', '');
-      await expect(page.locator(`[data-testid="backup-version-restore-${key}"]`)).toBeDisabled();
-    }
-  });
+  test(
+    'an unreadable version is listed but cannot be restored (US3-AC5)',
+    { tag: '@gate' },
+    async ({ page }) => {
+      // Not asserted by corrupting an object from the browser — nothing in the UI can do that.
+      // The integration tier covers the corrupt cases against a real destination; what this
+      // asserts is the UI contract: `usable: false` renders as visibly non-restorable rather
+      // than silently absent, so a user is never offered a version that will fail.
+      await openBackupsSettings(page);
+      const unusable = page.locator('[data-testid^="backup-version-unusable-"]');
+      if ((await unusable.count()) > 0) {
+        const key = (await unusable.first().getAttribute('data-testid'))!.replace(
+          'backup-version-unusable-',
+          '',
+        );
+        await expect(page.locator(`[data-testid="backup-version-restore-${key}"]`)).toBeDisabled();
+      }
+    },
+  );
   // ── US4: backups happen without me ───────────────────────────────────────────
 
   test(
@@ -358,17 +446,28 @@ test.describe('Backup destinations (feature 073)', () => {
       await openBackupsSettings(page);
       await fillDestination(page, label);
       await page.click('[data-testid="backup-destination-save"]');
-      await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
+      await page.waitForSelector('[data-testid="backup-destination-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
 
       await page.click('[data-testid="backup-job-add"]');
-      await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
+      await page.waitForSelector('[data-testid="backup-job-form"]', {
+        state: 'visible',
+        timeout: 15000,
+      });
       await page.fill('[data-testid="backup-job-label"]', `${label} scheduled`);
       await page.click('[data-testid="backup-job-save"]');
-      await page.waitForSelector('[data-testid="backup-job-list"]', { state: 'visible', timeout: 20000 });
+      await page.waitForSelector('[data-testid="backup-job-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
 
       // Open the job so the schedule editor is on screen.
       await page.locator('[data-testid^="backup-job-versions-"]').first().click();
-      await expect(page.locator('[data-testid="backup-schedule-editor"]')).toBeVisible({ timeout: 20000 });
+      await expect(page.locator('[data-testid="backup-schedule-editor"]')).toBeVisible({
+        timeout: 20000,
+      });
 
       // CONSENT IS A REAL OIDC ROUND TRIP (FR-022) — the app navigates to Keycloak and comes
       // back through the consent callback. The worker already holds a Keycloak SSO session, so
@@ -400,8 +499,8 @@ test.describe('Backup destinations (feature 073)', () => {
           throw new Error(
             `This worker is signed in as "${sessionUser.username}" but only ${E2E_USER}'s password ` +
               'is available here, and Keycloak asked for credentials rather than reusing the SSO ' +
-              'session. Signing in as a different user would store that user\'s offline token ' +
-              'against this session\'s id — failing instead of doing that quietly.',
+              "session. Signing in as a different user would store that user's offline token " +
+              "against this session's id — failing instead of doing that quietly.",
           );
         }
         await page.fill('input[name="username"]', E2E_USER);
@@ -412,22 +511,24 @@ test.describe('Backup destinations (feature 073)', () => {
       // The callback's own redirect target, so this cannot match the page we started on.
       await page.waitForURL(/consent=granted/, { timeout: 60000 });
       await expect
-        .poll(async () => (await (await request.get(`${BASE}/bff-api/backups/consent`)).json()).granted, {
-          timeout: 30000,
-        })
+        .poll(
+          async () => (await (await request.get(`${BASE}/bff-api/backups/consent`)).json()).granted,
+          {
+            timeout: 30000,
+          },
+        )
         .toBe(true);
 
       // Turn scheduling on, now that the permission exists.
       await openBackupsSettings(page);
       await page.locator('[data-testid^="backup-job-versions-"]').first().click();
-      await expect(page.locator('[data-testid="backup-schedule-editor"]')).toBeVisible({ timeout: 20000 });
+      await expect(page.locator('[data-testid="backup-schedule-editor"]')).toBeVisible({
+        timeout: 20000,
+      });
       // By ROLE, scoped to the editor. The design-system Switch does not forward a testID to
       // the DOM (see the note in schedule-editor.tsx), so a bare testID locator matches nothing
       // and the click times out as if the screen were broken — which is exactly how this read.
-      await page
-        .locator('[data-testid="backup-schedule-editor"]')
-        .getByRole('switch')
-        .click();
+      await page.locator('[data-testid="backup-schedule-editor"]').getByRole('switch').click();
 
       // Read back the instant the SERVER decided this job is next due. Using the server's own
       // answer rather than one the test computes is what makes this a test of the scheduling
@@ -437,7 +538,9 @@ test.describe('Backup destinations (feature 073)', () => {
         nextRunAt?: string;
       }
       const scheduledJobOrNull = async (): Promise<ScheduledJob | null> => {
-        const jobs = (await (await request.get(`${BASE}/bff-api/backups/jobs`)).json()) as ScheduledJob[];
+        const jobs = (await (
+          await request.get(`${BASE}/bff-api/backups/jobs`)
+        ).json()) as ScheduledJob[];
         return (Array.isArray(jobs) ? jobs : []).find((j) => j.nextRunAt) ?? null;
       };
       await expect
@@ -501,15 +604,24 @@ test.describe('Backup destinations (feature 073)', () => {
       await openBackupsSettings(page);
       await fillDestination(page, label);
       await page.click('[data-testid="backup-destination-save"]');
-      await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
+      await page.waitForSelector('[data-testid="backup-destination-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
 
       // keep-last-2, so three runs prove the prune without three times the wait.
       await page.click('[data-testid="backup-job-add"]');
-      await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
+      await page.waitForSelector('[data-testid="backup-job-form"]', {
+        state: 'visible',
+        timeout: 15000,
+      });
       await page.fill('[data-testid="backup-job-label"]', `${label} retention`);
       await page.fill('[data-testid="backup-job-keep-last"]', '2');
       await page.click('[data-testid="backup-job-save"]');
-      await page.waitForSelector('[data-testid="backup-job-list"]', { state: 'visible', timeout: 20000 });
+      await page.waitForSelector('[data-testid="backup-job-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
 
       const jobs = (await (await request.get(`${BASE}/bff-api/backups/jobs`)).json()) as {
         id: string;
@@ -594,20 +706,32 @@ test.describe('Backup destinations (feature 073)', () => {
 
       // A destination that saves but cannot be written to, so the run fails for real.
       await page.click('[data-testid="backup-destination-add"]');
-      await page.waitForSelector('[data-testid="backup-destination-form"]', { state: 'visible', timeout: 15000 });
+      await page.waitForSelector('[data-testid="backup-destination-form"]', {
+        state: 'visible',
+        timeout: 15000,
+      });
       await page.fill('[data-testid="backup-destination-label"]', label);
       await page.fill('[data-testid="backup-destination-endpoint"]', S3_ENDPOINT);
       await page.fill('[data-testid="backup-destination-bucket"]', `absent-${Date.now()}`);
       await page.fill('[data-testid="backup-destination-access-key-id"]', S3_ACCESS_KEY);
       await page.fill('[data-testid="backup-destination-secret"]', S3_SECRET);
       await page.click('[data-testid="backup-destination-save"]');
-      await page.waitForSelector('[data-testid="backup-destination-list"]', { state: 'visible', timeout: 20000 });
+      await page.waitForSelector('[data-testid="backup-destination-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
 
       await page.click('[data-testid="backup-job-add"]');
-      await page.waitForSelector('[data-testid="backup-job-form"]', { state: 'visible', timeout: 15000 });
+      await page.waitForSelector('[data-testid="backup-job-form"]', {
+        state: 'visible',
+        timeout: 15000,
+      });
       await page.fill('[data-testid="backup-job-label"]', `${label} failing`);
       await page.click('[data-testid="backup-job-save"]');
-      await page.waitForSelector('[data-testid="backup-job-list"]', { state: 'visible', timeout: 20000 });
+      await page.waitForSelector('[data-testid="backup-job-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
 
       await page.locator('[data-testid^="backup-job-run-"]').first().click();
       await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
@@ -617,15 +741,22 @@ test.describe('Backup destinations (feature 073)', () => {
 
       // Open the job's history: the banner is there with a reason.
       await page.locator('[data-testid^="backup-job-versions-"]').first().click();
-      await expect(page.locator('[data-testid="backup-failure-banner"]')).toBeVisible({ timeout: 30000 });
+      await expect(page.locator('[data-testid="backup-failure-banner"]')).toBeVisible({
+        timeout: 30000,
+      });
 
       // IT SURVIVES A RELOAD. That is the whole of FR-037 — the banner is derived from the
       // newest run, not from dismissable client state, so a user who closes the app and comes
       // back is still told their backups are not working.
       await page.reload();
-      await page.waitForSelector('[data-testid="settings-backups-screen"]', { state: 'visible', timeout: 30000 });
+      await page.waitForSelector('[data-testid="settings-backups-screen"]', {
+        state: 'visible',
+        timeout: 30000,
+      });
       await page.locator('[data-testid^="backup-job-versions-"]').first().click();
-      await expect(page.locator('[data-testid="backup-failure-banner"]')).toBeVisible({ timeout: 30000 });
+      await expect(page.locator('[data-testid="backup-failure-banner"]')).toBeVisible({
+        timeout: 30000,
+      });
 
       // And the next-run line is present, naming the zone rather than a bare time.
       await expect(page.locator('[data-testid="backup-next-run"]')).toContainText(/Not scheduled/i);

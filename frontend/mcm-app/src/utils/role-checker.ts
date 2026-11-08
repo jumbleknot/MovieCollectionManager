@@ -31,7 +31,5 @@ export function isMcUser(user: UserProfile | null | undefined): boolean {
 /** Returns all roles the user has */
 export function getUserRoles(user: UserProfile | null | undefined): AppRole[] {
   if (!user) return [];
-  return user.roles.filter((r): r is AppRole =>
-    r === 'mc-user' || r === 'mc-admin',
-  );
+  return user.roles.filter((r): r is AppRole => r === 'mc-user' || r === 'mc-admin');
 }

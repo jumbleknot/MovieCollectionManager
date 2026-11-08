@@ -79,7 +79,9 @@ describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + 
 
     const doc = await store.getByUserId(user.userId);
     expect(doc?.tmdbKeyEnc).toBeDefined();
-    expect(decryptSecret(doc!.tmdbKeyEnc!, env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey'))).toBe(TMDB_KEY);
+    expect(
+      decryptSecret(doc!.tmdbKeyEnc!, env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey')),
+    ).toBe(TMDB_KEY);
   });
 
   it('bad TMDB key → 422 per-field, nothing persisted (prior doc unchanged)', async () => {
@@ -102,11 +104,7 @@ describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + 
 
   it('malformed body (unknown provider) → 400, nothing persisted', async () => {
     const before = await store.getByUserId(user.userId);
-    const res = await bff.put(
-      '/bff-api/agent/config',
-      { provider: 'bogus-provider' },
-      auth(),
-    );
+    const res = await bff.put('/bff-api/agent/config', { provider: 'bogus-provider' }, auth());
     expect(res.status).toBe(400);
     const after = await store.getByUserId(user.userId);
     expect(after?.updatedAt).toBe(before?.updatedAt); // untouched
@@ -130,6 +128,8 @@ describe('PUT /bff-api/agent/config — validate-on-save (real BFF + Keycloak + 
 
     const after = await store.getByUserId(user.userId);
     expect(after?.tmdbKeyEnc).toBe(before?.tmdbKeyEnc); // secret preserved
-    expect(decryptSecret(after!.tmdbKeyEnc!, env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey'))).toBe(TMDB_KEY);
+    expect(
+      decryptSecret(after!.tmdbKeyEnc!, env.agentConfigEncKey, secretAad(user.userId, 'tmdbKey')),
+    ).toBe(TMDB_KEY);
   });
 });

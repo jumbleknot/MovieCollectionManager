@@ -9,8 +9,12 @@ describe('logger redaction — agent config secrets (018)', () => {
 
   beforeEach(() => {
     logged = [];
-    logSpy = jest.spyOn(console, 'log').mockImplementation((line) => { logged.push(String(line)); });
-    errSpy = jest.spyOn(console, 'error').mockImplementation((line) => { logged.push(String(line)); });
+    logSpy = jest.spyOn(console, 'log').mockImplementation((line) => {
+      logged.push(String(line));
+    });
+    errSpy = jest.spyOn(console, 'error').mockImplementation((line) => {
+      logged.push(String(line));
+    });
   });
   afterEach(() => {
     logSpy.mockRestore();

@@ -62,7 +62,8 @@ def test_unresolved_collection_still_defers() -> None:
 def test_confirmed_column_is_applied_as_the_chosen_attribute() -> None:
     cols = _BASE_COLS + [{"header": "Rating", "sampleValues": ["PG-13", "great"]}]
     tab = _tab(
-        "Favourites", cols,
+        "Favourites",
+        cols,
         [{"Title": "Dune", "Year": "2021", "Video Type": "Movie", "Rating": "PG-13"}],
     )
     plan = _preview(tab, _FAV, {"column": {"Rating": "rated"}}).tabs[0]
@@ -72,7 +73,8 @@ def test_confirmed_column_is_applied_as_the_chosen_attribute() -> None:
 def test_unconfirmed_medium_column_is_not_applied() -> None:
     cols = _BASE_COLS + [{"header": "Rating", "sampleValues": ["PG-13", "great"]}]
     tab = _tab(
-        "Favourites", cols,
+        "Favourites",
+        cols,
         [{"Title": "Dune", "Year": "2021", "Video Type": "Movie", "Rating": "PG-13"}],
     )
     plan = _preview(tab, _FAV, {}).tabs[0]
@@ -85,7 +87,8 @@ def test_unconfirmed_medium_column_is_not_applied() -> None:
 def test_ignored_column_is_dropped() -> None:
     cols = _BASE_COLS + [{"header": "Rating", "sampleValues": ["PG-13", "great"]}]
     tab = _tab(
-        "Favourites", cols,
+        "Favourites",
+        cols,
         [{"Title": "Dune", "Year": "2021", "Video Type": "Movie", "Rating": "PG-13"}],
     )
     plan = _preview(tab, _FAV, {"column": {"Rating": "__ignore__"}}).tabs[0]
@@ -100,7 +103,8 @@ def test_ignored_column_is_dropped() -> None:
 
 def test_article_reorder_choice_applied_to_title() -> None:
     tab = _tab(
-        "Favourites", _BASE_COLS,
+        "Favourites",
+        _BASE_COLS,
         [{"Title": "Goodbye, Lenin!", "Year": "2003", "Video Type": "Movie"}],
     )
     plan = _preview(tab, _FAV, {"article": {"Goodbye, Lenin!": "Lenin! Goodbye"}}).tabs[0]
@@ -109,7 +113,8 @@ def test_article_reorder_choice_applied_to_title() -> None:
 
 def test_article_keep_choice_leaves_title_untouched() -> None:
     tab = _tab(
-        "Favourites", _BASE_COLS,
+        "Favourites",
+        _BASE_COLS,
         [{"Title": "Goodbye, Lenin!", "Year": "2003", "Video Type": "Movie"}],
     )
     plan = _preview(tab, _FAV, {"article": {"Goodbye, Lenin!": "Goodbye, Lenin!"}}).tabs[0]
@@ -130,7 +135,7 @@ def test_article_keep_choice_leaves_title_untouched() -> None:
 
 # Titles whose final comma-chunk is a single non-article word → uncertain, so each asks.
 _TEN_AMBIGUOUS_TITLES: list[str] = [
-    "Three Billboards Outside Ebbing, Missouri ",   # the reported case, trailing space
+    "Three Billboards Outside Ebbing, Missouri ",  # the reported case, trailing space
     "Goodbye, Lenin!",
     "Cinema Paradiso, Nuovo",
     "Amelie, Le",
@@ -188,7 +193,8 @@ def test_answered_titles_are_never_reasked() -> None:
     # Bounded well above ten so a genuine loop fails loudly rather than hanging the suite.
     for _ in range(len(_TEN_AMBIGUOUS_TITLES) * 3):
         prompts = [
-            p for p in collect_import_disambiguations([tab], _FAV, resolutions)
+            p
+            for p in collect_import_disambiguations([tab], _FAV, resolutions)
             if p.kind == "article"
         ]
         if not prompts:
@@ -221,7 +227,8 @@ def test_answered_titles_are_applied_to_the_planned_payload() -> None:
     resolutions: dict[str, Any] = {}
     for _ in range(len(_TEN_AMBIGUOUS_TITLES) * 3):
         prompts = [
-            p for p in collect_import_disambiguations([tab], _FAV, resolutions)
+            p
+            for p in collect_import_disambiguations([tab], _FAV, resolutions)
             if p.kind == "article"
         ]
         if not prompts:

@@ -59,9 +59,7 @@ async def test_kill_switch_disables_assistant_with_zero_side_effects() -> None:
         called.append(1)  # must NOT run when the switch is engaged
         return "add"
 
-    graph = build_graph(
-        classifier=classifier, kill_switch=lambda: True, checkpointer=MemorySaver()
-    )
+    graph = build_graph(classifier=classifier, kill_switch=lambda: True, checkpointer=MemorySaver())
     result = await graph.ainvoke(
         {"messages": [("user", "add The Matrix to Sci-Fi")]}, _cfg("ks-disabled")
     )
@@ -236,8 +234,9 @@ async def test_metadata_unavailable_still_completes_the_add_as_owned() -> None:
     node = _degrade_organizer(_metadata_raises)
     asked_ripped = await node(_degrade_state("yes"))
     out = await node(
-        _degrade_state("no", add_stage="awaiting_ripped",
-                       add_owned_media=asked_ripped["add_owned_media"])
+        _degrade_state(
+            "no", add_stage="awaiting_ripped", add_owned_media=asked_ripped["add_owned_media"]
+        )
     )
 
     proposal = out["pending_proposal"]

@@ -105,7 +105,9 @@ mod tests {
         mock_repo
             .expect_count()
             .withf(|coll_id, owner_id, params| {
-                coll_id == "coll-1" && owner_id == "user-1" && params.genres == vec!["Action".to_string()]
+                coll_id == "coll-1"
+                    && owner_id == "user-1"
+                    && params.genres == vec!["Action".to_string()]
             })
             .returning(|_, _, _| Ok(7));
 

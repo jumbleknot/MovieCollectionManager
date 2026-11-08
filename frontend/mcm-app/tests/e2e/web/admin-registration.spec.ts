@@ -74,9 +74,7 @@ async function setRegistration(adminPage: Page, desired: boolean): Promise<void>
   if ((await registrationAllowed(adminPage)) !== desired) {
     await toggle.click();
   }
-  await expect
-    .poll(async () => registrationAllowed(adminPage), { timeout: 15000 })
-    .toBe(desired);
+  await expect.poll(async () => registrationAllowed(adminPage), { timeout: 15000 }).toBe(desired);
 }
 
 test.describe('US3 — admin disables self-registration', () => {

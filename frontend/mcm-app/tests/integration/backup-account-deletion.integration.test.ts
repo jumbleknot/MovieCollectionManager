@@ -15,19 +15,9 @@
  */
 import { randomUUID } from 'node:crypto';
 
-import {
-  createTestUser,
-  deleteTestUser,
-  type TestUser,
-} from './helpers/keycloak-test-client';
-import {
-  acquireOfflineRefreshToken,
-  offlineTokenStillWorks,
-} from './helpers/offline-token-flow';
-import {
-  describeBackupTargets,
-  assertBackupTargetsPresent,
-} from './helpers/backup-targets';
+import { createTestUser, deleteTestUser, type TestUser } from './helpers/keycloak-test-client';
+import { acquireOfflineRefreshToken, offlineTokenStillWorks } from './helpers/offline-token-flow';
+import { describeBackupTargets, assertBackupTargetsPresent } from './helpers/backup-targets';
 
 import * as offlineToken from '@/bff-server/backup-offline-token';
 import * as destinationStore from '@/bff-server/backup-destination-store';
@@ -140,12 +130,16 @@ describeBackupTargets('backup teardown on account deletion', () => {
 
     await offlineToken.tearDownUserBackups(user.userId);
 
-    expect(await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId })).toBe(0);
+    expect(
+      await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId }),
+    ).toBe(0);
     expect(await (await getBackupJobsCollection()).countDocuments({ userId: user.userId })).toBe(0);
     expect(await (await getBackupRunsCollection()).countDocuments({ userId: user.userId })).toBe(0);
     // Not merely "the documents are gone": no ciphertext of this user's credential survives
     // anywhere in the three collections, under any field name.
-    const leftovers = await (await getBackupDestinationsCollection())
+    const leftovers = await (
+      await getBackupDestinationsCollection()
+    )
       .find({ secretEnc: { $exists: true }, userId: user.userId })
       .toArray();
     expect(leftovers).toHaveLength(0);
@@ -192,7 +186,9 @@ describeBackupTargets('backup teardown on account deletion', () => {
     let destinationsAtRevokeTime = -1;
     await offlineToken.tearDownUserBackups(user.userId, {
       revokeAtIdp: async (t) => {
-        destinationsAtRevokeTime = await (await getBackupDestinationsCollection()).countDocuments({
+        destinationsAtRevokeTime = await (
+          await getBackupDestinationsCollection()
+        ).countDocuments({
           userId: user.userId,
         });
         await offlineToken.revokeOfflineTokenAtIdp(t);
@@ -225,7 +221,9 @@ describeBackupTargets('backup teardown on account deletion', () => {
 
     // Everything still present, so the deletion can be RETRIED. Deleting the local records
     // while the revocation failed is what strands a live token for ever.
-    expect(await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId })).toBe(1);
+    expect(
+      await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId }),
+    ).toBe(1);
     expect(await (await getBackupJobsCollection()).countDocuments({ userId: user.userId })).toBe(1);
     expect(await offlineToken.hasOfflineToken(user.userId)).toBe(true);
     expect(await offlineTokenStillWorks(token)).toBe(true);

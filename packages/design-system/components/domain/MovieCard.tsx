@@ -17,109 +17,117 @@
  *   - Quick-action: add to collection (FAB), wishlist toggle
  */
 
-import React from 'react'
-import { Image } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { XStack, YStack } from '@tamagui/stacks'
+import React from 'react';
+import { Image } from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { XStack, YStack } from '@tamagui/stacks';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type MediaFormat = '4K UHD' | 'Blu-ray' | 'DVD' | 'Digital' | 'VHS' | '4K Digital'
-export type CardLayout  = 'poster' | 'compact' | 'detail'
+export type MediaFormat = '4K UHD' | 'Blu-ray' | 'DVD' | 'Digital' | 'VHS' | '4K Digital';
+export type CardLayout = 'poster' | 'compact' | 'detail';
 
 export interface Movie {
-  id:           string
-  title:        string
-  year?:        number
-  posterUrl?:   string
-  runtime?:     number           // minutes
-  formats?:     MediaFormat[]
-  rating?:      number           // 0–10
-  inWishlist?:  boolean
-  genres?:      string[]
-  director?:    string
+  id: string;
+  title: string;
+  year?: number;
+  posterUrl?: string;
+  runtime?: number; // minutes
+  formats?: MediaFormat[];
+  rating?: number; // 0–10
+  inWishlist?: boolean;
+  genres?: string[];
+  director?: string;
 }
 
 export interface MovieCardProps {
-  movie:          Movie
-  layout?:        CardLayout
-  onPress?:       () => void
-  onWishlistToggle?: () => void
-  onAddToCollection?: () => void
-  selected?:      boolean        // multi-select mode
-  disabled?:      boolean
+  movie: Movie;
+  layout?: CardLayout;
+  onPress?: () => void;
+  onWishlistToggle?: () => void;
+  onAddToCollection?: () => void;
+  selected?: boolean; // multi-select mode
+  disabled?: boolean;
   /** Forwarded to the pressable root (FR-018 stable selectors). */
-  testID?:             string
-  accessibilityLabel?: string
+  testID?: string;
+  accessibilityLabel?: string;
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function StarRating({ rating }: { rating: number }) {
   // Convert 0–10 to 0–5 half-stars
-  const stars = rating / 2
-  const full  = Math.floor(stars)
-  const half  = stars - full >= 0.5
-  const empty = 5 - full - (half ? 1 : 0)
+  const stars = rating / 2;
+  const full = Math.floor(stars);
+  const half = stars - full >= 0.5;
+  const empty = 5 - full - (half ? 1 : 0);
 
-  const theme = useTheme()
-  const color = theme.tertiary?.val  // orange accent for rating stars
+  const theme = useTheme();
+  const color = theme.tertiary?.val; // orange accent for rating stars
 
   return (
     <XStack gap={1} alignItems="center">
-      {Array(full).fill(0).map((_, i) => (
-        <Text key={`f${i}`} fontSize={12} color={color}>★</Text>
-      ))}
-      {half && <Text fontSize={12} color={color}>⯨</Text>}
-      {Array(empty).fill(0).map((_, i) => (
-        <Text key={`e${i}`} fontSize={12} color={theme.outlineVariant?.val}>☆</Text>
-      ))}
+      {Array(full)
+        .fill(0)
+        .map((_, i) => (
+          <Text key={`f${i}`} fontSize={12} color={color}>
+            ★
+          </Text>
+        ))}
+      {half && (
+        <Text fontSize={12} color={color}>
+          ⯨
+        </Text>
+      )}
+      {Array(empty)
+        .fill(0)
+        .map((_, i) => (
+          <Text key={`e${i}`} fontSize={12} color={theme.outlineVariant?.val}>
+            ☆
+          </Text>
+        ))}
     </XStack>
-  )
+  );
 }
 
 function FormatBadge({ format }: { format: MediaFormat }) {
-  const theme = useTheme()
+  const theme = useTheme();
 
   // 4K formats get the tertiary accent colour
-  const is4K    = format.startsWith('4K')
-  const bg      = is4K ? theme.tertiaryContainer?.val : theme.secondaryContainer?.val
-  const fg      = is4K ? theme.onTertiaryContainer?.val : theme.onSecondaryContainer?.val
+  const is4K = format.startsWith('4K');
+  const bg = is4K ? theme.tertiaryContainer?.val : theme.secondaryContainer?.val;
+  const fg = is4K ? theme.onTertiaryContainer?.val : theme.onSecondaryContainer?.val;
 
   const shortLabel: Record<MediaFormat, string> = {
-    '4K UHD':     '4K',
-    'Blu-ray':    'BD',
-    'DVD':        'DVD',
-    'Digital':    'DIG',
-    'VHS':        'VHS',
+    '4K UHD': '4K',
+    'Blu-ray': 'BD',
+    DVD: 'DVD',
+    Digital: 'DIG',
+    VHS: 'VHS',
     '4K Digital': '4KD',
-  }
+  };
 
   return (
-    <View
-      backgroundColor={bg}
-      borderRadius={4}
-      paddingHorizontal={5}
-      paddingVertical={2}
-    >
-      <Text
-        fontFamily="body"
-        fontSize={10}
-        fontWeight="700"
-        letterSpacing={0.5}
-        color={fg}
-      >
+    <View backgroundColor={bg} borderRadius={4} paddingHorizontal={5} paddingVertical={2}>
+      <Text fontFamily="body" fontSize={10} fontWeight="700" letterSpacing={0.5} color={fg}>
         {shortLabel[format]}
       </Text>
     </View>
-  )
+  );
 }
 
 // ─── Poster Card (vertical) ───────────────────────────────────────────────────
 
-function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, accessibilityLabel }: MovieCardProps) {
-  const theme = useTheme()
+function PosterCard({
+  movie,
+  onPress,
+  onWishlistToggle,
+  selected,
+  testID,
+  accessibilityLabel,
+}: MovieCardProps) {
+  const theme = useTheme();
 
   return (
     <YStack
@@ -158,7 +166,9 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
         ) : (
           // Placeholder
           <View flex={1} alignItems="center" justifyContent="center">
-            <Text fontSize={48} lineHeight="48px">🎬</Text>
+            <Text fontSize={48} lineHeight="48px">
+              🎬
+            </Text>
           </View>
         )}
 
@@ -175,7 +185,9 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
             alignItems="center"
             justifyContent="center"
           >
-            <Text fontSize={12} lineHeight="12px">♥</Text>
+            <Text fontSize={12} lineHeight="12px">
+              ♥
+            </Text>
           </View>
         )}
       </View>
@@ -214,20 +226,27 @@ function PosterCard({ movie, onPress, onWishlistToggle, selected, testID, access
         {/* Format badges */}
         {movie.formats && movie.formats.length > 0 && (
           <XStack gap={4} flexWrap="wrap" marginTop={4}>
-            {movie.formats.map(fmt => (
+            {movie.formats.map((fmt) => (
               <FormatBadge key={fmt} format={fmt} />
             ))}
           </XStack>
         )}
       </YStack>
     </YStack>
-  )
+  );
 }
 
 // ─── Compact Card (horizontal row) ───────────────────────────────────────────
 
-function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, accessibilityLabel }: MovieCardProps) {
-  const theme = useTheme()
+function CompactCard({
+  movie,
+  onPress,
+  onWishlistToggle,
+  selected,
+  testID,
+  accessibilityLabel,
+}: MovieCardProps) {
+  const theme = useTheme();
 
   return (
     <XStack
@@ -294,7 +313,7 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
 
         <XStack gap={4} marginTop={2} alignItems="center">
           {movie.rating !== undefined && <StarRating rating={movie.rating} />}
-          {movie.formats?.slice(0, 2).map(fmt => (
+          {movie.formats?.slice(0, 2).map((fmt) => (
             <FormatBadge key={fmt} format={fmt} />
           ))}
         </XStack>
@@ -307,7 +326,10 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
           height={40}
           alignItems="center"
           justifyContent="center"
-          onPress={(e) => { e?.stopPropagation?.(); onWishlistToggle() }}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onWishlistToggle();
+          }}
           hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
         >
           <Text
@@ -319,7 +341,7 @@ function CompactCard({ movie, onPress, onWishlistToggle, selected, testID, acces
         </View>
       )}
     </XStack>
-  )
+  );
 }
 
 // ─── Main MovieCard ───────────────────────────────────────────────────────────
@@ -329,11 +351,13 @@ export const MovieCard = React.memo<MovieCardProps>(function MovieCard({
   ...props
 }) {
   switch (layout) {
-    case 'compact': return <CompactCard {...props} />
+    case 'compact':
+      return <CompactCard {...props} />;
     case 'poster':
-    default:        return <PosterCard  {...props} />
+    default:
+      return <PosterCard {...props} />;
   }
-})
+});
 
-MovieCard.displayName = 'MCM.MovieCard'
-export { StarRating, FormatBadge }
+MovieCard.displayName = 'MCM.MovieCard';
+export { StarRating, FormatBadge };

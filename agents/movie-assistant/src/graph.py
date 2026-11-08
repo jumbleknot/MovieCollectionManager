@@ -204,6 +204,7 @@ def _answers_ownership_question(stage: str, text: str, state: Mapping[str, Any])
         return resolve_multi_select(text, offered) is not None
     return parse_ownership_answer(text) is not None
 
+
 # Fields cleared when a SEARCH workflow concludes or is escaped (013 US7) so a finished search
 # never leaks into the next turn (mirrors _ADD_STATE_RESET).
 _SEARCH_STATE_RESET: dict[str, Any] = {
@@ -432,9 +433,10 @@ def _supervisor_node(
             # as `add`). Keep it in the search node, which resolves the pick in pure code. Only a
             # reply that does NOT match an offered result escapes to a genuinely new action (Bug 2:
             # a pick leaked to the curator's enrich preview, which carries no clickable TMDB link).
-            if intent in ("add", "organize") and resolve_option(
-                text, state.get("search_results") or []
-            ) is None:
+            if (
+                intent in ("add", "organize")
+                and resolve_option(text, state.get("search_results") or []) is None
+            ):
                 return {"intent": intent, **_SEARCH_STATE_RESET}
             return {"intent": "search"}
 
@@ -560,15 +562,9 @@ def build_graph(
     organizer = organizer or _responder(
         "organizer: collection organization not yet implemented (US2)."
     )
-    navigator = navigator or _responder(
-        "navigator: in-app navigation not yet implemented (US3)."
-    )
-    query = query or _responder(
-        "query: collection questions not yet implemented (US4)."
-    )
-    search = search or _responder(
-        "search: movie search workflow not yet implemented (US7)."
-    )
+    navigator = navigator or _responder("navigator: in-app navigation not yet implemented (US3).")
+    query = query or _responder("query: collection questions not yet implemented (US4).")
+    search = search or _responder("search: movie search workflow not yet implemented (US7).")
     import_collection = import_collection or _responder(
         "import: spreadsheet import not yet implemented (US2)."
     )

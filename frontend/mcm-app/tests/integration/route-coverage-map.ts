@@ -40,7 +40,9 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
   'collections/[collectionId]/movies/index+api.ts': { tests: ['movies.integration.test.ts'] },
   'collections/[collectionId]/movies/count+api.ts': { tests: ['movies-count.integration.test.ts'] },
   'collections/[collectionId]/movies/[movieId]+api.ts': { tests: ['movies.integration.test.ts'] },
-  'collections/[collectionId]/movies/filter-options+api.ts': { tests: ['movies.integration.test.ts'] },
+  'collections/[collectionId]/movies/filter-options+api.ts': {
+    tests: ['movies.integration.test.ts'],
+  },
 
   // ── Agent Gateway proxy (feature 012) ───────────────────────────────────────
   'agent/run+api.ts': { tests: ['agent-route-auth.integration.test.ts'] },
@@ -84,7 +86,10 @@ export const ROUTE_COVERAGE_MAP: Record<string, RouteCoverage> = {
     tests: ['account-delete-routes.integration.test.ts'],
   },
   'backups/consent+api.ts': {
-    tests: ['backup-consent-routes.integration.test.ts', 'backup-offline-token.integration.test.ts'],
+    tests: [
+      'backup-consent-routes.integration.test.ts',
+      'backup-offline-token.integration.test.ts',
+    ],
   },
   // The tick is INTERNAL and secret-guarded — it has no session and 404s rather than 401s, so
   // it cannot be exercised the way the user-facing routes are. Its suite drives the handler

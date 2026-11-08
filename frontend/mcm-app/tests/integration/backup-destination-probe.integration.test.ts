@@ -30,13 +30,19 @@ import {
 } from './helpers/backup-targets';
 
 const bff = createBffClient();
+
+// Fails here, naming the missing input, when MCM_REQUIRE_BACKUP_TARGETS=1 and the targets are
+// down, instead of as N connection errors below. Jest runs no hook when every test is skipped.
+beforeAll(() => assertBackupTargetsPresent());
 const PROBE = '/bff-api/backups/destinations/test';
 
-const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-rustfs:9000';
+const S3_ENDPOINT =
+  process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-rustfs:9000';
 const S3_BUCKET = process.env.BACKUP_TEST_S3_BUCKET || 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env.BACKUP_TEST_S3_ACCESS_KEY || 'mcmbackuptest';
 const S3_SECRET = process.env.BACKUP_TEST_S3_SECRET_KEY || '';
-const DAV_ENDPOINT = process.env.BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-webdav:6065';
+const DAV_ENDPOINT =
+  process.env.BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-webdav:6065';
 const DAV_USER = process.env.BACKUP_TEST_WEBDAV_USER || 'mcmbackuptest';
 const DAV_PASSWORD = process.env.BACKUP_TEST_WEBDAV_PASSWORD || '';
 
@@ -70,10 +76,13 @@ afterAll(async () => {
   await closeMongo();
 });
 
-itBackupTargets('has credentials to probe with — without them every case below is the same failure', () => {
-  expect(S3_SECRET).not.toBe('');
-  expect(DAV_PASSWORD).not.toBe('');
-});
+itBackupTargets(
+  'has credentials to probe with — without them every case below is the same failure',
+  () => {
+    expect(S3_SECRET).not.toBe('');
+    expect(DAV_PASSWORD).not.toBe('');
+  },
+);
 
 describeBackupTargets('the four outcomes are told apart (FR-004)', () => {
   it('reachable, authorised, can write → ok', async () => {
@@ -138,10 +147,14 @@ describeBackupTargets('the probe is not a way around the save-time guard', () =>
 
 describeBackupTargets('a draft can be probed before it is committed', () => {
   it('accepts an unsaved draft and stores nothing', async () => {
-    const before = await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId });
+    const before = await (
+      await getBackupDestinationsCollection()
+    ).countDocuments({ userId: user.userId });
     const res = await bff.post(PROBE, s3Draft(), auth());
     expect(res.status).toBe(200);
-    const after = await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId });
+    const after = await (
+      await getBackupDestinationsCollection()
+    ).countDocuments({ userId: user.userId });
     expect(after).toBe(before);
   });
 
@@ -164,7 +177,11 @@ describeBackupTargets('a draft can be probed before it is committed', () => {
   });
 
   it('answers 404 for another user’s destination id', async () => {
-    const res = await bff.post(PROBE, { destinationId: '00000000-0000-4000-8000-000000000000' }, auth());
+    const res = await bff.post(
+      PROBE,
+      { destinationId: '00000000-0000-4000-8000-000000000000' },
+      auth(),
+    );
     expect(res.status).toBe(404);
   });
 });

@@ -35,13 +35,16 @@ export default function LoginRoute(): React.JSX.Element {
   }, [isAuthenticated, router]);
 
   // Call BFF login then refresh auth context; errors surface via loginError or onError
-  const handleCode = useCallback(async (request: LoginRequest): Promise<void> => {
-    clearTimeoutReason();
-    const success = await login(request);
-    if (success) {
-      await refreshAuth();
-    }
-  }, [login, refreshAuth, clearTimeoutReason]);
+  const handleCode = useCallback(
+    async (request: LoginRequest): Promise<void> => {
+      clearTimeoutReason();
+      const success = await login(request);
+      if (success) {
+        await refreshAuth();
+      }
+    },
+    [login, refreshAuth, clearTimeoutReason],
+  );
 
   const { promptAsync, isLoading: isDiscovering } = useKeycloakAuth({
     onCode: handleCode,

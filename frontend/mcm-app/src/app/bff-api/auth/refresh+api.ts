@@ -11,8 +11,16 @@
  */
 
 import { checkRefreshRateLimit } from '@/bff-server/rate-limiter';
-import { readLiveSessionWithTokens, terminateSession, touchSession } from '@/bff-server/session-manager';
-import { ensureFreshTokens, openSessionTokens, type SessionTokens } from '@/bff-server/session-tokens';
+import {
+  readLiveSessionWithTokens,
+  terminateSession,
+  touchSession,
+} from '@/bff-server/session-manager';
+import {
+  ensureFreshTokens,
+  openSessionTokens,
+  type SessionTokens,
+} from '@/bff-server/session-tokens';
 import { buildAuthCookies, buildClearAuthCookies, extractSessionId } from '@/bff-server/auth';
 import { authErrorHeaders } from '@/bff-server/mc-api-error';
 import { logger } from '@/bff-server/logger';
@@ -44,7 +52,8 @@ async function _post(req: Request): Promise<Response> {
     await checkRefreshRateLimit(sessionId);
 
     const live = await readLiveSessionWithTokens(sessionId);
-    if ('expired' in live) return refused(AuthErrorCode.SESSION_EXPIRED, 'Session expired or not found.');
+    if ('expired' in live)
+      return refused(AuthErrorCode.SESSION_EXPIRED, 'Session expired or not found.');
 
     const { session, tokensRaw } = live;
     let held: SessionTokens;
@@ -63,19 +72,29 @@ async function _post(req: Request): Promise<Response> {
     const responseHeaders = securityHeaders();
     for (const cookie of buildAuthCookies(sessionId)) responseHeaders.append('Set-Cookie', cookie);
     return Response.json(
-      { success: true, expiresIn: Math.max(0, Math.round((renewed.accessExpiresAt - Date.now()) / 1000)) },
+      {
+        success: true,
+        expiresIn: Math.max(0, Math.round((renewed.accessExpiresAt - Date.now()) / 1000)),
+      },
       { status: 200, headers: responseHeaders },
     );
   } catch (err) {
     if (err instanceof RateLimitError) {
       return Response.json(
-        { error: 'Too many refresh requests.', code: AuthErrorCode.RATE_LIMIT_EXCEEDED, retryAfter: err.retryAfter },
+        {
+          error: 'Too many refresh requests.',
+          code: AuthErrorCode.RATE_LIMIT_EXCEEDED,
+          retryAfter: err.retryAfter,
+        },
         { status: 429, headers: securityHeaders({ 'Retry-After': String(err.retryAfter) }) },
       );
     }
     if (err instanceof AuthError) {
       if (err.statusCode === 401) return refused(err.code, err.message);
-      return Response.json({ error: err.message, code: err.code }, { status: err.statusCode, headers: authErrorHeaders(err) });
+      return Response.json(
+        { error: err.message, code: err.code },
+        { status: err.statusCode, headers: authErrorHeaders(err) },
+      );
     }
     logger.error('refresh: unhandled error', { action: 'refresh_error', error: err });
     return Response.json(

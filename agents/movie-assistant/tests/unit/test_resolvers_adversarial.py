@@ -132,7 +132,7 @@ def test_resolve_option_ordinals(text: str, expected_idx: int) -> None:
         ("number 2", 1),
         ("#3", 2),
         ("option 1", 0),
-        ("2", 1),   # bare single digit
+        ("2", 1),  # bare single digit
     ],
 )
 def test_resolve_option_1based_index(text: str, expected_idx: int) -> None:
@@ -478,14 +478,14 @@ def test_references_current_screen_true(text: str) -> None:
 @pytest.mark.parametrize(
     "text",
     [
-        "where is my collection",     # 'where' does NOT contain 'here' as a whole word
-        "somewhere nice",             # 'where' substring inside 'somewhere'
-        "there it is",                # 'there' should NOT match 'here'
-        "theory of everything",       # 'here' inside 'theory' — must NOT match
-        "another collection",         # no keyword
-        "add Dune to Sci-Fi",         # explicit named collection
-        "",                           # empty string
-        "therapeutic",                # 'here' inside 'therapeutic' — must NOT match
+        "where is my collection",  # 'where' does NOT contain 'here' as a whole word
+        "somewhere nice",  # 'where' substring inside 'somewhere'
+        "there it is",  # 'there' should NOT match 'here'
+        "theory of everything",  # 'here' inside 'theory' — must NOT match
+        "another collection",  # no keyword
+        "add Dune to Sci-Fi",  # explicit named collection
+        "",  # empty string
+        "therapeutic",  # 'here' inside 'therapeutic' — must NOT match
     ],
 )
 def test_references_current_screen_false(text: str) -> None:
@@ -610,7 +610,7 @@ def test_resolve_op_movie_too_short_partial_does_not_match_everything(title: str
 
 
 def test_unique_exact_match_subset_superset_same_year_resolves_exact() -> None:
-    """"Back to the Future (1985)" resolves the exact film, not the superset same-year title."""
+    """ "Back to the Future (1985)" resolves the exact film, not the superset same-year title."""
     match = _unique_exact_match("Back to the Future", 1985, SUBSET_SUPERSET_SAME_YEAR)
     assert match is not None and match["sourceId"] == "tmdb:105"
 
@@ -703,7 +703,7 @@ def test_multi_select_resolver_deduplicates_a_repeated_value() -> None:
 
 
 def test_multi_select_resolver_prefers_the_longest_matching_option() -> None:
-    """"Blu-Ray 3D" must not be shadowed by the shorter "Blu-Ray" it contains."""
+    """ "Blu-Ray 3D" must not be shadowed by the shorter "Blu-Ray" it contains."""
     assert resolve_multi_select("Blu-Ray 3D", MEDIA_FORMAT_OPTIONS) == ["Blu-Ray 3D"]
     assert resolve_multi_select("Selected: Blu-Ray 3D", MEDIA_FORMAT_OPTIONS) == ["Blu-Ray 3D"]
 
@@ -727,7 +727,7 @@ from tests.fixtures.adversarial import (  # noqa: E402
 
 
 def test_nav_short_titles_never_match_from_a_substring() -> None:
-    """"Up"/"It"/"Pi" appear inside ordinary words — the 4-char guard must hold."""
+    """ "Up"/"It"/"Pi" appear inside ordinary words — the 4-char guard must hold."""
     for text in ("open it up in my list", "take me to pi", "show it"):
         assert _nav_match_movie(text, NAV_SHORT_TITLE_MOVIES) is None
 

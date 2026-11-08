@@ -49,12 +49,13 @@ _KILL_SWITCH = "mcm.agent.kill-switch"
 _PROJECT = "default"
 _ENV = "development"
 
-_SDK_REFRESH_INTERVAL_S = 1   # short poll so propagation is fast
-_POLL_TIMEOUT_S = 30          # generous ceiling for CI/loaded machines
+_SDK_REFRESH_INTERVAL_S = 1  # short poll so propagation is fast
+_POLL_TIMEOUT_S = 30  # generous ceiling for CI/loaded machines
 _POLL_SLEEP_S = 1
 
 
 # ── skip guard (module-level) ─────────────────────────────────────────────────
+
 
 def _unleash_reachable() -> bool:
     try:
@@ -75,12 +76,12 @@ _requires_unleash = pytest.mark.skipif(
 
 # ── helper: toggle flag environment on / off via admin API ────────────────────
 
+
 def _toggle_flag(flag: str, on: bool) -> None:
     """Enable or disable *flag* in the development environment via the admin API."""
     action = "on" if on else "off"
     url = (
-        f"{_UNLEASH_URL}/api/admin/projects/{_PROJECT}/features/{flag}"
-        f"/environments/{_ENV}/{action}"
+        f"{_UNLEASH_URL}/api/admin/projects/{_PROJECT}/features/{flag}/environments/{_ENV}/{action}"
     )
     resp = httpx.post(url, headers=_ADMIN_HEADERS, timeout=10)
     # Unleash returns 200 (idempotent toggle) or 204; anything else is unexpected.
@@ -90,6 +91,7 @@ def _toggle_flag(flag: str, on: bool) -> None:
 
 
 # ── helper: bounded poll ──────────────────────────────────────────────────────
+
 
 def _poll_until(
     predicate: Callable[[], bool],
@@ -111,6 +113,7 @@ def _poll_until(
 
 
 # ── test ──────────────────────────────────────────────────────────────────────
+
 
 @_requires_unleash
 def test_kill_switch_reflects_real_toggle() -> None:

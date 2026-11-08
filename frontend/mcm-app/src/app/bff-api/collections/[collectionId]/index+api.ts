@@ -23,7 +23,10 @@ import { validateObjectId } from '@/bff-server/resource-id';
 
 // ─── GET /bff-api/collections/:id ─────────────────────────────────────────────
 
-export async function GET(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+export async function GET(
+  req: Request,
+  { collectionId }: { collectionId: string },
+): Promise<Response> {
   return withRequestContext(() => _get(req, collectionId));
 }
 
@@ -45,7 +48,10 @@ async function _get(req: Request, collectionId: string): Promise<Response> {
 
 // ─── PATCH /bff-api/collections/:id ───────────────────────────────────────────
 
-export async function PATCH(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+export async function PATCH(
+  req: Request,
+  { collectionId }: { collectionId: string },
+): Promise<Response> {
   return withRequestContext(() => _patch(req, collectionId));
 }
 
@@ -68,7 +74,10 @@ async function _patch(req: Request, collectionId: string): Promise<Response> {
 
 // ─── DELETE /bff-api/collections/:id ──────────────────────────────────────────
 
-export async function DELETE(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+export async function DELETE(
+  req: Request,
+  { collectionId }: { collectionId: string },
+): Promise<Response> {
   return withRequestContext(() => _delete(req, collectionId));
 }
 
@@ -88,4 +97,3 @@ async function _delete(req: Request, collectionId: string): Promise<Response> {
     return handleMcApiError(err, 'collection_delete');
   }
 }
-

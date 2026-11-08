@@ -48,9 +48,7 @@ describe('Button states', () => {
 
   it('fires onPress when enabled', async () => {
     const onPress = jest.fn();
-    const { getByTestId } = await renderDS(
-      <Button label="Save" testID="btn" onPress={onPress} />,
-    );
+    const { getByTestId } = await renderDS(<Button label="Save" testID="btn" onPress={onPress} />);
     await fireEvent.press(getByTestId('btn'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });

@@ -126,9 +126,7 @@ def load_budgets(env: Mapping[str, str]) -> Budgets:
     )
 
 
-def classify_breach(
-    cost_usd: float | None, latency_ms: float | None, budgets: Budgets
-) -> Breach:
+def classify_breach(cost_usd: float | None, latency_ms: float | None, budgets: Budgets) -> Breach:
     """Pure budget-breach check (no budget or no measurement → not a breach)."""
     cost = (
         cost_usd is not None
@@ -162,9 +160,7 @@ def percentile(values: Sequence[float], p: float) -> float | None:
     return data[min(rank, len(data)) - 1]
 
 
-def evaluate_turns(
-    turns: Sequence[Mapping[str, Any]], budgets: Budgets
-) -> dict[str, Any]:
+def evaluate_turns(turns: Sequence[Mapping[str, Any]], budgets: Budgets) -> dict[str, Any]:
     """Summarise measured turns against the budgets (SC-008 / T067).
 
     Each turn: `{"cost_usd": float|None, "latency_ms": float|None, "trace_id": str}`. Returns a

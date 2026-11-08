@@ -36,7 +36,9 @@ import type { BackupCollectionCount, RunSummary } from '@/types/backups';
  * A negative span — clocks do get adjusted — is also `null`, because a wrong duration is worse
  * than an absent one.
  */
-export function formatRunDuration(run: Pick<RunSummary, 'startedAt' | 'finishedAt'>): string | null {
+export function formatRunDuration(
+  run: Pick<RunSummary, 'startedAt' | 'finishedAt'>,
+): string | null {
   if (!run.finishedAt) return null;
   const ms = new Date(run.finishedAt).getTime() - new Date(run.startedAt).getTime();
   if (!Number.isFinite(ms) || ms < 0) return null;

@@ -39,10 +39,7 @@ jest.mock('@/config/env', () => ({
   },
 }));
 
-import {
-  setPendingAccountDeletion,
-  takePendingAccountDeletion,
-} from '@/bff-server/cache-service';
+import { setPendingAccountDeletion, takePendingAccountDeletion } from '@/bff-server/cache-service';
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -55,12 +52,7 @@ describe('pending account-deletion request', () => {
   it('parks the payload under a user-scoped key with a 5-minute TTL', async () => {
     await setPendingAccountDeletion('user-1', '{"state":"s"}');
 
-    expect(mockRedis.set).toHaveBeenCalledWith(
-      'account-delete:user-1',
-      '{"state":"s"}',
-      'EX',
-      300,
-    );
+    expect(mockRedis.set).toHaveBeenCalledWith('account-delete:user-1', '{"state":"s"}', 'EX', 300);
   });
 
   it('returns the parked payload', async () => {

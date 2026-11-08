@@ -4,11 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { Banner, Button } from '@mcm/design-system';
 import { getErrorMessage } from '@/utils/errors';
@@ -54,14 +50,18 @@ export function EmailVerificationScreen({
       <Text style={styles.title}>Check Your Email</Text>
 
       <Text style={styles.body}>
-        We've sent a verification link to{' '}
-        <Text style={styles.email}>{email}</Text>.{'\n\n'}
-        Please click the link in the email to verify your account.
-        The link expires in 24 hours.
+        We've sent a verification link to <Text style={styles.email}>{email}</Text>.{'\n\n'}
+        Please click the link in the email to verify your account. The link expires in 24 hours.
       </Text>
 
       {resentMessage ? (
-        <Banner tone="success" align="center" width="100%" marginBottom={12} testID="resent-success">
+        <Banner
+          tone="success"
+          align="center"
+          width="100%"
+          marginBottom={12}
+          testID="resent-success"
+        >
           {resentMessage}
         </Banner>
       ) : null}
@@ -89,47 +89,48 @@ export function EmailVerificationScreen({
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.background?.val,
-  },
-  iconContainer: {
-    marginBottom: 24,
-  },
-  icon: {
-    fontFamily: 'Inter',
-    fontSize: 57,
-  },
-  title: {
-    fontFamily: 'Outfit-Bold',
-    fontSize: 28,
-    fontWeight: '700',
-    color: theme.onSurface?.val,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  body: {
-    fontFamily: 'Inter',
-    fontSize: 16,
-    color: theme.onSurfaceVariant?.val,
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 24,
-  },
-  email: {
-    fontFamily: 'Inter',
-    fontWeight: '600',
-    color: theme.onSurface?.val,
-  },
-  resendPrompt: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: theme.onSurfaceVariant?.val,
-    marginTop: 8,
-    marginBottom: 12,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.background?.val,
+    },
+    iconContainer: {
+      marginBottom: 24,
+    },
+    icon: {
+      fontFamily: 'Inter',
+      fontSize: 57,
+    },
+    title: {
+      fontFamily: 'Outfit-Bold',
+      fontSize: 28,
+      fontWeight: '700',
+      color: theme.onSurface?.val,
+      marginBottom: 16,
+      textAlign: 'center',
+    },
+    body: {
+      fontFamily: 'Inter',
+      fontSize: 16,
+      color: theme.onSurfaceVariant?.val,
+      textAlign: 'center',
+      lineHeight: 24,
+      marginBottom: 24,
+    },
+    email: {
+      fontFamily: 'Inter',
+      fontWeight: '600',
+      color: theme.onSurface?.val,
+    },
+    resendPrompt: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: theme.onSurfaceVariant?.val,
+      marginTop: 8,
+      marginBottom: 12,
+    },
+  });

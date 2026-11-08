@@ -46,8 +46,8 @@ mcp = MCPServer("movie-mcp")
 _TRANSPORT_SECURITY = TransportSecuritySettings(enable_dns_rebinding_protection=False)
 
 
-
 # ── Read tools (curator + organizer allowlist) ───────────────────────────────
+
 
 @mcp.tool()
 async def list_collections() -> list[dict[str, Any]]:
@@ -97,6 +97,7 @@ async def get_movie_metadata() -> dict[str, Any]:
 
 
 # ── Write tools (organizer allowlist; HITL-gated; approved-resume path only) ──
+
 
 @mcp.tool()
 async def create_collection(name: str, idempotencyKey: str) -> dict[str, Any]:  # noqa: N803
@@ -170,11 +171,13 @@ async def delete_movie(
 def build_app() -> Any:
     """Streamable-HTTP ASGI app wrapped with the per-request token-capture middleware."""
     configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
-    return TokenCaptureMiddleware(mcp.streamable_http_app(
-        stateless_http=True,
-        json_response=True,
-        transport_security=_TRANSPORT_SECURITY,
-    ))
+    return TokenCaptureMiddleware(
+        mcp.streamable_http_app(
+            stateless_http=True,
+            json_response=True,
+            transport_security=_TRANSPORT_SECURITY,
+        )
+    )
 
 
 def main() -> None:

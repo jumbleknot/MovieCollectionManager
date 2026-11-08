@@ -119,79 +119,204 @@ class S:
 
 _SEARCH_TRANSITIONS: list[S] = [
     # ── fresh (stage="") ────────────────────────────────────────────────────────────────────
-    S("fresh-owned-single→buttons", {}, "find Avatar in my Sci-Fi collection", "result_buttons",
-      "New Scope 1: 1+ owned results → BUTTONS, never auto-navigate (new bug 2)",
-      by_cid={_SCIFI: [_AVATAR]}),
-    S("fresh-owned-multi→buttons", {}, "find Avatar in my Sci-Fi collection", "result_buttons",
-      "New Scope 1: several matches → disambiguation buttons",
-      by_cid={_SCIFI: [_AVATAR, _AVATAR2]}),
-    S("fresh-owned-miss→controls", {}, "find Inception in my Sci-Fi collection", "control_buttons",
-      "New Scope 1: no match → control buttons (search another / web / exit)",
-      by_cid={_SCIFI: []}),
-    S("fresh-no-title→ask", {}, "search for ", "ask_title",
-      "a search verb with no title asks what movie", by_cid={_SCIFI: [_AVATAR]}),
-    S("fresh-zero-collections→web", {}, "find Coherence", "web_card",
-      "New Scope 1: no collections → search the web", colls=[], web=_WEB_ONE),
-    S("fresh->1-coll-none-resolvable→scope", {}, "find Coherence", "scope_buttons",
-      "New Scope 1: >1 collection, none resolvable → scope buttons",
-      colls=_COLLS_NO_DEFAULT),
+    S(
+        "fresh-owned-single→buttons",
+        {},
+        "find Avatar in my Sci-Fi collection",
+        "result_buttons",
+        "New Scope 1: 1+ owned results → BUTTONS, never auto-navigate (new bug 2)",
+        by_cid={_SCIFI: [_AVATAR]},
+    ),
+    S(
+        "fresh-owned-multi→buttons",
+        {},
+        "find Avatar in my Sci-Fi collection",
+        "result_buttons",
+        "New Scope 1: several matches → disambiguation buttons",
+        by_cid={_SCIFI: [_AVATAR, _AVATAR2]},
+    ),
+    S(
+        "fresh-owned-miss→controls",
+        {},
+        "find Inception in my Sci-Fi collection",
+        "control_buttons",
+        "New Scope 1: no match → control buttons (search another / web / exit)",
+        by_cid={_SCIFI: []},
+    ),
+    S(
+        "fresh-no-title→ask",
+        {},
+        "search for ",
+        "ask_title",
+        "a search verb with no title asks what movie",
+        by_cid={_SCIFI: [_AVATAR]},
+    ),
+    S(
+        "fresh-zero-collections→web",
+        {},
+        "find Coherence",
+        "web_card",
+        "New Scope 1: no collections → search the web",
+        colls=[],
+        web=_WEB_ONE,
+    ),
+    S(
+        "fresh->1-coll-none-resolvable→scope",
+        {},
+        "find Coherence",
+        "scope_buttons",
+        "New Scope 1: >1 collection, none resolvable → scope buttons",
+        colls=_COLLS_NO_DEFAULT,
+    ),
     # ── awaiting_scope ──────────────────────────────────────────────────────────────────────
-    S("scope-web→web", {"search_stage": "awaiting_scope", "search_query": "Coherence"},
-      SCOPE_THE_WEB, "web_card", "scope → 'search the web' runs a web search",
-      colls=_COLLS_NO_DEFAULT, web=_WEB_ONE),
-    S("scope-collection→collection-buttons",
-      {"search_stage": "awaiting_scope", "search_query": "Coherence"},
-      SCOPE_A_COLLECTION, "collection_buttons", "scope → 'search a collection' lists collections",
-      colls=_COLLS_NO_DEFAULT),
+    S(
+        "scope-web→web",
+        {"search_stage": "awaiting_scope", "search_query": "Coherence"},
+        SCOPE_THE_WEB,
+        "web_card",
+        "scope → 'search the web' runs a web search",
+        colls=_COLLS_NO_DEFAULT,
+        web=_WEB_ONE,
+    ),
+    S(
+        "scope-collection→collection-buttons",
+        {"search_stage": "awaiting_scope", "search_query": "Coherence"},
+        SCOPE_A_COLLECTION,
+        "collection_buttons",
+        "scope → 'search a collection' lists collections",
+        colls=_COLLS_NO_DEFAULT,
+    ),
     # ── awaiting_collection ─────────────────────────────────────────────────────────────────
-    S("collection-pick→buttons",
-      {"search_stage": "awaiting_collection", "search_query": "Avatar"},
-      "Sci-Fi", "result_buttons", "collection pick → owned search there (1+ → buttons)",
-      by_cid={_SCIFI: [_AVATAR]}),
-    S("collection-no-match→reoffer",
-      {"search_stage": "awaiting_collection", "search_query": "Avatar"},
-      "Nonexistent", "collection_buttons", "an unknown collection name → re-offer the list"),
+    S(
+        "collection-pick→buttons",
+        {"search_stage": "awaiting_collection", "search_query": "Avatar"},
+        "Sci-Fi",
+        "result_buttons",
+        "collection pick → owned search there (1+ → buttons)",
+        by_cid={_SCIFI: [_AVATAR]},
+    ),
+    S(
+        "collection-no-match→reoffer",
+        {"search_stage": "awaiting_collection", "search_query": "Avatar"},
+        "Nonexistent",
+        "collection_buttons",
+        "an unknown collection name → re-offer the list",
+    ),
     # ── awaiting_pick ───────────────────────────────────────────────────────────────────────
-    S("pick-owned-result→navigate",
-      {"search_stage": "awaiting_pick", "search_scope": _SCIFI, "search_query": "Avatar",
-       "search_results": [{"title": "Avatar", "year": 2009, "collectionId": _SCIFI,
-                           "movieId": "m-av", "kind": "owned"}]},
-      "Avatar (2009)", "navigate", "tapping an owned result navigates to it"),
-    S("pick-web-result→web-card",
-      {"search_stage": "awaiting_pick", "search_scope": "web", "search_query": "The Matrix",
-       "search_results": [{"title": "The Matrix", "year": 1999, "sourceId": "tmdb:603",
-                           "kind": "web"}]},
-      "The Matrix (1999)", "web_card", "tapping a web result renders its preview card"),
-    S("pick-another-collection→collection-buttons",
-      {"search_stage": "awaiting_pick", "search_scope": _SCIFI, "search_query": "X",
-       "search_results": []},
-      CTRL_ANOTHER, "collection_buttons", "'search another collection' lists collections"),
-    S("pick-the-web→web",
-      {"search_stage": "awaiting_pick", "search_scope": _SCIFI, "search_query": "Coherence",
-       "search_results": []},
-      SCOPE_THE_WEB, "web_card", "'search the web' from a pick runs a web search",
-      by_cid={_SCIFI: [_AVATAR]}, web=_WEB_ONE),
-    S("pick-exit→exit",
-      {"search_stage": "awaiting_pick", "search_scope": _SCIFI, "search_query": "X",
-       "search_results": []},
-      CTRL_EXIT, "exit", "'exit search' clears the workflow"),
+    S(
+        "pick-owned-result→navigate",
+        {
+            "search_stage": "awaiting_pick",
+            "search_scope": _SCIFI,
+            "search_query": "Avatar",
+            "search_results": [
+                {
+                    "title": "Avatar",
+                    "year": 2009,
+                    "collectionId": _SCIFI,
+                    "movieId": "m-av",
+                    "kind": "owned",
+                }
+            ],
+        },
+        "Avatar (2009)",
+        "navigate",
+        "tapping an owned result navigates to it",
+    ),
+    S(
+        "pick-web-result→web-card",
+        {
+            "search_stage": "awaiting_pick",
+            "search_scope": "web",
+            "search_query": "The Matrix",
+            "search_results": [
+                {"title": "The Matrix", "year": 1999, "sourceId": "tmdb:603", "kind": "web"}
+            ],
+        },
+        "The Matrix (1999)",
+        "web_card",
+        "tapping a web result renders its preview card",
+    ),
+    S(
+        "pick-another-collection→collection-buttons",
+        {
+            "search_stage": "awaiting_pick",
+            "search_scope": _SCIFI,
+            "search_query": "X",
+            "search_results": [],
+        },
+        CTRL_ANOTHER,
+        "collection_buttons",
+        "'search another collection' lists collections",
+    ),
+    S(
+        "pick-the-web→web",
+        {
+            "search_stage": "awaiting_pick",
+            "search_scope": _SCIFI,
+            "search_query": "Coherence",
+            "search_results": [],
+        },
+        SCOPE_THE_WEB,
+        "web_card",
+        "'search the web' from a pick runs a web search",
+        by_cid={_SCIFI: [_AVATAR]},
+        web=_WEB_ONE,
+    ),
+    S(
+        "pick-exit→exit",
+        {
+            "search_stage": "awaiting_pick",
+            "search_scope": _SCIFI,
+            "search_query": "X",
+            "search_results": [],
+        },
+        CTRL_EXIT,
+        "exit",
+        "'exit search' clears the workflow",
+    ),
     # ── 050 / item #149: the terminal card, where there is no stage left ─────────────────────
     #
     # `_web_card` returns _SEARCH_RESET, so by the time the member can SEE the Cancel button the
     # stage is already "". A control gated on a live stage is therefore unreachable from the one
     # card that offers it, and the value falls through to the fresh-search branch as a title —
     # answering the member with `I couldn't find "exit search" in your "…" collection`.
-    S("card-cancel-no-stage→exit", {}, CTRL_EXIT, "exit",
-      "#149: the terminal card has ALREADY cleared the stage — cancel must still exit",
-      by_cid={_SCIFI: []}),
-    S("typed-exit-no-stage→exit", {}, "Exit Search", "exit",
-      "the same control typed, and cased as the button labels it",
-      by_cid={_SCIFI: []}),
-    S("pick-unresolvable→reoffer",
-      {"search_stage": "awaiting_pick", "search_scope": _SCIFI, "search_query": "Avatar",
-       "search_results": [{"title": "Avatar", "year": 2009, "collectionId": _SCIFI,
-                           "movieId": "m-av", "kind": "owned"}]},
-      "the purple one", "result_buttons", "an unresolvable reply re-offers the same buttons"),
+    S(
+        "card-cancel-no-stage→exit",
+        {},
+        CTRL_EXIT,
+        "exit",
+        "#149: the terminal card has ALREADY cleared the stage — cancel must still exit",
+        by_cid={_SCIFI: []},
+    ),
+    S(
+        "typed-exit-no-stage→exit",
+        {},
+        "Exit Search",
+        "exit",
+        "the same control typed, and cased as the button labels it",
+        by_cid={_SCIFI: []},
+    ),
+    S(
+        "pick-unresolvable→reoffer",
+        {
+            "search_stage": "awaiting_pick",
+            "search_scope": _SCIFI,
+            "search_query": "Avatar",
+            "search_results": [
+                {
+                    "title": "Avatar",
+                    "year": 2009,
+                    "collectionId": _SCIFI,
+                    "movieId": "m-av",
+                    "kind": "owned",
+                }
+            ],
+        },
+        "the purple one",
+        "result_buttons",
+        "an unresolvable reply re-offers the same buttons",
+    ),
 ]
 
 
@@ -214,10 +339,22 @@ _ORG_COLLS = [
 _TWO_HP = {
     _MC: [],
     _WISH: [
-        {"movieId": "hp1", "collectionId": _WISH, "year": 2007, "owned": False, "tags": [],
-         "title": "Harry Potter and the Order of the Phoenix"},
-        {"movieId": "hp2", "collectionId": _WISH, "title": "Harry Potter and the Goblet of Fire",
-         "year": 2005, "owned": False, "tags": []},
+        {
+            "movieId": "hp1",
+            "collectionId": _WISH,
+            "year": 2007,
+            "owned": False,
+            "tags": [],
+            "title": "Harry Potter and the Order of the Phoenix",
+        },
+        {
+            "movieId": "hp2",
+            "collectionId": _WISH,
+            "title": "Harry Potter and the Goblet of Fire",
+            "year": 2005,
+            "owned": False,
+            "tags": [],
+        },
     ],
 }
 _ONE_HP = {_MC: [], _WISH: [_TWO_HP[_WISH][0]]}
@@ -231,8 +368,10 @@ def _organizer(plan, by_cid):
         return by_cid.get(cid, [])
 
     return build_organizer(
-        list_collections=list_collections, list_movies=list_movies,
-        plan=lambda _m: plan, gen_id=lambda: "p1",
+        list_collections=list_collections,
+        list_movies=list_movies,
+        plan=lambda _m: plan,
+        gen_id=lambda: "p1",
     )
 
 
@@ -246,8 +385,10 @@ def _org_state(text: str, **extra: Any) -> dict[str, Any]:
     }
 
 
-_MOVE_HP = {"collection": None,
-            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
+_MOVE_HP = {
+    "collection": None,
+    "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}],
+}
 
 
 @pytest.mark.asyncio
@@ -275,8 +416,8 @@ async def test_organize_partial_multiple_disambiguates() -> None:
     "reply,expect_stage,expect_preview",
     [
         ("Harry Potter and the Order of the Phoenix (2007)", "", True),  # a pick → preview
-        ("cancel", "", False),                                            # cancel → clean exit
-        ("never mind", "", False),                                        # typed cancel
+        ("cancel", "", False),  # cancel → clean exit
+        ("never mind", "", False),  # typed cancel
     ],
 )
 async def test_organize_disambiguation_pick_or_cancel(
@@ -284,19 +425,36 @@ async def test_organize_disambiguation_pick_or_cancel(
 ) -> None:
     node = _organizer(_MOVE_HP, _TWO_HP)
     options = [
-        {"movieId": "hp1", "collectionId": _WISH,
-         "title": "Harry Potter and the Order of the Phoenix", "year": 2007,
-         "owned": False, "tags": []},
-        {"movieId": "hp2", "collectionId": _WISH,
-         "title": "Harry Potter and the Goblet of Fire", "year": 2005, "owned": False, "tags": []},
+        {
+            "movieId": "hp1",
+            "collectionId": _WISH,
+            "title": "Harry Potter and the Order of the Phoenix",
+            "year": 2007,
+            "owned": False,
+            "tags": [],
+        },
+        {
+            "movieId": "hp2",
+            "collectionId": _WISH,
+            "title": "Harry Potter and the Goblet of Fire",
+            "year": 2005,
+            "owned": False,
+            "tags": [],
+        },
     ]
-    out = await node(_org_state(
-        reply,
-        organize_stage="awaiting_pick",
-        organize_pending={"op": "move", "to": "Movie Collection", "changes": {},
-                          "collection_id": _WISH},
-        organize_options=options,
-    ))
+    out = await node(
+        _org_state(
+            reply,
+            organize_stage="awaiting_pick",
+            organize_pending={
+                "op": "move",
+                "to": "Movie Collection",
+                "changes": {},
+                "collection_id": _WISH,
+            },
+            organize_options=options,
+        )
+    )
     assert out.get("organize_stage", "") == expect_stage
     has_preview = isinstance(out["messages"][-1], AIMessage) and bool(
         out["messages"][-1].tool_calls
@@ -322,8 +480,7 @@ def _import_tab(*titles: str) -> dict[str, Any]:
         "eligible": True,
         "columns": [{"header": "Title"}, {"header": "Year"}, {"header": "Video Type"}],
         "rows": [
-            {"Title": t, "Year": str(1990 + i), "Video Type": "Movie"}
-            for i, t in enumerate(titles)
+            {"Title": t, "Year": str(1990 + i), "Video Type": "Movie"} for i, t in enumerate(titles)
         ],
     }
 
@@ -355,9 +512,7 @@ def _classify_import(reply: str, titles: list[str], resolutions: dict[str, Any])
         return "asked"
     chosen = resolve_import_pick(reply, prompt)
     if chosen is None:
-        labels = {
-            o["label"] for o in to_selection_options(prompt, unresolved_replies=1)
-        }
+        labels = {o["label"] for o in to_selection_options(prompt, unresolved_replies=1)}
         return "reask_with_escape" if CANCEL_IMPORT_LABEL in labels else "reask_no_escape"
     updated = apply_import_pick(resolutions, prompt, chosen)
     remaining = collect_import_disambiguations(tabs, _IMPORT_COLLS, updated)
@@ -378,28 +533,67 @@ class IT:
 
 
 _IMPORT_TRANSITIONS: list[IT] = [
-    IT("ac1-tap-trailing-space→done", _TRAILING.strip(), [_TRAILING], {}, "done",
-       "US2-AC1: a tapped option for a trailing-whitespace title is ACCEPTED and the import "
-       "proceeds to the next question or the preview"),
-    IT("ac2-typed-without-whitespace→done", _TRAILING.strip().lower(), [_TRAILING], {}, "done",
-       "US2-AC2: typing the title back without the trailing whitespace is accepted — "
-       "leading/trailing whitespace never affects whether an answer matches"),
-    IT("ac3-already-answered→never-reasked", "", [_TRAILING],
-       {"article": {_TRAILING.strip(): _TRAILING.strip()}}, "done",
-       "US2-AC3: a title the member already answered for is never asked about again"),
-    IT("ac4-unmatched-reply→reask-with-escape", "purple monkey dishwasher", [_TRAILING], {},
-       "reask_with_escape",
-       "US2-AC4: a reply matching none of the options is re-asked WITH a way to abandon "
-       "the import — it does not repeat the identical question indefinitely"),
-    IT("ac4-cancel→cancelled", "Cancel import", [_TRAILING], {}, "cancelled",
-       "US2-AC4: the offered way out actually ends the import"),
-    IT("ac6-several-titles→one-at-a-time", _TRAILING.strip(),
-       [_TRAILING, "Goodbye, Lenin!"], {}, "resolved",
-       "US2-AC6: with several distinct ambiguous titles, answering one leaves the others "
-       "still to be asked — each exactly once"),
-    IT("ac6-multi-word-comma→never-asked", "", ["Crouching Tiger, Hidden Dragon"], {}, "done",
-       "US2-AC6/FR-012: a genuine multi-word title comma is not an ambiguous title, so it "
-       "is never one of the decisions"),
+    IT(
+        "ac1-tap-trailing-space→done",
+        _TRAILING.strip(),
+        [_TRAILING],
+        {},
+        "done",
+        "US2-AC1: a tapped option for a trailing-whitespace title is ACCEPTED and the import "
+        "proceeds to the next question or the preview",
+    ),
+    IT(
+        "ac2-typed-without-whitespace→done",
+        _TRAILING.strip().lower(),
+        [_TRAILING],
+        {},
+        "done",
+        "US2-AC2: typing the title back without the trailing whitespace is accepted — "
+        "leading/trailing whitespace never affects whether an answer matches",
+    ),
+    IT(
+        "ac3-already-answered→never-reasked",
+        "",
+        [_TRAILING],
+        {"article": {_TRAILING.strip(): _TRAILING.strip()}},
+        "done",
+        "US2-AC3: a title the member already answered for is never asked about again",
+    ),
+    IT(
+        "ac4-unmatched-reply→reask-with-escape",
+        "purple monkey dishwasher",
+        [_TRAILING],
+        {},
+        "reask_with_escape",
+        "US2-AC4: a reply matching none of the options is re-asked WITH a way to abandon "
+        "the import — it does not repeat the identical question indefinitely",
+    ),
+    IT(
+        "ac4-cancel→cancelled",
+        "Cancel import",
+        [_TRAILING],
+        {},
+        "cancelled",
+        "US2-AC4: the offered way out actually ends the import",
+    ),
+    IT(
+        "ac6-several-titles→one-at-a-time",
+        _TRAILING.strip(),
+        [_TRAILING, "Goodbye, Lenin!"],
+        {},
+        "resolved",
+        "US2-AC6: with several distinct ambiguous titles, answering one leaves the others "
+        "still to be asked — each exactly once",
+    ),
+    IT(
+        "ac6-multi-word-comma→never-asked",
+        "",
+        ["Crouching Tiger, Hidden Dragon"],
+        {},
+        "done",
+        "US2-AC6/FR-012: a genuine multi-word title comma is not an ambiguous title, so it "
+        "is never one of the decisions",
+    ),
 ]
 
 
@@ -425,8 +619,11 @@ def test_import_ac5_stored_title_is_trimmed() -> None:
     resolutions = apply_import_pick({}, prompts[0], chosen)
 
     preview = build_import_preview(
-        tabs=tabs, collections=_IMPORT_COLLS, existing_by_collection={},
-        thread_id="t", resolutions=resolutions,
+        tabs=tabs,
+        collections=_IMPORT_COLLS,
+        existing_by_collection={},
+        thread_id="t",
+        resolutions=resolutions,
     )
     titles = [item.payload["title"] for item in preview.tabs[0].to_create]
     assert titles == [_TRAILING.strip()]
@@ -509,39 +706,77 @@ class OT:
 
 
 _OWNERSHIP_TRANSITIONS: list[OT] = [
-    OT("ac1-not-owned→proposal", "no", {"add_stage": "awaiting_ownership"}, "proposal",
-       "US4-AC1: answering no adds the movie as not owned, with no formats and no rip "
-       "quality — exactly as today"),
-    OT("ac2-owned→awaiting_media", "yes", {"add_stage": "awaiting_ownership"}, "awaiting_media",
-       "US4-AC2: answering yes offers the supported media formats as a toggle list"),
-    OT("ac3-media-confirm→awaiting_ripped", "Selected: DVD, Blu-Ray",
-       {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
-       "awaiting_ripped",
-       "US4-AC3: confirming the selection carries the still-selected formats forward and "
-       "asks whether the movie is ripped"),
-    OT("ac4-not-ripped→proposal", "no",
-       {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]}, "proposal",
-       "US4-AC4: answering no to ripped adds it owned with the formats, not ripped, no quality"),
-    OT("ac5-ripped→awaiting_rip_quality", "yes",
-       {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]}, "awaiting_rip_quality",
-       "US4-AC5: answering yes to ripped offers the supported rip qualities as a toggle list"),
-    OT("ac6-quality-confirm→proposal", "Selected: UHD Blu-Ray",
-       {"add_stage": "awaiting_rip_quality", "add_owned_media": ["DVD"], "add_ripped": True,
-        "add_multi_pending": _OWNERSHIP_FORMATS},
-       "proposal",
-       "US4-AC6: with every answer collected the add proposal is built for approval"),
-    OT("ac8-zero-formats→awaiting_ripped", "Selected: none",
-       {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
-       "awaiting_ripped",
-       "US4-AC8: selecting no formats is allowed — the flow continues, owned with none recorded"),
+    OT(
+        "ac1-not-owned→proposal",
+        "no",
+        {"add_stage": "awaiting_ownership"},
+        "proposal",
+        "US4-AC1: answering no adds the movie as not owned, with no formats and no rip "
+        "quality — exactly as today",
+    ),
+    OT(
+        "ac2-owned→awaiting_media",
+        "yes",
+        {"add_stage": "awaiting_ownership"},
+        "awaiting_media",
+        "US4-AC2: answering yes offers the supported media formats as a toggle list",
+    ),
+    OT(
+        "ac3-media-confirm→awaiting_ripped",
+        "Selected: DVD, Blu-Ray",
+        {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
+        "awaiting_ripped",
+        "US4-AC3: confirming the selection carries the still-selected formats forward and "
+        "asks whether the movie is ripped",
+    ),
+    OT(
+        "ac4-not-ripped→proposal",
+        "no",
+        {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]},
+        "proposal",
+        "US4-AC4: answering no to ripped adds it owned with the formats, not ripped, no quality",
+    ),
+    OT(
+        "ac5-ripped→awaiting_rip_quality",
+        "yes",
+        {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]},
+        "awaiting_rip_quality",
+        "US4-AC5: answering yes to ripped offers the supported rip qualities as a toggle list",
+    ),
+    OT(
+        "ac6-quality-confirm→proposal",
+        "Selected: UHD Blu-Ray",
+        {
+            "add_stage": "awaiting_rip_quality",
+            "add_owned_media": ["DVD"],
+            "add_ripped": True,
+            "add_multi_pending": _OWNERSHIP_FORMATS,
+        },
+        "proposal",
+        "US4-AC6: with every answer collected the add proposal is built for approval",
+    ),
+    OT(
+        "ac8-zero-formats→awaiting_ripped",
+        "Selected: none",
+        {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
+        "awaiting_ripped",
+        "US4-AC8: selecting no formats is allowed — the flow continues, owned with none recorded",
+    ),
     # An unresolvable reply must RE-ASK the same question rather than guess or drop through.
-    OT("unclear-media-reply→re-ask", "what are my options",
-       {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
-       "awaiting_media",
-       "never guess: a reply naming nothing on offer re-asks (mirrors FR-014's discipline)"),
-    OT("unclear-ripped-reply→re-ask", "hmm",
-       {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]}, "awaiting_ripped",
-       "never guess: an unclear ripped answer re-asks"),
+    OT(
+        "unclear-media-reply→re-ask",
+        "what are my options",
+        {"add_stage": "awaiting_media", "add_multi_pending": _OWNERSHIP_FORMATS},
+        "awaiting_media",
+        "never guess: a reply naming nothing on offer re-asks (mirrors FR-014's discipline)",
+    ),
+    OT(
+        "unclear-ripped-reply→re-ask",
+        "hmm",
+        {"add_stage": "awaiting_ripped", "add_owned_media": ["DVD"]},
+        "awaiting_ripped",
+        "never guess: an unclear ripped answer re-asks",
+    ),
 ]
 
 
@@ -652,24 +887,44 @@ def _classify_nav(out: dict[str, Any]) -> str:
 
 
 _NAV_TRANSITIONS: list[NT] = [
-    NT("named-collection→opens", "navigate to my Sci-Fi collection", "open_collection",
-       "US1-AC1: asking for a named collection opens that collection's screen",
-       reads_movies=False),
-    NT("large-collection-name-only→no-movie-read", "open my Sci-Fi collection", "open_collection",
-       "US1-AC1 + FR-002: resolving a NAME must not read the collection's contents, so the "
-       "answer cannot get slower as the collection grows",
-       by_cid={_NAV_SCIFI: [_NAV_DUNE]}, reads_movies=False),
-    NT("unknown-collection→asks-with-choices", "navigate to my Documentaries collection",
-       "ask_which_collection",
-       "US1-AC2: a name matching none of theirs asks which they meant and offers their "
-       "collections as choices — never a generic failure"),
-    NT("named-movie→opens-movie", "take me to Dune", "open_movie",
-       "US1-AC3: naming a movie that exists in exactly one collection opens its detail screen",
-       by_cid={_NAV_SCIFI: [_NAV_DUNE], _NAV_FAVS: []}),
-    NT("movie-in-two-collections→asks", "take me to Dune", "plain_reply",
-       "US1-AC3 (converse): the same title in more than one collection is ambiguous — ask, "
-       "never guess which one",
-       by_cid={_NAV_SCIFI: [_NAV_DUNE], _NAV_FAVS: [_NAV_DUNE]}),
+    NT(
+        "named-collection→opens",
+        "navigate to my Sci-Fi collection",
+        "open_collection",
+        "US1-AC1: asking for a named collection opens that collection's screen",
+        reads_movies=False,
+    ),
+    NT(
+        "large-collection-name-only→no-movie-read",
+        "open my Sci-Fi collection",
+        "open_collection",
+        "US1-AC1 + FR-002: resolving a NAME must not read the collection's contents, so the "
+        "answer cannot get slower as the collection grows",
+        by_cid={_NAV_SCIFI: [_NAV_DUNE]},
+        reads_movies=False,
+    ),
+    NT(
+        "unknown-collection→asks-with-choices",
+        "navigate to my Documentaries collection",
+        "ask_which_collection",
+        "US1-AC2: a name matching none of theirs asks which they meant and offers their "
+        "collections as choices — never a generic failure",
+    ),
+    NT(
+        "named-movie→opens-movie",
+        "take me to Dune",
+        "open_movie",
+        "US1-AC3: naming a movie that exists in exactly one collection opens its detail screen",
+        by_cid={_NAV_SCIFI: [_NAV_DUNE], _NAV_FAVS: []},
+    ),
+    NT(
+        "movie-in-two-collections→asks",
+        "take me to Dune",
+        "plain_reply",
+        "US1-AC3 (converse): the same title in more than one collection is ambiguous — ask, "
+        "never guess which one",
+        by_cid={_NAV_SCIFI: [_NAV_DUNE], _NAV_FAVS: [_NAV_DUNE]},
+    ),
 ]
 
 
@@ -691,9 +946,7 @@ async def test_navigate_transition(t: NT) -> None:
 
     assert _classify_nav(out) == t.expect, f"{t.id}: {t.spec}"
     if not t.reads_movies:
-        assert reads == [], (
-            f"{t.id}: {t.spec} — but the turn read movies from {reads}"
-        )
+        assert reads == [], f"{t.id}: {t.spec} — but the turn read movies from {reads}"
 
 
 async def test_navigate_unresolvable_names_what_it_could_not_find() -> None:
@@ -704,10 +957,12 @@ async def test_navigate_unresolvable_names_what_it_could_not_find() -> None:
         return _NAV_COLLS
 
     node = build_navigator(list_collections=list_collections)
-    out = await node({
-        "intent": "navigate",
-        "messages": [HumanMessage(content="open my Documentaries collection")],
-    })
+    out = await node(
+        {
+            "intent": "navigate",
+            "messages": [HumanMessage(content="open my Documentaries collection")],
+        }
+    )
     reply = str(out["messages"][-1].content)
     assert "Documentaries" in reply, f"US1-AC5: must name the unresolved target — got {reply!r}"
     assert "couldn't complete" not in reply.lower(), "US1-AC4/FR-005: not the generic reply"
@@ -719,20 +974,34 @@ async def test_navigate_unresolvable_names_what_it_could_not_find() -> None:
 # the scenario it encodes so a drift fails here with the citation attached.
 
 _IMPORT_RUN_STATES = [
-    ("in-flight", {"import_applied": 1200, "import_total": 2300}, "progress_visible",
-     "US3-AC2: a single progress line advances in place while the import runs"),
-    ("concluded", {"import_applied": 0, "import_total": 0}, "no_progress_surface",
-     "US3-AC2: when the import completes the line is REPLACED by the final report"),
-    ("never-started", {}, "no_progress_surface",
-     "US3-AC2 (converse): no run, no surface — the line is not a permanent fixture"),
-    ("interrupted", {"import_applied": 900, "import_total": 2000}, "progress_visible",
-     "US3-AC5: a run that stopped part-way is still an outcome the member must be told about"),
+    (
+        "in-flight",
+        {"import_applied": 1200, "import_total": 2300},
+        "progress_visible",
+        "US3-AC2: a single progress line advances in place while the import runs",
+    ),
+    (
+        "concluded",
+        {"import_applied": 0, "import_total": 0},
+        "no_progress_surface",
+        "US3-AC2: when the import completes the line is REPLACED by the final report",
+    ),
+    (
+        "never-started",
+        {},
+        "no_progress_surface",
+        "US3-AC2 (converse): no run, no surface — the line is not a permanent fixture",
+    ),
+    (
+        "interrupted",
+        {"import_applied": 900, "import_total": 2000},
+        "progress_visible",
+        "US3-AC5: a run that stopped part-way is still an outcome the member must be told about",
+    ),
 ]
 
 
-@pytest.mark.parametrize(
-    "case", _IMPORT_RUN_STATES, ids=lambda c: f"import_run-{c[0]}"
-)
+@pytest.mark.parametrize("case", _IMPORT_RUN_STATES, ids=lambda c: f"import_run-{c[0]}")
 def test_import_run_progress_surface_transition(case: tuple[str, dict, str, str]) -> None:
     """The progress surface is a pure function of the counters — nothing else may switch it on."""
     _id, state, expect, spec = case

@@ -69,6 +69,7 @@ def test_resolve_op_movie_named_year_absent_is_no_match() -> None:
     kind, payload = _resolve_op_movie("Coherence (2099)", _OP_MOVIES)
     assert kind == "none" and payload is None
 
+
 _CANDIDATE = EnrichedMovieCandidate(source_id="tmdb:603", title="The Matrix", year=1999)
 _EXISTING = [{"collectionId": "0123456789abcdef01234567", "name": "Sci-Fi", "movieCount": 3}]
 
@@ -122,8 +123,13 @@ async def _resolve_add(node: Any, state: dict[str, Any], answer: str = "yes") ->
         reply = answer if stage == "awaiting_ownership" else _CHAIN_ANSWERS[stage]
         messages = [*messages, HumanMessage(content=reply)]
         # Carry the state the node accumulates across the chain, as the checkpointer would.
-        for key in ("add_target", "add_childrens", "add_owned_media", "add_ripped",
-                    "add_multi_pending"):
+        for key in (
+            "add_target",
+            "add_childrens",
+            "add_owned_media",
+            "add_ripped",
+            "add_multi_pending",
+        ):
             if key in out:
                 carried[key] = out[key]
         out = await node({**state, **carried, "add_stage": stage, "messages": messages})

@@ -14,55 +14,58 @@
  *   <Tabs tabBar={(props) => <NavigationBar {...props} destinations={destinations} />} />
  */
 
-import React, { useState, useEffect } from 'react'
-import { Animated, useWindowDimensions } from 'react-native'
-import { View, useTheme, type ViewProps } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { XStack } from '@tamagui/stacks'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import React, { useState, useEffect } from 'react';
+import { Animated, useWindowDimensions } from 'react-native';
+import { View, useTheme, type ViewProps } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { XStack } from '@tamagui/stacks';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export interface NavDestination {
-  key:         string
-  label:       string
-  icon:        React.ReactNode        // inactive icon
-  activeIcon?: React.ReactNode        // active icon (filled variant)
-  badge?:      number | boolean       // number = count badge; true = dot badge
-  onPress:     () => void
+  key: string;
+  label: string;
+  icon: React.ReactNode; // inactive icon
+  activeIcon?: React.ReactNode; // active icon (filled variant)
+  badge?: number | boolean; // number = count badge; true = dot badge
+  onPress: () => void;
 }
 
 export interface NavigationBarProps {
-  destinations: NavDestination[]
-  activeKey:    string
+  destinations: NavDestination[];
+  activeKey: string;
   /** The Tamagui frame's own style type (Tamagui 3 types it from React Native 0.87). */
-  style?:       ViewProps['style']
+  style?: ViewProps['style'];
 }
 
-const BAR_HEIGHT = 80
+const BAR_HEIGHT = 80;
 
 export const NavigationBar = React.memo<NavigationBarProps>(function NavigationBar({
   destinations,
   activeKey,
   style,
 }) {
-  const theme   = useTheme()
-  const insets  = useSafeAreaInsets()
-  const { width } = useWindowDimensions()
+  const theme = useTheme();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
 
-  const activeIndex  = Math.max(0, destinations.findIndex(d => d.key === activeKey))
-  const itemWidth    = width / destinations.length
-  const indicatorX   = useState(() => new Animated.Value(activeIndex * itemWidth))[0]
+  const activeIndex = Math.max(
+    0,
+    destinations.findIndex((d) => d.key === activeKey),
+  );
+  const itemWidth = width / destinations.length;
+  const indicatorX = useState(() => new Animated.Value(activeIndex * itemWidth))[0];
 
   useEffect(() => {
-    const toX = activeIndex * itemWidth + (itemWidth - 64) / 2
+    const toX = activeIndex * itemWidth + (itemWidth - 64) / 2;
     Animated.spring(indicatorX, {
-      toValue:         toX,
+      toValue: toX,
       useNativeDriver: true,
-      bounciness:      6,
-      speed:           20,
-    }).start()
-  }, [activeIndex, itemWidth, indicatorX])
+      bounciness: 6,
+      speed: 20,
+    }).start();
+  }, [activeIndex, itemWidth, indicatorX]);
 
-  const totalHeight = BAR_HEIGHT + insets.bottom
+  const totalHeight = BAR_HEIGHT + insets.bottom;
 
   return (
     <View
@@ -80,13 +83,13 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
       {/* Active indicator (slides behind active item's icon) */}
       <Animated.View
         style={{
-          position:        'absolute',
-          top:             12,
-          width:           64,
-          height:          32,
-          borderRadius:    16,
+          position: 'absolute',
+          top: 12,
+          width: 64,
+          height: 32,
+          borderRadius: 16,
           backgroundColor: theme.secondaryContainer?.val,
-          transform:       [{ translateX: indicatorX }],
+          transform: [{ translateX: indicatorX }],
         }}
         pointerEvents="none"
       />
@@ -94,7 +97,7 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
       {/* Destination items */}
       <XStack flex={1} alignItems="flex-start" paddingTop={12}>
         {destinations.map((dest, i) => {
-          const isActive = dest.key === activeKey
+          const isActive = dest.key === activeKey;
 
           return (
             <View
@@ -138,7 +141,12 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
                     zIndex={1}
                   >
                     {dest.badge !== true && (
-                      <Text fontSize={11} fontWeight="500" color={theme.onError?.val} lineHeight="12px">
+                      <Text
+                        fontSize={11}
+                        fontWeight="500"
+                        color={theme.onError?.val}
+                        lineHeight="12px"
+                      >
                         {Number(dest.badge) > 99 ? '99+' : String(dest.badge)}
                       </Text>
                     )}
@@ -162,16 +170,14 @@ export const NavigationBar = React.memo<NavigationBarProps>(function NavigationB
                 {dest.label}
               </Text>
             </View>
-          )
+          );
         })}
       </XStack>
 
       {/* Safe area spacer */}
-      {insets.bottom > 0 && (
-        <View height={insets.bottom} />
-      )}
+      {insets.bottom > 0 && <View height={insets.bottom} />}
     </View>
-  )
-})
+  );
+});
 
-NavigationBar.displayName = 'MCM.NavigationBar'
+NavigationBar.displayName = 'MCM.NavigationBar';

@@ -66,7 +66,10 @@ export function createPinnedAgent(target: PinnedTarget): http.Agent | https.Agen
     // what Node's connect path uses for its dual-stack attempt sequence, so handing back EVERY
     // vetted address is what restores the fallback that single-address pinning removed.
     if ((options as { all?: boolean }).all) {
-      callback(null, target.addresses.map((a) => ({ address: a.address, family: a.family })));
+      callback(
+        null,
+        target.addresses.map((a) => ({ address: a.address, family: a.family })),
+      );
     } else {
       callback(null, target.address, target.family);
     }

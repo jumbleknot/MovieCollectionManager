@@ -3,7 +3,13 @@
  * Tests token exchange, user creation, and error handling.
  */
 
-import { exchangeCodeForTokens, refreshTokens, decodeJwtPayload, getUserIdByEmail, __clearDiscoveryCache } from '@/bff-server/keycloak';
+import {
+  exchangeCodeForTokens,
+  refreshTokens,
+  decodeJwtPayload,
+  getUserIdByEmail,
+  __clearDiscoveryCache,
+} from '@/bff-server/keycloak';
 import { AuthErrorCode } from '@/types/errors';
 
 // Mock fetch globally
@@ -71,7 +77,7 @@ describe('decodeJwtPayload', () => {
 describe('exchangeCodeForTokens', () => {
   it('returns token response on success', async () => {
     mockedFetch
-      .mockResolvedValueOnce(jsonResponse(mockDiscovery()))   // discovery
+      .mockResolvedValueOnce(jsonResponse(mockDiscovery())) // discovery
       .mockResolvedValueOnce(jsonResponse(makeTokenResponse())); // token exchange
 
     const result = await exchangeCodeForTokens(
@@ -129,29 +135,41 @@ describe('refreshTokens', () => {
 
   // Feature 085 (FR-019): the server now renews on the member's behalf, so a REJECTED refresh (the
   // grant is gone — sign in again) must be told apart from an OUTAGE (keep the session, retry).
-  it.each([400, 401])('a %i from the token endpoint is a rejection: 401 REFRESH_FAILED', async (status) => {
-    mockedFetch
-      .mockResolvedValueOnce(jsonResponse(mockDiscovery()))
-      .mockResolvedValueOnce(jsonResponse({ error: 'invalid_grant' }, status));
-    await expect(refreshTokens('rt')).rejects.toMatchObject({ code: AuthErrorCode.REFRESH_FAILED, statusCode: 401 });
-  });
+  it.each([400, 401])(
+    'a %i from the token endpoint is a rejection: 401 REFRESH_FAILED',
+    async (status) => {
+      mockedFetch
+        .mockResolvedValueOnce(jsonResponse(mockDiscovery()))
+        .mockResolvedValueOnce(jsonResponse({ error: 'invalid_grant' }, status));
+      await expect(refreshTokens('rt')).rejects.toMatchObject({
+        code: AuthErrorCode.REFRESH_FAILED,
+        statusCode: 401,
+      });
+    },
+  );
 
-  it.each([500, 502, 503])('a %i is transient: 503 KEYCLOAK_UNAVAILABLE, retryable', async (status) => {
-    mockedFetch
-      .mockResolvedValueOnce(jsonResponse(mockDiscovery()))
-      .mockResolvedValueOnce(jsonResponse({}, status));
-    await expect(refreshTokens('rt')).rejects.toMatchObject({
-      code: AuthErrorCode.KEYCLOAK_UNAVAILABLE,
-      statusCode: 503,
-      retryAfterSeconds: 5,
-    });
-  });
+  it.each([500, 502, 503])(
+    'a %i is transient: 503 KEYCLOAK_UNAVAILABLE, retryable',
+    async (status) => {
+      mockedFetch
+        .mockResolvedValueOnce(jsonResponse(mockDiscovery()))
+        .mockResolvedValueOnce(jsonResponse({}, status));
+      await expect(refreshTokens('rt')).rejects.toMatchObject({
+        code: AuthErrorCode.KEYCLOAK_UNAVAILABLE,
+        statusCode: 503,
+        retryAfterSeconds: 5,
+      });
+    },
+  );
 
   it('a network error or timeout is transient, not a sign-out', async () => {
     mockedFetch
       .mockResolvedValueOnce(jsonResponse(mockDiscovery()))
       .mockRejectedValueOnce(Object.assign(new Error('aborted'), { name: 'TimeoutError' }));
-    await expect(refreshTokens('rt')).rejects.toMatchObject({ code: AuthErrorCode.KEYCLOAK_UNAVAILABLE, statusCode: 503 });
+    await expect(refreshTokens('rt')).rejects.toMatchObject({
+      code: AuthErrorCode.KEYCLOAK_UNAVAILABLE,
+      statusCode: 503,
+    });
   });
 
   it('bounds the token call with a timeout signal', async () => {

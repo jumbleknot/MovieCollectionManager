@@ -94,6 +94,7 @@ async def drain_audit_tasks() -> None:
     if pending:
         await asyncio.gather(*pending, return_exceptions=True)
 
+
 # Tool categories — names match contracts/movie-mcp-tools.md + web-api-mcp-tools.md.
 _READ_TOOLS = frozenset(
     {
@@ -493,9 +494,7 @@ async def invoke_tool(
             injection=guard.injection,
             status=status,
         )
-    _spawn_audit(
-        emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "ok"})
-    )
+    _spawn_audit(emit_audit("agent_tool_call", {"agent": agent, "tool": tool_name, "status": "ok"}))
     return ToolOutcome(ok=True, data=result.data, injection=guard.injection)
 
 

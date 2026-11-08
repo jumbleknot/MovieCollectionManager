@@ -54,6 +54,7 @@ def request_import_file(prompt: str = "") -> dict[str, Any]:
     """
     return {"prompt": prompt or "Choose the spreadsheet you'd like to import."}
 
+
 # The selectable-button kinds a `render_selection` option may carry (013 US7). `movie`/`collection`
 # pick a result/scope; `scope`/`control` drive the workflow ("search the web", "exit search").
 SELECTION_KINDS = frozenset({"movie", "collection", "scope", "control"})

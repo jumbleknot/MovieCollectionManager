@@ -51,7 +51,11 @@ describe('handleBffError — AuthError', () => {
   it('uses the error statusCode for the response', () => {
     const res = makeRes();
 
-    handleBffError(new AuthError(AuthErrorCode.TOKEN_EXPIRED, 'internal detail', 401), makeReq(), res);
+    handleBffError(
+      new AuthError(AuthErrorCode.TOKEN_EXPIRED, 'internal detail', 401),
+      makeReq(),
+      res,
+    );
 
     expect(res.status).toHaveBeenCalledWith(401);
   });
@@ -59,7 +63,11 @@ describe('handleBffError — AuthError', () => {
   it('returns the safe user-facing message, not the internal error message', () => {
     const res = makeRes();
 
-    handleBffError(new AuthError(AuthErrorCode.TOKEN_EXPIRED, 'raw internal detail', 401), makeReq(), res);
+    handleBffError(
+      new AuthError(AuthErrorCode.TOKEN_EXPIRED, 'raw internal detail', 401),
+      makeReq(),
+      res,
+    );
 
     const body = (res.json as jest.Mock).mock.calls[0][0] as { error: string; code: string };
     expect(body.error).toBe('Your session has expired. Please log in again.');
@@ -80,7 +88,11 @@ describe('handleBffError — AuthError', () => {
   });
 
   it('does not call logger.error for known auth errors', () => {
-    handleBffError(new AuthError(AuthErrorCode.INVALID_CREDENTIALS, 'internal', 401), makeReq(), makeRes());
+    handleBffError(
+      new AuthError(AuthErrorCode.INVALID_CREDENTIALS, 'internal', 401),
+      makeReq(),
+      makeRes(),
+    );
 
     expect(mockedLoggerError).not.toHaveBeenCalled();
   });

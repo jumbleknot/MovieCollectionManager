@@ -54,7 +54,9 @@ function getRedis(): RedisBufferLike {
     // Dynamic require so ioredis is never bundled into the client; synchronous require is
     // interceptable by Jest mocks (mirrors cache-service.ts).
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { default: Redis } = require('ioredis') as { default: new (url: string) => RedisBufferLike };
+    const { default: Redis } = require('ioredis') as {
+      default: new (url: string) => RedisBufferLike;
+    };
     redisClient = new Redis(env.redisUrl);
     return redisClient;
   } catch {

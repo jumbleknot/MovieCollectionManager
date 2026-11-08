@@ -27,13 +27,25 @@ import { validateObjectId } from '@/bff-server/resource-id';
 // path (mc-service static-routes it to the count handler), but the count needs its filter
 // params forwarded to be correct. (013 US2; same shadowing as `…/movies/filter-options`.)
 const GET_FORWARD_QUERY_PARAMS = [
-  'search', 'contentType', 'genre', 'childrens', 'rated',
-  'language', 'decade', 'owned', 'ownedMedia', 'ripped', 'ripQuality',
+  'search',
+  'contentType',
+  'genre',
+  'childrens',
+  'rated',
+  'language',
+  'decade',
+  'owned',
+  'ownedMedia',
+  'ripped',
+  'ripQuality',
 ] as const;
 
 // ─── GET /bff-api/collections/:id/movies/:movieId ─────────────────────────────
 
-export async function GET(req: Request, { collectionId, movieId }: { collectionId: string; movieId: string }): Promise<Response> {
+export async function GET(
+  req: Request,
+  { collectionId, movieId }: { collectionId: string; movieId: string },
+): Promise<Response> {
   return withRequestContext(() => _get(req, collectionId, movieId));
 }
 
@@ -69,7 +81,10 @@ async function _get(req: Request, collectionId: string, movieId: string): Promis
 
 // ─── PUT /bff-api/collections/:id/movies/:movieId ─────────────────────────────
 
-export async function PUT(req: Request, { collectionId, movieId }: { collectionId: string; movieId: string }): Promise<Response> {
+export async function PUT(
+  req: Request,
+  { collectionId, movieId }: { collectionId: string; movieId: string },
+): Promise<Response> {
   return withRequestContext(() => _put(req, collectionId, movieId));
 }
 
@@ -96,7 +111,10 @@ async function _put(req: Request, collectionId: string, movieId: string): Promis
 
 // ─── DELETE /bff-api/collections/:id/movies/:movieId ──────────────────────────
 
-export async function DELETE(req: Request, { collectionId, movieId }: { collectionId: string; movieId: string }): Promise<Response> {
+export async function DELETE(
+  req: Request,
+  { collectionId, movieId }: { collectionId: string; movieId: string },
+): Promise<Response> {
   return withRequestContext(() => _delete(req, collectionId, movieId));
 }
 
@@ -116,4 +134,3 @@ async function _delete(req: Request, collectionId: string, movieId: string): Pro
     return handleMcApiError(err, 'movie_delete');
   }
 }
-

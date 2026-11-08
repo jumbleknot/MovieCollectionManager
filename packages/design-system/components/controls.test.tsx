@@ -39,9 +39,7 @@ describe('SearchBar', () => {
 
   it('shows the clear button only when there is a value, and fires onClear', async () => {
     const onClear = jest.fn();
-    const { getByText } = await renderDS(
-      <SearchBar value="x" onClear={onClear} />,
-    );
+    const { getByText } = await renderDS(<SearchBar value="x" onClear={onClear} />);
     await fireEvent.press(getByText('×'));
     expect(onClear).toHaveBeenCalledTimes(1);
   });
@@ -279,22 +277,34 @@ describe('Badge', () => {
 describe('Banner', () => {
   it('renders the message and forwards testID (finding #9)', async () => {
     const { getByText, getByTestId } = await renderDS(
-      <Banner tone="error" testID="err-banner">Something failed.</Banner>,
+      <Banner tone="error" testID="err-banner">
+        Something failed.
+      </Banner>,
     );
     expect(getByText('Something failed.')).toBeTruthy();
     expect(getByTestId('err-banner')).toBeTruthy();
   });
 
   it('exposes role="alert" for an error notice (and none for success)', async () => {
-    const { getByTestId: errId } = await renderDS(<Banner tone="error" testID="e">x</Banner>);
+    const { getByTestId: errId } = await renderDS(
+      <Banner tone="error" testID="e">
+        x
+      </Banner>,
+    );
     expect(errId('e').props.accessibilityRole).toBe('alert');
-    const { getByTestId: okId } = await renderDS(<Banner tone="success" testID="s">y</Banner>);
+    const { getByTestId: okId } = await renderDS(
+      <Banner tone="success" testID="s">
+        y
+      </Banner>,
+    );
     expect(okId('s').props.accessibilityRole).toBeUndefined();
   });
 
   it('passes through layout props (marginBottom) without baking them in', async () => {
     const { getByTestId } = await renderDS(
-      <Banner tone="success" testID="b" marginBottom={24}>ok</Banner>,
+      <Banner tone="success" testID="b" marginBottom={24}>
+        ok
+      </Banner>,
     );
     expect(getByTestId('b')).toBeTruthy();
   });

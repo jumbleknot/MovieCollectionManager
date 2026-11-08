@@ -170,7 +170,9 @@ describe('validateOllamaUrl', () => {
 
     it('matches the allow-list EXACTLY — a suffix must not admit an attacker subdomain', async () => {
       mockEnv.agentOllamaAllowedHosts = 'nas.home.arpa';
-      expect((await ok('http://nas.home.arpa.attacker.test:11434', resolvesTo('203.0.113.7'))).ok).toBe(false);
+      expect(
+        (await ok('http://nas.home.arpa.attacker.test:11434', resolvesTo('203.0.113.7'))).ok,
+      ).toBe(false);
     });
 
     it('still blocks metadata even if someone allow-lists it', async () => {

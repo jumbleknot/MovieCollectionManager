@@ -21,8 +21,14 @@ from src.nodes.curator import build_curator
 from src.nodes.organizer import build_organizer
 
 _DETAILS = {
-    "source": "tmdb", "sourceId": "tmdb:603", "title": "The Matrix", "year": 1999,
-    "overview": "x", "genres": ["Science Fiction"], "posterUrl": "http://x", "language": "English",
+    "source": "tmdb",
+    "sourceId": "tmdb:603",
+    "title": "The Matrix",
+    "year": 1999,
+    "overview": "x",
+    "genres": ["Science Fiction"],
+    "posterUrl": "http://x",
+    "language": "English",
 }
 
 
@@ -47,7 +53,8 @@ def _build(execute_calls: list[Any]) -> Any:
         classifier=lambda _m: "add",
         curator=build_curator(
             extract=lambda _m: {"title": "The Matrix", "year": 1999, "collection": "Sci-Fi"},
-            search=_search_exact, details=_details,
+            search=_search_exact,
+            details=_details,
         ),
         organizer=build_organizer(list_collections=_list_existing, gen_id=lambda: "p1"),
         approval_gate=build_approval_gate_for(execute),
@@ -63,7 +70,6 @@ def build_approval_gate_for(execute: Any) -> Any:
 
 def _config(thread: str) -> dict[str, Any]:
     return {"configurable": {"thread_id": thread}}
-
 
 
 # 047 US4 extended the single ownership question into a chain (ownership → media formats →
@@ -184,7 +190,8 @@ def _build_with_classifier(classifier: Any) -> Any:
         classifier=classifier,
         curator=build_curator(
             extract=lambda _m: {"title": "The Matrix", "year": 1999, "collection": "Sci-Fi"},
-            search=_search_exact, details=_details,
+            search=_search_exact,
+            details=_details,
         ),
         organizer=build_organizer(
             list_collections=_list_existing, gen_id=lambda: "p1", get_movie_metadata=metadata
@@ -208,8 +215,8 @@ async def test_multi_select_answer_survives_a_hostile_classification(hostile: st
     # 059 US2 inserted the children's question ahead of ownership, so reaching the multi-select
     # takes one more turn. The extra turn is added rather than the target stage relaxed — this
     # test is specifically about what happens AT the multi-select confirm.
-    await graph.ainvoke({"messages": [("user", "no")]}, cfg)           # → awaiting_ownership
-    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)          # → awaiting_media
+    await graph.ainvoke({"messages": [("user", "no")]}, cfg)  # → awaiting_ownership
+    await graph.ainvoke({"messages": [("user", "yes")]}, cfg)  # → awaiting_media
 
     # Only the multi-select CONFIRM is misclassified — the exact CI failure shape.
     label["v"] = hostile
@@ -259,7 +266,7 @@ async def test_a_genuinely_new_command_still_escapes_the_ownership_chain() -> No
         {"messages": [("user", "add The Matrix to Sci-Fi")], "target_collection_name": "Sci-Fi"},
         cfg,
     )
-    await graph.ainvoke({"messages": [("user", "no")]}, cfg)   # 059 US2: the children's question
+    await graph.ainvoke({"messages": [("user", "no")]}, cfg)  # 059 US2: the children's question
     await graph.ainvoke({"messages": [("user", "yes")]}, cfg)
 
     label["v"] = "query"

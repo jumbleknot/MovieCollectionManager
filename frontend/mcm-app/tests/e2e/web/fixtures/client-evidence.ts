@@ -48,7 +48,11 @@ const stamp = () => new Date().toISOString();
 
 /** A filesystem-safe name that still identifies the test to a human reading the bundle. */
 function evidenceFileName(titlePath: string[]): string {
-  const slug = titlePath.join(' > ').replace(/[^A-Za-z0-9._ >-]+/g, '-').replace(/\s+/g, '_').slice(0, 120);
+  const slug = titlePath
+    .join(' > ')
+    .replace(/[^A-Za-z0-9._ >-]+/g, '-')
+    .replace(/\s+/g, '_')
+    .slice(0, 120);
   return `client-evidence-${slug || 'unnamed'}.log`;
 }
 
@@ -68,7 +72,9 @@ export const test = base.extend<{ clientEvidence: void }>({
       });
 
       page.on('requestfailed', (req) => {
-        ring.push(`${stamp()} requestfailed ${req.method()} ${req.url()} — ${req.failure()?.errorText ?? 'unknown'}`);
+        ring.push(
+          `${stamp()} requestfailed ${req.method()} ${req.url()} — ${req.failure()?.errorText ?? 'unknown'}`,
+        );
       });
 
       // Agent traffic only. Recording every request would bury the signal under the app's own asset
@@ -76,7 +82,9 @@ export const test = base.extend<{ clientEvidence: void }>({
       page.on('request', (req) => {
         if (!AGENT_ROUTE.test(req.url())) return;
         const headers = redactHeaders(req.headers());
-        ring.push(`${stamp()} request ${req.method()} ${req.url()} headers=${JSON.stringify(headers)}`);
+        ring.push(
+          `${stamp()} request ${req.method()} ${req.url()} headers=${JSON.stringify(headers)}`,
+        );
       });
 
       page.on('response', (res) => {
@@ -105,7 +113,10 @@ export const test = base.extend<{ clientEvidence: void }>({
 
       try {
         mkdirSync(OUTPUT_DIR, { recursive: true });
-        writeFileSync(join(OUTPUT_DIR, evidenceFileName(testInfo.titlePath)), `${header}\n${entries.join('\n')}\n`);
+        writeFileSync(
+          join(OUTPUT_DIR, evidenceFileName(testInfo.titlePath)),
+          `${header}\n${entries.join('\n')}\n`,
+        );
       } catch {
         // A diagnostic must never fail the test it is diagnosing. The test's own result is the
         // signal; losing its capture is a degradation, not an error.

@@ -73,7 +73,7 @@ describe('token-service — integration (real Keycloak JWKS)', () => {
     // Forge an expired token: keep header/signature, set exp in the past. The
     // expiry check runs before signature verification, so this exercises the
     // typed expired-token path against real claim parsing.
-    const [h, p, s] = accessToken.split('.');
+    const [h, , s] = accessToken.split('.');
     const payload = decodePayload(accessToken);
     payload.exp = Math.floor(Date.now() / 1000) - 100;
     const expired = `${h}.${b64urlJson(payload)}.${s}`;

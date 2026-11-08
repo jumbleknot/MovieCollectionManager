@@ -13,49 +13,49 @@
  *   row   — horizontal row for list layout
  */
 
-import React from 'react'
-import { Image } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { XStack, YStack } from '@tamagui/stacks'
+import React from 'react';
+import { Image } from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { XStack, YStack } from '@tamagui/stacks';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type CollectionRole    = 'owner' | 'contributor' | 'viewer'
-export type CollectionVariant = 'grid' | 'row'
+export type CollectionRole = 'owner' | 'contributor' | 'viewer';
+export type CollectionVariant = 'grid' | 'row';
 
 export interface Collection {
-  id:            string
-  name:          string
-  description?:  string
-  movieCount:    number
-  posterUrls?:   string[]   // first 3 shown in mosaic
-  isDefault?:    boolean
-  role?:         CollectionRole
-  ownerName?:    string     // shown for shared collections
-  updatedAt?:    Date
+  id: string;
+  name: string;
+  description?: string;
+  movieCount: number;
+  posterUrls?: string[]; // first 3 shown in mosaic
+  isDefault?: boolean;
+  role?: CollectionRole;
+  ownerName?: string; // shown for shared collections
+  updatedAt?: Date;
 }
 
 export interface CollectionCardProps {
-  collection:  Collection
-  variant?:    CollectionVariant
-  onPress?:    () => void
-  onManage?:   () => void
+  collection: Collection;
+  variant?: CollectionVariant;
+  onPress?: () => void;
+  onManage?: () => void;
   /** Forwarded to the pressable root (FR-018 stable selectors). */
-  testID?:             string
-  accessibilityLabel?: string
+  testID?: string;
+  accessibilityLabel?: string;
 }
 
 // ─── Poster Mosaic (3-up film strip) ─────────────────────────────────────────
 
 function PosterMosaic({ urls, size }: { urls: string[]; size: number }) {
-  const theme     = useTheme()
-  const slotW     = Math.floor(size / 3)
-  const slotH     = size
+  const theme = useTheme();
+  const slotW = Math.floor(size / 3);
+  const slotH = size;
 
   return (
     <XStack width={size} height={slotH} overflow="hidden" borderRadius={8}>
-      {[0, 1, 2].map(i => (
+      {[0, 1, 2].map((i) => (
         <View
           key={i}
           width={slotW}
@@ -74,51 +74,52 @@ function PosterMosaic({ urls, size }: { urls: string[]; size: number }) {
               resizeMode="cover"
             />
           ) : (
-            <Text fontSize={slotW * 0.4} lineHeight={`${slotW * 0.4}px`}>🎬</Text>
+            <Text fontSize={slotW * 0.4} lineHeight={`${slotW * 0.4}px`}>
+              🎬
+            </Text>
           )}
         </View>
       ))}
     </XStack>
-  )
+  );
 }
 
 // ─── Role chip ────────────────────────────────────────────────────────────────
 
 function RoleChip({ role }: { role: CollectionRole }) {
-  const theme = useTheme()
+  const theme = useTheme();
 
   const config = {
-    owner:       { label: 'Owner',       bg: theme.primaryContainer?.val,   fg: theme.onPrimaryContainer?.val },
-    contributor: { label: 'Contributor', bg: theme.secondaryContainer?.val, fg: theme.onSecondaryContainer?.val },
-    viewer:      { label: 'Viewer',      bg: theme.surfaceVariant?.val,     fg: theme.onSurfaceVariant?.val },
-  }
+    owner: { label: 'Owner', bg: theme.primaryContainer?.val, fg: theme.onPrimaryContainer?.val },
+    contributor: {
+      label: 'Contributor',
+      bg: theme.secondaryContainer?.val,
+      fg: theme.onSecondaryContainer?.val,
+    },
+    viewer: { label: 'Viewer', bg: theme.surfaceVariant?.val, fg: theme.onSurfaceVariant?.val },
+  };
 
-  const c = config[role]
+  const c = config[role];
 
   return (
-    <View
-      backgroundColor={c.bg}
-      borderRadius={4}
-      paddingHorizontal={8}
-      paddingVertical={2}
-    >
-      <Text
-        fontFamily="body"
-        fontSize={11}
-        fontWeight="500"
-        letterSpacing={0.5}
-        color={c.fg}
-      >
+    <View backgroundColor={c.bg} borderRadius={4} paddingHorizontal={8} paddingVertical={2}>
+      <Text fontFamily="body" fontSize={11} fontWeight="500" letterSpacing={0.5} color={c.fg}>
         {c.label}
       </Text>
     </View>
-  )
+  );
 }
 
 // ─── Grid Card ────────────────────────────────────────────────────────────────
 
-function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }: CollectionCardProps) {
-  const theme = useTheme()
+function GridCard({
+  collection,
+  onPress,
+  onManage,
+  testID,
+  accessibilityLabel,
+}: CollectionCardProps) {
+  const theme = useTheme();
 
   return (
     <YStack
@@ -158,11 +159,10 @@ function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }:
           >
             {collection.name}
             {collection.isDefault && (
-              <Text
-                fontFamily="body"
-                fontSize={12}
-                color={theme.primary?.val}
-              > ★ Default</Text>
+              <Text fontFamily="body" fontSize={12} color={theme.primary?.val}>
+                {' '}
+                ★ Default
+              </Text>
             )}
           </Text>
 
@@ -181,12 +181,10 @@ function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }:
 
           {collection.ownerName && collection.role !== 'owner' && (
             <>
-              <Text color={theme.outlineVariant?.val} fontSize={14}>·</Text>
-              <Text
-                fontFamily="body"
-                fontSize={14}
-                color={theme.onSurfaceVariant?.val}
-              >
+              <Text color={theme.outlineVariant?.val} fontSize={14}>
+                ·
+              </Text>
+              <Text fontFamily="body" fontSize={14} color={theme.onSurfaceVariant?.val}>
                 by {collection.ownerName}
               </Text>
             </>
@@ -206,20 +204,30 @@ function GridCard({ collection, onPress, onManage, testID, accessibilityLabel }:
         )}
       </YStack>
     </YStack>
-  )
+  );
 }
 
 // ─── Row Card ─────────────────────────────────────────────────────────────────
 
-function RowCard({ collection, onPress, onManage, testID, accessibilityLabel }: CollectionCardProps) {
-  const theme = useTheme()
+function RowCard({
+  collection,
+  onPress,
+  onManage,
+  testID,
+  accessibilityLabel,
+}: CollectionCardProps) {
+  const theme = useTheme();
 
   return (
     <XStack
       testID={testID}
       accessibilityLabel={accessibilityLabel}
       accessibilityRole="button"
-      backgroundColor={{ default: 'transparent', hover: theme.surface1?.val, press: theme.surfaceVariant?.val }}
+      backgroundColor={{
+        default: 'transparent',
+        hover: theme.surface1?.val,
+        press: theme.surfaceVariant?.val,
+      }}
       borderRadius={8}
       overflow="hidden"
       cursor="pointer"
@@ -244,23 +252,19 @@ function RowCard({ collection, onPress, onManage, testID, accessibilityLabel }: 
         >
           {collection.name}
         </Text>
-        <Text
-          fontFamily="body"
-          fontSize={13}
-          color={theme.onSurfaceVariant?.val}
-        >
+        <Text fontFamily="body" fontSize={13} color={theme.onSurfaceVariant?.val}>
           {collection.movieCount} movies
-          {collection.ownerName && collection.role !== 'owner'
-            ? ` · ${collection.ownerName}`
-            : ''}
+          {collection.ownerName && collection.role !== 'owner' ? ` · ${collection.ownerName}` : ''}
         </Text>
         {collection.role && <RoleChip role={collection.role} />}
       </YStack>
 
       {/* Arrow */}
-      <Text fontSize={20} color={theme.onSurfaceVariant?.val} lineHeight="20px">›</Text>
+      <Text fontSize={20} color={theme.onSurfaceVariant?.val} lineHeight="20px">
+        ›
+      </Text>
     </XStack>
-  )
+  );
 }
 
 // ─── Main CollectionCard ──────────────────────────────────────────────────────
@@ -269,7 +273,7 @@ export const CollectionCard = React.memo<CollectionCardProps>(function Collectio
   variant = 'grid',
   ...props
 }) {
-  return variant === 'row' ? <RowCard {...props} /> : <GridCard {...props} />
-})
+  return variant === 'row' ? <RowCard {...props} /> : <GridCard {...props} />;
+});
 
-CollectionCard.displayName = 'MCM.CollectionCard'
+CollectionCard.displayName = 'MCM.CollectionCard';

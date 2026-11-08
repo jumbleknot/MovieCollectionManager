@@ -24,27 +24,65 @@ from src.nodes.supervisor import route_for_intent
 
 # Authentic 'Sample'-tab headers from docs/test-data/sample-movies.xlsx (drift-guarded below).
 _REAL_HEADERS = [
-    "Title", "Year", "Video Type", "Children's", "Owned", "Media", "Ripped", "Rip Quality",
-    "IMDB Id", "IMDB URL", "Pick", "Top", "TMDB Id", "TMDB URL", "Language", "Original Title",
-    "Release Date", "Tagline", "Outline", "Plot", "Runtime", "MPAA", "Directors", "Actors",
-    "Set", "Tags", "Genres",
+    "Title",
+    "Year",
+    "Video Type",
+    "Children's",
+    "Owned",
+    "Media",
+    "Ripped",
+    "Rip Quality",
+    "IMDB Id",
+    "IMDB URL",
+    "Pick",
+    "Top",
+    "TMDB Id",
+    "TMDB URL",
+    "Language",
+    "Original Title",
+    "Release Date",
+    "Tagline",
+    "Outline",
+    "Plot",
+    "Runtime",
+    "MPAA",
+    "Directors",
+    "Actors",
+    "Set",
+    "Tags",
+    "Genres",
 ]
 
 # The authentic first data row (the film "9", 2009) — verbatim cell strings as parsed.
 _REAL_ROW = {
-    "Title": "9", "Year": "2009", "Video Type": "Movie", "Children's": "No", "Owned": "Yes",
-    "Media": "Blu-Ray", "Ripped": "Yes", "Rip Quality": "Blu-Ray", "IMDB Id": "tt0472033",
-    "IMDB URL": "https://www.imdb.com/title/tt0472033/", "TMDB Id": "", "TMDB URL": "",
-    "Language": "English", "Original Title": "9", "Release Date": "2009-09-09",
-    "Tagline": "(1) To Protect Us...", "Outline": "A rag doll...", "Plot": "In a world...",
-    "Runtime": "79", "MPAA": "PG-13", "Directors": "Shane Acker",
-    "Actors": "Christopher Plummer|Martin Landau|John C. Reilly", "Set": "", "Tags": "",
+    "Title": "9",
+    "Year": "2009",
+    "Video Type": "Movie",
+    "Children's": "No",
+    "Owned": "Yes",
+    "Media": "Blu-Ray",
+    "Ripped": "Yes",
+    "Rip Quality": "Blu-Ray",
+    "IMDB Id": "tt0472033",
+    "IMDB URL": "https://www.imdb.com/title/tt0472033/",
+    "TMDB Id": "",
+    "TMDB URL": "",
+    "Language": "English",
+    "Original Title": "9",
+    "Release Date": "2009-09-09",
+    "Tagline": "(1) To Protect Us...",
+    "Outline": "A rag doll...",
+    "Plot": "In a world...",
+    "Runtime": "79",
+    "MPAA": "PG-13",
+    "Directors": "Shane Acker",
+    "Actors": "Christopher Plummer|Martin Landau|John C. Reilly",
+    "Set": "",
+    "Tags": "",
     "Genres": "Drama|Mystery|Sci-Fi|Thriller|Action|Adventure|Animation",
 }
 
-_FIXTURE = (
-    Path(__file__).resolve().parents[4] / "docs" / "test-data" / "sample-movies.xlsx"
-)
+_FIXTURE = Path(__file__).resolve().parents[4] / "docs" / "test-data" / "sample-movies.xlsx"
 _CASSETTES = Path(__file__).resolve().parents[2] / "tests" / "golden" / "cassettes"
 
 
@@ -103,13 +141,19 @@ def test_real_row_builds_a_typed_payload() -> None:
     assert payload["childrens"] is False  # "No" → bool
     assert payload["rated"] == "PG-13"
     # Multi-value split on "|".
-    assert payload["genres"] == ["Drama", "Mystery", "Sci-Fi", "Thriller", "Action",
-                                 "Adventure", "Animation"]
+    assert payload["genres"] == [
+        "Drama",
+        "Mystery",
+        "Sci-Fi",
+        "Thriller",
+        "Action",
+        "Adventure",
+        "Animation",
+    ]
     assert payload["actors"] == ["Christopher Plummer", "Martin Landau", "John C. Reilly"]
     # externalIds assembled from the id/URL pair (TMDB blank → only IMDB present).
     assert payload["externalIds"] == [
-        {"system": "IMDB", "uniqueId": "tt0472033",
-         "url": "https://www.imdb.com/title/tt0472033/"}
+        {"system": "IMDB", "uniqueId": "tt0472033", "url": "https://www.imdb.com/title/tt0472033/"}
     ]
     # A blank cell yields NO attribute (FR-019 — never blanks on update).
     assert "movieSet" not in payload

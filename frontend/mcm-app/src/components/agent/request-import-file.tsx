@@ -107,10 +107,17 @@ export function useRequestImportFileTool(): void {
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  container: { gap: 6, paddingVertical: 4 },
-  prompt: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val },
-  row: { flexDirection: 'row', gap: 8 },
-  dismissed: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val, fontStyle: 'italic', paddingVertical: 4 },
-  error: { fontFamily: 'Inter', fontSize: 12, color: theme.error?.val },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: { gap: 6, paddingVertical: 4 },
+    prompt: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurface?.val },
+    row: { flexDirection: 'row', gap: 8 },
+    dismissed: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: theme.onSurfaceVariant?.val,
+      fontStyle: 'italic',
+      paddingVertical: 4,
+    },
+    error: { fontFamily: 'Inter', fontSize: 12, color: theme.error?.val },
+  });

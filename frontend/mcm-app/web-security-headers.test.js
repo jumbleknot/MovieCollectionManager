@@ -23,7 +23,9 @@ describe('INLINE_SCRIPT_HASHES (feature 087): the one list the CSP and the build
   });
 
   it('leaves the header unchanged, byte for byte', () => {
-    expect(buildWebSecurityHeaders({ keycloakOrigin: DEFAULT_ORIGIN })['Content-Security-Policy']).toBe(
+    expect(
+      buildWebSecurityHeaders({ keycloakOrigin: DEFAULT_ORIGIN })['Content-Security-Policy'],
+    ).toBe(
       "default-src 'self'; " +
         "script-src 'self' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='; " +
         "style-src 'self' 'unsafe-inline'; " +
@@ -47,7 +49,9 @@ describe('buildWebSecurityHeaders', () => {
   });
 
   it('builds the web-app CSP with the required directives and the Keycloak origin in connect-src', () => {
-    const csp = buildWebSecurityHeaders({ keycloakOrigin: DEFAULT_ORIGIN })['Content-Security-Policy'];
+    const csp = buildWebSecurityHeaders({ keycloakOrigin: DEFAULT_ORIGIN })[
+      'Content-Security-Policy'
+    ];
     expect(csp).toContain("default-src 'self'");
     expect(csp).toContain("object-src 'none'");
     expect(csp).toContain("frame-ancestors 'none'");
@@ -56,7 +60,9 @@ describe('buildWebSecurityHeaders', () => {
     expect(csp).toContain(`connect-src 'self' ${DEFAULT_ORIGIN}`);
     // script-src allow-lists Expo's inline hydration script by its stable sha256 hash (T006),
     // NOT 'unsafe-inline'/'unsafe-eval' — strict anti-XSS posture.
-    expect(csp).toContain("script-src 'self' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='");
+    expect(csp).toContain(
+      "script-src 'self' 'sha256-67fhrP0+BkBqmgGGXTtgiVO/9EQs3QruYNU/7fnRkI8='",
+    );
     // scripts must not permit eval anywhere in the policy (style-src's 'unsafe-inline' is fine).
     expect(csp).not.toContain("'unsafe-eval'");
     const scriptSrc = csp.split('; ').find((d) => d.startsWith('script-src '));

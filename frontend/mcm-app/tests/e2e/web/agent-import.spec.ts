@@ -68,9 +68,15 @@ async function gotoHome(page: Page): Promise<void> {
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 /**
@@ -101,48 +107,49 @@ test.describe('Assistant import flow (feature 014, US2 / T040)', () => {
     await cleanupOwnedCollections(request);
   });
 
-  test('type → choose file → summary preview → approve creates exactly the rows; re-run idempotent', { tag: '@gate' }, async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(360_000);
-    const name = `t040-imp-${Date.now()}`;
-    const collectionId = await seedEmptyCollection(request, name);
-    const csv = importCsv();
+  test(
+    'type → choose file → summary preview → approve creates exactly the rows; re-run idempotent',
+    { tag: '@gate' },
+    async ({ page, request }) => {
+      test.setTimeout(360_000);
+      const name = `t040-imp-${Date.now()}`;
+      const collectionId = await seedEmptyCollection(request, name);
+      const csv = importCsv();
 
-    await gotoHome(page);
-    await openDock(page);
-    await startImportByTyping(page, `${name}.csv`, csv); // filename stem == collection name → no disambiguation
+      await gotoHome(page);
+      await openDock(page);
+      await startImportByTyping(page, `${name}.csv`, csv); // filename stem == collection name → no disambiguation
 
-    // A single confirm-once SUMMARY card (NOT a per-item wall) appears behind the approval gate —
-    // nothing written yet (SC-009). The Approve button is reachable regardless of row count.
-    const preview = page.locator('[data-testid="import-preview"]');
-    await expect(preview).toBeVisible({ timeout: PREVIEW_TIMEOUT });
-    await expect(page.locator('[data-testid="import-preview-total"]')).toContainText(
-      `${IMPORT_ROWS.length} to add`,
-    );
-    await expect(page.locator('[data-testid="import-preview-approve"]')).toBeVisible();
-    expect(await movieTitles(request, collectionId)).toEqual(new Set());
+      // A single confirm-once SUMMARY card (NOT a per-item wall) appears behind the approval gate —
+      // nothing written yet (SC-009). The Approve button is reachable regardless of row count.
+      const preview = page.locator('[data-testid="import-preview"]');
+      await expect(preview).toBeVisible({ timeout: PREVIEW_TIMEOUT });
+      await expect(page.locator('[data-testid="import-preview-total"]')).toContainText(
+        `${IMPORT_ROWS.length} to add`,
+      );
+      await expect(page.locator('[data-testid="import-preview-approve"]')).toBeVisible();
+      expect(await movieTitles(request, collectionId)).toEqual(new Set());
 
-    await page.click('[data-testid="import-preview-approve"]');
-    // Wait for the writes to ACTUALLY land before asserting — the assistant summary streams before
-    // add_movie completes, so a single immediate GET races the still-in-flight async write (and the
-    // afterEach cleanup). Poll the collection until every movie appears (see
-    // agent-import-disambiguate for the full root-cause trace).
-    await expect
-      .poll(async () => [...(await movieTitles(request, collectionId))].sort(), {
-        timeout: DONE_TIMEOUT,
-        message: 'the imported movies should land in the collection',
-      })
-      .toEqual([...IMPORT_ROWS].sort());
-
-    // Re-run the identical import → idempotent: still exactly the same movies (SC-005).
-    await startImportByTyping(page, `${name}.csv`, csv);
-    const preview2 = page.locator('[data-testid="import-preview"]');
-    if (await preview2.isVisible({ timeout: PREVIEW_TIMEOUT }).catch(() => false)) {
       await page.click('[data-testid="import-preview-approve"]');
-      await page.waitForTimeout(3000);
-    }
-    expect(await movieTitles(request, collectionId)).toEqual(new Set(IMPORT_ROWS));
-  });
+      // Wait for the writes to ACTUALLY land before asserting — the assistant summary streams before
+      // add_movie completes, so a single immediate GET races the still-in-flight async write (and the
+      // afterEach cleanup). Poll the collection until every movie appears (see
+      // agent-import-disambiguate for the full root-cause trace).
+      await expect
+        .poll(async () => [...(await movieTitles(request, collectionId))].sort(), {
+          timeout: DONE_TIMEOUT,
+          message: 'the imported movies should land in the collection',
+        })
+        .toEqual([...IMPORT_ROWS].sort());
+
+      // Re-run the identical import → idempotent: still exactly the same movies (SC-005).
+      await startImportByTyping(page, `${name}.csv`, csv);
+      const preview2 = page.locator('[data-testid="import-preview"]');
+      if (await preview2.isVisible({ timeout: PREVIEW_TIMEOUT }).catch(() => false)) {
+        await page.click('[data-testid="import-preview-approve"]');
+        await page.waitForTimeout(3000);
+      }
+      expect(await movieTitles(request, collectionId)).toEqual(new Set(IMPORT_ROWS));
+    },
+  );
 });

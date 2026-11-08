@@ -182,34 +182,34 @@ COLLECTIONS_NO_DEFAULT: list[dict[str, Any]] = [
 # MESSY_PICK_TEXTS: realistic strings an LLM or user might produce as a disambiguation pick,
 # targeting fragile title/year parsing in resolve_option.
 MESSY_PICK_TEXTS: list[str] = [
-    "Avatar: Fire and Ash (2025)",      # long specific title with trailing year
-    "Avatar: The Way of Water",          # long title, no year
-    "avatar",                            # bare lowercase
-    "the first one",                     # ordinal
-    "the last one",                      # ordinal (last)
-    "the second one",                    # ordinal (second)
-    "the 2021 one",                      # year phrase
-    "AVATAR: THE WAY OF WATER",          # uppercase title
-    "  Avatar: Fire and Ash  ",          # extra whitespace
-    "number 2",                          # 1-based index
-    "#3",                                # 1-based index (hash)
-    "the green one",                     # unresolvable colour reference
-    "the big one",                       # unresolvable adjective
+    "Avatar: Fire and Ash (2025)",  # long specific title with trailing year
+    "Avatar: The Way of Water",  # long title, no year
+    "avatar",  # bare lowercase
+    "the first one",  # ordinal
+    "the last one",  # ordinal (last)
+    "the second one",  # ordinal (second)
+    "the 2021 one",  # year phrase
+    "AVATAR: THE WAY OF WATER",  # uppercase title
+    "  Avatar: Fire and Ash  ",  # extra whitespace
+    "number 2",  # 1-based index
+    "#3",  # 1-based index (hash)
+    "the green one",  # unresolvable colour reference
+    "the big one",  # unresolvable adjective
 ]
 
 # MESSY_OP_TITLES: realistic strings the LLM might emit as operation titles in a plan
 # (organizer._match_movie target); mixes echoed-year suffixes, casing, and whitespace.
 MESSY_OP_TITLES: list[str] = [
-    "Dune (2021)",                  # echoed year → disambiguates same-title pair
-    "Dune (1984)",                  # echoed year → other Dune
-    "Dune",                         # bare → ambiguous across two Dunes
-    "Avatar (2022)",                # year disagrees with the only stored Avatar (2009)
-    "Avatar (2009)",                # year agrees
-    "coherence",                    # exact title, lowercase
-    "  Coherence  ",                # extra whitespace
-    "COHERENCE",                    # all-caps
-    "Star Wars: A New Hope",        # colon-containing title (bare, no year stored)
-    "The (Real) Deal",              # mid-title parens that are NOT a year
+    "Dune (2021)",  # echoed year → disambiguates same-title pair
+    "Dune (1984)",  # echoed year → other Dune
+    "Dune",  # bare → ambiguous across two Dunes
+    "Avatar (2022)",  # year disagrees with the only stored Avatar (2009)
+    "Avatar (2009)",  # year agrees
+    "coherence",  # exact title, lowercase
+    "  Coherence  ",  # extra whitespace
+    "COHERENCE",  # all-caps
+    "Star Wars: A New Hope",  # colon-containing title (bare, no year stored)
+    "The (Real) Deal",  # mid-title parens that are NOT a year
 ]
 
 # ---------------------------------------------------------------------------
@@ -439,8 +439,11 @@ def oversize_import_tabs(
             ],
             "rowCount": eligible_rows,
             "rows": [
-                {"Title": f"Oversize Row {i:05d}", "Year": str(1950 + (i % 70)),
-                 "Video Type": "Movie"}
+                {
+                    "Title": f"Oversize Row {i:05d}",
+                    "Year": str(1950 + (i % 70)),
+                    "Video Type": "Movie",
+                }
                 for i in range(eligible_rows)
             ],
         }

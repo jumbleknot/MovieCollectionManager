@@ -63,7 +63,12 @@ const movie = (title: string) => ({
 });
 
 const sampleCollections = (): BackupArtifactCollection[] => [
-  { id: 'c1', name: `Verify ${randomUUID().slice(0, 8)}`, description: 'x', movies: [movie('One'), movie('Two')] },
+  {
+    id: 'c1',
+    name: `Verify ${randomUUID().slice(0, 8)}`,
+    description: 'x',
+    movies: [movie('One'), movie('Two')],
+  },
 ];
 
 async function collectionCount(): Promise<number> {
@@ -136,7 +141,10 @@ describe('a corrupt artifact creates NOTHING', () => {
   }, 120_000);
 
   it('something that is not a backup at all', async () => {
-    await expectNothingCreated(gzipSync(Buffer.from(JSON.stringify({ hello: 'world' }))), /backup/i);
+    await expectNothingCreated(
+      gzipSync(Buffer.from(JSON.stringify({ hello: 'world' }))),
+      /backup/i,
+    );
   }, 120_000);
 });
 

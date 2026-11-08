@@ -81,26 +81,27 @@ export function ColumnSelector({ visibleColumns, onToggle }: ColumnSelectorProps
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    maxHeight: 64,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: theme.outlineVariant?.val,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    gap: 12,
-  },
-  item: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  label: {
-    fontFamily: 'Inter',
-    fontSize: 11,
-    color: theme.onSurfaceVariant?.val,
-    textAlign: 'center',
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      maxHeight: 64,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.outlineVariant?.val,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 8,
+      gap: 12,
+    },
+    item: {
+      alignItems: 'center',
+      gap: 4,
+    },
+    label: {
+      fontFamily: 'Inter',
+      fontSize: 11,
+      color: theme.onSurfaceVariant?.val,
+      textAlign: 'center',
+    },
+  });

@@ -27,7 +27,8 @@ import { AuthError, AuthErrorCode } from '@/types/errors';
 export function authErrorHeaders(err: AuthError): Headers {
   const headers = securityHeaders();
   for (const cookie of err.clearCookies ?? []) headers.append('Set-Cookie', cookie);
-  if (err.retryAfterSeconds !== undefined) headers.set('Retry-After', String(err.retryAfterSeconds));
+  if (err.retryAfterSeconds !== undefined)
+    headers.set('Retry-After', String(err.retryAfterSeconds));
   return headers;
 }
 

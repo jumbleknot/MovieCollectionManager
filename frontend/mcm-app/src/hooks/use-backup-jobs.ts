@@ -92,7 +92,7 @@ export function useBackupJobs(): UseBackupJobsReturn {
   }, []);
 
   const mutate = useCallback(
-    async <T,>(work: () => Promise<T>, refresh = true): Promise<T | null> => {
+    async <T>(work: () => Promise<T>, refresh = true): Promise<T | null> => {
       setBusy(true);
       try {
         const value = await work();
@@ -116,12 +116,29 @@ export function useBackupJobs(): UseBackupJobsReturn {
     error,
     reload,
     create: (draft) => mutate(async () => (await apiClient.post<JobView>(BASE, draft)).data),
-    update: (id, patch) => mutate(async () => (await apiClient.patch<JobView>(`${BASE}/${id}`, patch)).data),
-    remove: async (id) => (await mutate(async () => { await apiClient.delete(`${BASE}/${id}`); return true; })) ?? false,
-    runNow: (id) => mutate(async () => (await apiClient.post<RunSummary>(`${BASE}/${id}/run`, {})).data),
-    listRuns: async (id) => (await mutate(async () => (await apiClient.get<RunSummary[]>(`${BASE}/${id}/runs`)).data, false)) ?? [],
-    listVersions: async (id) => (await mutate(async () => (await apiClient.get<BackupVersion[]>(`${BASE}/${id}/versions`)).data, false)) ?? [],
-    restore: (id, key) => mutate(async () => (await apiClient.post<RestoreOutcome>(`${BASE}/${id}/restore`, { key })).data),
+    update: (id, patch) =>
+      mutate(async () => (await apiClient.patch<JobView>(`${BASE}/${id}`, patch)).data),
+    remove: async (id) =>
+      (await mutate(async () => {
+        await apiClient.delete(`${BASE}/${id}`);
+        return true;
+      })) ?? false,
+    runNow: (id) =>
+      mutate(async () => (await apiClient.post<RunSummary>(`${BASE}/${id}/run`, {})).data),
+    listRuns: async (id) =>
+      (await mutate(
+        async () => (await apiClient.get<RunSummary[]>(`${BASE}/${id}/runs`)).data,
+        false,
+      )) ?? [],
+    listVersions: async (id) =>
+      (await mutate(
+        async () => (await apiClient.get<BackupVersion[]>(`${BASE}/${id}/versions`)).data,
+        false,
+      )) ?? [],
+    restore: (id, key) =>
+      mutate(
+        async () => (await apiClient.post<RestoreOutcome>(`${BASE}/${id}/restore`, { key })).data,
+      ),
     // A plain link, so the browser handles the download. The key is guessable and the handle is
     // NOT a capability — the server re-checks ownership from the session on every request.
     downloadUrl: (id, key) => `${BASE}/${id}/download?key=${encodeURIComponent(key)}`,

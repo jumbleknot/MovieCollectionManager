@@ -69,25 +69,40 @@ const mockTokens = {
 const mockIdPayload = { sub: 'user-1', exp: now + 900, iss: 'http://kc' };
 const mockAccessPayload = { sub: 'user-1', exp: now + 900 };
 const mockKeycloakUser = {
-  id: 'user-1', username: 'tuser', email: 'test@example.com',
-  firstName: 'Test', lastName: 'User', emailVerified: true, enabled: true,
+  id: 'user-1',
+  username: 'tuser',
+  email: 'test@example.com',
+  firstName: 'Test',
+  lastName: 'User',
+  emailVerified: true,
+  enabled: true,
 };
 
 function setupMocks() {
   (exchangeCodeForTokens as jest.Mock).mockResolvedValue(mockTokens);
   (decodeJwtPayload as jest.Mock).mockReturnValue(mockIdPayload);
-  (validateJwt as jest.Mock).mockResolvedValue({ payload: mockAccessPayload, header: { alg: 'RS256', kid: 'key1', typ: 'JWT' } });
+  (validateJwt as jest.Mock).mockResolvedValue({
+    payload: mockAccessPayload,
+    header: { alg: 'RS256', kid: 'key1', typ: 'JWT' },
+  });
   (extractRoles as jest.Mock).mockReturnValue(['mc-user']);
   (getUserById as jest.Mock).mockResolvedValue(mockKeycloakUser);
 }
 
 describe('POST /bff-api/auth/login', () => {
-  beforeEach(() => { jest.clearAllMocks(); setupMocks(); });
+  beforeEach(() => {
+    jest.clearAllMocks();
+    setupMocks();
+  });
 
   it('returns 200 with user profile for valid code exchange', async () => {
-    const res = await POST(makeRequest({
-      code: 'auth-code', codeVerifier: 'verifier', redirectUri: 'mcm-app://callback',
-    }));
+    const res = await POST(
+      makeRequest({
+        code: 'auth-code',
+        codeVerifier: 'verifier',
+        redirectUri: 'mcm-app://callback',
+      }),
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
@@ -103,25 +118,37 @@ describe('POST /bff-api/auth/login', () => {
 
   it('returns 429 when rate limit exceeded', async () => {
     (checkLoginRateLimit as jest.Mock).mockRejectedValueOnce(new RateLimitError(60));
-    const res = await POST(makeRequest({
-      code: 'auth-code', codeVerifier: 'verifier', redirectUri: 'mcm-app://callback',
-    }));
+    const res = await POST(
+      makeRequest({
+        code: 'auth-code',
+        codeVerifier: 'verifier',
+        redirectUri: 'mcm-app://callback',
+      }),
+    );
     expect(res.status).toBe(429);
   });
 
   it('returns 403 when user lacks required role', async () => {
     (extractRoles as jest.Mock).mockReturnValueOnce([]);
-    const res = await POST(makeRequest({
-      code: 'auth-code', codeVerifier: 'verifier', redirectUri: 'mcm-app://callback',
-    }));
+    const res = await POST(
+      makeRequest({
+        code: 'auth-code',
+        codeVerifier: 'verifier',
+        redirectUri: 'mcm-app://callback',
+      }),
+    );
     expect(res.status).toBe(403);
   });
 
   it('returns 403 when account is disabled', async () => {
     (getUserById as jest.Mock).mockResolvedValueOnce({ ...mockKeycloakUser, enabled: false });
-    const res = await POST(makeRequest({
-      code: 'auth-code', codeVerifier: 'verifier', redirectUri: 'mcm-app://callback',
-    }));
+    const res = await POST(
+      makeRequest({
+        code: 'auth-code',
+        codeVerifier: 'verifier',
+        redirectUri: 'mcm-app://callback',
+      }),
+    );
     expect(res.status).toBe(403);
     const data = await res.json();
     expect(data.code).toBe(AuthErrorCode.ACCOUNT_DISABLED);
@@ -137,8 +164,13 @@ describe('POST /bff-api/auth/login — the client receives only the session refe
     (validateJwt as jest.Mock).mockResolvedValue({ payload: { sub: 'user-1' } });
     (extractRoles as jest.Mock).mockReturnValue(['mc-user']);
     (getUserById as jest.Mock).mockResolvedValue({
-      id: 'user-1', username: 'tuser', email: 'u@example.com', firstName: 'T', lastName: 'U',
-      enabled: true, emailVerified: true,
+      id: 'user-1',
+      username: 'tuser',
+      email: 'u@example.com',
+      firstName: 'T',
+      lastName: 'U',
+      enabled: true,
+      emailVerified: true,
     });
   });
 
@@ -155,7 +187,9 @@ describe('POST /bff-api/auth/login — the client receives only the session refe
 
   it('no response header carries the access or refresh token', async () => {
     const res = await POST(makeRequest({ code: 'c', codeVerifier: 'v', redirectUri: 'r' }));
-    const everything = [...res.headers.entries()].map(([k, v]) => `${k}: ${v}`).join('\n') + JSON.stringify(await res.json());
+    const everything =
+      [...res.headers.entries()].map(([k, v]) => `${k}: ${v}`).join('\n') +
+      JSON.stringify(await res.json());
     expect(everything).not.toContain('access-tok');
     expect(everything).not.toContain('refresh-tok');
   });

@@ -83,7 +83,7 @@ async function renderDetail(movie: Movie, overrides: Record<string, unknown> = {
   const onDelete = jest.fn();
 
   const utils = await render(
-    <MovieDetail movie={movie} onEdit={onEdit} onDelete={onDelete} {...overrides} />
+    <MovieDetail movie={movie} onEdit={onEdit} onDelete={onDelete} {...overrides} />,
   );
   return { ...utils, onEdit, onDelete };
 }

@@ -33,7 +33,9 @@ describe('concurrent session cap — integration (real Redis db 1)', () => {
     const max = env.maxConcurrentSessions;
 
     // Fire max + 5 logins concurrently to exercise the race.
-    await Promise.all(Array.from({ length: max + 5 }, () => createSession(userId, placeholderSessionTokens())));
+    await Promise.all(
+      Array.from({ length: max + 5 }, () => createSession(userId, placeholderSessionTokens())),
+    );
 
     expect(await getActiveSessionCount(userId)).toBeLessThanOrEqual(max);
   });
@@ -69,7 +71,8 @@ describe('concurrent session cap — integration (real Redis db 1)', () => {
     const max = env.maxConcurrentSessions;
 
     const created: string[] = [];
-    for (let i = 0; i < max; i += 1) created.push((await createSession(userId, placeholderSessionTokens())).sessionId);
+    for (let i = 0; i < max; i += 1)
+      created.push((await createSession(userId, placeholderSessionTokens())).sessionId);
 
     const entries = await captureLogEntries(async () => {
       await createSession(userId, placeholderSessionTokens());

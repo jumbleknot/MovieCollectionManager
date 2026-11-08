@@ -72,7 +72,9 @@ describe('useLogin', () => {
       await result.current.login(request);
     });
 
-    await act(() => { result.current.clearError(); });
+    await act(() => {
+      result.current.clearError();
+    });
 
     expect(result.current.error).toBeNull();
   });

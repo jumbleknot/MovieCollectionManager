@@ -33,8 +33,18 @@ test.describe('font-fallback (FR-017 / SC-006)', () => {
 
     // The app must still reach an interactive authenticated screen despite the font failure.
     const ready = await Promise.race([
-      page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => true),
-      page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => true),
+      page
+        .waitForSelector('[data-testid="home-screen-create-button"]', {
+          state: 'visible',
+          timeout: 60000,
+        })
+        .then(() => true),
+      page
+        .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+          state: 'visible',
+          timeout: 60000,
+        })
+        .then(() => true),
     ]).catch(() => false);
     expect(ready, 'authenticated screen did not render with fonts blocked').toBe(true);
 

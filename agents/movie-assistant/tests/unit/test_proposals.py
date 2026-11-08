@@ -40,6 +40,7 @@ _CANDIDATE = EnrichedMovieCandidate(
 
 # ── idempotency key ──────────────────────────────────────────────────────────
 
+
 def test_idempotency_key_is_deterministic() -> None:
     a = idempotency_key("t1", "p1", "i1")
     b = idempotency_key("t1", "p1", "i1")
@@ -54,6 +55,7 @@ def test_idempotency_key_differs_per_item_proposal_and_thread() -> None:
 
 
 # ── to_movie_payload TMDB external link (013 US5 / T041) ──────────────────────
+
 
 def test_to_movie_payload_sets_tmdb_external_id_url() -> None:
     payload = to_movie_payload(_CANDIDATE)
@@ -74,6 +76,7 @@ def test_to_movie_payload_omits_external_id_when_no_usable_id() -> None:
 
 
 # ── 040 US4: ownership comes from the user's answer, not a forced default ──────
+
 
 def test_to_movie_payload_owned_defaults_false_not_forced_true() -> None:
     # The old behavior hardcoded owned=True. Default is now False (matches mc-service's default),
@@ -104,6 +107,7 @@ def test_build_add_proposal_threads_owned_onto_the_add_item() -> None:
 
 # ── EnrichedMovieCandidate (camelCase wire ↔ snake_case model) ────────────────
 
+
 def test_candidate_validates_web_api_mcp_camelcase_output() -> None:
     wire = {
         "source": "tmdb",
@@ -123,6 +127,7 @@ def test_candidate_validates_web_api_mcp_camelcase_output() -> None:
 
 
 # ── build_add_proposal ───────────────────────────────────────────────────────
+
 
 def test_add_to_existing_collection_is_single_add_item() -> None:
     proposal = build_add_proposal(
@@ -169,6 +174,7 @@ def test_all_items_carry_pending_status_and_no_revalidation_yet() -> None:
 
 # ── chunk_operations (FR-009b batch cap) ──────────────────────────────────────
 
+
 def _remove_op(movie_id: str) -> OrganizeOp:
     return OrganizeOp(operation=Operation.remove, collection_id="c1", movie_id=movie_id)
 
@@ -195,6 +201,7 @@ def test_chunk_rejects_nonpositive_cap() -> None:
 
 
 # ── build_organize_proposal (update / remove batch) ───────────────────────────
+
 
 def test_organize_proposal_builds_typed_items_with_distinct_keys() -> None:
     ops = [
@@ -296,12 +303,13 @@ def test_compose_movie_payload_does_not_mutate_the_source_doc() -> None:
 
 # ── build_organize_proposal: move item (T070a) ────────────────────────────────
 
+
 def test_move_op_item_carries_source_dest_and_replacement_payload() -> None:
     move = OrganizeOp(
         operation=Operation.move,
-        collection_id="c1",            # source
+        collection_id="c1",  # source
         movie_id="mX",
-        dest_collection_id="c2",       # destination
+        dest_collection_id="c2",  # destination
         movie_payload={"title": "Inception", "owned": True},
         label="Inception",
     )

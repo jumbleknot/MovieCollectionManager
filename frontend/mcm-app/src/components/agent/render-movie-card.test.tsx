@@ -64,9 +64,7 @@ describe('RenderMovieCard', () => {
 
   it('renders the genres joined and the overview', async () => {
     const { getByTestId } = await render(<RenderMovieCard {...FULL_PROPS} />);
-    expect(getByTestId('render-movie-card-genres')).toHaveTextContent(
-      'Science Fiction, Thriller',
-    );
+    expect(getByTestId('render-movie-card-genres')).toHaveTextContent('Science Fiction, Thriller');
     expect(getByTestId('render-movie-card-overview')).toHaveTextContent(
       'A blade runner must pursue and terminate four replicants.',
     );
@@ -118,11 +116,7 @@ describe('RenderMovieCard', () => {
     const openSpy = jest.fn();
     (globalThis as unknown as { window: { open: jest.Mock } }).window = { open: openSpy };
     const { getByTestId } = await render(
-      <RenderMovieCard
-        {...FULL_PROPS}
-        url="https://www.themoviedb.org/movie/78"
-        addable
-      />,
+      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable />,
     );
     const link = getByTestId('render-movie-card-url');
     expect(link).toHaveTextContent('View on TMDB');
@@ -180,7 +174,12 @@ describe('RenderMovieCard', () => {
 
   it('renders a cancel action beside Add when cancelable (US5-AC2)', async () => {
     const { getByTestId } = await render(
-      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+      <RenderMovieCard
+        {...FULL_PROPS}
+        url="https://www.themoviedb.org/movie/78"
+        addable
+        cancelable
+      />,
     );
     expect(getByTestId('render-movie-card-add')).toBeTruthy();
     expect(getByTestId('render-movie-card-cancel')).toBeTruthy();
@@ -188,7 +187,12 @@ describe('RenderMovieCard', () => {
 
   it('posts the canonical exit value through the same send path as Add (US5-AC2)', async () => {
     const { getByTestId } = await render(
-      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+      <RenderMovieCard
+        {...FULL_PROPS}
+        url="https://www.themoviedb.org/movie/78"
+        addable
+        cancelable
+      />,
     );
     await fireEvent.press(getByTestId('render-movie-card-cancel'));
     expect(addMessage).toHaveBeenCalledWith(
@@ -199,7 +203,12 @@ describe('RenderMovieCard', () => {
 
   it('adds nothing when cancelled — no add message is ever posted (US5-AC3)', async () => {
     const { getByTestId } = await render(
-      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+      <RenderMovieCard
+        {...FULL_PROPS}
+        url="https://www.themoviedb.org/movie/78"
+        addable
+        cancelable
+      />,
     );
     await fireEvent.press(getByTestId('render-movie-card-cancel'));
     const posted = addMessage.mock.calls.map((c) => String(c[0].content));
@@ -209,7 +218,12 @@ describe('RenderMovieCard', () => {
 
   it('disables both actions after cancelling, so the card no longer invites an add (FR-033)', async () => {
     const { getByTestId } = await render(
-      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+      <RenderMovieCard
+        {...FULL_PROPS}
+        url="https://www.themoviedb.org/movie/78"
+        addable
+        cancelable
+      />,
     );
     await fireEvent.press(getByTestId('render-movie-card-cancel'));
 
@@ -224,7 +238,12 @@ describe('RenderMovieCard', () => {
 
   it('disables both actions after adding too, so a card cannot be actioned twice', async () => {
     const { getByTestId } = await render(
-      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+      <RenderMovieCard
+        {...FULL_PROPS}
+        url="https://www.themoviedb.org/movie/78"
+        addable
+        cancelable
+      />,
     );
     await fireEvent.press(getByTestId('render-movie-card-add'));
     await fireEvent.press(getByTestId('render-movie-card-cancel'));
@@ -255,7 +274,10 @@ describe('RenderMovieCard', () => {
   it('latches at enqueue, so a second tap during the queued window adds nothing', async () => {
     agentState.isRunning = true;
     const props = {
-      ...FULL_PROPS, url: 'https://www.themoviedb.org/movie/78', addable: true, cancelable: true,
+      ...FULL_PROPS,
+      url: 'https://www.themoviedb.org/movie/78',
+      addable: true,
+      cancelable: true,
     };
     const { getByTestId, rerender } = await render(<RenderMovieCard {...props} />);
 
@@ -272,7 +294,12 @@ describe('RenderMovieCard', () => {
 
   it('keeps the card itself in the transcript after cancelling (it is a record, not a mistake)', async () => {
     const { getByTestId } = await render(
-      <RenderMovieCard {...FULL_PROPS} url="https://www.themoviedb.org/movie/78" addable cancelable />,
+      <RenderMovieCard
+        {...FULL_PROPS}
+        url="https://www.themoviedb.org/movie/78"
+        addable
+        cancelable
+      />,
     );
     await fireEvent.press(getByTestId('render-movie-card-cancel'));
     expect(getByTestId('render-movie-card')).toBeTruthy();

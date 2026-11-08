@@ -230,8 +230,12 @@ def build_import_preview(
             payload = build_row_payload(row, mappings, article_overrides=art_res)
             missing = [field_ for field_ in _REQUIRED if not _present(payload.get(field_))]
             if missing:
-                skipped.append({"title": _row_title(payload, row, mappings),
-                                "reason": _skip_reason(missing, row, mappings)})
+                skipped.append(
+                    {
+                        "title": _row_title(payload, row, mappings),
+                        "reason": _skip_reason(missing, row, mappings),
+                    }
+                )
             else:
                 supplied_rows.append(payload)
 
@@ -335,7 +339,7 @@ def build_import_proposals(preview: ImportPreview, thread_id: str) -> list[Propo
         # Enhancement 1: surface the resolved field mapping + one sample row's values so the user
         # can verify how columns map to movie fields before approving. Only mapped (non-ignored)
         # columns are shown; the sample is the first create (else first update) payload.
-        sample_item = (plan.to_create or plan.to_update)
+        sample_item = plan.to_create or plan.to_update
         summary_tabs.append(
             {
                 "tabName": plan.tab_name,
@@ -392,13 +396,12 @@ def _plan_writes(
         item_id = f"{title}:{supplied.get('year')}"
         key = idempotency_key(thread_id, tab_name, item_id)
         if match is None:
-            to_create.append(
-                ImportPlanItem(title, None, apply_create_defaults(supplied), key)
-            )
+            to_create.append(ImportPlanItem(title, None, apply_create_defaults(supplied), key))
         else:
             to_update.append(
-                ImportPlanItem(title, str(match["movieId"]),
-                               compose_import_payload(match, supplied), key)
+                ImportPlanItem(
+                    title, str(match["movieId"]), compose_import_payload(match, supplied), key
+                )
             )
     return to_create, to_update
 

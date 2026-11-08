@@ -33,7 +33,12 @@ jest.mock('@/bff-server/security-headers', () => ({ securityHeaders: () => new H
 
 const mockAudit = jest.fn();
 jest.mock('@/bff-server/logger', () => ({
-  logger: { audit: (...a: unknown[]) => mockAudit(...a), warn: jest.fn(), error: jest.fn(), info: jest.fn() },
+  logger: {
+    audit: (...a: unknown[]) => mockAudit(...a),
+    warn: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+  },
 }));
 
 import { POST } from '@/app/bff-api/auth/register+api';
@@ -59,15 +64,26 @@ const VALID = {
 beforeEach(() => jest.clearAllMocks());
 
 it('refuses registration with 403 + audit and creates NO user when disabled', async () => {
-  mockGetAppSettings.mockResolvedValue({ allowSelfRegistration: false, updatedBy: 'a', updatedAt: 't' });
+  mockGetAppSettings.mockResolvedValue({
+    allowSelfRegistration: false,
+    updatedBy: 'a',
+    updatedAt: 't',
+  });
   const res = await POST(req(VALID));
   expect(res.status).toBe(403);
   expect(mockCreateUser).not.toHaveBeenCalled();
-  expect(mockAudit).toHaveBeenCalledWith('registration_refused_disabled', expect.objectContaining({ ip: '10.0.0.2' }));
+  expect(mockAudit).toHaveBeenCalledWith(
+    'registration_refused_disabled',
+    expect.objectContaining({ ip: '10.0.0.2' }),
+  );
 });
 
 it('proceeds to create the user (201) when enabled', async () => {
-  mockGetAppSettings.mockResolvedValue({ allowSelfRegistration: true, updatedBy: null, updatedAt: null });
+  mockGetAppSettings.mockResolvedValue({
+    allowSelfRegistration: true,
+    updatedBy: null,
+    updatedAt: null,
+  });
   mockCreateUser.mockResolvedValue('new-user-id');
   mockAssignRole.mockResolvedValue(undefined);
   mockSendVerify.mockResolvedValue(undefined);

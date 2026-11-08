@@ -79,9 +79,7 @@ class TestResolution:
             )
 
     def test_allows_a_name_resolving_to_an_ordinary_lan_address(self) -> None:
-        assert_ollama_url_allowed(
-            "http://nas.home.arpa:11434", lookup=resolves_to("192.168.1.50")
-        )
+        assert_ollama_url_allowed("http://nas.home.arpa:11434", lookup=resolves_to("192.168.1.50"))
 
     def test_checks_every_answer_not_just_the_first(self) -> None:
         # One public and one blocked answer is the shape that defeats a guard reading answers[0].
@@ -124,9 +122,7 @@ class TestBuildChatModelIsGuarded:
     def test_build_chat_model_refuses_a_blocked_ollama_base_url(self, monkeypatch) -> None:
         from src.models import ModelSpec, _build_real_chat_model
 
-        monkeypatch.setattr(
-            "src.ollama_guard._default_lookup", lambda _host: ["169.254.169.254"]
-        )
+        monkeypatch.setattr("src.ollama_guard._default_lookup", lambda _host: ["169.254.169.254"])
         spec = ModelSpec(provider="ollama", model_id="qwen2.5", temperature=0.0)
         with pytest.raises(OllamaAddressNotAllowed):
             _build_real_chat_model(spec, {"OLLAMA_BASE_URL": "http://ollama.evil.test:11434"})

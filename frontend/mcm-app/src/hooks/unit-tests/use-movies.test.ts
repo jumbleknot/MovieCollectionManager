@@ -130,12 +130,16 @@ describe('useMovies', () => {
     it('sets isLoading true during fetch', async () => {
       let resolveGet!: (val: unknown) => void;
       mockedGet.mockReturnValueOnce(
-        new Promise((res) => { resolveGet = res; }) as never,
+        new Promise((res) => {
+          resolveGet = res;
+        }) as never,
       );
 
       const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
-      await act(() => { void result.current.getMovie(MOVIE_ID); });
+      await act(() => {
+        void result.current.getMovie(MOVIE_ID);
+      });
 
       expect(result.current.isLoading).toBe(true);
 
@@ -254,7 +258,9 @@ describe('useMovies', () => {
         await result.current.createMovie(CREATE_MOVIE_REQUEST).catch(() => {});
       });
 
-      expect(result.current.error).toBe('A movie with this title already exists in the collection.');
+      expect(result.current.error).toBe(
+        'A movie with this title already exists in the collection.',
+      );
     });
 
     it('falls back to generic message when not an Axios error', async () => {
@@ -272,7 +278,11 @@ describe('useMovies', () => {
 
   describe('updateMovie', () => {
     it('sends PUT to /bff-api/collections/:id/movies/:movieId with the full body', async () => {
-      const updatedMovie = { ...MOCK_MOVIE, ripped: true, ripQuality: ['Blu-Ray'] as Movie['ripQuality'] };
+      const updatedMovie = {
+        ...MOCK_MOVIE,
+        ripped: true,
+        ripQuality: ['Blu-Ray'] as Movie['ripQuality'],
+      };
       const updateRequest: CreateMovieRequest = {
         ...CREATE_MOVIE_REQUEST,
         ripped: true,
@@ -293,13 +303,21 @@ describe('useMovies', () => {
     });
 
     it('updates movie state after successful PUT', async () => {
-      const updatedMovie = { ...MOCK_MOVIE, ripped: true, ripQuality: ['Blu-Ray'] as Movie['ripQuality'] };
+      const updatedMovie = {
+        ...MOCK_MOVIE,
+        ripped: true,
+        ripQuality: ['Blu-Ray'] as Movie['ripQuality'],
+      };
       mockedPut.mockResolvedValueOnce({ data: updatedMovie } as never);
 
       const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
       await act(async () => {
-        await result.current.updateMovie(MOVIE_ID, { ...CREATE_MOVIE_REQUEST, ripped: true, ripQuality: ['Blu-Ray'] });
+        await result.current.updateMovie(MOVIE_ID, {
+          ...CREATE_MOVIE_REQUEST,
+          ripped: true,
+          ripQuality: ['Blu-Ray'],
+        });
       });
 
       expect(result.current.movie?.ripped).toBe(true);
@@ -465,8 +483,12 @@ describe('useMovies — list/search/filter (T123)', () => {
 
     const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
-    await act(async () => { await result.current.listMovies(); });
-    await act(async () => { await result.current.loadMore(); });
+    await act(async () => {
+      await result.current.listMovies();
+    });
+    await act(async () => {
+      await result.current.loadMore();
+    });
 
     expect(result.current.movies).toHaveLength(2);
     expect(result.current.movies[1].movieId).toBe('mov-2');
@@ -480,12 +502,16 @@ describe('useMovies — list/search/filter (T123)', () => {
 
     const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
-    await act(async () => { await result.current.listMovies(); });
+    await act(async () => {
+      await result.current.listMovies();
+    });
 
     mockedGet.mockImplementationOnce(() =>
       Promise.resolve({ data: { items: [MOCK_MOVIE_2], nextCursor: null } }),
     );
-    await act(async () => { await result.current.loadMore(); });
+    await act(async () => {
+      await result.current.loadMore();
+    });
 
     const secondCall = (mockedGet as jest.Mock).mock.calls.find(
       (call: unknown[]) =>
@@ -500,19 +526,26 @@ describe('useMovies — list/search/filter (T123)', () => {
   it('loadMore() does nothing when hasMore is false', async () => {
     const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
-    await act(async () => { await result.current.listMovies(); });
+    await act(async () => {
+      await result.current.listMovies();
+    });
 
     const callCountAfterList = (mockedGet as jest.Mock).mock.calls.length;
 
-    await act(async () => { await result.current.loadMore(); });
+    await act(async () => {
+      await result.current.loadMore();
+    });
 
     // No additional list call made (filter-options may still be counted)
     const listCalls = (mockedGet as jest.Mock).mock.calls.filter(
       (call: unknown[]) => !String(call[0]).endsWith('/filter-options'),
     );
-    expect(listCalls.length).toBe(callCountAfterList - (mockedGet as jest.Mock).mock.calls.filter(
-      (call: unknown[]) => String(call[0]).endsWith('/filter-options'),
-    ).length);
+    expect(listCalls.length).toBe(
+      callCountAfterList -
+        (mockedGet as jest.Mock).mock.calls.filter((call: unknown[]) =>
+          String(call[0]).endsWith('/filter-options'),
+        ).length,
+    );
   });
 
   // ── Search ───────────────────────────────────────────────────────────────────
@@ -520,12 +553,18 @@ describe('useMovies — list/search/filter (T123)', () => {
   it('setSearch() forwards search param to BFF GET after debounce', async () => {
     const { result } = await renderHook(() => useMovies(COLLECTION_ID));
 
-    await act(async () => { await result.current.listMovies(); });
+    await act(async () => {
+      await result.current.listMovies();
+    });
 
-    await act(() => { result.current.setSearch('batman'); });
+    await act(() => {
+      result.current.setSearch('batman');
+    });
 
     // Advance past debounce delay (300ms)
-    await act(async () => { jest.advanceTimersByTime(350); });
+    await act(async () => {
+      jest.advanceTimersByTime(350);
+    });
     await act(async () => {});
 
     const searchCall = (mockedGet as jest.Mock).mock.calls.find(
@@ -544,11 +583,17 @@ describe('useMovies — list/search/filter (T123)', () => {
     );
 
     const { result } = await renderHook(() => useMovies(COLLECTION_ID));
-    await act(async () => { await result.current.listMovies(); });
+    await act(async () => {
+      await result.current.listMovies();
+    });
     expect(result.current.hasMore).toBe(true);
 
-    await act(() => { result.current.setSearch('batman'); });
-    await act(async () => { jest.advanceTimersByTime(350); });
+    await act(() => {
+      result.current.setSearch('batman');
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(350);
+    });
     await act(async () => {});
 
     // After search reload, cursor is reset (no cursor param in new call)
@@ -561,7 +606,9 @@ describe('useMovies — list/search/filter (T123)', () => {
 
   it('setFilter() forwards filter param to BFF GET immediately', async () => {
     const { result } = await renderHook(() => useMovies(COLLECTION_ID));
-    await act(async () => { await result.current.listMovies(); });
+    await act(async () => {
+      await result.current.listMovies();
+    });
 
     await act(async () => {
       await result.current.setFilter('contentType', 'Series');
@@ -583,7 +630,9 @@ describe('useMovies — list/search/filter (T123)', () => {
     );
 
     const { result } = await renderHook(() => useMovies(COLLECTION_ID));
-    await act(async () => { await result.current.listMovies(); });
+    await act(async () => {
+      await result.current.listMovies();
+    });
     expect(result.current.hasMore).toBe(true);
 
     await act(async () => {
@@ -598,7 +647,9 @@ describe('useMovies — list/search/filter (T123)', () => {
 
   it('clearFilters() reloads without filter params', async () => {
     const { result } = await renderHook(() => useMovies(COLLECTION_ID));
-    await act(async () => { await result.current.listMovies(); });
+    await act(async () => {
+      await result.current.listMovies();
+    });
 
     await act(async () => {
       await result.current.setFilter('contentType', 'Series');
@@ -745,7 +796,7 @@ describe('useMovies — sort (013 US1)', () => {
       (c) => typeof c[0] === 'string' && (c[0] as string).endsWith('/movies'),
     );
     const last = listCalls[listCalls.length - 1];
-    return ((last?.[1] as { params?: Record<string, unknown> })?.params) ?? {};
+    return (last?.[1] as { params?: Record<string, unknown> })?.params ?? {};
   }
 
   it('defaults to title ascending on a fresh mount (session-scoped — US1-AC5)', async () => {

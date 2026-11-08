@@ -19,7 +19,12 @@ import { Banner, Button, Chip } from '@mcm/design-system';
 
 import { NoAutoFillInput } from '@/components/no-autofill-input';
 import { useAssistantConfig } from '@/hooks/use-assistant-config';
-import type { AgentConfigUpdate, AgentProvider, ProbeField, ProbeStatus } from '@/types/agent-config';
+import type {
+  AgentConfigUpdate,
+  AgentProvider,
+  ProbeField,
+  ProbeStatus,
+} from '@/types/agent-config';
 
 const PROVIDERS: { value: AgentProvider; label: string }[] = [
   { value: 'ollama', label: 'Ollama (self-hosted)' },
@@ -31,10 +36,15 @@ type FieldErrors = Partial<Record<ProbeField, string>>;
 // Map a failed save to a user-facing banner. A 400/422 carries per-field reasons (shown inline);
 // a 401 (session expired) and a 5xx carry none, so distinguish them rather than show the same
 // opaque "could not save" for every failure (review M2).
-function saveErrorMessage(outcome: { status: number; errors: { field: ProbeField; reason: string }[] }): string {
+function saveErrorMessage(outcome: {
+  status: number;
+  errors: { field: ProbeField; reason: string }[];
+}): string {
   if (outcome.status === 401) return 'Your session has expired — please sign in again.';
-  if (outcome.status >= 500) return 'The server had a problem saving your settings. Please try again.';
-  if (outcome.errors.length > 0) return 'Some settings could not be validated — see the messages below.';
+  if (outcome.status >= 500)
+    return 'The server had a problem saving your settings. Please try again.';
+  if (outcome.errors.length > 0)
+    return 'Some settings could not be validated — see the messages below.';
   return 'Could not save your settings. Please try again.';
 }
 
@@ -94,7 +104,9 @@ export function MovieAssistantConfig(): React.JSX.Element {
     if (trimmedCost !== '') {
       const n = Number(trimmedCost);
       if (!Number.isFinite(n) || n <= 0) {
-        setErrors({ costLimitUsd: 'Must be a positive number (or leave blank to use the default)' });
+        setErrors({
+          costLimitUsd: 'Must be a positive number (or leave blank to use the default)',
+        });
         return;
       }
     }
@@ -239,7 +251,9 @@ export function MovieAssistantConfig(): React.JSX.Element {
         style={[styles.input, errors.tmdbKey ? styles.inputError : null]}
         value={tmdbKey}
         onChangeText={setTmdbKey}
-        placeholder={config.hasTmdbKey ? 'Leave blank to keep the saved key' : 'Your TMDB v3 API key'}
+        placeholder={
+          config.hasTmdbKey ? 'Leave blank to keep the saved key' : 'Your TMDB v3 API key'
+        }
         secureTextEntry
         autoCapitalize="none"
         testID="assistant-config-tmdb-key-input"

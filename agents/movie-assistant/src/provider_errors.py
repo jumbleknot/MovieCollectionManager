@@ -82,9 +82,7 @@ def describe_provider_error(exc: BaseException) -> ProviderError:
     )
 
 
-def log_provider_error(
-    logger: logging.Logger, exc: BaseException, *, frame: str
-) -> ProviderError:
+def log_provider_error(logger: logging.Logger, exc: BaseException, *, frame: str) -> ProviderError:
     """Write the ONE ERROR record naming status, type and the frame that caught it.
 
     Status, type, frame and the exception CLASS only. `str(exc)` is never formatted in: a provider

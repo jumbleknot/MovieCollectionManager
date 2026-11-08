@@ -25,12 +25,27 @@ const uniqueTitle = () => `IntMovie_${randomUUID().replace(/-/g, '').slice(0, 12
 // mc-service CreateMovieRequest requires every field present (non-Option Rust fields).
 function movieBody(title: string, overrides: Record<string, unknown> = {}) {
   return {
-    title, year: 2015, contentType: 'Movie', language: 'English',
-    owned: true, ripped: false, childrens: false,
-    ownedMedia: [], ripQuality: [], genres: ['Action'], rated: 'R',
-    directors: [], actors: [], tags: [],
-    movieSet: null, originalTitle: null, releaseDate: null,
-    outline: null, plot: null, runtime: null, externalIds: [],
+    title,
+    year: 2015,
+    contentType: 'Movie',
+    language: 'English',
+    owned: true,
+    ripped: false,
+    childrens: false,
+    ownedMedia: [],
+    ripQuality: [],
+    genres: ['Action'],
+    rated: 'R',
+    directors: [],
+    actors: [],
+    tags: [],
+    movieSet: null,
+    originalTitle: null,
+    releaseDate: null,
+    outline: null,
+    plot: null,
+    runtime: null,
+    externalIds: [],
     ...overrides,
   };
 }
@@ -62,12 +77,17 @@ describe('movie proxy — integration (real BFF + mc-service)', () => {
     userNoRole = await createTestUser('int-mov-norole');
     tokenNoRole = (await loginSessionWithoutAppRole(userNoRole)).cookie;
 
-    const coll = await bff.post('/bff-api/collections', { name: `IntMovColl_${randomUUID().slice(0, 8)}` }, auth(tokenA));
+    const coll = await bff.post(
+      '/bff-api/collections',
+      { name: `IntMovColl_${randomUUID().slice(0, 8)}` },
+      auth(tokenA),
+    );
     collectionId = coll.data.collectionId;
   });
 
   afterAll(async () => {
-    if (collectionId) await bff.delete(`/bff-api/collections/${collectionId}`, auth(tokenA)).catch(() => {});
+    if (collectionId)
+      await bff.delete(`/bff-api/collections/${collectionId}`, auth(tokenA)).catch(() => {});
     await deleteTestUser(userA?.userId);
     await deleteTestUser(userB?.userId);
     await deleteTestUser(userNoRole?.userId);
@@ -95,7 +115,11 @@ describe('movie proxy — integration (real BFF + mc-service)', () => {
     expect(read.data.title).toBe(title);
 
     // UPDATE (PUT full replacement) → 200
-    const put = await bff.put(`${moviesPath()}/${movieId}`, movieBody(title, { plot: 'updated' }), auth(tokenA));
+    const put = await bff.put(
+      `${moviesPath()}/${movieId}`,
+      movieBody(title, { plot: 'updated' }),
+      auth(tokenA),
+    );
     expect(put.status).toBe(200);
 
     // FILTER-OPTIONS → 200 with the FilterOptionsDto shape

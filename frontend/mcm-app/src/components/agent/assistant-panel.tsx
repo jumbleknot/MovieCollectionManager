@@ -28,7 +28,7 @@
 // Must stay first: it has to run before anything in this chunk builds a zod schema (feature 089).
 import '@/utils/zod-jitless';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { Button, ChatBubble } from '@mcm/design-system';
 import { useAgent, useRenderToolCall, type ToolCall } from '@copilotkit/react-native';
@@ -216,7 +216,10 @@ function AssistantPanel() {
             // Wrapper keeps the stable assistant-msg-<role> testID; the DS ChatBubble
             // (Grumpy Robot avatar on assistant turns) renders the message visuals.
             <View testID={`assistant-msg-${item.role}`} style={styles.message}>
-              <ChatBubble sender={item.role === 'user' ? 'user' : 'assistant'} message={item.content} />
+              <ChatBubble
+                sender={item.role === 'user' ? 'user' : 'assistant'}
+                message={item.content}
+              />
             </View>
           ) : (
             <View testID={`assistant-tool-${item.id}`} style={styles.message}>
@@ -271,12 +274,41 @@ const makeStyles = (theme: Theme) => ({
   // unoccupied app-wide. The container is pointerEvents="box-none" so only the toggle/panel
   // themselves capture events.
   dock: { position: 'absolute' as const, left: 16, bottom: 16, alignItems: 'flex-start' as const },
-  toggle: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, backgroundColor: theme.surface3?.val, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.outlineVariant?.val },
+  toggle: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    backgroundColor: theme.surface3?.val,
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: theme.outlineVariant?.val,
+  },
   toggleText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' as const },
-  panel: { width: 320, height: 420, marginTop: 8, backgroundColor: theme.surface1?.val, borderRadius: 12, borderWidth: 1, borderColor: theme.outlineVariant?.val, padding: 8 },
+  panel: {
+    width: 320,
+    height: 420,
+    marginTop: 8,
+    backgroundColor: theme.surface1?.val,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.outlineVariant?.val,
+    padding: 8,
+  },
   message: { paddingVertical: 6, paddingHorizontal: 2 },
   inputRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8 },
-  input: { flex: 1, borderWidth: 1, borderColor: theme.outline?.val, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, color: theme.onSurface?.val, backgroundColor: theme.surfaceVariant?.val, fontFamily: 'Inter' },
+  input: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: theme.outline?.val,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    color: theme.onSurface?.val,
+    backgroundColor: theme.surfaceVariant?.val,
+    fontFamily: 'Inter',
+  },
 });
 
 /**

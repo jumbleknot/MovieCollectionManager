@@ -22,28 +22,28 @@
  * and `id:` on native, so Playwright, Maestro and jest all locate the same element.
  */
 
-import React from 'react'
-import { Platform, Pressable, StyleSheet } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { withAlpha, stateLayer } from '../../tokens/with-alpha'
+import React from 'react';
+import { Platform, Pressable, StyleSheet } from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { withAlpha, stateLayer } from '../../tokens/with-alpha';
 
 export interface NavListItem {
-  key: string
-  label: string
-  icon?: React.ReactNode
+  key: string;
+  label: string;
+  icon?: React.ReactNode;
   /** Stable external-contract selector; rendered on a React Native host node. */
-  testID?: string
+  testID?: string;
 }
 
 export interface NavListProps {
-  items: NavListItem[]
-  activeKey: string
-  onSelect: (key: string) => void
+  items: NavListItem[];
+  activeKey: string;
+  onSelect: (key: string) => void;
   /** Compact rows (40dp rather than 56dp) for narrow viewports where vertical space is scarce. */
-  compact?: boolean
+  compact?: boolean;
   /** Accessible name for the list as a whole, announced by assistive technology. */
-  accessibilityLabel?: string
+  accessibilityLabel?: string;
 }
 
 export const NavList = React.memo<NavListProps>(function NavList({
@@ -53,21 +53,16 @@ export const NavList = React.memo<NavListProps>(function NavList({
   compact = false,
   accessibilityLabel = 'Sections',
 }) {
-  const theme = useTheme()
+  const theme = useTheme();
 
   // The state layer is drawn from `onSurface` at an MD3 hover opacity rather than a hardcoded
   // hex suffix. See tokens/with-alpha.ts for why the `hex + '14'` form fails silently.
-  const hoverLayer = withAlpha(theme.onSurface?.val as string | undefined, stateLayer.hover)
+  const hoverLayer = withAlpha(theme.onSurface?.val as string | undefined, stateLayer.hover);
 
   return (
-    <View
-      accessibilityRole="menu"
-      aria-label={accessibilityLabel}
-      gap={4}
-      width="100%"
-    >
+    <View accessibilityRole="menu" aria-label={accessibilityLabel} gap={4} width="100%">
       {items.map((item) => {
-        const isActive = item.key === activeKey
+        const isActive = item.key === activeKey;
         return (
           <Pressable
             key={item.key}
@@ -93,9 +88,13 @@ export const NavList = React.memo<NavListProps>(function NavList({
               // Android it swallows the tap meant for the outer Pressable. MEASURED: PR #788's first full-suite
               // run - `Tap on id: settings-nav-assistant... COMPLETED`, then settings-assistant-screen never
               // appeared, 3/3 attempts. Native has no hover, so it gets a plain value and nothing to attach.
-              backgroundColor={isActive
-                ? theme.secondaryContainer?.val
-                : Platform.OS === 'web' ? { default: 'transparent', hover: hoverLayer } : 'transparent'}
+              backgroundColor={
+                isActive
+                  ? theme.secondaryContainer?.val
+                  : Platform.OS === 'web'
+                    ? { default: 'transparent', hover: hoverLayer }
+                    : 'transparent'
+              }
               // A hover clause ONLY — never a `press` clause (v2: `pressStyle`) on this inner Tamagui
               // View. Measured on Android (CI run 2063): a Tamagui press state makes the View a touch
               // responder (v3 still attaches press events for a press clause, createComponent),
@@ -121,15 +120,15 @@ export const NavList = React.memo<NavListProps>(function NavList({
               </Text>
             </View>
           </Pressable>
-        )
+        );
       })}
     </View>
-  )
-})
+  );
+});
 
-NavList.displayName = 'MCM.NavList'
+NavList.displayName = 'MCM.NavList';
 
 const styles = StyleSheet.create({
   row: { width: '100%' },
   rowPressed: { opacity: 0.9 },
-})
+});

@@ -16,8 +16,7 @@ jest.mock('@/components/agent/movie-assistant-config', () => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { View: ViewLocal } = require('react-native');
   return {
-    MovieAssistantConfig: () =>
-      ReactLocal.createElement(ViewLocal, { testID: 'assistant-config' }),
+    MovieAssistantConfig: () => ReactLocal.createElement(ViewLocal, { testID: 'assistant-config' }),
   };
 });
 

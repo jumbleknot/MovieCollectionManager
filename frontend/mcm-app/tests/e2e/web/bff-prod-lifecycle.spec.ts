@@ -65,19 +65,35 @@ async function gotoHome(page: Page): Promise<void> {
   // Wait on the FR-009-RESOLVED signal (home-screen-create-button), not the instant home-route
   // wrapper which races ahead of the FR-009 default-collection redirect. See collections.spec.
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
     return;
   }
   if (!result) throw new Error('gotoHome: home screen did not render');
 }
 
 test.describe('BFF container — auth lifecycle (T013/US3)', () => {
-  test('login → the client holds only the session reference → logout terminates session + SSO', async ({ page, context }) => {
+  test('login → the client holds only the session reference → logout terminates session + SSO', async ({
+    page,
+    context,
+  }) => {
     // 1. Login (own session).
     await login(page);
 
@@ -86,7 +102,10 @@ test.describe('BFF container — auth lifecycle (T013/US3)', () => {
     //    not relaxed for tests).
     const cookies = await context.cookies();
     for (const name of RETIRED_TOKEN_COOKIES) {
-      expect(cookies.find((ck) => ck.name === name && ck.value), `${name} must not be held by the client`).toBeFalsy();
+      expect(
+        cookies.find((ck) => ck.name === name && ck.value),
+        `${name} must not be held by the client`,
+      ).toBeFalsy();
     }
     const session = cookies.find((ck) => ck.name === 'mcm_session_id');
     expect(session, 'mcm_session_id present after login').toBeTruthy();
@@ -111,7 +130,10 @@ test.describe('BFF container — auth lifecycle (T013/US3)', () => {
     // 5. Session terminated server-side: the session reference no longer authenticates (401) —
     //    proving the BFF session (and SSO) was ended, not just the UI navigated (085 US6 AS-3).
     const afterLogout = await context.cookies();
-    expect(afterLogout.find((c) => c.name === 'mcm_session_id' && c.value === session!.value), 'old session reference cleared').toBeFalsy();
+    expect(
+      afterLogout.find((c) => c.name === 'mcm_session_id' && c.value === session!.value),
+      'old session reference cleared',
+    ).toBeFalsy();
     const res = await page.request.get(`${BASE}/bff-api/auth/user`, { failOnStatusCode: false });
     expect(res.status(), 'protected request rejected after logout').toBe(401);
   });

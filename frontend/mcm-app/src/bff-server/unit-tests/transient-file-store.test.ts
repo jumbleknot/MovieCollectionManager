@@ -107,7 +107,10 @@ describe('takeExportFile (single-use)', () => {
     expect(got).toEqual({ bytes, filename: 'movie-collections-export.xlsx' });
     expect(mockRedis.getBuffer).toHaveBeenCalledWith(`${EXPORT_FILE_PREFIX}h-9`);
     expect(mockRedis.getBuffer).toHaveBeenCalledWith(`${EXPORT_NAME_PREFIX}h-9`);
-    expect(mockRedis.del).toHaveBeenCalledWith(`${EXPORT_FILE_PREFIX}h-9`, `${EXPORT_NAME_PREFIX}h-9`);
+    expect(mockRedis.del).toHaveBeenCalledWith(
+      `${EXPORT_FILE_PREFIX}h-9`,
+      `${EXPORT_NAME_PREFIX}h-9`,
+    );
   });
 
   it('falls back to a default filename when the name key is missing', async () => {

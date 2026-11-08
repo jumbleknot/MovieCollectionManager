@@ -18,14 +18,17 @@ async function gotoRegister(page: Page) {
   await page.waitForSelector('[data-testid="input-firstName"]', { timeout: 10000 });
 }
 
-async function fillRegisterForm(page: Page, opts: {
-  firstName?: string;
-  lastName?: string;
-  username?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-} = {}) {
+async function fillRegisterForm(
+  page: Page,
+  opts: {
+    firstName?: string;
+    lastName?: string;
+    username?: string;
+    email?: string;
+    password?: string;
+    confirmPassword?: string;
+  } = {},
+) {
   const ts = Date.now() % 10000000;
   const {
     firstName = 'Test',
@@ -152,7 +155,11 @@ test.describe('Registration form — submission', () => {
       await route.fulfill({
         status: 201,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, message: 'Account created. Please check your email to verify your address.', userId: 'user-test-id' }),
+        body: JSON.stringify({
+          success: true,
+          message: 'Account created. Please check your email to verify your address.',
+          userId: 'user-test-id',
+        }),
       });
     });
 
@@ -171,7 +178,11 @@ test.describe('Registration form — submission', () => {
       route.fulfill({
         status: 201,
         contentType: 'application/json',
-        body: JSON.stringify({ success: true, message: 'Account created. Please check your email to verify your address.', userId: 'user-test-id' }),
+        body: JSON.stringify({
+          success: true,
+          message: 'Account created. Please check your email to verify your address.',
+          userId: 'user-test-id',
+        }),
       }),
     );
 
@@ -188,13 +199,18 @@ test.describe('Registration form — submission', () => {
       route.fulfill({
         status: 409,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'That username is already taken. Please choose another.', code: 'DUPLICATE_USERNAME' }),
+        body: JSON.stringify({
+          error: 'That username is already taken. Please choose another.',
+          code: 'DUPLICATE_USERNAME',
+        }),
       }),
     );
 
     await page.click('[data-testid="btn-create-account"]');
     await expect(page.getByTestId('register-form-error')).toBeVisible({ timeout: 8000 });
-    await expect(page.getByText('That username is already taken. Please choose another.')).toBeVisible();
+    await expect(
+      page.getByText('That username is already taken. Please choose another.'),
+    ).toBeVisible();
   });
 
   test('shows error banner on duplicate email', async ({ page }) => {
@@ -205,7 +221,10 @@ test.describe('Registration form — submission', () => {
       route.fulfill({
         status: 409,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'An account with that email already exists.', code: 'DUPLICATE_EMAIL' }),
+        body: JSON.stringify({
+          error: 'An account with that email already exists.',
+          code: 'DUPLICATE_EMAIL',
+        }),
       }),
     );
 
@@ -222,7 +241,10 @@ test.describe('Registration form — submission', () => {
       route.fulfill({
         status: 429,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Too many requests. Please try again later.', code: 'RATE_LIMIT_EXCEEDED' }),
+        body: JSON.stringify({
+          error: 'Too many requests. Please try again later.',
+          code: 'RATE_LIMIT_EXCEEDED',
+        }),
       }),
     );
 
@@ -261,7 +283,11 @@ test.describe('Email verification screen', () => {
     await gotoVerificationScreen(page);
 
     await page.route('**/bff-api/auth/resend-verification', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true }) }),
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true }),
+      }),
     );
 
     await page.click('[data-testid="btn-resend-verification"]');
@@ -300,19 +326,31 @@ const MOCK_USER = {
 
 async function mockUserFirstUnauthThenAuth(page: Page): Promise<void> {
   await page.route('**/bff-api/auth/user', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_USER) }),
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(MOCK_USER),
+    }),
   );
   await page.route(
     '**/bff-api/auth/user',
     (route) =>
-      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ code: 'UNAUTHORIZED', error: 'Not authenticated' }) }),
+      route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'UNAUTHORIZED', error: 'Not authenticated' }),
+      }),
     { times: 1 },
   );
 }
 
 async function mockUserAuthenticated(page: Page): Promise<void> {
   await page.route('**/bff-api/auth/user', (route) =>
-    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_USER) }),
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(MOCK_USER),
+    }),
   );
 }
 
@@ -348,40 +386,58 @@ test.describe('Keycloak login flow', () => {
 
   test('BFF login error shows error banner on the login screen', async ({ page, context }) => {
     await page.route('**/bff-api/auth/user', (route) =>
-      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ code: 'UNAUTHORIZED', error: 'Not authenticated' }) }),
+      route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'UNAUTHORIZED', error: 'Not authenticated' }),
+      }),
     );
     await interceptKeycloakPopup(context);
     await page.route('**/bff-api/auth/login', (route) =>
       route.fulfill({
         status: 403,
         contentType: 'application/json',
-        body: JSON.stringify({ code: 'FORBIDDEN', error: 'You do not have permission to access this resource.' }),
+        body: JSON.stringify({
+          code: 'FORBIDDEN',
+          error: 'You do not have permission to access this resource.',
+        }),
       }),
     );
 
     await waitForLoginScreen(page);
     await page.click('[data-testid="btn-login-with-keycloak"]');
     await expect(page.getByTestId('login-error-banner')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('You do not have permission to access this resource.')).toBeVisible();
+    await expect(
+      page.getByText('You do not have permission to access this resource.'),
+    ).toBeVisible();
   });
 
   test('EMAIL_NOT_VERIFIED error shows the specific message', async ({ page, context }) => {
     await page.route('**/bff-api/auth/user', (route) =>
-      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ code: 'UNAUTHORIZED' }) }),
+      route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'UNAUTHORIZED' }),
+      }),
     );
     await interceptKeycloakPopup(context);
     await page.route('**/bff-api/auth/login', (route) =>
       route.fulfill({
         status: 401,
         contentType: 'application/json',
-        body: JSON.stringify({ code: 'EMAIL_NOT_VERIFIED', error: 'Please verify your email address before logging in.' }),
+        body: JSON.stringify({
+          code: 'EMAIL_NOT_VERIFIED',
+          error: 'Please verify your email address before logging in.',
+        }),
       }),
     );
 
     await waitForLoginScreen(page);
     await page.click('[data-testid="btn-login-with-keycloak"]');
     await expect(page.getByTestId('login-error-banner')).toBeVisible({ timeout: 15000 });
-    await expect(page.getByText('Please verify your email address before logging in.')).toBeVisible();
+    await expect(
+      page.getByText('Please verify your email address before logging in.'),
+    ).toBeVisible();
   });
 });
 
@@ -390,7 +446,11 @@ test.describe('Keycloak login flow', () => {
 test.describe('Auth guard', () => {
   test('redirects unauthenticated user from /home to the login screen', async ({ page }) => {
     await page.route('**/bff-api/auth/user', (route) =>
-      route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ code: 'UNAUTHORIZED' }) }),
+      route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'UNAUTHORIZED' }),
+      }),
     );
     await page.goto(`${BASE}/(app)/home`);
     await expect(page.getByTestId('login-screen')).toBeVisible({ timeout: 15000 });
@@ -424,7 +484,9 @@ test.describe('Settings — Profile area (authenticated)', () => {
   });
 
   // US3 Scenario 2 / FR-009: all six required profile fields rendered
-  test('profile display shows all required fields (username, email, first name, last name, roles, status)', async ({ page }) => {
+  test('profile display shows all required fields (username, email, first name, last name, roles, status)', async ({
+    page,
+  }) => {
     await mockUserAuthenticated(page);
     await page.goto(`${BASE}/(app)/settings`);
     await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 15000 });
@@ -464,7 +526,11 @@ test.describe('Settings — Profile area (authenticated)', () => {
   test('confirming logout ends the session and returns to the login screen', async ({ page }) => {
     await mockUserAuthenticated(page);
     await page.route('**/bff-api/auth/logout', (route) =>
-      route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: true, message: 'Logged out successfully.' }) }),
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ success: true, message: 'Logged out successfully.' }),
+      }),
     );
     await page.goto(`${BASE}/(app)/settings`);
     await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 15000 });

@@ -22,11 +22,7 @@ import {
   type DestinationLookup,
   type VettedDestination,
 } from '@/bff-server/backup-destination-url-guard';
-import type {
-  BackupDestination,
-  BackupObjectInfo,
-  BackupProbeOutcome,
-} from '@/types/backups';
+import type { BackupDestination, BackupObjectInfo, BackupProbeOutcome } from '@/types/backups';
 // STATIC imports, deliberately. `await import()` here read as the tidier way to keep the two
 // drivers out of each other's way, and it fails under Jest's CJS runtime with "A dynamic import
 // callback was invoked without --experimental-vm-modules" — the same trap mongo-client.ts
@@ -146,7 +142,12 @@ export function createPinnedTransport(vetted: VettedDestination): PinnedTranspor
 function encodePath(path: string): string {
   return (path.startsWith('/') ? path : `/${path}`)
     .split('/')
-    .map((s) => encodeURIComponent(s).replace(/[!'()*]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`))
+    .map((s) =>
+      encodeURIComponent(s).replace(
+        /[!'()*]/g,
+        (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`,
+      ),
+    )
     .join('/');
 }
 
@@ -173,7 +174,9 @@ export async function createBackupDriver(
   secret: string,
   options: DriverOptions = {},
 ): Promise<BackupDestinationDriver> {
-  const vetted = await assertDestinationUrlAllowed(destination.endpoint, { lookup: options.lookup });
+  const vetted = await assertDestinationUrlAllowed(destination.endpoint, {
+    lookup: options.lookup,
+  });
   const transport = createPinnedTransport(vetted);
 
   switch (destination.type) {

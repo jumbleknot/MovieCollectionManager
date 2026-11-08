@@ -185,7 +185,10 @@ export async function browserLogin(
  * the member who clicks "enable schedule" while signed in.
  */
 export async function followAuthorize(jar: CookieJar, authorizationUrl: string): Promise<string> {
-  const res = await fetch(authorizationUrl, { redirect: 'manual', headers: { Cookie: jar.header() } });
+  const res = await fetch(authorizationUrl, {
+    redirect: 'manual',
+    headers: { Cookie: jar.header() },
+  });
   jar.absorb(res);
   const location = res.headers.get('location');
   const code = location ? new URL(location).searchParams.get('code') : null;

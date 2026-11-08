@@ -76,7 +76,12 @@ export function CollectionCard({
           {name}
         </Text>
         {isDefault && (
-          <Badge inline count="Default" colorScheme="primary" testID="collection-card-default-badge" />
+          <Badge
+            inline
+            count="Default"
+            colorScheme="primary"
+            testID="collection-card-default-badge"
+          />
         )}
       </XStack>
 
@@ -114,7 +119,10 @@ export function CollectionCard({
           label="Open"
           testID="collection-card-action-open"
           accessibilityLabel="Open collection"
-          onPress={(e) => { e?.stopPropagation?.(); onOpen(collectionId); }}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onOpen(collectionId);
+          }}
         />
         <Button
           variant="outlined"
@@ -122,7 +130,10 @@ export function CollectionCard({
           label="Edit"
           testID="collection-card-action-edit"
           accessibilityLabel="Edit collection"
-          onPress={(e) => { e?.stopPropagation?.(); onEdit(collection); }}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onEdit(collection);
+          }}
         />
         {!isDefault && (
           <Button
@@ -131,7 +142,10 @@ export function CollectionCard({
             label="Set as Default"
             testID="collection-card-action-set-default"
             accessibilityLabel="Set as default collection"
-            onPress={(e) => { e?.stopPropagation?.(); onSetDefault(collectionId); }}
+            onPress={(e) => {
+              e?.stopPropagation?.();
+              onSetDefault(collectionId);
+            }}
           />
         )}
         {/* Inline destructive in a dense action row → outlined danger (two-tier destructive rule;
@@ -143,7 +157,10 @@ export function CollectionCard({
           label="Delete"
           testID="collection-card-action-delete"
           accessibilityLabel="Delete collection"
-          onPress={(e) => { e?.stopPropagation?.(); onDelete(collectionId); }}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onDelete(collectionId);
+          }}
         />
       </XStack>
     </YStack>

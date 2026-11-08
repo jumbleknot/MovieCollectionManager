@@ -134,8 +134,14 @@ async def test_bulk_exemption_lets_2000_approved_writes_through_a_30_call_limite
     for i in range(2000):
         outcomes.append(
             await invoke_tool(
-                agent="organizer", tool_name="add_movie", arguments={"i": i}, server=_MOVIE,
-                subject_token="subj", call=_ok, limiter=limiter, acquire_token=_grant,
+                agent="organizer",
+                tool_name="add_movie",
+                arguments={"i": i},
+                server=_MOVIE,
+                subject_token="subj",
+                call=_ok,
+                limiter=limiter,
+                acquire_token=_grant,
                 skip_rate_limit=True,
             )
         )
@@ -155,8 +161,14 @@ async def test_without_the_exemption_the_same_traffic_is_throttled() -> None:
 
     outcomes = [
         await invoke_tool(
-            agent="organizer", tool_name="add_movie", arguments={"i": i}, server=_MOVIE,
-            subject_token="subj", call=_ok, limiter=limiter, acquire_token=_grant,
+            agent="organizer",
+            tool_name="add_movie",
+            arguments={"i": i},
+            server=_MOVIE,
+            subject_token="subj",
+            call=_ok,
+            limiter=limiter,
+            acquire_token=_grant,
         )
         for i in range(60)
     ]

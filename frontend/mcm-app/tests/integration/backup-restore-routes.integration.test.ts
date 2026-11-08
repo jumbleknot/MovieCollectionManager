@@ -22,11 +22,7 @@ import {
 
 import { createBffClient } from './helpers/bff-test-server';
 
-import {
-  describeBackupTargets,
-  itBackupTargets,
-  assertBackupTargetsPresent,
-} from './helpers/backup-targets';
+import { describeBackupTargets, assertBackupTargetsPresent } from './helpers/backup-targets';
 import {
   createTestUser,
   deleteTestUser,
@@ -37,9 +33,14 @@ import {
 import { loginSession } from './helpers/bff-session';
 
 const bff = createBffClient();
+
+// Fails here, naming the missing input, when MCM_REQUIRE_BACKUP_TARGETS=1 and the targets are
+// down, instead of as N connection errors below. Jest runs no hook when every test is skipped.
+beforeAll(() => assertBackupTargetsPresent());
 const JOBS = '/bff-api/backups/jobs';
 
-const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-rustfs:9000';
+const S3_ENDPOINT =
+  process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-rustfs:9000';
 const S3_BUCKET = process.env.BACKUP_TEST_S3_BUCKET || 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env.BACKUP_TEST_S3_ACCESS_KEY || 'mcmbackuptest';
 const S3_SECRET = process.env.BACKUP_TEST_S3_SECRET_KEY || '';
@@ -64,16 +65,36 @@ beforeAll(async () => {
   await assignRole(userB.userId, 'mc-user');
   tokenB = (await loginSession(userB.username, userB.password)).cookie;
 
-  const collection = await bff.post('/bff-api/collections', { name: `RR ${randomUUID().slice(0, 8)}` }, authA());
+  const collection = await bff.post(
+    '/bff-api/collections',
+    { name: `RR ${randomUUID().slice(0, 8)}` },
+    authA(),
+  );
   collectionId = collection.data.collectionId ?? collection.data.id;
   await bff.post(
     `/bff-api/collections/${collectionId}/movies`,
     {
-      title: 'RR Movie', year: 2015, contentType: 'Movie', language: 'English',
-      owned: true, ripped: false, childrens: false, ownedMedia: [], ripQuality: [],
-      genres: ['Action'], rated: 'R', directors: [], actors: [], tags: [],
-      movieSet: null, originalTitle: null, releaseDate: null, outline: null, plot: null,
-      runtime: null, externalIds: [],
+      title: 'RR Movie',
+      year: 2015,
+      contentType: 'Movie',
+      language: 'English',
+      owned: true,
+      ripped: false,
+      childrens: false,
+      ownedMedia: [],
+      ripQuality: [],
+      genres: ['Action'],
+      rated: 'R',
+      directors: [],
+      actors: [],
+      tags: [],
+      movieSet: null,
+      originalTitle: null,
+      releaseDate: null,
+      outline: null,
+      plot: null,
+      runtime: null,
+      externalIds: [],
     },
     authA(),
   );
@@ -92,7 +113,13 @@ beforeAll(async () => {
 
   const job = await bff.post(
     JOBS,
-    { destinationId: destination.id, label: 'rr job', collectionIds: [collectionId], keepLast: 7, enabled: true },
+    {
+      destinationId: destination.id,
+      label: 'rr job',
+      collectionIds: [collectionId],
+      keepLast: 7,
+      enabled: true,
+    },
     authA(),
   );
   jobId = job.data.id;
@@ -107,7 +134,10 @@ beforeAll(async () => {
 
 afterAll(async () => {
   const res = await bff.get('/bff-api/collections', authA());
-  for (const c of (Array.isArray(res.data) ? res.data : []) as Array<{ collectionId?: string; id?: string }>) {
+  for (const c of (Array.isArray(res.data) ? res.data : []) as Array<{
+    collectionId?: string;
+    id?: string;
+  }>) {
     const id = c.collectionId ?? c.id;
     if (id) await bff.delete(`/bff-api/collections/${id}`, authA());
   }
@@ -138,10 +168,10 @@ describeBackupTargets('download', () => {
   it('streams bytes that gunzip into a valid artifact', async () => {
     // The point of FR-028: a user must be able to read their own backup WITHOUT this system.
     // If these bytes do not gunzip into plain JSON outside the app, that promise is not kept.
-    const res = await bff.get(
-      `${JOBS}/${jobId}/download?key=${encodeURIComponent(versionKey)}`,
-      { ...authA(), responseType: 'arraybuffer' },
-    );
+    const res = await bff.get(`${JOBS}/${jobId}/download?key=${encodeURIComponent(versionKey)}`, {
+      ...authA(),
+      responseType: 'arraybuffer',
+    });
     expect(res.status).toBe(200);
     expect(String(res.headers['content-disposition'])).toContain('attachment');
 
@@ -151,7 +181,10 @@ describeBackupTargets('download', () => {
   }, 60_000);
 
   it('refuses another user’s key — possession of a key is NOT authorisation', async () => {
-    const res = await bff.get(`${JOBS}/${jobId}/download?key=${encodeURIComponent(versionKey)}`, authB());
+    const res = await bff.get(
+      `${JOBS}/${jobId}/download?key=${encodeURIComponent(versionKey)}`,
+      authB(),
+    );
     expect(res.status).toBe(404);
   });
 
@@ -166,7 +199,10 @@ describeBackupTargets('download', () => {
 
   it('refuses a traversal out of the prefix', async () => {
     const traversal = `${versionKey.split('/').slice(0, 2).join('/')}/../../elsewhere.json.gz`;
-    const res = await bff.get(`${JOBS}/${jobId}/download?key=${encodeURIComponent(traversal)}`, authA());
+    const res = await bff.get(
+      `${JOBS}/${jobId}/download?key=${encodeURIComponent(traversal)}`,
+      authA(),
+    );
     expect(res.status).toBe(404);
   });
 });
@@ -190,7 +226,9 @@ describeBackupTargets('restore', () => {
   });
 
   it('answers 404 for another user’s job rather than restoring into their account', async () => {
-    expect((await bff.post(`${JOBS}/${jobId}/restore`, { key: versionKey }, authB())).status).toBe(404);
+    expect((await bff.post(`${JOBS}/${jobId}/restore`, { key: versionKey }, authB())).status).toBe(
+      404,
+    );
   });
 
   it('answers 404 for a key outside the job’s prefix', async () => {

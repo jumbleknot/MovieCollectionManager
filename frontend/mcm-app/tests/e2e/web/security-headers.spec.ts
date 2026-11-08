@@ -22,7 +22,9 @@ import { E2E_BASE_URL as BASE } from './setup/target';
 test.use({ storageState: { cookies: [], origins: [] } });
 
 test.describe('web security headers (032 US1)', () => {
-  test('SSR HTML shell carries the baseline headers and no X-Powered-By (Surface 1)', async ({ request }) => {
+  test('SSR HTML shell carries the baseline headers and no X-Powered-By (Surface 1)', async ({
+    request,
+  }) => {
     const res = await request.get(`${BASE}/`);
     const h = res.headers();
 

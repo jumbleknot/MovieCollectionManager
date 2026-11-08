@@ -94,7 +94,10 @@ def _config(thread: str) -> dict[str, Any]:
 async def test_import_turn_pauses_at_a_summary_preview() -> None:
     rec = _ImportRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     result = await graph.ainvoke(
@@ -118,7 +121,10 @@ async def test_import_turn_pauses_at_a_summary_preview() -> None:
 async def test_reject_writes_nothing() -> None:
     rec = _ImportRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     cfg = _config("imp-reject")
@@ -130,7 +136,10 @@ async def test_reject_writes_nothing() -> None:
 async def test_approve_applies_the_create_with_idempotency_key() -> None:
     rec = _ImportRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     cfg = _config("imp-approve")
@@ -149,7 +158,10 @@ async def test_approve_applies_the_create_with_idempotency_key() -> None:
 async def test_missing_file_handle_asks_for_a_file_with_buttons() -> None:
     rec = _ImportRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     config = {"configurable": {"thread_id": "imp-nofile", "subject_token": "s", "user_id": "u"}}
@@ -200,7 +212,10 @@ class _MultiRowRecorder(_ImportRecorder):
 async def test_one_approval_applies_every_row_no_extra_prompts() -> None:
     rec = _MultiRowRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     cfg = _config("imp-multi")
@@ -262,7 +277,11 @@ async def test_large_approved_import_is_not_throttled_by_the_rate_limiter() -> N
     # A TIGHT cap (5) that the 8-row import would breach if the apply were throttled.
     cfg.limiter = AgentToolRateLimiter(max_calls=5, window_seconds=60)
     graph = build_runtime_graph(
-        {}, config=cfg, classifier=lambda _m: "import", checkpointer=MemorySaver(), force=True,
+        {},
+        config=cfg,
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
+        force=True,
     )
     config = _config("imp-many")
     await graph.ainvoke({"messages": [("user", "import these movies")]}, config)
@@ -275,7 +294,10 @@ async def test_large_approved_import_is_not_throttled_by_the_rate_limiter() -> N
 async def test_excluding_a_tab_at_preview_writes_nothing() -> None:
     rec = _MultiRowRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     cfg = _config("imp-exclude")
@@ -344,12 +366,13 @@ async def test_import_checkpoints_a_handle_not_the_parsed_dataset() -> None:
     and stashes the parsed sheet exactly once (T024 checkpoint-bloat fix)."""
     rec = _StoreRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
-    first = await graph.ainvoke(
-        {"messages": [("user", "import my movies")]}, _config("imp-handle")
-    )
+    first = await graph.ainvoke({"messages": [("user", "import my movies")]}, _config("imp-handle"))
     assert first["import_stage"] == "awaiting_import_choice"
     assert first.get("import_handle")  # the small handle is what's checkpointed
     assert not first.get("import_context")  # the whole parsed dataset is NOT in the checkpoint
@@ -362,7 +385,10 @@ async def test_multi_turn_import_resolves_the_handle_every_turn() -> None:
     EVERY clarification turn (not just the first), and never inlines it into the checkpoint."""
     rec = _StoreRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     cfg = _config("imp-multi")
@@ -424,7 +450,10 @@ async def test_oversize_file_is_refused_before_any_preview_or_write() -> None:
     """FR-015: 5,001 rows is refused, the limit is stated, and nothing is proposed or written."""
     rec = _OversizeRecorder(5001)
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     result = await graph.ainvoke(
@@ -444,7 +473,10 @@ async def test_a_file_at_the_limit_is_still_accepted() -> None:
     """The boundary belongs to the accepted side — 5,000 rows is not oversize."""
     rec = _OversizeRecorder(5000)
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     result = await graph.ainvoke(
@@ -465,7 +497,10 @@ async def test_a_file_at_the_limit_is_still_accepted() -> None:
 async def test_interrupted_import_is_reported_on_the_next_turn() -> None:
     rec = _ImportRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "query", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "query",
+        checkpointer=MemorySaver(),
         force=True,
     )
     config = _config("interrupted-1")
@@ -492,7 +527,10 @@ async def test_an_interrupted_import_is_reported_only_once() -> None:
     """Reporting it must CLEAR it — otherwise every later turn re-announces the same dead run."""
     rec = _ImportRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "query", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "query",
+        checkpointer=MemorySaver(),
         force=True,
     )
     config = _config("interrupted-2")
@@ -543,7 +581,10 @@ async def test_a_huge_IGNORED_tab_does_not_trip_the_import_ceiling() -> None:
 
     rec = _R()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     result = await graph.ainvoke(

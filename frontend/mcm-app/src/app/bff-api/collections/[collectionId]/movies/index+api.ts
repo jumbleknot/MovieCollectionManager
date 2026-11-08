@@ -27,13 +27,28 @@ import { validateObjectId } from '@/bff-server/resource-id';
 // ─── Query params forwarded for GET (movie list) ───────────────────────────────
 
 const LIST_QUERY_PARAMS = [
-  'cursor', 'sortBy', 'sortDir', 'search', 'contentType', 'genre', 'childrens', 'rated',
-  'language', 'decade', 'owned', 'ownedMedia', 'ripped', 'ripQuality',
+  'cursor',
+  'sortBy',
+  'sortDir',
+  'search',
+  'contentType',
+  'genre',
+  'childrens',
+  'rated',
+  'language',
+  'decade',
+  'owned',
+  'ownedMedia',
+  'ripped',
+  'ripQuality',
 ] as const;
 
 // ─── GET /bff-api/collections/:id/movies ──────────────────────────────────────
 
-export async function GET(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+export async function GET(
+  req: Request,
+  { collectionId }: { collectionId: string },
+): Promise<Response> {
   return withRequestContext(() => _get(req, collectionId));
 }
 
@@ -55,10 +70,9 @@ async function _get(req: Request, collectionId: string): Promise<Response> {
       else if (all.length > 1) queryParams[key] = all;
     }
 
-    const { status, data } = await client.get(
-      `/api/v1/collections/${collectionId}/movies`,
-      { params: queryParams },
-    );
+    const { status, data } = await client.get(`/api/v1/collections/${collectionId}/movies`, {
+      params: queryParams,
+    });
     return Response.json(data, { status, headers: securityHeaders() });
   } catch (err) {
     return handleMcApiError(err, 'movie_list');
@@ -67,7 +81,10 @@ async function _get(req: Request, collectionId: string): Promise<Response> {
 
 // ─── POST /bff-api/collections/:id/movies ─────────────────────────────────────
 
-export async function POST(req: Request, { collectionId }: { collectionId: string }): Promise<Response> {
+export async function POST(
+  req: Request,
+  { collectionId }: { collectionId: string },
+): Promise<Response> {
   return withRequestContext(() => _post(req, collectionId));
 }
 
@@ -87,4 +104,3 @@ async function _post(req: Request, collectionId: string): Promise<Response> {
     return handleMcApiError(err, 'movie_create');
   }
 }
-

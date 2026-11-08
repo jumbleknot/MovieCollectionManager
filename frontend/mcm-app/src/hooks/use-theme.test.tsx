@@ -36,9 +36,7 @@ describe('use-theme', () => {
     await waitFor(() => expect(result.current.theme).toBe('dark'));
     await act(() => result.current.toggle());
     expect(result.current.theme).toBe('light');
-    await waitFor(async () =>
-      expect(await AsyncStorage.getItem('mcm.theme')).toBe('light'),
-    );
+    await waitFor(async () => expect(await AsyncStorage.getItem('mcm.theme')).toBe('light'));
   });
 
   it('falls back to dark for an unrecognized stored value', async () => {

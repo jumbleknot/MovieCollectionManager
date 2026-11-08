@@ -61,11 +61,27 @@ async def _require_movie_mcp() -> None:
 
 def _movie_body(title: str, *, owned: bool = True, tags: list[str] | None = None) -> dict[str, Any]:
     return {
-        "title": title, "year": 1999, "contentType": "Movie", "language": "English",
-        "owned": owned, "ripped": False, "childrens": False, "ownedMedia": [], "ripQuality": [],
-        "genres": ["Sci-Fi"], "rated": "R", "directors": [], "actors": [], "tags": tags or [],
-        "movieSet": None, "originalTitle": None, "releaseDate": None, "outline": None,
-        "plot": None, "runtime": None, "externalIds": [],
+        "title": title,
+        "year": 1999,
+        "contentType": "Movie",
+        "language": "English",
+        "owned": owned,
+        "ripped": False,
+        "childrens": False,
+        "ownedMedia": [],
+        "ripQuality": [],
+        "genres": ["Sci-Fi"],
+        "rated": "R",
+        "directors": [],
+        "actors": [],
+        "tags": tags or [],
+        "movieSet": None,
+        "originalTitle": None,
+        "releaseDate": None,
+        "outline": None,
+        "plot": None,
+        "runtime": None,
+        "externalIds": [],
     }
 
 
@@ -200,8 +216,10 @@ async def test_organize_remove_batch_applies_on_approval(
         config = _config(f"t047-rm-{uuid.uuid4().hex[:8]}", subject_token)
 
         paused = await graph.ainvoke(
-            {"messages": [("user", f"remove Alpha and Gamma from {name}")],
-             "target_collection_name": name},
+            {
+                "messages": [("user", f"remove Alpha and Gamma from {name}")],
+                "target_collection_name": name,
+            },
             config,
         )
         assert "__interrupt__" in paused
@@ -228,8 +246,10 @@ async def test_organize_skips_drifted_item_without_aborting_batch(
         graph = _graph(_live_cfg(reexchange_env, _plan_remove("Alpha", "Beta")))
         config = _config(f"t047-drift-{uuid.uuid4().hex[:8]}", subject_token)
         await graph.ainvoke(
-            {"messages": [("user", f"remove Alpha and Beta from {name}")],
-             "target_collection_name": name},
+            {
+                "messages": [("user", f"remove Alpha and Beta from {name}")],
+                "target_collection_name": name,
+            },
             config,
         )
         # Drift: Beta is deleted out-of-band AFTER the proposal was built, BEFORE approval.
@@ -286,8 +306,10 @@ async def test_organize_update_flips_owned_on_approval(
         config = _config(f"t070-upd-{uuid.uuid4().hex[:8]}", subject_token)
 
         paused = await graph.ainvoke(
-            {"messages": [("user", f"mark Alpha as owned in {name}")],
-             "target_collection_name": name},
+            {
+                "messages": [("user", f"mark Alpha as owned in {name}")],
+                "target_collection_name": name,
+            },
             config,
         )
         assert "__interrupt__" in paused
@@ -310,15 +332,15 @@ async def test_organize_update_adds_tag_on_approval(
     await _require_movie_mcp()
     token = await _downscoped(subject_token, reexchange_env)
     name = f"t070-tag-{uuid.uuid4().hex[:8]}"
-    collection_id, _ = await _seed_collection(
-        token, name, [_movie_body("Alpha", tags=["scifi"])]
-    )
+    collection_id, _ = await _seed_collection(token, name, [_movie_body("Alpha", tags=["scifi"])])
     try:
         graph = _graph(_live_cfg(reexchange_env, _plan_update("Alpha", {"addTags": ["favorite"]})))
         config = _config(f"t070-tag-{uuid.uuid4().hex[:8]}", subject_token)
         await graph.ainvoke(
-            {"messages": [("user", f"tag Alpha as favorite in {name}")],
-             "target_collection_name": name},
+            {
+                "messages": [("user", f"tag Alpha as favorite in {name}")],
+                "target_collection_name": name,
+            },
             config,
         )
         final = await graph.ainvoke(Command(resume={"decision": "approved"}), config)
@@ -338,17 +360,17 @@ async def test_organize_move_relocates_movie_on_approval(
     token = await _downscoped(subject_token, reexchange_env)
     src_name = f"t070-mv-src-{uuid.uuid4().hex[:8]}"
     dst_name = f"t070-mv-dst-{uuid.uuid4().hex[:8]}"
-    src_id, _ = await _seed_collection(
-        token, src_name, [_movie_body("Alpha"), _movie_body("Beta")]
-    )
+    src_id, _ = await _seed_collection(token, src_name, [_movie_body("Alpha"), _movie_body("Beta")])
     dst_id, _ = await _seed_collection(token, dst_name, [])
     try:
         graph = _graph(_live_cfg(reexchange_env, _plan_move("Alpha", dst_name)))
         config = _config(f"t070-mv-{uuid.uuid4().hex[:8]}", subject_token)
 
         paused = await graph.ainvoke(
-            {"messages": [("user", f"move Alpha from {src_name} to {dst_name}")],
-             "target_collection_name": src_name},
+            {
+                "messages": [("user", f"move Alpha from {src_name} to {dst_name}")],
+                "target_collection_name": src_name,
+            },
             config,
         )
         assert "__interrupt__" in paused
@@ -358,8 +380,8 @@ async def test_organize_move_relocates_movie_on_approval(
 
         final = await graph.ainvoke(Command(resume={"decision": "approved"}), config)
         assert final["status"] == "completed"
-        assert await _movie_titles(token, src_id) == {"Beta"}    # Alpha left the source
-        assert await _movie_titles(token, dst_id) == {"Alpha"}   # Alpha arrived in the dest
+        assert await _movie_titles(token, src_id) == {"Beta"}  # Alpha left the source
+        assert await _movie_titles(token, dst_id) == {"Alpha"}  # Alpha arrived in the dest
     finally:
         await _delete_collection(token, src_id)
         await _delete_collection(token, dst_id)

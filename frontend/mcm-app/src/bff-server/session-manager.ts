@@ -144,9 +144,7 @@ export async function terminateAllSessions(userId: string): Promise<void> {
 async function evictOldestSession(userId: string): Promise<void> {
   const sessionIds = await getUserSessionIds(userId);
 
-  const sessions = await Promise.all(
-    sessionIds.map((id) => getSession(id)),
-  );
+  const sessions = await Promise.all(sessionIds.map((id) => getSession(id)));
 
   const validSessions = sessions.filter((s): s is Session => s !== null);
 

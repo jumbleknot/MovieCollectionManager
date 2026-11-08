@@ -102,6 +102,13 @@ Source: `specs/085-bff-auth-fail-closed/` (spec, plan, research R1–R11, data m
     way, the gateway is not called.
   - **Measured:** Keycloak 26.5 answers a revoked subject token with `400 invalid_request "Invalid
     token"`, not the RFC's `invalid_token`.
+- **In the gateway, a claim read from the subject token is provenance, never a key to a credential**
+  (spec 094). `agui_identity.subject_user_id` decodes `sub` *without* checking the signature; Keycloak
+  validates the token only when it is exchanged. So anything that lets that `sub` alone select a
+  stored credential skips the validation. That is what the downscoped-token cache did: keyed by
+  `(user, audience)`, a hit returned before OPA and the exchange, and a JWT naming a victim's `sub`
+  received the victim's cached mc-service token. The key now includes a SHA-256 digest of the
+  presented token. Apply the same test to any new per-user cache or lookup in the gateway.
 - **Sign-in redirect registration retries until Keycloak confirms it.** `ensureClientRedirectUris`
   records "done" only when nothing was missing or the `PUT` returned `2xx` (item #753).
 - **Pre-rollout clients sign in again once.** The retired `mcm_access_token` / `mcm_refresh_token`

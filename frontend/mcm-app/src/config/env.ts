@@ -57,7 +57,7 @@ export const env = {
   cookieSecret: requireEnv('COOKIE_SECRET', ''),
 
   // Session config
-  sessionIdleTimeoutMs: parseInt(optionalEnv('SESSION_IDLE_TIMEOUT_MS', '1800000'), 10),  // 30 min
+  sessionIdleTimeoutMs: parseInt(optionalEnv('SESSION_IDLE_TIMEOUT_MS', '1800000'), 10), // 30 min
   sessionAbsoluteTimeoutMs: parseInt(optionalEnv('SESSION_ABSOLUTE_TIMEOUT_MS', '86400000'), 10), // 24 hr
   maxConcurrentSessions: parseInt(optionalEnv('MAX_CONCURRENT_SESSIONS', '10'), 10),
 
@@ -136,7 +136,10 @@ export const env = {
   // deliberately not streamed, because a truncated artifact that looks complete is the worst
   // failure this feature can have. The reason names both the ceiling and the measured value.
   backupMaxMovies: parseInt(optionalEnv('BACKUP_MAX_MOVIES', '25000'), 10),
-  backupMaxUncompressedBytes: parseInt(optionalEnv('BACKUP_MAX_UNCOMPRESSED_BYTES', '67108864'), 10), // 64 MiB
+  backupMaxUncompressedBytes: parseInt(
+    optionalEnv('BACKUP_MAX_UNCOMPRESSED_BYTES', '67108864'),
+    10,
+  ), // 64 MiB
   // How often server.js pokes the loopback tick route. Not the schedule resolution — the tick
   // only looks for jobs already due, so a longer interval delays a run, it never skips one.
   backupTickIntervalMs: parseInt(optionalEnv('BACKUP_TICK_INTERVAL_MS', '60000'), 10),
@@ -149,7 +152,10 @@ export const env = {
   // accepted "it is 03:00" from anyone who also had the tick secret. An operator has to mean it.
   backupTickAllowTimeOverride: optionalEnv('BACKUP_TICK_ALLOW_TIME_OVERRIDE', '') === '1',
   // The three backup collections in the BFF's own Mongo, named like the two that precede them.
-  backupDestinationsCollection: optionalEnv('BACKUP_DESTINATIONS_COLLECTION', 'backup_destinations'),
+  backupDestinationsCollection: optionalEnv(
+    'BACKUP_DESTINATIONS_COLLECTION',
+    'backup_destinations',
+  ),
   backupJobsCollection: optionalEnv('BACKUP_JOBS_COLLECTION', 'backup_jobs'),
   backupRunsCollection: optionalEnv('BACKUP_RUNS_COLLECTION', 'backup_runs'),
 

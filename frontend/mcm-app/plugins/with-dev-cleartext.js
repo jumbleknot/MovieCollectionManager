@@ -40,9 +40,20 @@ const withDevCleartext = (config) => {
   config = withDangerousMod(config, [
     'android',
     async (cfg) => {
-      const xmlDir = path.join(cfg.modRequest.platformProjectRoot, 'app', 'src', 'main', 'res', 'xml');
+      const xmlDir = path.join(
+        cfg.modRequest.platformProjectRoot,
+        'app',
+        'src',
+        'main',
+        'res',
+        'xml',
+      );
       fs.mkdirSync(xmlDir, { recursive: true });
-      fs.writeFileSync(path.join(xmlDir, 'network_security_config.xml'), NETWORK_SECURITY_CONFIG, 'utf8');
+      fs.writeFileSync(
+        path.join(xmlDir, 'network_security_config.xml'),
+        NETWORK_SECURITY_CONFIG,
+        'utf8',
+      );
       return cfg;
     },
   ]);

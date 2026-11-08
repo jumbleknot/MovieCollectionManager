@@ -48,15 +48,21 @@ beforeEach(() => {
 
 describe('the consent request', () => {
   it('names the dedicated consent client, not the login client', async () => {
-    const { authorizationUrl } = await buildConsentRequest('http://localhost:8082/bff-api/backups/consent');
+    const { authorizationUrl } = await buildConsentRequest(
+      'http://localhost:8082/bff-api/backups/consent',
+    );
     expect(new URL(authorizationUrl).searchParams.get('client_id')).toBe('mcm-backup-consent');
   });
 
   it('falls back to the login client when no consent client is configured', async () => {
     // US3: production before the operator creates the client behaves exactly as before.
     mockEnv.backupConsentClientId = mockEnv.keycloakClientId;
-    const { authorizationUrl } = await buildConsentRequest('http://localhost:8082/bff-api/backups/consent');
-    expect(new URL(authorizationUrl).searchParams.get('client_id')).toBe('movie-collection-manager');
+    const { authorizationUrl } = await buildConsentRequest(
+      'http://localhost:8082/bff-api/backups/consent',
+    );
+    expect(new URL(authorizationUrl).searchParams.get('client_id')).toBe(
+      'movie-collection-manager',
+    );
   });
 });
 

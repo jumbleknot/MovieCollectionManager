@@ -399,9 +399,7 @@ def _organize_item(thread_id: str, proposal_id: str, item_id: str, op: OrganizeO
     )
 
 
-def chunk_operations(
-    operations: list[OrganizeOp], cap: int = BATCH_CAP
-) -> list[list[OrganizeOp]]:
+def chunk_operations(operations: list[OrganizeOp], cap: int = BATCH_CAP) -> list[list[OrganizeOp]]:
     """Split a plan into sequential batches of at most `cap` operations (FR-009b).
 
     An empty plan yields no batches. `cap` must be ≥1.

@@ -31,7 +31,10 @@ const bff = createBffClient();
 const JWT = /eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}/;
 
 const sessionIdOf = (s: BffSession): string =>
-  s.setCookies.map((c) => c.split(';')[0]!).find((p) => p.startsWith('mcm_session_id='))!.slice('mcm_session_id='.length);
+  s.setCookies
+    .map((c) => c.split(';')[0]!)
+    .find((p) => p.startsWith('mcm_session_id='))!
+    .slice('mcm_session_id='.length);
 
 describe('server-held tokens (feature 085 US6, real stack)', () => {
   let member: TestUser;
@@ -73,7 +76,9 @@ describe('server-held tokens (feature 085 US6, real stack)', () => {
   it('an expired access token is renewed by the server; concurrent requests both succeed (AS-2, AS-5)', async () => {
     const s = await loginSession(member.username, member.password);
     const sid = sessionIdOf(s);
-    const before = JSON.parse((await bffRawSessionValues(sid)).tokens!) as { accessExpiresAt: number };
+    const before = JSON.parse((await bffRawSessionValues(sid)).tokens!) as {
+      accessExpiresAt: number;
+    };
     await bffAgeSessionAccessToken(sid);
 
     const [r1, r2] = await Promise.all([
@@ -85,11 +90,15 @@ describe('server-held tokens (feature 085 US6, real stack)', () => {
       expect(((r.headers['set-cookie'] as string[] | undefined) ?? []).join(';')).not.toMatch(JWT);
     }
 
-    const after = JSON.parse((await bffRawSessionValues(sid)).tokens!) as { accessExpiresAt: number };
+    const after = JSON.parse((await bffRawSessionValues(sid)).tokens!) as {
+      accessExpiresAt: number;
+    };
     expect(after.accessExpiresAt).toBeGreaterThan(Date.now());
     expect(after.accessExpiresAt).toBeGreaterThanOrEqual(before.accessExpiresAt);
     // The renewed session keeps working — a second, rotated-away renewal would have ended it.
-    expect((await bff.get('/bff-api/auth/user', { headers: { Cookie: s.cookie } })).status).toBe(200);
+    expect((await bff.get('/bff-api/auth/user', { headers: { Cookie: s.cookie } })).status).toBe(
+      200,
+    );
   });
 
   it('sign-out revokes the server-held tokens, ends the SSO session, and the reference is refused (AS-3, FR-020)', async () => {
@@ -99,7 +108,9 @@ describe('server-held tokens (feature 085 US6, real stack)', () => {
     expect(out.status).toBe(200);
 
     expect(await bffRawSessionValues(sid)).toEqual({ record: null, tokens: null });
-    expect((await bff.get('/bff-api/auth/user', { headers: { Cookie: s.cookie } })).status).toBe(401);
+    expect((await bff.get('/bff-api/auth/user', { headers: { Cookie: s.cookie } })).status).toBe(
+      401,
+    );
     expect(await getUserSessions(member.userId)).toEqual([]);
   });
 
@@ -109,8 +120,12 @@ describe('server-held tokens (feature 085 US6, real stack)', () => {
       headers: { Cookie: `mcm_access_token=${accessToken}; mcm_session_id=${randomUUID()}` },
     });
     expect(res.status).toBe(401);
-    const cleared = ((res.headers['set-cookie'] as string[] | undefined) ?? []).map((c) => c.split('=')[0]);
-    expect(cleared).toEqual(expect.arrayContaining(['mcm_session_id', 'mcm_access_token', 'mcm_refresh_token']));
+    const cleared = ((res.headers['set-cookie'] as string[] | undefined) ?? []).map(
+      (c) => c.split('=')[0],
+    );
+    expect(cleared).toEqual(
+      expect.arrayContaining(['mcm_session_id', 'mcm_access_token', 'mcm_refresh_token']),
+    );
   });
 
   it("a session holding another member's sealed tokens is refused and ended (FR-006 by construction)", async () => {

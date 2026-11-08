@@ -50,13 +50,19 @@ describe('BackupsSettingsScreen', () => {
   // an absent `schedule` as "leave it alone". Only an explicit `null` clears it.
   it('turning the schedule off sends an explicit null, which is what clears it', async () => {
     const job = {
-      id: 'job-1', label: 'Nightly', destinationId: 'dest-1', collectionIds: ['c1'], keepLast: 7,
-      enabled: true, schedule: { frequency: 'daily', hour: 3, minute: 0, timeZone: 'America/New_York' },
+      id: 'job-1',
+      label: 'Nightly',
+      destinationId: 'dest-1',
+      collectionIds: ['c1'],
+      keepLast: 7,
+      enabled: true,
+      schedule: { frequency: 'daily', hour: 3, minute: 0, timeZone: 'America/New_York' },
       nextRunAt: '2026-10-26T07:00:00.000Z',
     };
     (apiClient.get as jest.Mock).mockImplementation(async (url: string) => {
       if (url === '/bff-api/backups/jobs') return { data: [job] };
-      if (url === '/bff-api/backups/consent') return { data: { granted: true, grantedAt: '2026-10-25T20:42:28Z' } };
+      if (url === '/bff-api/backups/consent')
+        return { data: { granted: true, grantedAt: '2026-10-25T20:42:28Z' } };
       return { data: [] };
     });
 

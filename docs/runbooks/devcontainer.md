@@ -1014,6 +1014,14 @@ them (`cargo`, `uv sync`, the Python integration tiers). Compose stacks still bu
 Rust/Python images *inside* nested Docker builds, so the pilot image does not need those toolchains
 for `pnpm nx build` / integration tests — it simply has them anyway.
 
+**The baked watchman does not run (measured 2026-11-08).** The prebuilt
+`watchman v2024.01.22.00` links `libcrypto.so.1.1`, and bookworm ships only `libcrypto.so.3`, so
+every call fails with `error while loading shared libraries: libcrypto.so.1.1`. `pnpm nx test mcm-app`
+is unaffected, but a bare `npx jest <file>` from `frontend/mcm-app` exits 1 printing only the watchman
+error, with no test result. That reads as a test failure, and it is not one. Run single files as
+`npx jest --no-watchman --maxWorkers=1 <paths>`. Metro falls back to its Node crawler. Fixing the image
+(a watchman build against OpenSSL 3, or dropping it) is item #963.
+
 ## Spec Kit — `pwsh` is half of the SDD toolchain (item #221)
 
 The Spec Kit lifecycle scripts ship as **PowerShell only** (`.specify/scripts/powershell/`), so

@@ -40,7 +40,13 @@ jest.mock('@/bff-server/session-tokens', () => ({
 }));
 
 jest.mock('@/bff-server/logger', () => ({
-  logger: { audit: jest.fn(), warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+  logger: {
+    audit: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+  },
 }));
 
 import { POST } from '@/app/bff-api/auth/logout+api';
@@ -59,9 +65,15 @@ function makeRequest(cookie = 'mcm_session_id=session-abc'): Parameters<typeof P
 describe('POST /bff-api/auth/logout', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (readLiveSessionWithTokens as jest.Mock).mockResolvedValue({ session: SESSION, tokensRaw: 'sealed' });
+    (readLiveSessionWithTokens as jest.Mock).mockResolvedValue({
+      session: SESSION,
+      tokensRaw: 'sealed',
+    });
     (openSessionTokens as jest.Mock).mockReturnValue({
-      accessToken: 'held-access', refreshToken: 'held-refresh', accessExpiresAt: 0, refreshExpiresAt: 0,
+      accessToken: 'held-access',
+      refreshToken: 'held-refresh',
+      accessExpiresAt: 0,
+      refreshExpiresAt: 0,
     });
   });
 
@@ -112,7 +124,9 @@ describe('POST /bff-api/auth/logout', () => {
   });
 
   it('a session whose tokens cannot be opened is still ended', async () => {
-    (openSessionTokens as jest.Mock).mockImplementationOnce(() => { throw new Error('bad record'); });
+    (openSessionTokens as jest.Mock).mockImplementationOnce(() => {
+      throw new Error('bad record');
+    });
     await POST(makeRequest());
     expect(revokeToken).not.toHaveBeenCalled();
     expect(terminateSession).toHaveBeenCalledWith('session-abc', 'user-1');

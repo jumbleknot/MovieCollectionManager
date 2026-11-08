@@ -68,10 +68,17 @@ describe('JSON output format', () => {
   });
 
   it('sets correct level for each method', () => {
-    logger.debug('d'); expect(capturedEntry(logSpy)['level']).toBe('debug'); logSpy.mockClear();
-    logger.info('i');  expect(capturedEntry(logSpy)['level']).toBe('info');  logSpy.mockClear();
-    logger.warn('w');  expect(capturedEntry(errorSpy)['level']).toBe('warn'); errorSpy.mockClear();
-    logger.error('e'); expect(capturedEntry(errorSpy)['level']).toBe('error');
+    logger.debug('d');
+    expect(capturedEntry(logSpy)['level']).toBe('debug');
+    logSpy.mockClear();
+    logger.info('i');
+    expect(capturedEntry(logSpy)['level']).toBe('info');
+    logSpy.mockClear();
+    logger.warn('w');
+    expect(capturedEntry(errorSpy)['level']).toBe('warn');
+    errorSpy.mockClear();
+    logger.error('e');
+    expect(capturedEntry(errorSpy)['level']).toBe('error');
   });
 
   it('includes context fields in output', () => {
@@ -97,7 +104,15 @@ describe('sensitive field redaction', () => {
   });
 
   it('redacts token variants', () => {
-    logger.info('test', { token: 'tok', accessToken: 'at', refreshToken: 'rt', idToken: 'it', id_token: 'it2', access_token: 'at2', refresh_token: 'rt2' });
+    logger.info('test', {
+      token: 'tok',
+      accessToken: 'at',
+      refreshToken: 'rt',
+      idToken: 'it',
+      id_token: 'it2',
+      access_token: 'at2',
+      refresh_token: 'rt2',
+    });
     const entry = capturedEntry(logSpy);
     expect(entry['token']).toBe('[REDACTED]');
     expect(entry['accessToken']).toBe('[REDACTED]');
@@ -176,7 +191,10 @@ describe('Error serialization', () => {
 
   it('serializes custom Error subclass with correct name', () => {
     class AuthError extends Error {
-      constructor() { super('auth failed'); this.name = 'AuthError'; }
+      constructor() {
+        super('auth failed');
+        this.name = 'AuthError';
+      }
     }
     logger.error('auth error', { error: new AuthError() });
     const entry = capturedEntry(errorSpy) as { error: Record<string, unknown> };
@@ -185,7 +203,9 @@ describe('Error serialization', () => {
   });
 
   it('does not throw when context contains a nested Error', () => {
-    expect(() => logger.warn('nested error', { wrapper: { cause: new Error('cause') } })).not.toThrow();
+    expect(() =>
+      logger.warn('nested error', { wrapper: { cause: new Error('cause') } }),
+    ).not.toThrow();
   });
 });
 

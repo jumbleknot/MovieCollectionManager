@@ -36,9 +36,15 @@ const CLARIFY_TIMEOUT = 120_000;
 const MOVIE_TITLE = 'Coherence';
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 test.describe('Assistant reference resolution inside settings (feature 062)', () => {
@@ -47,30 +53,46 @@ test.describe('Assistant reference resolution inside settings (feature 062)', ()
     'Needs the production-node gateway. Run with E2E_AGENT_PRODUCTION=1.',
   );
 
-  test('"add <movie> to this" on a settings area asks the user to clarify', { tag: '@model-decision' }, async ({ page }) => {
-    test.setTimeout(300_000);
+  test(
+    '"add <movie> to this" on a settings area asks the user to clarify',
+    { tag: '@model-decision' },
+    async ({ page }) => {
+      test.setTimeout(300_000);
 
-    // Boot on home so the dock initializes, then navigate IN-APP to a settings area — the same
-    // path assistant-context.spec.ts documents (a fresh deep-load remounts the app tree and
-    // resets the dock, a deep-load-only quirk that does not affect the real UX).
-    await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
-    await openDock(page);
+      // Boot on home so the dock initializes, then navigate IN-APP to a settings area — the same
+      // path assistant-context.spec.ts documents (a fresh deep-load remounts the app tree and
+      // resets the dock, a deep-load-only quirk that does not affect the real UX).
+      await page.goto(`${BASE}/home`);
+      await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      });
+      await openDock(page);
 
-    await page.click('[data-testid="nav-settings"]');
-    await page.waitForSelector('[data-testid="settings-profile-screen"]', { state: 'visible', timeout: 30000 });
-    await page.click('[data-testid="settings-nav-backups"]');
-    await page.waitForSelector('[data-testid="settings-backups-screen"]', { state: 'visible', timeout: 30000 });
+      await page.click('[data-testid="nav-settings"]');
+      await page.waitForSelector('[data-testid="settings-profile-screen"]', {
+        state: 'visible',
+        timeout: 30000,
+      });
+      await page.click('[data-testid="settings-nav-backups"]');
+      await page.waitForSelector('[data-testid="settings-backups-screen"]', {
+        state: 'visible',
+        timeout: 30000,
+      });
 
-    await page.fill('[data-testid="assistant-dock-input"]', `add the movie ${MOVIE_TITLE} (2013) to this`);
-    await page.click('[data-testid="assistant-dock-send"]');
+      await page.fill(
+        '[data-testid="assistant-dock-input"]',
+        `add the movie ${MOVIE_TITLE} (2013) to this`,
+      );
+      await page.click('[data-testid="assistant-dock-send"]');
 
-    // `settings-backups` resolves no collection target, so the assistant clarifies — it never
-    // guesses and never acts on a target left over from an earlier screen.
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
-      /which collection/i,
-      { timeout: CLARIFY_TIMEOUT },
-    );
-    await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
-  });
+      // `settings-backups` resolves no collection target, so the assistant clarifies — it never
+      // guesses and never acts on a target left over from an earlier screen.
+      await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toContainText(
+        /which collection/i,
+        { timeout: CLARIFY_TIMEOUT },
+      );
+      await expect(page.locator('[data-testid="approval-request"]')).toHaveCount(0);
+    },
+  );
 });

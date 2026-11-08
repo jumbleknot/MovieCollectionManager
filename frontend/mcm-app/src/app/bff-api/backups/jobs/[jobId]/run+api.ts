@@ -36,7 +36,9 @@ export async function POST(req: Request, { jobId }: Params): Promise<Response> {
       return problem('A backup is already running', 409, 'Wait for the current backup to finish.');
     }
     try {
-      const doc = (await (await getBackupJobsCollection()).findOne({ _id: jobId, userId })) as BackupJob;
+      const doc = (await (
+        await getBackupJobsCollection()
+      ).findOne({ _id: jobId, userId })) as BackupJob;
       const run = await runBackup({ userId, jwt, job: doc, trigger: 'manual' });
 
       const summary: RunSummary = {

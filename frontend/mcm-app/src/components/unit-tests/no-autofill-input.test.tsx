@@ -58,7 +58,9 @@ describe('NoAutoFillInput', () => {
 
     it('uses autoComplete=new-password for a secureTextEntry field on web (Chrome ignores "off" on password fields)', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
-      const { getByTestId } = await render(<NoAutoFillInput testID="secret-input" secureTextEntry />);
+      const { getByTestId } = await render(
+        <NoAutoFillInput testID="secret-input" secureTextEntry />,
+      );
       const input = getByTestId('secret-input');
       // <input type="password"> only respects autocomplete="new-password" to block the
       // browser's built-in password manager; "off" is ignored on password fields (FR-006/NFR-Sec).
@@ -67,7 +69,9 @@ describe('NoAutoFillInput', () => {
 
     it('still injects the third-party password-manager ignore attrs on a secureTextEntry field', async () => {
       Object.defineProperty(Platform, 'OS', { value: 'web', writable: true });
-      const { getByTestId } = await render(<NoAutoFillInput testID="secret-input" secureTextEntry />);
+      const { getByTestId } = await render(
+        <NoAutoFillInput testID="secret-input" secureTextEntry />,
+      );
       const input = getByTestId('secret-input');
       expect(input.props['data-lpignore']).toBe('true');
       expect(input.props['data-1p-ignore']).toBe('');

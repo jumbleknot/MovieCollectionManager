@@ -108,8 +108,14 @@ def _web_enrichers() -> tuple[Any, Any]:
             args["year"] = year
         with tmdb_key_scope(TMDB_KEY):
             out = await invoke_tool(
-                agent="curator", tool_name="search_title", arguments=args, server=WEB,
-                subject_token=None, call=call_mcp_tool, limiter=limiter, acquire_token=_no_token,
+                agent="curator",
+                tool_name="search_title",
+                arguments=args,
+                server=WEB,
+                subject_token=None,
+                call=call_mcp_tool,
+                limiter=limiter,
+                acquire_token=_no_token,
             )
         assert out.ok, f"search_title failed: {out.error}"
         return out.data
@@ -117,9 +123,14 @@ def _web_enrichers() -> tuple[Any, Any]:
     async def details(source_id: str) -> dict[str, Any]:
         with tmdb_key_scope(TMDB_KEY):
             out = await invoke_tool(
-                agent="curator", tool_name="get_movie_details",
-                arguments={"sourceId": source_id}, server=WEB,
-                subject_token=None, call=call_mcp_tool, limiter=limiter, acquire_token=_no_token,
+                agent="curator",
+                tool_name="get_movie_details",
+                arguments={"sourceId": source_id},
+                server=WEB,
+                subject_token=None,
+                call=call_mcp_tool,
+                limiter=limiter,
+                acquire_token=_no_token,
             )
         assert out.ok, f"get_movie_details failed: {out.error}"
         return out.data
@@ -151,11 +162,27 @@ def _mc(token: str) -> httpx.AsyncClient:
 def _movie_body(title: str, year: int) -> dict[str, Any]:
     """Minimal valid movie payload for mc-service (mirrors test_organize_batch._movie_body)."""
     return {
-        "title": title, "year": year, "contentType": "Movie", "language": "English",
-        "owned": True, "ripped": False, "childrens": False, "ownedMedia": [], "ripQuality": [],
-        "genres": ["Sci-Fi"], "rated": "R", "directors": [], "actors": [], "tags": [],
-        "movieSet": None, "originalTitle": None, "releaseDate": None, "outline": None,
-        "plot": None, "runtime": None, "externalIds": [],
+        "title": title,
+        "year": year,
+        "contentType": "Movie",
+        "language": "English",
+        "owned": True,
+        "ripped": False,
+        "childrens": False,
+        "ownedMedia": [],
+        "ripQuality": [],
+        "genres": ["Sci-Fi"],
+        "rated": "R",
+        "directors": [],
+        "actors": [],
+        "tags": [],
+        "movieSet": None,
+        "originalTitle": None,
+        "releaseDate": None,
+        "outline": None,
+        "plot": None,
+        "runtime": None,
+        "externalIds": [],
     }
 
 
@@ -217,9 +244,7 @@ async def test_avatar_resolve_option_prefers_full_title_over_bare_prefix() -> No
     titles_lower = [str(o.get("title", "")).lower() for o in options]
 
     # Find the bare "Avatar" and the "Avatar: The Way of Water" in the live results.
-    bare_avatar = next(
-        (o for o in options if str(o.get("title", "")).lower() == "avatar"), None
-    )
+    bare_avatar = next((o for o in options if str(o.get("title", "")).lower() == "avatar"), None)
     way_of_water = next(
         (o for o in options if "way of water" in str(o.get("title", "")).lower()), None
     )
@@ -259,11 +284,9 @@ async def test_avatar_resolve_option_prefers_full_title_over_bare_prefix() -> No
         assert year_chosen is not None, (
             f"Year-bearing pick 'Avatar ({way_of_water_year})' returned None"
         )
-        assert str(year_chosen.get("title", "")).lower() == str(
-            way_of_water.get("title", "")
-        ).lower(), (
-            f"Year-bearing pick resolved to wrong film: {year_chosen.get('title')!r}"
-        )
+        assert (
+            str(year_chosen.get("title", "")).lower() == str(way_of_water.get("title", "")).lower()
+        ), f"Year-bearing pick resolved to wrong film: {year_chosen.get('title')!r}"
 
 
 # ── Test B — _match_movie against REAL seeded data ───────────────────────────

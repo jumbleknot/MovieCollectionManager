@@ -21,7 +21,9 @@ describe('RenderImportReport', () => {
     const { getByTestId, queryByTestId } = await render(
       <RenderImportReport imported={200} skipped={SKIPPED} failed={FAILED} />,
     );
-    expect(getByTestId('import-report-summary')).toHaveTextContent('Imported 200. 2 skipped, 1 failed.');
+    expect(getByTestId('import-report-summary')).toHaveTextContent(
+      'Imported 200. 2 skipped, 1 failed.',
+    );
     expect(queryByTestId('import-report-detail')).toBeNull(); // collapsed by default
   });
 

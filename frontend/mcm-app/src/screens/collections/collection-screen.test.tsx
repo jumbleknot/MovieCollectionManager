@@ -14,7 +14,12 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@/test-support/render';
 import { CollectionScreen } from '@/screens/collections/collection-screen';
-import type { Movie, ColumnVisibility, FilterOptionsData, MovieListFilters } from '@/types/collection';
+import type {
+  Movie,
+  ColumnVisibility,
+  FilterOptionsData,
+  MovieListFilters,
+} from '@/types/collection';
 
 // ─── Mock dependencies ─────────────────────────────────────────────────────────
 
@@ -27,41 +32,87 @@ const mockToggleColumn = jest.fn();
 const mockFetchFilterOptions = jest.fn().mockResolvedValue(undefined);
 
 const VISIBLE_COLS: ColumnVisibility = {
-  year: true, contentType: true, language: false, owned: true, ripped: true,
-  childrens: false, genres: false, rated: false, ownedMedia: false, ripQuality: false,
-  runtime: false, directors: false, actors: false,
+  year: true,
+  contentType: true,
+  language: false,
+  owned: true,
+  ripped: true,
+  childrens: false,
+  genres: false,
+  rated: false,
+  ownedMedia: false,
+  ripQuality: false,
+  runtime: false,
+  directors: false,
+  actors: false,
 };
 
 const FILTER_OPTIONS: FilterOptionsData = {
-  genres: ['Action'], contentTypes: ['Movie'], rated: ['R'],
-  languages: ['English'], decades: [2000], ownedMedia: ['Blu-Ray'], ripQuality: ['1080p'],
+  genres: ['Action'],
+  contentTypes: ['Movie'],
+  rated: ['R'],
+  languages: ['English'],
+  decades: [2000],
+  ownedMedia: ['Blu-Ray'],
+  ripQuality: ['1080p'],
 };
 
 const MOCK_MOVIES: Movie[] = [
   {
-    movieId: 'mov-1', collectionId: 'col-1', title: 'The Matrix', year: 1999,
-    contentType: 'Movie', language: 'English', owned: true, ripped: true, childrens: false,
-    ownedMedia: ['Blu-Ray'], ripQuality: ['Blu-Ray'], genres: [], rated: null,
-    directors: [], actors: [], tags: [], movieSet: null, originalTitle: null,
-    releaseDate: null, outline: null, plot: null, runtime: 136, externalIds: [],
-    createdAt: '2026-05-23T00:00:00.000Z', updatedAt: '2026-05-23T00:00:00.000Z',
+    movieId: 'mov-1',
+    collectionId: 'col-1',
+    title: 'The Matrix',
+    year: 1999,
+    contentType: 'Movie',
+    language: 'English',
+    owned: true,
+    ripped: true,
+    childrens: false,
+    ownedMedia: ['Blu-Ray'],
+    ripQuality: ['Blu-Ray'],
+    genres: [],
+    rated: null,
+    directors: [],
+    actors: [],
+    tags: [],
+    movieSet: null,
+    originalTitle: null,
+    releaseDate: null,
+    outline: null,
+    plot: null,
+    runtime: 136,
+    externalIds: [],
+    createdAt: '2026-05-23T00:00:00.000Z',
+    updatedAt: '2026-05-23T00:00:00.000Z',
   },
 ];
 
 jest.mock('@/hooks/use-movies', () => ({
   useMovies: jest.fn(() => ({
     // Single-movie (not used in this screen)
-    movie: null, isLoading: false, error: null,
-    getMovie: jest.fn(), createMovie: jest.fn(), updateMovie: jest.fn(),
+    movie: null,
+    isLoading: false,
+    error: null,
+    getMovie: jest.fn(),
+    createMovie: jest.fn(),
+    updateMovie: jest.fn(),
     // List
-    movies: MOCK_MOVIES, isLoadingList: false, listError: null, hasMore: false,
-    listMovies: mockListMovies, loadMore: mockLoadMore,
+    movies: MOCK_MOVIES,
+    isLoadingList: false,
+    listError: null,
+    hasMore: false,
+    listMovies: mockListMovies,
+    loadMore: mockLoadMore,
     // Search
-    search: '', setSearch: mockSetSearch,
+    search: '',
+    setSearch: mockSetSearch,
     // Filters
-    filters: {} as MovieListFilters, setFilter: mockSetFilter, clearFilters: mockClearFilters,
+    filters: {} as MovieListFilters,
+    setFilter: mockSetFilter,
+    clearFilters: mockClearFilters,
     // Filter options
-    filterOptions: FILTER_OPTIONS, isLoadingFilterOptions: false,
+    filterOptions: FILTER_OPTIONS,
+    isLoadingFilterOptions: false,
     fetchFilterOptions: mockFetchFilterOptions,
   })),
 }));
@@ -76,9 +127,17 @@ jest.mock('@/hooks/use-column-visibility', () => ({
 
 jest.mock('@/hooks/use-auth', () => ({
   useAuth: jest.fn(() => ({
-    user: { id: 'test-user-id', username: 'testuser', email: 'test@example.com',
-            firstName: 'Test', lastName: 'User', roles: ['mc-user'],
-            emailVerified: true, accountStatus: 'active', createdAt: '2026-01-01T00:00:00Z' },
+    user: {
+      id: 'test-user-id',
+      username: 'testuser',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      roles: ['mc-user'],
+      emailVerified: true,
+      accountStatus: 'active',
+      createdAt: '2026-01-01T00:00:00Z',
+    },
     isAuthenticated: true,
     isLoading: false,
     refreshAuth: jest.fn(),
@@ -157,9 +216,7 @@ describe('CollectionScreen', () => {
   it('tapping a movie row navigates to movie detail screen', async () => {
     const { getAllByTestId } = await render(<CollectionScreen collectionId="col-1" />);
     await fireEvent.press(getAllByTestId('movie-list-item-row')[0]);
-    expect(mockPush).toHaveBeenCalledWith(
-      expect.stringContaining('mov-1'),
-    );
+    expect(mockPush).toHaveBeenCalledWith(expect.stringContaining('mov-1'));
   });
 
   it('delegates setSearch to useMovies hook when search changes', async () => {

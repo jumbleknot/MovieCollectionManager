@@ -39,8 +39,8 @@ describe('useSessionTimeout', () => {
     await renderHook(() =>
       useSessionTimeout({
         onTimeout,
-        idleTimeoutMs: 86400000,    // Long idle - won't trigger first
-        absoluteTimeoutMs: 10000,   // Short absolute
+        idleTimeoutMs: 86400000, // Long idle - won't trigger first
+        absoluteTimeoutMs: 10000, // Short absolute
         enabled: true,
       }),
     );

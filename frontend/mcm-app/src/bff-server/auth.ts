@@ -15,8 +15,16 @@
 
 import { env } from '@/config/env';
 import { validateJwt, extractRoles } from '@/bff-server/token-service';
-import { readLiveSessionWithTokens, terminateSession, touchSession } from '@/bff-server/session-manager';
-import { ensureFreshTokens, openSessionTokens, type SessionTokens } from '@/bff-server/session-tokens';
+import {
+  readLiveSessionWithTokens,
+  terminateSession,
+  touchSession,
+} from '@/bff-server/session-manager';
+import {
+  ensureFreshTokens,
+  openSessionTokens,
+  type SessionTokens,
+} from '@/bff-server/session-tokens';
 import { logger } from '@/bff-server/logger';
 import type { JWTPayload, Session, UserProfile } from '@/types/auth';
 import { AuthError, AuthErrorCode } from '@/types/errors';
@@ -102,12 +110,21 @@ export async function requireAuth(
   const live = await readLiveSessionWithTokens(sessionId);
   if ('expired' in live) {
     if (live.expired === 'missing') {
-      throw sessionEnded(AuthErrorCode.SESSION_NOT_FOUND, 'Your session could not be found. Please log in again.');
+      throw sessionEnded(
+        AuthErrorCode.SESSION_NOT_FOUND,
+        'Your session could not be found. Please log in again.',
+      );
     }
     logger.audit('session_expired', { userId: live.userId, reason: live.expired });
     throw live.expired === 'absolute'
-      ? sessionEnded(AuthErrorCode.SESSION_ABSOLUTE_TIMEOUT, 'Your session has ended for security purposes. Please log in again.')
-      : sessionEnded(AuthErrorCode.SESSION_IDLE_TIMEOUT, 'Your session has ended due to inactivity. Please log in again.');
+      ? sessionEnded(
+          AuthErrorCode.SESSION_ABSOLUTE_TIMEOUT,
+          'Your session has ended for security purposes. Please log in again.',
+        )
+      : sessionEnded(
+          AuthErrorCode.SESSION_IDLE_TIMEOUT,
+          'Your session has ended due to inactivity. Please log in again.',
+        );
   }
 
   const { session, tokensRaw } = live;
@@ -119,7 +136,10 @@ export async function requireAuth(
     // A session created before 085 (no tokens key), or a record that does not open for this
     // session and owner. Neither is trusted, and neither is migrated (FR-022).
     await terminateSession(session.sessionId, session.userId).catch(() => {});
-    throw sessionEnded(AuthErrorCode.SESSION_NOT_FOUND, 'Your session could not be found. Please log in again.');
+    throw sessionEnded(
+      AuthErrorCode.SESSION_NOT_FOUND,
+      'Your session could not be found. Please log in again.',
+    );
   }
 
   try {
@@ -143,11 +163,19 @@ export async function requireAuth(
   if (payload.sub !== session.userId) {
     await terminateSession(session.sessionId, session.userId).catch(() => {});
     logger.audit('session_refresh_owner_mismatch', { userId: session.userId });
-    throw sessionEnded(AuthErrorCode.SESSION_OWNER_MISMATCH, 'Your session could not be renewed. Please log in again.');
+    throw sessionEnded(
+      AuthErrorCode.SESSION_OWNER_MISMATCH,
+      'Your session could not be renewed. Please log in again.',
+    );
   }
 
   await touchSession(session);
-  return { payload, user: buildUserProfileFromPayload(payload), accessToken: tokens.accessToken, session };
+  return {
+    payload,
+    user: buildUserProfileFromPayload(payload),
+    accessToken: tokens.accessToken,
+    session,
+  };
 }
 
 /**
@@ -173,7 +201,9 @@ export function extractSessionId(
 export function buildAuthCookies(sessionId: string): string[] {
   const secure = !env.isDevelopment ? '; Secure' : '';
   const maxAge = Math.floor(env.sessionAbsoluteTimeoutMs / 1000);
-  return [`${SESSION_ID_COOKIE}=${sessionId}; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=${maxAge}`];
+  return [
+    `${SESSION_ID_COOKIE}=${sessionId}; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=${maxAge}`,
+  ];
 }
 
 /**

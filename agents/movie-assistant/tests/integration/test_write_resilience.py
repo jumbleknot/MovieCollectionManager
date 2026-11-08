@@ -47,10 +47,16 @@ async def test_write_resilience_dead_letters_when_movie_mcp_unreachable(
 ) -> None:
     with caplog.at_level(logging.ERROR):
         outcome = await invoke_tool(
-            agent="organizer", tool_name="add_movie",
+            agent="organizer",
+            tool_name="add_movie",
             arguments={"collectionId": "c1", "idempotencyKey": "k1"},
-            server=_UNREACHABLE, subject_token="subj", call=call_mcp_tool,
-            limiter=_limiter(), acquire_token=_grant_token, max_retries=2, sleep=_no_sleep,
+            server=_UNREACHABLE,
+            subject_token="subj",
+            call=call_mcp_tool,
+            limiter=_limiter(),
+            acquire_token=_grant_token,
+            max_retries=2,
+            sleep=_no_sleep,
         )
 
     assert not outcome.ok
@@ -71,10 +77,16 @@ async def test_write_resilience_retries_transient_failure_then_succeeds() -> Non
         return McpCallResult(is_error=False, data={"movieId": "m1"}, text="ok")
 
     outcome = await invoke_tool(
-        agent="organizer", tool_name="add_movie",
+        agent="organizer",
+        tool_name="add_movie",
         arguments={"collectionId": "c1", "idempotencyKey": "k1"},
-        server=_MOVIE, subject_token="subj", call=flapping_call,
-        limiter=_limiter(), acquire_token=_grant_token, max_retries=2, sleep=_no_sleep,
+        server=_MOVIE,
+        subject_token="subj",
+        call=flapping_call,
+        limiter=_limiter(),
+        acquire_token=_grant_token,
+        max_retries=2,
+        sleep=_no_sleep,
     )
 
     assert outcome.ok and outcome.data == {"movieId": "m1"}

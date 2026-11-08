@@ -95,12 +95,8 @@ describe('runAccountDeletion — ordering', () => {
 
     await runAccountDeletion(input, recordingSteps(calls));
 
-    expect(calls.indexOf('deleteCollections')).toBeLessThan(
-      calls.indexOf('revokeStepUpToken'),
-    );
-    expect(calls.indexOf('deleteCollections')).toBeLessThan(
-      calls.indexOf('terminateSessions'),
-    );
+    expect(calls.indexOf('deleteCollections')).toBeLessThan(calls.indexOf('revokeStepUpToken'));
+    expect(calls.indexOf('deleteCollections')).toBeLessThan(calls.indexOf('terminateSessions'));
   });
 
   it('passes the step-up access token to the collection deletes, not the session token', async () => {

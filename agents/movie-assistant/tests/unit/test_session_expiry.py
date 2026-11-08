@@ -30,8 +30,14 @@ from src.session_expiry import (
 )
 
 _DETAIL = {
-    "source": "tmdb", "sourceId": "tmdb:603", "title": "The Matrix", "year": 1999,
-    "overview": "x", "genres": ["Science Fiction"], "posterUrl": "http://x", "language": "English",
+    "source": "tmdb",
+    "sourceId": "tmdb:603",
+    "title": "The Matrix",
+    "year": 1999,
+    "overview": "x",
+    "genres": ["Science Fiction"],
+    "posterUrl": "http://x",
+    "language": "English",
 }
 _COLLECTIONS = [{"collectionId": "a" * 24, "name": "Sci-Fi", "isDefault": False, "movieCount": 0}]
 

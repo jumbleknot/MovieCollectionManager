@@ -18,9 +18,10 @@ function computeRedirectUri(): string {
     // Use window.location.origin at runtime so the redirect URI is correct for any
     // deployment without requiring EXPO_PUBLIC_BFF_BASE_URL to be set at build time.
     // Falls back to the build-time env var (or localhost default) during SSR.
-    const base = typeof window !== 'undefined' && window.location != null
-      ? window.location.origin
-      : (process.env['EXPO_PUBLIC_BFF_BASE_URL'] || 'http://localhost:8081');
+    const base =
+      typeof window !== 'undefined' && window.location != null
+        ? window.location.origin
+        : process.env['EXPO_PUBLIC_BFF_BASE_URL'] || 'http://localhost:8081';
     return `${base}/auth-callback`;
   }
   return NATIVE_REDIRECT_URI;
@@ -43,8 +44,10 @@ export const KEYCLOAK_REALM = process.env['KEYCLOAK_REALM'] ?? 'grumpyrobot';
 // 2026-07-02). An empty value means "not provided" here, so treat it as absent.
 export const KEYCLOAK_URL =
   Platform.OS !== 'web'
-    ? (process.env['EXPO_PUBLIC_KEYCLOAK_NATIVE_URL'] || 'http://10.0.2.2:8099')
-    : (process.env['EXPO_PUBLIC_KEYCLOAK_URL'] || process.env['KEYCLOAK_URL'] || 'http://localhost:8099');
+    ? process.env['EXPO_PUBLIC_KEYCLOAK_NATIVE_URL'] || 'http://10.0.2.2:8099'
+    : process.env['EXPO_PUBLIC_KEYCLOAK_URL'] ||
+      process.env['KEYCLOAK_URL'] ||
+      'http://localhost:8099';
 
 export const KEYCLOAK_CLIENT_ID = process.env['KEYCLOAK_CLIENT_ID'] ?? 'movie-collection-manager';
 
@@ -60,11 +63,13 @@ export const keycloakConfig = {
   discoveryEndpoint: KEYCLOAK_DISCOVERY_ENDPOINT,
 
   // Getter so makeRedirectUri() is evaluated lazily, not at import time.
-  get redirectUri(): string { return computeRedirectUri(); },
+  get redirectUri(): string {
+    return computeRedirectUri();
+  },
 
   // Token lifetimes
-  accessTokenTtlSeconds: 900,      // 15 minutes
-  refreshTokenTtlSeconds: 604800,  // 7 days
+  accessTokenTtlSeconds: 900, // 15 minutes
+  refreshTokenTtlSeconds: 604800, // 7 days
 
   // PKCE code challenge method
   codeChallengeMethod: 'S256' as const,

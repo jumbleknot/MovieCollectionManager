@@ -60,7 +60,10 @@ export async function PATCH(req: Request, { jobId }: Params): Promise<Response> 
     // `schedule: null` CLEARS the schedule (the job becomes on-demand only); omitting it
     // preserves whatever is stored. The two must be distinguishable, or "leave the schedule
     // alone" and "remove the schedule" become the same request.
-    const patch = schedule === null ? { ...rest, schedule: undefined } : { ...rest, ...(schedule ? { schedule } : {}) };
+    const patch =
+      schedule === null
+        ? { ...rest, schedule: undefined }
+        : { ...rest, ...(schedule ? { schedule } : {}) };
 
     const updated = await jobStore.updateJob(userId, jobId, patch);
     if (!updated) return notFound();

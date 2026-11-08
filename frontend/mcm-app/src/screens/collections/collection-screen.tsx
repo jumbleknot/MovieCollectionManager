@@ -117,17 +117,22 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
   );
 
   const handleAddMovie = useCallback(() => {
-    router.push(
-      `/collections/${collectionId}/add-movie` as Parameters<typeof router.push>[0],
-    );
+    router.push(`/collections/${collectionId}/add-movie` as Parameters<typeof router.push>[0]);
   }, [router, collectionId]);
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.background?.val }]} edges={['bottom', 'left', 'right']}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: theme.background?.val }]}
+      edges={['bottom', 'left', 'right']}
+    >
       {/* Collection name header (013 Enhancement 1) — which collection the user is viewing.
           Hidden until the name loads so the layout doesn't jump on a slow/failed fetch. */}
       {collectionName ? (
-        <Text testID="collection-screen-name" style={[styles.collectionName, { color: theme.onSurface?.val }]} numberOfLines={1}>
+        <Text
+          testID="collection-screen-name"
+          style={[styles.collectionName, { color: theme.onSurface?.val }]}
+          numberOfLines={1}
+        >
           {collectionName}
         </Text>
       ) : null}
@@ -136,23 +141,40 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
       <MovieSearchBar value={search} onSearch={setSearch} />
 
       {/* Column selector */}
-      <ColumnSelector visibleColumns={visibleColumns} onToggle={(col: ColumnKey) => toggleColumn(col)} />
+      <ColumnSelector
+        visibleColumns={visibleColumns}
+        onToggle={(col: ColumnKey) => toggleColumn(col)}
+      />
 
       {/* Sort control (013 US1) — scalar columns currently shown + direction toggle */}
       <MovieSortControl
         sortBy={sortBy}
         sortDir={sortDir}
         visibleColumns={visibleColumns}
-        onChange={(field, dir) => { void setSort(field, dir); }}
+        onChange={(field, dir) => {
+          void setSort(field, dir);
+        }}
       />
 
       {/* Filter panel — always rendered; passes empty options while loading */}
       <MovieFilterPanel
-        filterOptions={filterOptions ?? { genres: [], contentTypes: [], rated: [], languages: [], decades: [], ownedMedia: [], ripQuality: [] }}
+        filterOptions={
+          filterOptions ?? {
+            genres: [],
+            contentTypes: [],
+            rated: [],
+            languages: [],
+            decades: [],
+            ownedMedia: [],
+            ripQuality: [],
+          }
+        }
         isLoading={isLoadingFilterOptions}
         activeFilters={filters}
         onFilterChange={handleFilterChange}
-        onClearFilters={() => { void clearFilters(); }}
+        onClearFilters={() => {
+          void clearFilters();
+        }}
       />
 
       {/* Count info line (013 US2) + Add Movie action, sharing one bar above the grid.
@@ -180,7 +202,9 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
           visibleColumns={visibleColumns}
           hasMore={hasMore}
           isLoadingMore={isLoadingList}
-          onLoadMore={() => { void loadMore(); }}
+          onLoadMore={() => {
+            void loadMore();
+          }}
           onMoviePress={handleMoviePress}
         />
       </View>

@@ -17,11 +17,7 @@ import {
   type TestUser,
 } from './helpers/keycloak-test-client';
 import { createBffClient } from './helpers/bff-test-server';
-import {
-  bffRawSessionValues,
-  bffCleanupUser,
-  closeBffRedis,
-} from './helpers/bff-redis-client';
+import { bffRawSessionValues, bffCleanupUser, closeBffRedis } from './helpers/bff-redis-client';
 import { loginSession } from './helpers/bff-session';
 
 const bff = createBffClient();

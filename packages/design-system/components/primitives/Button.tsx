@@ -19,38 +19,33 @@
  * All variants include the MD3 state-layer press/hover/focus ripple.
  */
 
-import React from 'react'
-import { ActivityIndicator } from 'react-native'
-import {
-  View,
-  styled,
-  useTheme,
-  type ViewProps,
-} from '@tamagui/core'
-import { Text } from './Text'
+import React from 'react';
+import { ActivityIndicator } from 'react-native';
+import { View, styled, useTheme, type ViewProps } from '@tamagui/core';
+import { Text } from './Text';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-export type ButtonVariant = 'filled' | 'filledTonal' | 'elevated' | 'outlined' | 'text'
-export type ButtonSize    = 'sm' | 'md' | 'lg'
+export type ButtonVariant = 'filled' | 'filledTonal' | 'elevated' | 'outlined' | 'text';
+export type ButtonSize = 'sm' | 'md' | 'lg';
 
 export interface ButtonProps extends Omit<ViewProps, 'onPress'> {
-  variant?:      ButtonVariant
-  size?:         ButtonSize
-  label:         string
-  icon?:         React.ReactNode
-  trailingIcon?: React.ReactNode
-  loading?:      boolean
-  disabled?:     boolean
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  label: string;
+  icon?: React.ReactNode;
+  trailingIcon?: React.ReactNode;
+  loading?: boolean;
+  disabled?: boolean;
   /** Destructive action — recolours the chosen variant onto the error palette (delete, logout…). */
-  danger?:       boolean
+  danger?: boolean;
   /** Allow the label to wrap (up to 3 lines) instead of truncating — for full-width list/option
    *  buttons with long text (e.g. the assistant's selectable result buttons). */
-  multiline?:    boolean
+  multiline?: boolean;
   /** Tamagui's own press handler type. Tamagui 3 types its events from React Native 0.87
    *  (@tamagui/react-native-types), where the press event narrowed; declaring react-native's
    *  `GestureResponderEvent` here no longer matches the frame it is forwarded to (feature 081 US10). */
-  onPress?:      ViewProps['onPress']
+  onPress?: ViewProps['onPress'];
 }
 
 // ─── Size config ──────────────────────────────────────────────────────────────
@@ -59,132 +54,149 @@ const sizeConfig = {
   sm: { height: 32, paddingH: 12, fontSize: 13, iconSize: 16 },
   md: { height: 40, paddingH: 24, fontSize: 14, iconSize: 18 },
   lg: { height: 48, paddingH: 28, fontSize: 16, iconSize: 20 },
-} as const
+} as const;
 
 // ─── Styled container ────────────────────────────────────────────────────────
 
 const ButtonBase = styled(View, {
-  name:            'MCMButton',
-  flexDirection:   'row',
-  alignItems:      'center',
-  justifyContent:  'center',
-  borderRadius:    '9',      // MD3 extraLarge = full pill for buttons
-  overflow:        'hidden',
-  cursor:          'pointer',
-  userSelect:      'none',
+  name: 'MCMButton',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  borderRadius: '9', // MD3 extraLarge = full pill for buttons
+  overflow: 'hidden',
+  cursor: 'pointer',
+  userSelect: 'none',
   // MD3 min touch target 48x48 — enforced via minHeight even for sm
-  minHeight:       48,
+  minHeight: 48,
   // No default outline; the ring is added on KEYBOARD focus only (`focus-visible`, never `focus`) so
   // a mouse click doesn't leave a persistent :focus outline until blur (feature 015 bug fix).
-  outlineStyle:    'none focus-visible:solid',
-  outlineWidth:    'focus-visible:3px',
-  outlineColor:    'focus-visible:primary',
-  outlineOffset:   'focus-visible:2px',
+  outlineStyle: 'none focus-visible:solid',
+  outlineWidth: 'focus-visible:3px',
+  outlineColor: 'focus-visible:primary',
+  outlineOffset: 'focus-visible:2px',
   // Tamagui 3: a state is a clause on the property it modifies (was pressStyle / hoverStyle). The
   // instance below must NOT pass a resting opacity of its own — a prop replaces this whole program,
   // so `opacity={1}` would silently switch hover and press off. The v2 `disabledStyle` is not carried
   // over: Button never passed `disabled` to this frame, so it never applied, and v3's `disabled:`
   // clause matches `aria-disabled` on web — it would start dimming the LOADING state too.
-  opacity:         'hover:0.92 press:0.88',
-})
+  opacity: 'hover:0.92 press:0.88',
+});
 
 // ─── State-layer overlay (MD3 ripple equivalent) ─────────────────────────────
 
 const StateLayer = styled(View, {
-  name:            'MCMButtonStateLayer',
-  position:        'absolute',
-  top: 0, right: 0, bottom: 0, left: 0,
-  borderRadius:    '9',
-  pointerEvents:   'none',
-  opacity:         '0 hover:0.08 press:0.12 focus-visible:0.12',
-})
+  name: 'MCMButtonStateLayer',
+  position: 'absolute',
+  top: 0,
+  right: 0,
+  bottom: 0,
+  left: 0,
+  borderRadius: '9',
+  pointerEvents: 'none',
+  opacity: '0 hover:0.08 press:0.12 focus-visible:0.12',
+});
 
 // ─── Button component ─────────────────────────────────────────────────────────
 
 export const Button = React.forwardRef<any, ButtonProps>(function Button(
   {
-    variant  = 'filled',
-    size     = 'md',
+    variant = 'filled',
+    size = 'md',
     label,
     icon,
     trailingIcon,
-    loading  = false,
+    loading = false,
     disabled = false,
-    danger   = false,
+    danger = false,
     multiline = false,
     onPress,
     ...rest
   },
   ref,
 ) {
-  const theme = useTheme()
-  const cfg   = sizeConfig[size]
+  const theme = useTheme();
+  const cfg = sizeConfig[size];
 
   // ── Variant → colour mapping ───────────────────────────────────────────
   type VariantStyle = {
-    bg:           string
-    fg:           string
-    border?:      string
-    stateLayer:   string
-    shadowLevel?: number
-  }
+    bg: string;
+    fg: string;
+    border?: string;
+    stateLayer: string;
+    shadowLevel?: number;
+  };
 
   const variantStyles: Record<ButtonVariant, VariantStyle> = {
     filled: {
-      bg:         theme.primary?.val,
-      fg:         theme.onPrimary?.val,
+      bg: theme.primary?.val,
+      fg: theme.onPrimary?.val,
       stateLayer: theme.onPrimary?.val,
     },
     filledTonal: {
-      bg:         theme.secondaryContainer?.val,
-      fg:         theme.onSecondaryContainer?.val,
+      bg: theme.secondaryContainer?.val,
+      fg: theme.onSecondaryContainer?.val,
       stateLayer: theme.onSecondaryContainer?.val,
     },
     elevated: {
-      bg:          theme.surface1?.val,
-      fg:          theme.primary?.val,
-      stateLayer:  theme.primary?.val,
+      bg: theme.surface1?.val,
+      fg: theme.primary?.val,
+      stateLayer: theme.primary?.val,
       shadowLevel: 1,
     },
     outlined: {
-      bg:         'transparent',
-      fg:         theme.primary?.val,
-      border:     theme.outline?.val,
+      bg: 'transparent',
+      fg: theme.primary?.val,
+      border: theme.outline?.val,
       stateLayer: theme.primary?.val,
     },
     text: {
-      bg:         'transparent',
-      fg:         theme.primary?.val,
+      bg: 'transparent',
+      fg: theme.primary?.val,
       stateLayer: theme.primary?.val,
     },
-  }
+  };
 
   // Destructive recolour: map the chosen variant onto the error palette.
   const dangerStyles: Record<ButtonVariant, VariantStyle> = {
-    filled:      { bg: theme.error?.val,          fg: theme.onError?.val,          stateLayer: theme.onError?.val },
-    filledTonal: { bg: theme.errorContainer?.val, fg: theme.onErrorContainer?.val, stateLayer: theme.onErrorContainer?.val },
-    elevated:    { bg: theme.surface1?.val,        fg: theme.error?.val,            stateLayer: theme.error?.val, shadowLevel: 1 },
-    outlined:    { bg: 'transparent',              fg: theme.error?.val,            border: theme.error?.val, stateLayer: theme.error?.val },
-    text:        { bg: 'transparent',              fg: theme.error?.val,            stateLayer: theme.error?.val },
-  }
+    filled: { bg: theme.error?.val, fg: theme.onError?.val, stateLayer: theme.onError?.val },
+    filledTonal: {
+      bg: theme.errorContainer?.val,
+      fg: theme.onErrorContainer?.val,
+      stateLayer: theme.onErrorContainer?.val,
+    },
+    elevated: {
+      bg: theme.surface1?.val,
+      fg: theme.error?.val,
+      stateLayer: theme.error?.val,
+      shadowLevel: 1,
+    },
+    outlined: {
+      bg: 'transparent',
+      fg: theme.error?.val,
+      border: theme.error?.val,
+      stateLayer: theme.error?.val,
+    },
+    text: { bg: 'transparent', fg: theme.error?.val, stateLayer: theme.error?.val },
+  };
 
-  const vs = danger ? dangerStyles[variant] : variantStyles[variant]
+  const vs = danger ? dangerStyles[variant] : variantStyles[variant];
 
   // ── Shadow (elevated only) ─────────────────────────────────────────────
   const shadowProps = vs.shadowLevel
     ? {
-        shadowColor:    theme.shadow?.val,
-        shadowOffset:   { width: 0, height: 1 },
-        shadowOpacity:  0.12,
-        shadowRadius:   2,
-        elevation:      1,
+        shadowColor: theme.shadow?.val,
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.12,
+        shadowRadius: 2,
+        elevation: 1,
       }
-    : {}
+    : {};
 
-  const hasIcon = !!icon || !!trailingIcon
-  const paddingH = hasIcon ? cfg.paddingH - 8 : cfg.paddingH
+  const hasIcon = !!icon || !!trailingIcon;
+  const paddingH = hasIcon ? cfg.paddingH - 8 : cfg.paddingH;
 
-  const isInactive = disabled || loading
+  const isInactive = disabled || loading;
 
   return (
     <ButtonBase
@@ -215,7 +227,13 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
 
       {/* Leading icon */}
       {icon && !loading && (
-        <View marginRight={8} width={cfg.iconSize} height={cfg.iconSize} alignItems="center" justifyContent="center">
+        <View
+          marginRight={8}
+          width={cfg.iconSize}
+          height={cfg.iconSize}
+          alignItems="center"
+          justifyContent="center"
+        >
           {icon}
         </View>
       )}
@@ -223,10 +241,7 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
       {/* Loading spinner */}
       {loading && (
         <View marginRight={8}>
-          <ActivityIndicator
-            size="small"
-            color={vs.fg}
-          />
+          <ActivityIndicator size="small" color={vs.fg} />
         </View>
       )}
 
@@ -254,20 +269,32 @@ export const Button = React.forwardRef<any, ButtonProps>(function Button(
 
       {/* Trailing icon */}
       {trailingIcon && !loading && (
-        <View marginLeft={8} width={cfg.iconSize} height={cfg.iconSize} alignItems="center" justifyContent="center">
+        <View
+          marginLeft={8}
+          width={cfg.iconSize}
+          height={cfg.iconSize}
+          alignItems="center"
+          justifyContent="center"
+        >
           {trailingIcon}
         </View>
       )}
     </ButtonBase>
-  )
-})
+  );
+});
 
-Button.displayName = 'MCM.Button'
+Button.displayName = 'MCM.Button';
 
 // ─── Convenience exports ──────────────────────────────────────────────────────
 
-export const FilledButton      = (p: Omit<ButtonProps, 'variant'>) => <Button variant="filled"      {...p} />
-export const FilledTonalButton = (p: Omit<ButtonProps, 'variant'>) => <Button variant="filledTonal" {...p} />
-export const ElevatedButton    = (p: Omit<ButtonProps, 'variant'>) => <Button variant="elevated"    {...p} />
-export const OutlinedButton    = (p: Omit<ButtonProps, 'variant'>) => <Button variant="outlined"    {...p} />
-export const TextButton        = (p: Omit<ButtonProps, 'variant'>) => <Button variant="text"        {...p} />
+export const FilledButton = (p: Omit<ButtonProps, 'variant'>) => <Button variant="filled" {...p} />;
+export const FilledTonalButton = (p: Omit<ButtonProps, 'variant'>) => (
+  <Button variant="filledTonal" {...p} />
+);
+export const ElevatedButton = (p: Omit<ButtonProps, 'variant'>) => (
+  <Button variant="elevated" {...p} />
+);
+export const OutlinedButton = (p: Omit<ButtonProps, 'variant'>) => (
+  <Button variant="outlined" {...p} />
+);
+export const TextButton = (p: Omit<ButtonProps, 'variant'>) => <Button variant="text" {...p} />;

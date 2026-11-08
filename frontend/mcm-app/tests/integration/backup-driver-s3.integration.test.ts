@@ -64,14 +64,24 @@ const driverFor = (d: S3BackupDestination, secret = S3_SECRET) => createBackupDr
 beforeAll(() => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { env } = require('@/config/env') as { env: { backupAllowedDestinationHosts: string } };
-  const hosts = new Set(env.backupAllowedDestinationHosts.split(',').map((h) => h.trim()).filter(Boolean));
+  const hosts = new Set(
+    env.backupAllowedDestinationHosts
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean),
+  );
   hosts.add(new URL(S3_ENDPOINT).hostname);
-  (env as { backupAllowedDestinationHosts: string }).backupAllowedDestinationHosts = [...hosts].join(',');
+  (env as { backupAllowedDestinationHosts: string }).backupAllowedDestinationHosts = [
+    ...hosts,
+  ].join(',');
 });
 
-itBackupTargets('has the backup destinations up — otherwise every case below is one failure', () => {
-  assertBackupTargetsPresent();
-});
+itBackupTargets(
+  'has the backup destinations up — otherwise every case below is one failure',
+  () => {
+    assertBackupTargetsPresent();
+  },
+);
 
 describeBackupTargets('put / get', () => {
   it('round-trips bytes EXACTLY, including binary gzip content', async () => {

@@ -98,7 +98,10 @@ async function handle(req: Request): Promise<Response> {
     });
   } catch (err) {
     logger.error('step-up verification failed', {
-      action: 'account_deletion_reauth_error', userId, ip, error: err,
+      action: 'account_deletion_reauth_error',
+      userId,
+      ip,
+      error: err,
     });
     return redirectTo(`${ACCOUNT_SETTINGS_PATH}?error=reauth`);
   }
@@ -124,7 +127,10 @@ async function handle(req: Request): Promise<Response> {
     // operators and decides what the user sees; duplicating the audit here would double-count
     // every failure and record the weaker of the two entries.
     logger.error('account deletion failed', {
-      action: 'account_deletion_error', userId, ip, error: err,
+      action: 'account_deletion_error',
+      userId,
+      ip,
+      error: err,
     });
     return redirectTo(`${ACCOUNT_SETTINGS_PATH}?error=failed`);
   }
@@ -172,14 +178,25 @@ async function handleNative(req: Request): Promise<Response> {
     });
   } catch (err) {
     logger.error('native step-up verification failed', {
-      action: 'account_deletion_reauth_error', userId, ip, error: err,
+      action: 'account_deletion_reauth_error',
+      userId,
+      ip,
+      error: err,
     });
-    return problemResponse('We could not confirm it was you', 401, 'Your account has not been deleted.');
+    return problemResponse(
+      'We could not confirm it was you',
+      401,
+      'Your account has not been deleted.',
+    );
   }
 
   if (!proof.ok) {
     logger.audit('account_deletion_reauth_rejected', { userId, ip, reason: proof.reason });
-    return problemResponse('We could not confirm it was you', 401, 'Your account has not been deleted.');
+    return problemResponse(
+      'We could not confirm it was you',
+      401,
+      'Your account has not been deleted.',
+    );
   }
 
   try {
@@ -190,7 +207,10 @@ async function handleNative(req: Request): Promise<Response> {
     });
   } catch (err) {
     logger.error('account deletion failed', {
-      action: 'account_deletion_error', userId, ip, error: err,
+      action: 'account_deletion_error',
+      userId,
+      ip,
+      error: err,
     });
     return problemResponse('Your account was not deleted', 500, 'Please try again.');
   }

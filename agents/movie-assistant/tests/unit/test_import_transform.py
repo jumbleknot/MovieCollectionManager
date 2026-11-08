@@ -123,13 +123,28 @@ def test_apply_create_defaults_fills_required_fields() -> None:
     assert payload["owned"] is False
     assert payload["ripped"] is False
     assert payload["childrens"] is False
-    for list_field in ("directors", "actors", "genres", "tags", "ownedMedia", "ripQuality",
-                       "externalIds"):
+    for list_field in (
+        "directors",
+        "actors",
+        "genres",
+        "tags",
+        "ownedMedia",
+        "ripQuality",
+        "externalIds",
+    ):
         assert payload[list_field] == []
     # Optional scalars must be PRESENT as null (CreateMovieDto requires them — only `language`
     # carries serde(default); omitting the rest 422s mc-service).
-    for opt_field in ("language", "originalTitle", "releaseDate", "outline", "plot", "runtime",
-                      "rated", "movieSet"):
+    for opt_field in (
+        "language",
+        "originalTitle",
+        "releaseDate",
+        "outline",
+        "plot",
+        "runtime",
+        "rated",
+        "movieSet",
+    ):
         assert payload[opt_field] is None
     # A complete create payload covers every CreateMovieDto field.
     assert _ALL_MOVIE_ATTRS <= set(payload)
@@ -139,17 +154,40 @@ def test_apply_create_defaults_fills_required_fields() -> None:
 
 
 def test_apply_create_defaults_does_not_clobber_supplied() -> None:
-    supplied = {"title": "X", "year": 2000, "contentType": "Movie", "owned": True,
-                "genres": ["Action"]}
+    supplied = {
+        "title": "X",
+        "year": 2000,
+        "contentType": "Movie",
+        "owned": True,
+        "genres": ["Action"],
+    }
     payload = apply_create_defaults(supplied)
     assert payload["owned"] is True
     assert payload["genres"] == ["Action"]
 
 
 _ALL_MOVIE_ATTRS = {
-    "title", "year", "contentType", "language", "owned", "ripped", "childrens",
-    "originalTitle", "releaseDate", "outline", "plot", "runtime", "rated", "directors",
-    "actors", "movieSet", "tags", "genres", "ownedMedia", "ripQuality", "externalIds",
+    "title",
+    "year",
+    "contentType",
+    "language",
+    "owned",
+    "ripped",
+    "childrens",
+    "originalTitle",
+    "releaseDate",
+    "outline",
+    "plot",
+    "runtime",
+    "rated",
+    "directors",
+    "actors",
+    "movieSet",
+    "tags",
+    "genres",
+    "ownedMedia",
+    "ripQuality",
+    "externalIds",
 }
 
 
@@ -235,11 +273,23 @@ def test_trim_leaves_a_whitespace_only_cell_blank_on_update() -> None:
     assert "language" not in payload
 
     existing = {
-        "movieId": "m1", "collectionId": "c1", "title": "Dune", "year": 2021,
-        "contentType": "Movie", "owned": True, "ripped": False, "childrens": False,
-        "plot": "Paul Atreides leads the Fremen.", "language": "English",
-        "genres": [], "directors": [], "actors": [], "tags": [],
-        "ownedMedia": [], "ripQuality": [], "externalIds": [],
+        "movieId": "m1",
+        "collectionId": "c1",
+        "title": "Dune",
+        "year": 2021,
+        "contentType": "Movie",
+        "owned": True,
+        "ripped": False,
+        "childrens": False,
+        "plot": "Paul Atreides leads the Fremen.",
+        "language": "English",
+        "genres": [],
+        "directors": [],
+        "actors": [],
+        "tags": [],
+        "ownedMedia": [],
+        "ripQuality": [],
+        "externalIds": [],
     }
     composed = compose_import_payload(existing, payload)
     assert composed["plot"] == "Paul Atreides leads the Fremen.", "a blank cell wiped an attribute"

@@ -17,20 +17,27 @@
  *   />
  */
 
-import React, { useEffect, useState } from 'react'
-import { Animated, Platform, Pressable, ScrollView, StyleSheet, type LayoutRectangle } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { withAlpha, stateLayer } from '../../tokens/with-alpha'
-import { XStack } from '@tamagui/stacks'
+import React, { useEffect, useState } from 'react';
+import {
+  Animated,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  type LayoutRectangle,
+} from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { withAlpha, stateLayer } from '../../tokens/with-alpha';
+import { XStack } from '@tamagui/stacks';
 
-export type TabsType = 'primary' | 'secondary'
+export type TabsType = 'primary' | 'secondary';
 
 export interface TabItem {
-  key:    string
-  label:  string
-  icon?:  React.ReactNode
-  badge?: boolean | number
+  key: string;
+  label: string;
+  icon?: React.ReactNode;
+  badge?: boolean | number;
   /**
    * STABLE EXTERNAL-CONTRACT SELECTOR — exempt from the constitution's
    * behaviour-descriptive-identifier rule under its carve-out for E2E selectors.
@@ -41,15 +48,15 @@ export interface TabItem {
    * The host node maps testID → data-testid on web and id on native, so jest, Playwright and
    * Maestro all locate and press the same element. Optional — existing callers are unaffected.
    */
-  testID?: string
+  testID?: string;
 }
 
 export interface TabsProps {
-  tabs:         TabItem[]
-  activeKey:    string
-  onTabChange:  (key: string) => void
-  type?:        TabsType
-  scrollable?:  boolean  // allow horizontal scroll for many tabs
+  tabs: TabItem[];
+  activeKey: string;
+  onTabChange: (key: string) => void;
+  type?: TabsType;
+  scrollable?: boolean; // allow horizontal scroll for many tabs
 }
 
 /**
@@ -71,56 +78,61 @@ export function mergeTabLayout(
   key: string,
   next: LayoutRectangle,
 ): Record<string, LayoutRectangle> {
-  const cur = prev[key]
-  if (cur && cur.x === next.x && cur.y === next.y &&
-      cur.width === next.width && cur.height === next.height) {
-    return prev
+  const cur = prev[key];
+  if (
+    cur &&
+    cur.x === next.x &&
+    cur.y === next.y &&
+    cur.width === next.width &&
+    cur.height === next.height
+  ) {
+    return prev;
   }
-  return { ...prev, [key]: next }
+  return { ...prev, [key]: next };
 }
 
 export const Tabs = React.memo<TabsProps>(function Tabs({
   tabs,
   activeKey,
   onTabChange,
-  type       = 'primary',
+  type = 'primary',
   scrollable = false,
 }) {
-  const theme = useTheme()
-  const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({})
-  const indicatorX    = useState(() => new Animated.Value(0))[0]
-  const indicatorW    = useState(() => new Animated.Value(0))[0]
+  const theme = useTheme();
+  const [layouts, setLayouts] = useState<Record<string, LayoutRectangle>>({});
+  const indicatorX = useState(() => new Animated.Value(0))[0];
+  const indicatorW = useState(() => new Animated.Value(0))[0];
 
   // Animate indicator to active tab's position.
   //
   // Depends on the ACTIVE tab's x/width, not on the `layouts` object — so a re-measure of some
   // OTHER tab cannot restart the spring. Together with the bail-out in onLayout below, this is
   // what stops the feedback loop described there.
-  const activeLayout = layouts[activeKey]
-  const activeX = activeLayout?.x
-  const activeW = activeLayout?.width
+  const activeLayout = layouts[activeKey];
+  const activeX = activeLayout?.x;
+  const activeW = activeLayout?.width;
   useEffect(() => {
-    if (activeX === undefined || activeW === undefined) return
+    if (activeX === undefined || activeW === undefined) return;
 
     // The secondary pill hugs the TAB, rather than the fixed 64dp NavigationBar uses — that
     // width is sized for an icon, and a text tab ("Movie Assistant" measures ~153dp) would
     // overflow it on both sides. Same role, different content.
-    const targetX = activeX
-    const targetW = activeW
+    const targetX = activeX;
+    const targetW = activeW;
 
     Animated.parallel([
       Animated.spring(indicatorX, {
-        toValue:         targetX,
+        toValue: targetX,
         useNativeDriver: false,
-        bounciness:      4,
+        bounciness: 4,
       }),
       Animated.spring(indicatorW, {
-        toValue:         targetW,
+        toValue: targetW,
         useNativeDriver: false,
-        bounciness:      2,
+        bounciness: 2,
       }),
-    ]).start()
-  }, [activeX, activeW, indicatorW, indicatorX])
+    ]).start();
+  }, [activeX, activeW, indicatorW, indicatorX]);
 
   const TabRow = (
     <XStack
@@ -129,7 +141,7 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
       borderBottomColor={theme.surfaceVariant?.val}
     >
       {tabs.map((tab, i) => {
-        const isActive = tab.key === activeKey
+        const isActive = tab.key === activeKey;
 
         return (
           <Pressable
@@ -148,8 +160,8 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
             onLayout={(e) => {
               // See mergeTabLayout: an identical rect returns the SAME map reference, so React
               // skips the re-render and Android cannot re-dispatch onLayout into a loop.
-              const next = e.nativeEvent.layout
-              setLayouts(prev => mergeTabLayout(prev, tab.key, next))
+              const next = e.nativeEvent.layout;
+              setLayouts((prev) => mergeTabLayout(prev, tab.key, next));
             }}
             style={({ pressed }) => [
               scrollable ? styles.tabScrollable : styles.tabFlex,
@@ -157,89 +169,96 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
               pressed ? styles.tabPressed : null,
             ]}
           >
-          <View
-            flex={scrollable ? undefined : 1}
-            alignItems="center"
-            justifyContent="center"
-            paddingVertical={type === 'primary' ? 16 : 10}
-            paddingHorizontal={scrollable ? 24 : 0}
-            minWidth={scrollable ? undefined : 0}
-            cursor="pointer"
-            // NOT `theme.onSurface?.val + '14'`. That concatenation assumes a 6-digit hex and
-            // produces an invalid colour for any other notation — which renders NOTHING rather
-            // than erroring — and 8% over a dark surface is invisible even when it is valid.
-            // Measured on feature 062: this hover could not be seen at all in dark mode.
-            // Tamagui 3: the hover is a clause on backgroundColor (was hoverStyle). The typed form
-            // keeps the computed rgba() — which contains spaces — out of a space-separated program.
-            // WEB ONLY. In Tamagui 3 ANY state clause - hover included - makes this inner View attach its
-            // own event handlers on native (createComponent: `shouldAttach` counts a hover program), so on
-            // Android it swallows the tap meant for the outer Pressable. MEASURED: PR #788's first full-suite
-            // run - `Tap on id: settings-nav-assistant` (NavList, same pattern) did nothing. Native has no
-            // hover, so it gets no clause and nothing to attach.
-            backgroundColor={Platform.OS === 'web'
-              ? { hover: withAlpha(theme.onSurface?.val as string | undefined, stateLayer.hover) }
-              : undefined}
-          >
-            {/* Icon */}
-            {tab.icon && (
-              <View marginBottom={type === 'primary' ? 4 : 0} position="relative">
-                {tab.icon}
-                {/* Badge dot */}
-                {tab.badge !== undefined && tab.badge !== false && (
-                  <View
-                    position="absolute"
-                    top={-2}
-                    right={-8}
-                    backgroundColor={theme.error?.val}
-                    borderRadius={tab.badge === true ? 3 : 8}
-                    width={tab.badge === true ? 6 : undefined}
-                    height={tab.badge === true ? 6 : 16}
-                    minWidth={tab.badge === true ? 6 : 16}
-                    paddingHorizontal={tab.badge !== true && String(tab.badge).length > 1 ? 4 : 0}
-                    alignItems="center"
-                    justifyContent="center"
-                  >
-                    {tab.badge !== true && (
-                      <Text fontSize={11} fontWeight="500" color={theme.onError?.val}>
-                        {Number(tab.badge) > 99 ? '99+' : String(tab.badge)}
-                      </Text>
-                    )}
-                  </View>
-                )}
-              </View>
-            )}
-
-            {/* Label */}
-            <Text
-              fontFamily="body"
-              fontSize={14}
-              fontWeight={isActive ? '700' : '500'}
-              letterSpacing={0.1}
-              color={
-                isActive
-                  ? type === 'secondary'
-                    ? theme.onSecondaryContainer?.val
-                    : theme.primary?.val
-                  : theme.onSurfaceVariant?.val
+            <View
+              flex={scrollable ? undefined : 1}
+              alignItems="center"
+              justifyContent="center"
+              paddingVertical={type === 'primary' ? 16 : 10}
+              paddingHorizontal={scrollable ? 24 : 0}
+              minWidth={scrollable ? undefined : 0}
+              cursor="pointer"
+              // NOT `theme.onSurface?.val + '14'`. That concatenation assumes a 6-digit hex and
+              // produces an invalid colour for any other notation — which renders NOTHING rather
+              // than erroring — and 8% over a dark surface is invisible even when it is valid.
+              // Measured on feature 062: this hover could not be seen at all in dark mode.
+              // Tamagui 3: the hover is a clause on backgroundColor (was hoverStyle). The typed form
+              // keeps the computed rgba() — which contains spaces — out of a space-separated program.
+              // WEB ONLY. In Tamagui 3 ANY state clause - hover included - makes this inner View attach its
+              // own event handlers on native (createComponent: `shouldAttach` counts a hover program), so on
+              // Android it swallows the tap meant for the outer Pressable. MEASURED: PR #788's first full-suite
+              // run - `Tap on id: settings-nav-assistant` (NavList, same pattern) did nothing. Native has no
+              // hover, so it gets no clause and nothing to attach.
+              backgroundColor={
+                Platform.OS === 'web'
+                  ? {
+                      hover: withAlpha(
+                        theme.onSurface?.val as string | undefined,
+                        stateLayer.hover,
+                      ),
+                    }
+                  : undefined
               }
-              numberOfLines={1}
             >
-              {tab.label}
-            </Text>
-          </View>
+              {/* Icon */}
+              {tab.icon && (
+                <View marginBottom={type === 'primary' ? 4 : 0} position="relative">
+                  {tab.icon}
+                  {/* Badge dot */}
+                  {tab.badge !== undefined && tab.badge !== false && (
+                    <View
+                      position="absolute"
+                      top={-2}
+                      right={-8}
+                      backgroundColor={theme.error?.val}
+                      borderRadius={tab.badge === true ? 3 : 8}
+                      width={tab.badge === true ? 6 : undefined}
+                      height={tab.badge === true ? 6 : 16}
+                      minWidth={tab.badge === true ? 6 : 16}
+                      paddingHorizontal={tab.badge !== true && String(tab.badge).length > 1 ? 4 : 0}
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      {tab.badge !== true && (
+                        <Text fontSize={11} fontWeight="500" color={theme.onError?.val}>
+                          {Number(tab.badge) > 99 ? '99+' : String(tab.badge)}
+                        </Text>
+                      )}
+                    </View>
+                  )}
+                </View>
+              )}
+
+              {/* Label */}
+              <Text
+                fontFamily="body"
+                fontSize={14}
+                fontWeight={isActive ? '700' : '500'}
+                letterSpacing={0.1}
+                color={
+                  isActive
+                    ? type === 'secondary'
+                      ? theme.onSecondaryContainer?.val
+                      : theme.primary?.val
+                    : theme.onSurfaceVariant?.val
+                }
+                numberOfLines={1}
+              >
+                {tab.label}
+              </Text>
+            </View>
           </Pressable>
-        )
+        );
       })}
 
       {/* Sliding indicator */}
       <Animated.View
         style={{
-          position:        'absolute',
-          bottom:          0,
-          left:            indicatorX,
-          width:           indicatorW,
-          height:          type === 'primary' ? 3 : 32,
-          borderRadius:    type === 'primary' ? 2 : 16,
+          position: 'absolute',
+          bottom: 0,
+          left: indicatorX,
+          width: indicatorW,
+          height: type === 'primary' ? 3 : 32,
+          borderRadius: type === 'primary' ? 2 : 16,
           // MD3 container role, matching this package's own NavigationBar active indicator
           // ("64x32dp pill behind the active icon", secondaryContainer / onSecondaryContainer).
           // It was `theme.primary` — an opaque saturated fill drawn IN FRONT of the label, in the
@@ -247,14 +266,16 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
           backgroundColor: type === 'primary' ? theme.primary?.val : theme.secondaryContainer?.val,
           // Primary's 3dp bar draws OVER the bottom border by design; the secondary pill draws
           // BEHIND the tab content, which carries zIndex 1 (see styles.tabAboveIndicator).
-          zIndex:          type === 'primary' ? 1 : 0,
+          zIndex: type === 'primary' ? 1 : 0,
           // For secondary: center vertically
-          ...(type === 'secondary' ? { bottom: undefined, top: undefined, alignSelf: 'center' } : {}),
+          ...(type === 'secondary'
+            ? { bottom: undefined, top: undefined, alignSelf: 'center' }
+            : {}),
         }}
         pointerEvents="none"
       />
     </XStack>
-  )
+  );
 
   if (scrollable) {
     return (
@@ -266,20 +287,20 @@ export const Tabs = React.memo<TabsProps>(function Tabs({
       >
         {TabRow}
       </ScrollView>
-    )
+    );
   }
 
-  return TabRow
-})
+  return TabRow;
+});
 
-Tabs.displayName = 'MCM.Tabs'
+Tabs.displayName = 'MCM.Tabs';
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 // On the RN host node only. The tab's visual treatment stays on the Tamagui View inside,
 // which is where the design tokens live; these three carry layout and press feedback that
 // have to sit on the host node so the testID and the press target are the same element.
 const styles = StyleSheet.create({
-  tabFlex:       { flex: 1 },
+  tabFlex: { flex: 1 },
   // NOT `flex: 0` — in React Native that is flexGrow:0 + flexShrink:0 + flexBasis:0, and a
   // zero basis collapses the tab to zero WIDTH inside the horizontal ScrollView. On web the
   // element then has a testID, a role and its label text, and is still `hidden` to Playwright.
@@ -292,6 +313,6 @@ const styles = StyleSheet.create({
   // parent grows to fill the cross axis on native and squeezes whatever follows it — the reason
   // this app's column-selector.tsx pins its own horizontal ScrollView with `maxHeight: 64`.
   // Expressed as grow/shrink rather than a pixel height so the row still sizes to its content.
-  scroller:      { flexGrow: 0, flexShrink: 0 },
-  tabPressed:    { opacity: 0.8 },
-})
+  scroller: { flexGrow: 0, flexShrink: 0 },
+  tabPressed: { opacity: 0.8 },
+});

@@ -110,9 +110,9 @@ describe('requireRole', () => {
 
   it('rejects unauthenticated request (missing role claim) with 403', () => {
     // When the JWT has no role claim, extracted roles will be empty
-    expect(() =>
-      requireRole(makeUser([]), ClientRole.MCUser, ClientRole.MCAdmin),
-    ).toThrow(ForbiddenError);
+    expect(() => requireRole(makeUser([]), ClientRole.MCUser, ClientRole.MCAdmin)).toThrow(
+      ForbiddenError,
+    );
   });
 });
 

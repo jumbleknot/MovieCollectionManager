@@ -20,10 +20,7 @@ import {
   auditEntriesFor,
   findCredentialLeaks,
 } from './helpers/audit-log-capture';
-import {
-  describeBackupTargets,
-  assertBackupTargetsPresent,
-} from './helpers/backup-targets';
+import { describeBackupTargets, assertBackupTargetsPresent } from './helpers/backup-targets';
 import {
   createTestUser,
   deleteTestUser,
@@ -119,7 +116,10 @@ describeBackupTargets('backup audit coverage', () => {
   });
 
   it('records a run from start to finish, and names what it wrote (FR-035)', async () => {
-    const destination = await destinationStore.createDestination(user.userId, destinationInput(`a-${randomUUID()}`));
+    const destination = await destinationStore.createDestination(
+      user.userId,
+      destinationInput(`a-${randomUUID()}`),
+    );
     const job = await jobStore.createJob(user.userId, {
       destinationId: destination.id,
       label: 'audited job',
@@ -130,7 +130,12 @@ describeBackupTargets('backup audit coverage', () => {
     const doc = (await (await getBackupJobsCollection()).findOne({ _id: job.id })) as BackupJob;
 
     const entries = await captureLogEntries(async () => {
-      await runBackup({ userId: user.userId, jwt: 'not-a-real-token', job: doc, trigger: 'manual' });
+      await runBackup({
+        userId: user.userId,
+        jwt: 'not-a-real-token',
+        job: doc,
+        trigger: 'manual',
+      });
     });
 
     // A run that STARTED must be recorded even though it then failed: without it, a run that
@@ -140,7 +145,10 @@ describeBackupTargets('backup audit coverage', () => {
   });
 
   it('a successful run records counts and sizes, and no collection content (SC-009)', async () => {
-    const destination = await destinationStore.createDestination(user.userId, destinationInput(`b-${randomUUID()}`));
+    const destination = await destinationStore.createDestination(
+      user.userId,
+      destinationInput(`b-${randomUUID()}`),
+    );
     const job = await jobStore.createJob(user.userId, {
       destinationId: destination.id,
       label: 'audited success',
@@ -151,8 +159,17 @@ describeBackupTargets('backup audit coverage', () => {
     const doc = (await (await getBackupJobsCollection()).findOne({ _id: job.id })) as BackupJob;
 
     const entries = await captureLogEntries(async () => {
-      logger.audit('backup_destination_tested', { userId: user.userId, destinationId: destination.id, result: 'ok' });
-      await runBackup({ userId: user.userId, jwt: 'not-a-real-token', job: doc, trigger: 'manual' });
+      logger.audit('backup_destination_tested', {
+        userId: user.userId,
+        destinationId: destination.id,
+        result: 'ok',
+      });
+      await runBackup({
+        userId: user.userId,
+        jwt: 'not-a-real-token',
+        job: doc,
+        trigger: 'manual',
+      });
     });
 
     // NOT A CREDENTIAL ANYWHERE. Checked against the real values used above, at any depth —
@@ -165,7 +182,10 @@ describeBackupTargets('backup audit coverage', () => {
   });
 
   it('records enabling and disabling a schedule as distinct events (FR-035)', async () => {
-    const destination = await destinationStore.createDestination(user.userId, destinationInput(`c-${randomUUID()}`));
+    const destination = await destinationStore.createDestination(
+      user.userId,
+      destinationInput(`c-${randomUUID()}`),
+    );
 
     const entries = await captureLogEntries(async () => {
       const job = await jobStore.createJob(user.userId, {

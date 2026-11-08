@@ -21,12 +21,7 @@ import {
 import { cacheSession } from '@/bff-server/cache-service';
 import { env } from '@/config/env';
 import type { Session } from '@/types/auth';
-import {
-  redisExists,
-  redisTtl,
-  redisFlushDb,
-  closeRedis,
-} from './helpers/redis-test-client';
+import { redisExists, redisTtl, redisFlushDb, closeRedis } from './helpers/redis-test-client';
 
 const sessionKey = (id: string) => `session:${id}`;
 

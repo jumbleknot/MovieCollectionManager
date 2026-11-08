@@ -76,7 +76,9 @@ export async function POST(req: Request): Promise<Response> {
     const driver = await createBackupDriver(destination, secret);
     const outcome = await driver.testConnection();
 
-    const result: BackupTestResult = outcome.ok ? { ok: true } : { ok: false, reason: outcome.reason ?? 'That destination could not be verified' };
+    const result: BackupTestResult = outcome.ok
+      ? { ok: true }
+      : { ok: false, reason: outcome.reason ?? 'That destination could not be verified' };
     if (savedId) await store.recordTestResult(userId, savedId, result);
 
     // The FAILURE CLASS is logged, never the reason string and never the endpoint: the class is

@@ -83,7 +83,7 @@ describe('AssistantDock generative UI', () => {
   // spreadsheet-import-button / spreadsheet-export-button are removed.)
   it('shows no always-on import/export buttons when the panel opens', async () => {
     mockAgentWithToolCall();
-    const { getByTestId, queryByTestId } = await render(<AssistantRuntime />);
+    const { queryByTestId } = await render(<AssistantRuntime />);
     expect(queryByTestId('spreadsheet-import-button')).toBeNull();
     expect(queryByTestId('spreadsheet-export-button')).toBeNull();
   });
@@ -157,7 +157,7 @@ describe('AssistantDock generative UI', () => {
   // still mount and still fire. Before the gate this navigated to `/collections/undefined`.
   it('renders no navigation effect at all while navigate_to_collection args are incomplete', async () => {
     mockAgentWithToolCall({ name: 'navigate_to_collection', arguments: '{}' });
-    const { getByTestId, queryByTestId } = await render(<AssistantRuntime />);
+    const { queryByTestId } = await render(<AssistantRuntime />);
 
     expect(queryByTestId('assistant-ui-action-navigate')).toBeNull();
     // Not even the shared pending card — mounting anything here is what fires the effect.

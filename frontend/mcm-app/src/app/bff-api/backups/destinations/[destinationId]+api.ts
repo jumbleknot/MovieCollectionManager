@@ -42,7 +42,10 @@ export async function PATCH(req: Request, { destinationId }: Params): Promise<Re
     const existing = await store.getDestination(userId, destinationId);
     if (!existing) return notFound();
 
-    const parsed = destinationUpdateSchema.safeParse({ type: existing.type, ...(body.value as object) });
+    const parsed = destinationUpdateSchema.safeParse({
+      type: existing.type,
+      ...(body.value as object),
+    });
     if (!parsed.success) return problem('Invalid destination', 400, firstIssue(parsed.error));
     if (parsed.data.endpoint) await assertDestinationUrlAllowed(parsed.data.endpoint);
 

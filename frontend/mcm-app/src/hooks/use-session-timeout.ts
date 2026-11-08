@@ -11,7 +11,7 @@ import { useEffect, useRef, useCallback } from 'react';
 
 // ─── Default timeouts (must match BFF server-side values) ─────────────────────
 
-const DEFAULT_IDLE_MS = 30 * 60 * 1000;    // 30 minutes
+const DEFAULT_IDLE_MS = 30 * 60 * 1000; // 30 minutes
 const DEFAULT_ABSOLUTE_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // ─── Activity events to track ─────────────────────────────────────────────────

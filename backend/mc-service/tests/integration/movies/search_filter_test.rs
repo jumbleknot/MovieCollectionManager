@@ -531,7 +531,11 @@ async fn genre_filter_matches_case_insensitively_within_array() {
     let (_, movie_repo, coll_id, db) = setup().await;
 
     let mut multi = movie("Heat", 1995, "Action");
-    multi.genres = vec!["Action".to_string(), "Drama".to_string(), "Crime".to_string()];
+    multi.genres = vec![
+        "Action".to_string(),
+        "Drama".to_string(),
+        "Crime".to_string(),
+    ];
     movie_repo
         .create(&coll_id, "sf-owner", multi)
         .await
@@ -556,7 +560,10 @@ async fn genre_filter_matches_case_insensitively_within_array() {
     crate::common::cleanup_db(&db).await;
 
     let list = result.expect("genre filter should not error");
-    assert_eq!(list.items.len(), 1, "case-insensitive 'drama' matches stored 'Drama' in the array");
+    assert_eq!(
+        list.items.len(),
+        1,
+        "case-insensitive 'drama' matches stored 'Drama' in the array"
+    );
     assert_eq!(list.items[0].title, "Heat");
 }
-

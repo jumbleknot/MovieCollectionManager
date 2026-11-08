@@ -54,9 +54,13 @@ async function _put(req: Request): Promise<Response> {
       );
     }
 
-    const result = await service.validateAndSave(user.id, body as Parameters<typeof service.validateAndSave>[1]);
+    const result = await service.validateAndSave(
+      user.id,
+      body as Parameters<typeof service.validateAndSave>[1],
+    );
     if (!result.ok) {
-      const title = result.status === 422 ? 'Credential validation failed' : 'Invalid configuration';
+      const title =
+        result.status === 422 ? 'Credential validation failed' : 'Invalid configuration';
       return Response.json(
         { type: 'about:blank', title, status: result.status, errors: result.errors },
         { status: result.status, headers: securityHeaders() },

@@ -44,16 +44,8 @@ export function ProfileDisplay({ user, onLogout }: ProfileDisplayProps): React.J
         value={user.emailVerified ? 'Yes' : 'No'}
         testID="profile-email-verified"
       />
-      <ProfileRow
-        label="Roles"
-        value={(user.roles ?? []).join(', ')}
-        testID="profile-roles"
-      />
-      <ProfileRow
-        label="Account Status"
-        value="Active"
-        testID="profile-status"
-      />
+      <ProfileRow label="Roles" value={(user.roles ?? []).join(', ')} testID="profile-roles" />
+      <ProfileRow label="Account Status" value="Active" testID="profile-status" />
 
       <Button
         variant="filled"
@@ -87,7 +79,10 @@ function ProfileRow({
 }): React.JSX.Element {
   const styles = makeStyles(useTheme());
   return (
-    <View style={styles.row} testID={testID ?? `profile-${label.toLowerCase().replace(/\s/g, '-')}`}>
+    <View
+      style={styles.row}
+      testID={testID ?? `profile-${label.toLowerCase().replace(/\s/g, '-')}`}
+    >
       <Text style={styles.rowLabel}>{label}</Text>
       <Text style={styles.rowValue}>{value}</Text>
     </View>
@@ -96,39 +91,40 @@ function ProfileRow({
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 24,
-    backgroundColor: theme.background?.val,
-  },
-  heading: {
-    fontFamily: 'Outfit-Bold',
-    fontSize: 22,
-    fontWeight: '700',
-    color: theme.onSurface?.val,
-    marginBottom: 24,
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.outlineVariant?.val,
-  },
-  rowLabel: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: theme.onSurfaceVariant?.val,
-    fontWeight: '600',
-  },
-  rowValue: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    color: theme.onSurface?.val,
-    fontWeight: '500',
-    textAlign: 'right',
-    flex: 1,
-    marginLeft: 16,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 24,
+      backgroundColor: theme.background?.val,
+    },
+    heading: {
+      fontFamily: 'Outfit-Bold',
+      fontSize: 22,
+      fontWeight: '700',
+      color: theme.onSurface?.val,
+      marginBottom: 24,
+    },
+    row: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.outlineVariant?.val,
+    },
+    rowLabel: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: theme.onSurfaceVariant?.val,
+      fontWeight: '600',
+    },
+    rowValue: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      color: theme.onSurface?.val,
+      fontWeight: '500',
+      textAlign: 'right',
+      flex: 1,
+      marginLeft: 16,
+    },
+  });

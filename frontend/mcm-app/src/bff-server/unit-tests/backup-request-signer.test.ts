@@ -84,7 +84,8 @@ function parseRequest(raw: string): ParsedRequest {
 
 function loadCase(name: string) {
   const dir = join(SUITE_DIR, name);
-  const read = (ext: string) => readFileSync(join(dir, `${name}.${ext}`), 'utf8').replace(/\r\n/g, '\n');
+  const read = (ext: string) =>
+    readFileSync(join(dir, `${name}.${ext}`), 'utf8').replace(/\r\n/g, '\n');
   return {
     request: parseRequest(read('req')),
     canonical: read('creq').replace(/\n$/, ''),
@@ -217,12 +218,24 @@ describe('the operations the AWS suite does not cover', () => {
 
   it('signs DELETE, and a different key yields a different signature', () => {
     const one = signRequest(
-      { method: 'DELETE', path: '/bucket/a.json.gz', query: '', headers: [['Host', 'storage.example.com']], payloadHash: EMPTY_SHA256 },
+      {
+        method: 'DELETE',
+        path: '/bucket/a.json.gz',
+        query: '',
+        headers: [['Host', 'storage.example.com']],
+        payloadHash: EMPTY_SHA256,
+      },
       s3Creds,
       new Date('2026-09-20T03:00:00Z'),
     );
     const two = signRequest(
-      { method: 'DELETE', path: '/bucket/b.json.gz', query: '', headers: [['Host', 'storage.example.com']], payloadHash: EMPTY_SHA256 },
+      {
+        method: 'DELETE',
+        path: '/bucket/b.json.gz',
+        query: '',
+        headers: [['Host', 'storage.example.com']],
+        payloadHash: EMPTY_SHA256,
+      },
       s3Creds,
       new Date('2026-09-20T03:00:00Z'),
     );
@@ -231,7 +244,13 @@ describe('the operations the AWS suite does not cover', () => {
 
   it('adds x-amz-date and covers it in SignedHeaders', () => {
     const signed = signRequest(
-      { method: 'GET', path: '/bucket', query: '', headers: [['Host', 'storage.example.com']], payloadHash: EMPTY_SHA256 },
+      {
+        method: 'GET',
+        path: '/bucket',
+        query: '',
+        headers: [['Host', 'storage.example.com']],
+        payloadHash: EMPTY_SHA256,
+      },
       s3Creds,
       new Date('2026-09-20T03:00:00Z'),
     );
@@ -244,7 +263,13 @@ describe('the operations the AWS suite does not cover', () => {
     // slashes too would sign a path the server never sees; escaping nothing would sign a
     // different path than the one requested. Either way the request is rejected as unsigned.
     const signed = signRequest(
-      { method: 'PUT', path: '/bucket/mcm backups/a+b.json.gz', query: '', headers: [['Host', 'storage.example.com']], payloadHash: EMPTY_SHA256 },
+      {
+        method: 'PUT',
+        path: '/bucket/mcm backups/a+b.json.gz',
+        query: '',
+        headers: [['Host', 'storage.example.com']],
+        payloadHash: EMPTY_SHA256,
+      },
       s3Creds,
       new Date('2026-09-20T03:00:00Z'),
     );

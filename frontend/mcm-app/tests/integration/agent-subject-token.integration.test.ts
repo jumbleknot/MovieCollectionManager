@@ -114,11 +114,17 @@ describeOrSkip('mintSubjectToken vs real Keycloak', () => {
       await logoutAllUserSessions(victim.userId);
 
       const refusal = await mintSubjectToken(accessToken).then(
-        () => { throw new Error('expected the exchange to be refused'); },
+        () => {
+          throw new Error('expected the exchange to be refused');
+        },
         (err: unknown) => err,
       );
       expect(refusal).toBeInstanceOf(AgentIdentityError);
-      expect(refusal).toMatchObject({ outcome: 'auth', statusCode: 401, code: 'AGENT_IDENTITY_REJECTED' });
+      expect(refusal).toMatchObject({
+        outcome: 'auth',
+        statusCode: 401,
+        code: 'AGENT_IDENTITY_REJECTED',
+      });
     } finally {
       await deleteTestUser(victim.userId);
     }

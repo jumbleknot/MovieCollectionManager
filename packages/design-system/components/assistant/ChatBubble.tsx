@@ -18,22 +18,22 @@
  *   (MovieCard, CollectionCard, etc.) inside the bubble.
  */
 
-import React, { useState, useEffect } from 'react'
-import { Animated } from 'react-native'
-import { View, useTheme } from '@tamagui/core'
-import { Text } from '../primitives/Text'
-import { XStack, YStack } from '@tamagui/stacks'
-import { AssistantAvatar } from './AssistantAvatar'
+import React, { useState, useEffect } from 'react';
+import { Animated } from 'react-native';
+import { View, useTheme } from '@tamagui/core';
+import { Text } from '../primitives/Text';
+import { XStack, YStack } from '@tamagui/stacks';
+import { AssistantAvatar } from './AssistantAvatar';
 
-export type BubbleSender = 'user' | 'assistant' | 'system'
+export type BubbleSender = 'user' | 'assistant' | 'system';
 
 export interface ChatBubbleProps {
-  sender:      BubbleSender
-  message?:    string
-  timestamp?:  Date
-  thinking?:   boolean    // assistant is "typing"
-  error?:      boolean
-  children?:   React.ReactNode  // generative UI content
+  sender: BubbleSender;
+  message?: string;
+  timestamp?: Date;
+  thinking?: boolean; // assistant is "typing"
+  error?: boolean;
+  children?: React.ReactNode; // generative UI content
 }
 
 function TypingDots({ color }: { color: string }) {
@@ -41,7 +41,7 @@ function TypingDots({ color }: { color: string }) {
     useState(() => new Animated.Value(0))[0],
     useState(() => new Animated.Value(0))[0],
     useState(() => new Animated.Value(0))[0],
-  ]
+  ];
 
   useEffect(() => {
     const anims = dots.map((d, i) =>
@@ -49,16 +49,16 @@ function TypingDots({ color }: { color: string }) {
         Animated.sequence([
           Animated.delay(i * 200),
           Animated.timing(d, { toValue: -6, duration: 300, useNativeDriver: true }),
-          Animated.timing(d, { toValue: 0,  duration: 300, useNativeDriver: true }),
+          Animated.timing(d, { toValue: 0, duration: 300, useNativeDriver: true }),
           Animated.delay(300),
-        ])
-      )
-    )
-    anims.forEach(a => a.start())
-    return () => anims.forEach(a => a.stop())
+        ]),
+      ),
+    );
+    anims.forEach((a) => a.start());
+    return () => anims.forEach((a) => a.stop());
     // dots are stable useState refs; run the loop once on mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, []);
 
   return (
     <XStack gap={4} alignItems="center" height={20} paddingVertical={4}>
@@ -66,24 +66,24 @@ function TypingDots({ color }: { color: string }) {
         <Animated.View
           key={i}
           style={{
-            width:           6,
-            height:          6,
-            borderRadius:    3,
+            width: 6,
+            height: 6,
+            borderRadius: 3,
             backgroundColor: color,
-            transform:       [{ translateY: d }],
+            transform: [{ translateY: d }],
           }}
         />
       ))}
     </XStack>
-  )
+  );
 }
 
 // ─── Timestamp ────────────────────────────────────────────────────────────────
 
 function Timestamp({ date }: { date: Date }) {
-  const theme = useTheme()
-  const h = date.getHours().toString().padStart(2, '0')
-  const m = date.getMinutes().toString().padStart(2, '0')
+  const theme = useTheme();
+  const h = date.getHours().toString().padStart(2, '0');
+  const m = date.getMinutes().toString().padStart(2, '0');
   return (
     <Text
       fontFamily="body"
@@ -94,7 +94,7 @@ function Timestamp({ date }: { date: Date }) {
     >
       {h}:{m}
     </Text>
-  )
+  );
 }
 
 // ─── Main ChatBubble ──────────────────────────────────────────────────────────
@@ -104,10 +104,10 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
   message,
   timestamp,
   thinking = false,
-  error    = false,
+  error = false,
   children,
 }) {
-  const theme = useTheme()
+  const theme = useTheme();
 
   // System message — centered pill
   if (sender === 'system') {
@@ -130,11 +130,11 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
           </Text>
         </View>
       </View>
-    )
+    );
   }
 
-  const isUser      = sender === 'user'
-  const isAssistant = sender === 'assistant'
+  const isUser = sender === 'user';
+  const isAssistant = sender === 'assistant';
 
   // Bubble colours
   // Assistant bubbles use surface3 (a step lighter than the dock panel's surface1) plus a
@@ -143,16 +143,16 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
   const bubbleBg = error
     ? theme.errorContainer?.val
     : isUser
-    ? theme.primaryContainer?.val
-    : theme.surface3?.val
+      ? theme.primaryContainer?.val
+      : theme.surface3?.val;
 
   const textColor = error
     ? theme.onErrorContainer?.val
     : isUser
-    ? theme.onPrimaryContainer?.val
-    : theme.onSurface?.val
+      ? theme.onPrimaryContainer?.val
+      : theme.onSurface?.val;
 
-  const dotColor = error ? theme.onErrorContainer?.val : theme.onSurfaceVariant?.val
+  const dotColor = error ? theme.onErrorContainer?.val : theme.onSurfaceVariant?.val;
 
   return (
     <XStack
@@ -206,11 +206,7 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
               )}
 
               {/* Generative UI content (MovieCard, CollectionCard, etc.) */}
-              {children && (
-                <View marginTop={message ? 12 : 0}>
-                  {children}
-                </View>
-              )}
+              {children && <View marginTop={message ? 12 : 0}>{children}</View>}
             </>
           )}
         </View>
@@ -223,21 +219,21 @@ export const ChatBubble = React.memo<ChatBubbleProps>(function ChatBubble({
         )}
       </YStack>
     </XStack>
-  )
-})
+  );
+});
 
-ChatBubble.displayName = 'MCM.ChatBubble'
+ChatBubble.displayName = 'MCM.ChatBubble';
 
 // ─── HITL Approval Bubble ─────────────────────────────────────────────────────
 
 export interface ApprovalBubbleProps {
-  title:       string
-  description: string
-  onApprove:   () => void
-  onReject:    () => void
-  loading?:    boolean
-  approved?:   boolean
-  rejected?:   boolean
+  title: string;
+  description: string;
+  onApprove: () => void;
+  onReject: () => void;
+  loading?: boolean;
+  approved?: boolean;
+  rejected?: boolean;
 }
 
 export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalBubble({
@@ -245,12 +241,12 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
   description,
   onApprove,
   onReject,
-  loading   = false,
-  approved  = false,
-  rejected  = false,
+  loading = false,
+  approved = false,
+  rejected = false,
 }) {
-  const theme = useTheme()
-  const done  = approved || rejected
+  const theme = useTheme();
+  const done = approved || rejected;
 
   return (
     <XStack alignItems="flex-end" gap={8} marginVertical={4} paddingHorizontal={16}>
@@ -280,7 +276,9 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
           alignItems="center"
           gap={8}
         >
-          <Text fontSize={16} lineHeight="16px">⚡</Text>
+          <Text fontSize={16} lineHeight="16px">
+            ⚡
+          </Text>
           <Text
             fontFamily="heading"
             fontSize={15}
@@ -307,12 +305,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
 
         {/* Actions */}
         {!done ? (
-          <XStack
-            paddingHorizontal={12}
-            paddingBottom={12}
-            gap={8}
-            justifyContent="flex-end"
-          >
+          <XStack paddingHorizontal={12} paddingBottom={12} gap={8} justifyContent="flex-end">
             <View
               paddingHorizontal={16}
               paddingVertical={10}
@@ -323,7 +316,13 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
               opacity={`${loading ? 0.5 : 1} press:0.8`}
               onPress={loading ? undefined : onReject}
             >
-              <Text fontFamily="body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onSurface?.val}>
+              <Text
+                fontFamily="body"
+                fontSize={14}
+                fontWeight="500"
+                letterSpacing={0.1}
+                color={theme.onSurface?.val}
+              >
                 Reject
               </Text>
             </View>
@@ -336,7 +335,13 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
               opacity={`${loading ? 0.7 : 1} press:0.8`}
               onPress={loading ? undefined : onApprove}
             >
-              <Text fontFamily="body" fontSize={14} fontWeight="500" letterSpacing={0.1} color={theme.onPrimary?.val}>
+              <Text
+                fontFamily="body"
+                fontSize={14}
+                fontWeight="500"
+                letterSpacing={0.1}
+                color={theme.onPrimary?.val}
+              >
                 {loading ? 'Applying…' : 'Approve'}
               </Text>
             </View>
@@ -354,7 +359,7 @@ export const ApprovalBubble = React.memo<ApprovalBubbleProps>(function ApprovalB
         )}
       </YStack>
     </XStack>
-  )
-})
+  );
+});
 
-ApprovalBubble.displayName = 'MCM.ApprovalBubble'
+ApprovalBubble.displayName = 'MCM.ApprovalBubble';

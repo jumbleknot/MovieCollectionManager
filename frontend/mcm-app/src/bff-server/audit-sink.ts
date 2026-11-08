@@ -28,17 +28,26 @@ import { logger } from '@/bff-server/logger';
  */
 const REDACT = new Set([
   'token',
-  'sessionId', 'session_id',
+  'sessionId',
+  'session_id',
   'password',
-  'secret', 'clientSecret', 'client_secret',
+  'secret',
+  'clientSecret',
+  'client_secret',
   'cookie',
   'authorization',
-  'code', 'codeVerifier', 'code_verifier',
+  'code',
+  'codeVerifier',
+  'code_verifier',
   'email',
   'username',
   // Explicit token variants (also caught by the .includes('token') check below).
-  'accessToken', 'refreshToken', 'idToken',
-  'id_token', 'access_token', 'refresh_token',
+  'accessToken',
+  'refreshToken',
+  'idToken',
+  'id_token',
+  'access_token',
+  'refresh_token',
 ]);
 
 /**
@@ -69,14 +78,9 @@ export function buildAuditDoc(
  * accepted. All other cases use plain `fetch`. The insecure option is strictly opt-in and
  * scoped to this one request — `NODE_TLS_REJECT_UNAUTHORIZED` is never touched.
  */
-export function postAuditDoc(
-  url: string,
-  auth: string,
-  body: string,
-): Promise<void> {
+export function postAuditDoc(url: string, auth: string, body: string): Promise<void> {
   const insecureTls =
-    !!(process.env['OPENSEARCH_INSECURE_TLS'] ?? '').trim() &&
-    url.startsWith('https://');
+    !!(process.env['OPENSEARCH_INSECURE_TLS'] ?? '').trim() && url.startsWith('https://');
 
   if (insecureTls) {
     // Use node:https with rejectUnauthorized: false — scoped to this request only.

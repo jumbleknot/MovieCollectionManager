@@ -81,8 +81,11 @@ function makeAxiosError(status: number, data: unknown): Error {
 
 const mockPayload = { sub: 'user-1', exp: 99999999999 };
 const mockUserProfile = {
-  id: 'user-1', username: 'tuser', roles: ['mc-user'],
-  accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z',
+  id: 'user-1',
+  username: 'tuser',
+  roles: ['mc-user'],
+  accountStatus: 'active' as const,
+  createdAt: '2026-01-01T00:00:00.000Z',
 };
 
 const mockCollectionSummaries = [
@@ -91,8 +94,12 @@ const mockCollectionSummaries = [
 ];
 
 const mockCreatedCollection = {
-  id: 'coll-new', name: 'New Collection', description: null, isDefault: false,
-  createdAt: '2026-05-23T00:00:00.000Z', updatedAt: '2026-05-23T00:00:00.000Z',
+  id: 'coll-new',
+  name: 'New Collection',
+  description: null,
+  isDefault: false,
+  createdAt: '2026-05-23T00:00:00.000Z',
+  updatedAt: '2026-05-23T00:00:00.000Z',
 };
 
 const noRoleUserProfile = { ...mockUserProfile, roles: [] };
@@ -102,7 +109,11 @@ const noRoleUserProfile = { ...mockUserProfile, roles: [] };
 describe('GET /bff-api/collections', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValue({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     mockMcClient.get.mockResolvedValue({ status: 200, data: { items: mockCollectionSummaries } });
   });
 
@@ -120,7 +131,11 @@ describe('GET /bff-api/collections', () => {
   });
 
   it('creates mc-service client with the extracted raw JWT', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: mockUserProfile, accessToken: 'specific-jwt-for-this-request' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'specific-jwt-for-this-request',
+    });
     await GET(makeGetRequest());
     expect(createMcServiceClient).toHaveBeenCalledWith('specific-jwt-for-this-request');
   });
@@ -132,7 +147,11 @@ describe('GET /bff-api/collections', () => {
   });
 
   it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: noRoleUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     const res = await GET(makeGetRequest());
     expect(res.status).toBe(403);
   });
@@ -151,7 +170,11 @@ describe('GET /bff-api/collections', () => {
 describe('POST /bff-api/collections', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValue({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     mockMcClient.post.mockResolvedValue({ status: 201, data: mockCreatedCollection });
   });
 
@@ -170,7 +193,11 @@ describe('POST /bff-api/collections', () => {
   });
 
   it('creates mc-service client with the extracted raw JWT', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: mockUserProfile, accessToken: 'post-jwt' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'post-jwt',
+    });
     await POST(makePostRequest({ name: 'X' }));
     expect(createMcServiceClient).toHaveBeenCalledWith('post-jwt');
   });
@@ -182,7 +209,11 @@ describe('POST /bff-api/collections', () => {
   });
 
   it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: noRoleUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     const res = await POST(makePostRequest({ name: 'X' }));
     expect(res.status).toBe(403);
   });

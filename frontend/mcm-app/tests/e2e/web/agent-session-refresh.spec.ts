@@ -33,33 +33,56 @@ async function sessionId(context: BrowserContext): Promise<string> {
 }
 
 test.describe('Server-held tokens — renewal is transparent (085 US6)', () => {
-  test('an expired server-held access token is renewed with no 401 and nothing stored client-side', { tag: '@gate' }, async ({
-    page,
-  }) => {
-    const context = page.context();
-    const api: APIRequestContext = page.request; // shares the context cookie jar + storageState
+  test(
+    'an expired server-held access token is renewed with no 401 and nothing stored client-side',
+    { tag: '@gate' },
+    async ({ page }) => {
+      const context = page.context();
+      const api: APIRequestContext = page.request; // shares the context cookie jar + storageState
 
-    // 1. Baseline, and the client holds the session reference only (FR-016, SC-007).
-    expect((await api.get(PROTECTED)).status(), 'baseline protected call should be authenticated').toBe(200);
-    const names = (await context.cookies()).map((c) => c.name);
-    for (const retired of RETIRED_TOKEN_COOKIES) expect(names, `${retired} must not be held`).not.toContain(retired);
-    const sid = await sessionId(context);
+      // 1. Baseline, and the client holds the session reference only (FR-016, SC-007).
+      expect(
+        (await api.get(PROTECTED)).status(),
+        'baseline protected call should be authenticated',
+      ).toBe(200);
+      const names = (await context.cookies()).map((c) => c.name);
+      for (const retired of RETIRED_TOKEN_COOKIES)
+        expect(names, `${retired} must not be held`).not.toContain(retired);
+      const sid = await sessionId(context);
 
-    // 2. The access token "expires" — on the server, where it lives.
-    const { before } = await ageServerHeldAccessToken(sid);
+      // 2. The access token "expires" — on the server, where it lives.
+      const { before } = await ageServerHeldAccessToken(sid);
 
-    // 3. No 401: the BFF renews it on this very request (FR-018).
-    const after = await api.get(PROTECTED);
-    expect(after.status(), 'an expired server-held token must be renewed, not answered with 401').toBe(200);
-    expect(after.headersArray().filter((h) => h.name.toLowerCase() === 'set-cookie').map((h) => h.value).join(';'))
-      .not.toMatch(/mcm_(access|refresh)_token=[^;]/);
+      // 3. No 401: the BFF renews it on this very request (FR-018).
+      const after = await api.get(PROTECTED);
+      expect(
+        after.status(),
+        'an expired server-held token must be renewed, not answered with 401',
+      ).toBe(200);
+      expect(
+        after
+          .headersArray()
+          .filter((h) => h.name.toLowerCase() === 'set-cookie')
+          .map((h) => h.value)
+          .join(';'),
+      ).not.toMatch(/mcm_(access|refresh)_token=[^;]/);
 
-    // 4. The renewal happened, and the client fallback still works on the session cookie alone.
-    expect((await serverHeldAccessExpiry(sid)) ?? 0, 'the server-held token was renewed').toBeGreaterThan(Date.now());
-    expect(before).toBeGreaterThan(0);
-    const refreshed = await api.post('/bff-api/auth/refresh');
-    expect(refreshed.status(), '/auth/refresh renews the session on the session cookie alone').toBe(200);
-    const setCookies = refreshed.headersArray().filter((h) => h.name.toLowerCase() === 'set-cookie').map((h) => h.value);
-    expect(setCookies.map((v) => v.split('=')[0])).toEqual(['mcm_session_id']);
-  });
+      // 4. The renewal happened, and the client fallback still works on the session cookie alone.
+      expect(
+        (await serverHeldAccessExpiry(sid)) ?? 0,
+        'the server-held token was renewed',
+      ).toBeGreaterThan(Date.now());
+      expect(before).toBeGreaterThan(0);
+      const refreshed = await api.post('/bff-api/auth/refresh');
+      expect(
+        refreshed.status(),
+        '/auth/refresh renews the session on the session cookie alone',
+      ).toBe(200);
+      const setCookies = refreshed
+        .headersArray()
+        .filter((h) => h.name.toLowerCase() === 'set-cookie')
+        .map((h) => h.value);
+      expect(setCookies.map((v) => v.split('=')[0])).toEqual(['mcm_session_id']);
+    },
+  );
 });

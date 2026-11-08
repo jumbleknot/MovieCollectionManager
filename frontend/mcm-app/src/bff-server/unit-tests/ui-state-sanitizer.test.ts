@@ -67,17 +67,15 @@ describe('sanitizeUiState', () => {
   // hooks/use-ui-state.tsx ends in `| string` and constrains nothing at runtime — which is
   // exactly how 'admin-settings' drifted into being reported but never allowed.
 
-  it.each([
-    'settings',
-    'settings-assistant',
-    'settings-backups',
-    'settings-admin',
-  ])('admits the settings-area label %s unchanged', (screen) => {
-    expect(sanitizeUiState({ current_screen: screen })!.current_screen).toBe(screen);
-  });
+  it.each(['settings', 'settings-assistant', 'settings-backups', 'settings-admin'])(
+    'admits the settings-area label %s unchanged',
+    (screen) => {
+      expect(sanitizeUiState({ current_screen: screen })!.current_screen).toBe(screen);
+    },
+  );
 
   it.each([
-    'profile',        // retired with the pre-split route; nothing reports it any more
+    'profile', // retired with the pre-split route; nothing reports it any more
     'admin-settings', // was reported by the old admin route but never allowlisted
   ])('reduces the retired label %s to "unknown"', (screen) => {
     expect(sanitizeUiState({ current_screen: screen })!.current_screen).toBe('unknown');

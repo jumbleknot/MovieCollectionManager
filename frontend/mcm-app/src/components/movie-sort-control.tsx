@@ -12,7 +12,12 @@ import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { Chip, IconButton } from '@mcm/design-system';
-import type { ColumnKey, ColumnVisibility, MovieSortField, SortDirection } from '@/types/collection';
+import type {
+  ColumnKey,
+  ColumnVisibility,
+  MovieSortField,
+  SortDirection,
+} from '@/types/collection';
 
 interface MovieSortControlProps {
   sortBy: MovieSortField;
@@ -33,18 +38,30 @@ const SCALAR_SORT_FIELDS: { key: MovieSortField; col: ColumnKey; label: string }
   { key: 'runtime', col: 'runtime', label: 'Runtime' },
 ];
 
-export function MovieSortControl({ sortBy, sortDir, visibleColumns, onChange }: MovieSortControlProps) {
+export function MovieSortControl({
+  sortBy,
+  sortDir,
+  visibleColumns,
+  onChange,
+}: MovieSortControlProps) {
   const theme = useTheme();
   const styles = makeStyles(theme);
   const fields: { key: MovieSortField; label: string }[] = [
     { key: 'title', label: 'Title' }, // always available
-    ...SCALAR_SORT_FIELDS.filter((f) => visibleColumns[f.col]).map((f) => ({ key: f.key, label: f.label })),
+    ...SCALAR_SORT_FIELDS.filter((f) => visibleColumns[f.col]).map((f) => ({
+      key: f.key,
+      label: f.label,
+    })),
   ];
 
   return (
     <View style={styles.container} testID="movie-sort-control">
       <Text style={styles.label}>Sort</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+      >
         {fields.map((f) => {
           const active = f.key === sortBy;
           return (
@@ -65,7 +82,11 @@ export function MovieSortControl({ sortBy, sortDir, visibleColumns, onChange }: 
           variant="filled"
           selected
           onPress={() => onChange(sortBy, sortDir === 'asc' ? 'desc' : 'asc')}
-          label={sortDir === 'asc' ? 'Sort ascending, tap for descending' : 'Sort descending, tap for ascending'}
+          label={
+            sortDir === 'asc'
+              ? 'Sort ascending, tap for descending'
+              : 'Sort descending, tap for ascending'
+          }
           icon={<Text style={styles.dirToggleText}>{sortDir === 'asc' ? '▲' : '▼'}</Text>}
         />
       </ScrollView>
@@ -75,30 +96,31 @@ export function MovieSortControl({ sortBy, sortDir, visibleColumns, onChange }: 
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: theme.background?.val,
-  },
-  label: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    fontWeight: '600',
-    color: theme.onSurfaceVariant?.val,
-    marginRight: 8,
-  },
-  row: {
-    alignItems: 'center',
-    gap: 8,
-  },
-  dirToggleText: {
-    fontFamily: 'Inter',
-    fontSize: 14,
-    lineHeight: 16,
-    fontWeight: '700',
-    color: theme.onPrimary?.val,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      backgroundColor: theme.background?.val,
+    },
+    label: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.onSurfaceVariant?.val,
+      marginRight: 8,
+    },
+    row: {
+      alignItems: 'center',
+      gap: 8,
+    },
+    dirToggleText: {
+      fontFamily: 'Inter',
+      fontSize: 14,
+      lineHeight: 16,
+      fontWeight: '700',
+      color: theme.onPrimary?.val,
+    },
+  });

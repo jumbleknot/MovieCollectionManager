@@ -29,11 +29,30 @@ interface CollectionListProps {
 function EmptyState(): React.JSX.Element {
   const theme = useTheme();
   return (
-    <YStack flex={1} alignItems="center" justifyContent="center" padding={32} testID="collection-list-empty-state">
-      <Text fontFamily="heading" fontSize={22} fontWeight="700" color={theme.onSurface?.val} marginBottom={8} textAlign="center">
+    <YStack
+      flex={1}
+      alignItems="center"
+      justifyContent="center"
+      padding={32}
+      testID="collection-list-empty-state"
+    >
+      <Text
+        fontFamily="heading"
+        fontSize={22}
+        fontWeight="700"
+        color={theme.onSurface?.val}
+        marginBottom={8}
+        textAlign="center"
+      >
         No collections yet
       </Text>
-      <Text fontFamily="body" fontSize={16} color={theme.onSurfaceVariant?.val} textAlign="center" lineHeight="22px">
+      <Text
+        fontFamily="body"
+        fontSize={16}
+        color={theme.onSurfaceVariant?.val}
+        textAlign="center"
+        lineHeight="22px"
+      >
         Create your first collection to start managing your movies.
       </Text>
     </YStack>
@@ -57,7 +76,7 @@ export function CollectionList({
       contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
       testID="collection-list"
     >
-      {collections.map(collection => (
+      {collections.map((collection) => (
         <CollectionCard
           key={collection.collectionId}
           collection={collection}

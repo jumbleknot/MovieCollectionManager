@@ -9,38 +9,37 @@
  * Direction: 'horizontal' (default) | 'vertical'
  */
 
-import React from 'react'
-import { View, useTheme, type ViewProps } from '@tamagui/core'
+import React from 'react';
+import { View, useTheme, type ViewProps } from '@tamagui/core';
 
-export type DividerVariant   = 'full' | 'inset' | 'middle'
-export type DividerDirection = 'horizontal' | 'vertical'
+export type DividerVariant = 'full' | 'inset' | 'middle';
+export type DividerDirection = 'horizontal' | 'vertical';
 
 export interface DividerProps extends Omit<ViewProps, 'children' | 'direction'> {
-  variant?:     DividerVariant
-  direction?:   DividerDirection
-  inset?:       number  // leading inset for 'inset'; both edges for 'middle'
-  thickness?:   number  // default 1
+  variant?: DividerVariant;
+  direction?: DividerDirection;
+  inset?: number; // leading inset for 'inset'; both edges for 'middle'
+  thickness?: number; // default 1
 }
 
 export const Divider = React.forwardRef<any, DividerProps>(function Divider(
-  {
-    variant   = 'full',
-    direction = 'horizontal',
-    inset     = 16,
-    thickness = 1,
-    ...rest
-  },
+  { variant = 'full', direction = 'horizontal', inset = 16, thickness = 1, ...rest },
   ref,
 ) {
-  const theme = useTheme()
+  const theme = useTheme();
 
-  const isH = direction === 'horizontal'
+  const isH = direction === 'horizontal';
 
-  const insetProps = variant === 'inset'
-    ? (isH ? { marginLeft: inset } : { marginTop: inset })
-    : variant === 'middle'
-    ? (isH ? { marginHorizontal: inset } : { marginVertical: inset })
-    : {}
+  const insetProps =
+    variant === 'inset'
+      ? isH
+        ? { marginLeft: inset }
+        : { marginTop: inset }
+      : variant === 'middle'
+        ? isH
+          ? { marginHorizontal: inset }
+          : { marginVertical: inset }
+        : {};
 
   return (
     <View
@@ -53,7 +52,7 @@ export const Divider = React.forwardRef<any, DividerProps>(function Divider(
       {...insetProps}
       {...rest}
     />
-  )
-})
+  );
+});
 
-Divider.displayName = 'MCM.Divider'
+Divider.displayName = 'MCM.Divider';

@@ -32,7 +32,11 @@ export async function POST(req: Request): Promise<Response> {
     if (!parsed.success) return problem('Invalid backup job', 400, firstIssue(parsed.error));
 
     const created = await jobStore.createJob(userId, parsed.data);
-    logger.audit('backup_job_created', { userId, jobId: created.id, scheduled: Boolean(created.schedule) });
+    logger.audit('backup_job_created', {
+      userId,
+      jobId: created.id,
+      scheduled: Boolean(created.schedule),
+    });
     return json(created, 201);
   });
 }

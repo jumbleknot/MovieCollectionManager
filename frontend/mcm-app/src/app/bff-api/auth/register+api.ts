@@ -6,7 +6,11 @@
  * Rate limited: 10 requests per email per day.
  */
 
-import { checkRegisterRateLimit, checkRegisterIpRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
+import {
+  checkRegisterRateLimit,
+  checkRegisterIpRateLimit,
+  extractClientIp,
+} from '@/bff-server/rate-limiter';
 import { getAppSettings } from '@/bff-server/app-settings-store';
 import { createUser, assignMcUserRole, sendVerificationEmail } from '@/bff-server/keycloak';
 import { cacheUserProfile } from '@/bff-server/cache-service';
@@ -14,11 +18,7 @@ import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
 import { securityHeaders } from '@/bff-server/security-headers';
 import { AuthError, AuthErrorCode } from '@/types/errors';
-import {
-  isValidEmail,
-  isValidUsername,
-  isValidPassword,
-} from '@/utils/validators';
+import { isValidEmail, isValidUsername, isValidPassword } from '@/utils/validators';
 import type { RegisterRequest, RegisterResponse, UserProfile } from '@/types/auth';
 
 export async function POST(request: Request): Promise<Response> {
@@ -38,11 +38,7 @@ async function _post(request: Request): Promise<Response> {
     const appSettings = await getAppSettings();
     if (!appSettings.allowSelfRegistration) {
       logger.audit('registration_refused_disabled', { ip });
-      throw new AuthError(
-        AuthErrorCode.FORBIDDEN,
-        'Self-registration is currently disabled.',
-        403,
-      );
+      throw new AuthError(AuthErrorCode.FORBIDDEN, 'Self-registration is currently disabled.', 403);
     }
 
     const body = (await request.json()) as Partial<RegisterRequest>;
@@ -92,7 +88,10 @@ async function _post(request: Request): Promise<Response> {
     try {
       await sendVerificationEmail(userId, verificationRedirectUri);
     } catch (emailErr) {
-      logger.warn('register: verification email failed', { action: 'register_email_failed', error: emailErr });
+      logger.warn('register: verification email failed', {
+        action: 'register_email_failed',
+        error: emailErr,
+      });
     }
 
     // ─── Cache user profile (10-min TTL) ──────────────────────────────────
@@ -111,7 +110,10 @@ async function _post(request: Request): Promise<Response> {
     try {
       await cacheUserProfile(profile);
     } catch (cacheErr) {
-      logger.warn('register: profile cache failed', { action: 'register_cache_failed', error: cacheErr });
+      logger.warn('register: profile cache failed', {
+        action: 'register_cache_failed',
+        error: cacheErr,
+      });
     }
 
     logger.audit('register', { ip });
@@ -150,13 +152,15 @@ function extractError(err: unknown): { code: string; message: string; status: nu
 
 function getUserMessage(code: string): string {
   const messages: Record<string, string> = {
-    [AuthErrorCode.WEAK_PASSWORD]: 'Password must be at least 12 characters and include uppercase, lowercase, numbers, and symbols.',
+    [AuthErrorCode.WEAK_PASSWORD]:
+      'Password must be at least 12 characters and include uppercase, lowercase, numbers, and symbols.',
     [AuthErrorCode.DUPLICATE_USERNAME]: 'That username is already taken. Please choose another.',
     [AuthErrorCode.DUPLICATE_EMAIL]: 'An account with that email already exists.',
     [AuthErrorCode.INVALID_EMAIL]: 'Please enter a valid email address.',
     [AuthErrorCode.INVALID_INPUT]: 'The provided information is invalid. Please check your input.',
     [AuthErrorCode.RATE_LIMIT_EXCEEDED]: 'Too many requests. Please try again later.',
-    [AuthErrorCode.KEYCLOAK_UNAVAILABLE]: 'The authentication service is temporarily unavailable. Please try again later.',
+    [AuthErrorCode.KEYCLOAK_UNAVAILABLE]:
+      'The authentication service is temporarily unavailable. Please try again later.',
     [AuthErrorCode.FORBIDDEN]: 'Self-registration is currently disabled.',
     [AuthErrorCode.UNKNOWN]: 'An unexpected error occurred. Please try again.',
   };

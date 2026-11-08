@@ -21,9 +21,7 @@ const mockUser: UserProfile = {
 
 describe('ProfileDisplay', () => {
   it('renders all user fields', async () => {
-    const { getByText } = await render(
-      <ProfileDisplay user={mockUser} onLogout={jest.fn()} />,
-    );
+    const { getByText } = await render(<ProfileDisplay user={mockUser} onLogout={jest.fn()} />);
 
     expect(getByText('testuser')).toBeTruthy();
     expect(getByText('test@example.com')).toBeTruthy();
@@ -33,24 +31,18 @@ describe('ProfileDisplay', () => {
   });
 
   it('shows email verification status', async () => {
-    const { getByTestId } = await render(
-      <ProfileDisplay user={mockUser} onLogout={jest.fn()} />,
-    );
+    const { getByTestId } = await render(<ProfileDisplay user={mockUser} onLogout={jest.fn()} />);
     const emailVerified = getByTestId('profile-email-verified');
     expect(emailVerified).toBeTruthy();
   });
 
   it('shows logout button', async () => {
-    const { getByTestId } = await render(
-      <ProfileDisplay user={mockUser} onLogout={jest.fn()} />,
-    );
+    const { getByTestId } = await render(<ProfileDisplay user={mockUser} onLogout={jest.fn()} />);
     expect(getByTestId('btn-logout')).toBeTruthy();
   });
 
   it('opens logout confirmation dialog on logout press', async () => {
-    const { getByTestId } = await render(
-      <ProfileDisplay user={mockUser} onLogout={jest.fn()} />,
-    );
+    const { getByTestId } = await render(<ProfileDisplay user={mockUser} onLogout={jest.fn()} />);
 
     await fireEvent.press(getByTestId('btn-logout'));
     expect(getByTestId('logout-dialog')).toBeTruthy();
@@ -58,9 +50,7 @@ describe('ProfileDisplay', () => {
 
   it('calls onLogout when dialog confirmed', async () => {
     const onLogout = jest.fn().mockResolvedValue(undefined);
-    const { getByTestId } = await render(
-      <ProfileDisplay user={mockUser} onLogout={onLogout} />,
-    );
+    const { getByTestId } = await render(<ProfileDisplay user={mockUser} onLogout={onLogout} />);
 
     await fireEvent.press(getByTestId('btn-logout'));
     await fireEvent.press(getByTestId('btn-logout-confirm'));

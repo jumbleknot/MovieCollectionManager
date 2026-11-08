@@ -29,11 +29,10 @@ import type { BackupDestination, BackupJob, BackupVersion } from '@/types/backup
  */
 const DEEP_CHECK_COUNT = 5;
 
-export async function listBackupVersions(
-  userId: string,
-  job: BackupJob,
-): Promise<BackupVersion[]> {
-  const destinationDoc = await (await getBackupDestinationsCollection()).findOne({
+export async function listBackupVersions(userId: string, job: BackupJob): Promise<BackupVersion[]> {
+  const destinationDoc = await (
+    await getBackupDestinationsCollection()
+  ).findOne({
     _id: job.destinationId,
     userId,
   });
@@ -97,7 +96,11 @@ function timestampFromKey(key: string): string | null {
  * guessable. So ownership is re-established on every request from the session, and a key
  * outside this job's prefix is refused rather than fetched.
  */
-export function keyBelongsToJob(destination: BackupDestination, job: BackupJob, key: string): boolean {
+export function keyBelongsToJob(
+  destination: BackupDestination,
+  job: BackupJob,
+  key: string,
+): boolean {
   const prefix = `${destination.basePath || 'mcm-backups'}/${job._id}/`;
   // `startsWith` is necessary but NOT sufficient: `..` in the remainder could walk out of the
   // prefix at the server, so a traversal segment disqualifies the key outright.

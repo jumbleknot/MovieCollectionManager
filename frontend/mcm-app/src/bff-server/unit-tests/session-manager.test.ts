@@ -240,7 +240,10 @@ describe('readLiveSession', () => {
     const now = Date.now();
     const both = makeSession({ expiresAt: now - 1_000, lastActivityAt: now - 3_600_000 });
     mockedGetSession.mockResolvedValue(both);
-    await expect(readLiveSession('sess-001')).resolves.toEqual({ expired: 'absolute', userId: both.userId });
+    await expect(readLiveSession('sess-001')).resolves.toEqual({
+      expired: 'absolute',
+      userId: both.userId,
+    });
     expect(mockedDeleteSession).toHaveBeenCalledWith('sess-001', both.userId);
   });
 
@@ -248,7 +251,10 @@ describe('readLiveSession', () => {
     const now = Date.now();
     const idle = makeSession({ expiresAt: now + 86_400_000, lastActivityAt: now - 1_900_000 });
     mockedGetSession.mockResolvedValue(idle);
-    await expect(readLiveSession('sess-001')).resolves.toEqual({ expired: 'idle', userId: idle.userId });
+    await expect(readLiveSession('sess-001')).resolves.toEqual({
+      expired: 'idle',
+      userId: idle.userId,
+    });
     expect(mockedDeleteSession).toHaveBeenCalledWith('sess-001', idle.userId);
   });
 });
@@ -305,22 +311,34 @@ describe('readLiveSessionWithTokens', () => {
   it('returns the live session and its sealed record', async () => {
     const session = makeSession();
     (getSessionWithTokens as jest.Mock).mockResolvedValue({ session, tokensRaw: 'sealed' });
-    await expect(readLiveSessionWithTokens('sess-001')).resolves.toEqual({ session, tokensRaw: 'sealed' });
+    await expect(readLiveSessionWithTokens('sess-001')).resolves.toEqual({
+      session,
+      tokensRaw: 'sealed',
+    });
   });
 
   it('reports absolute before idle, and deletes the expired session', async () => {
     const now = Date.now();
     const both = makeSession({ expiresAt: now - 1, lastActivityAt: now - 3_600_000 });
     (getSessionWithTokens as jest.Mock).mockResolvedValue({ session: both, tokensRaw: 'sealed' });
-    await expect(readLiveSessionWithTokens('sess-001')).resolves.toEqual({ expired: 'absolute', userId: both.userId });
+    await expect(readLiveSessionWithTokens('sess-001')).resolves.toEqual({
+      expired: 'absolute',
+      userId: both.userId,
+    });
     expect(mockedDeleteSession).toHaveBeenCalledWith('sess-001', both.userId);
   });
 
   it('reports idle, and missing', async () => {
     const now = Date.now();
     const idle = makeSession({ lastActivityAt: now - 1_900_000 });
-    (getSessionWithTokens as jest.Mock).mockResolvedValueOnce({ session: idle, tokensRaw: 'sealed' });
-    await expect(readLiveSessionWithTokens('sess-001')).resolves.toEqual({ expired: 'idle', userId: idle.userId });
+    (getSessionWithTokens as jest.Mock).mockResolvedValueOnce({
+      session: idle,
+      tokensRaw: 'sealed',
+    });
+    await expect(readLiveSessionWithTokens('sess-001')).resolves.toEqual({
+      expired: 'idle',
+      userId: idle.userId,
+    });
     (getSessionWithTokens as jest.Mock).mockResolvedValueOnce({ session: null, tokensRaw: null });
     await expect(readLiveSessionWithTokens('gone')).resolves.toEqual({ expired: 'missing' });
   });

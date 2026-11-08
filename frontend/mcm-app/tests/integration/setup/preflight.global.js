@@ -80,7 +80,8 @@ function tcpProbe(host, port, { send, expectPrefix } = {}) {
     });
     socket.on('data', (buf) => {
       const reply = buf.toString('utf-8');
-      if (expectPrefix && !reply.startsWith(expectPrefix)) done(`unexpected reply: ${reply.slice(0, 40)}`);
+      if (expectPrefix && !reply.startsWith(expectPrefix))
+        done(`unexpected reply: ${reply.slice(0, 40)}`);
       else done(null);
     });
     socket.on('timeout', () => done(`timed out after ${PROBE_TIMEOUT_MS}ms`));
@@ -117,7 +118,9 @@ module.exports = async function preflight() {
   const bffUrl = process.env.BFF_BASE_URL || 'http://localhost:8082';
   const keycloakUrl = process.env.KEYCLOAK_URL || 'http://localhost:8099';
   const realm = process.env.KEYCLOAK_REALM || 'grumpyrobot';
-  const redis = parseRedis(process.env.REDIS_TEST_URL || process.env.REDIS_URL || 'redis://localhost:6379/1');
+  const redis = parseRedis(
+    process.env.REDIS_TEST_URL || process.env.REDIS_URL || 'redis://localhost:6379/1',
+  );
   const mongo = parseMongo(process.env.MONGO_URL || 'mongodb://localhost:27018');
 
   const checks = [
@@ -125,9 +128,15 @@ module.exports = async function preflight() {
     [
       'Keycloak',
       `${keycloakUrl}/realms/${realm}/.well-known/openid-configuration`,
-      httpProbe(`${keycloakUrl}/realms/${realm}/.well-known/openid-configuration`, { expectStatus: 200 }),
+      httpProbe(`${keycloakUrl}/realms/${realm}/.well-known/openid-configuration`, {
+        expectStatus: 200,
+      }),
     ],
-    ['Redis', `${redis.host}:${redis.port}`, tcpProbe(redis.host, redis.port, { send: 'PING\r\n', expectPrefix: '+PONG' })],
+    [
+      'Redis',
+      `${redis.host}:${redis.port}`,
+      tcpProbe(redis.host, redis.port, { send: 'PING\r\n', expectPrefix: '+PONG' }),
+    ],
     ['BFF Mongo', `${mongo.host}:${mongo.port}`, tcpProbe(mongo.host, mongo.port)],
   ];
 
@@ -144,7 +153,11 @@ module.exports = async function preflight() {
     const s3Url = process.env.BACKUP_TEST_S3_ENDPOINT || 'http://localhost:9100';
     const davUrl = process.env.BACKUP_TEST_WEBDAV_ENDPOINT || 'http://localhost:9102';
     checks.push(
-      ['Backup S3 (RustFS)', `${s3Url}/health/ready`, httpProbe(`${s3Url}/health/ready`, { expectStatus: 200 })],
+      [
+        'Backup S3 (RustFS)',
+        `${s3Url}/health/ready`,
+        httpProbe(`${s3Url}/health/ready`, { expectStatus: 200 }),
+      ],
       ['Backup WebDAV', davUrl, httpProbe(davUrl, { expectStatus: 401 })],
     );
   }

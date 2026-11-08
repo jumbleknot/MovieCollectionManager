@@ -224,10 +224,7 @@ export interface BackupObjectInfo {
 // different fix from a rejected credential, which is a different fix again from a credential
 // that authenticates but may not write.
 export type BackupProbeFailure =
-  | 'unreachable'
-  | 'credentials-rejected'
-  | 'no-write-permission'
-  | 'address-not-allowed';
+  'unreachable' | 'credentials-rejected' | 'no-write-permission' | 'address-not-allowed';
 
 export interface BackupProbeOutcome {
   ok: boolean;

@@ -14,7 +14,10 @@ const validValues = {
   password: 'SecurePass1!extra',
 };
 
-async function fillAndSubmit(getByTestId: Awaited<ReturnType<typeof render>>['getByTestId'], overrides = {}) {
+async function fillAndSubmit(
+  getByTestId: Awaited<ReturnType<typeof render>>['getByTestId'],
+  overrides = {},
+) {
   const values = { ...validValues, confirmPassword: validValues.password, ...overrides };
 
   await fireEvent.changeText(getByTestId('input-firstName'), values.firstName);
@@ -22,7 +25,10 @@ async function fillAndSubmit(getByTestId: Awaited<ReturnType<typeof render>>['ge
   await fireEvent.changeText(getByTestId('input-username'), values.username);
   await fireEvent.changeText(getByTestId('input-email'), values.email);
   await fireEvent.changeText(getByTestId('input-password'), values.password);
-  await fireEvent.changeText(getByTestId('input-confirmPassword'), (overrides as { confirmPassword?: string }).confirmPassword ?? values.password);
+  await fireEvent.changeText(
+    getByTestId('input-confirmPassword'),
+    (overrides as { confirmPassword?: string }).confirmPassword ?? values.password,
+  );
 
   await fireEvent.press(getByTestId('btn-create-account'));
 }

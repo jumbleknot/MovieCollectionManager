@@ -36,7 +36,10 @@ describe('POST /bff-api/auth/resend-verification', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
-    expect(sendVerificationEmail).toHaveBeenCalledWith('user-123', expect.stringContaining('/login?verified=true'));
+    expect(sendVerificationEmail).toHaveBeenCalledWith(
+      'user-123',
+      expect.stringContaining('/login?verified=true'),
+    );
   });
 
   it('returns 200 even when email not found (prevents enumeration)', async () => {
@@ -53,9 +56,7 @@ describe('POST /bff-api/auth/resend-verification', () => {
   });
 
   it('returns 429 when rate limit exceeded', async () => {
-    (checkResendVerificationRateLimit as jest.Mock).mockRejectedValueOnce(
-      new RateLimitError(3600),
-    );
+    (checkResendVerificationRateLimit as jest.Mock).mockRejectedValueOnce(new RateLimitError(3600));
 
     const res = await POST(makeRequest({ email: 'test@example.com' }));
     expect(res.status).toBe(429);

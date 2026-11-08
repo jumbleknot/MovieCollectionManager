@@ -37,8 +37,11 @@ jest.mock('@/bff-server/backup-offline-token', () => {
 // hands the body the caller's id, which is all these routes ever see.
 jest.mock('@/bff-server/backup-route-support', () => ({
   ...jest.requireActual('@/bff-server/backup-route-support'),
-  withBackupRoute: (_req: Request, _action: string, body: (ctx: { userId: string; jwt: string }) => Promise<Response>) =>
-    body({ userId: 'user-1', jwt: 'jwt' }),
+  withBackupRoute: (
+    _req: Request,
+    _action: string,
+    body: (ctx: { userId: string; jwt: string }) => Promise<Response>,
+  ) => body({ userId: 'user-1', jwt: 'jwt' }),
 }));
 
 jest.mock('@/bff-server/security-headers', () => ({ securityHeaders: () => new Headers() }));
@@ -128,12 +131,18 @@ describe('DELETE /bff-api/backups/jobs/{id}', () => {
 });
 
 describe('DELETE /bff-api/backups/consent — withdrawing the permission', () => {
-  const req = () => new Request('http://localhost:8082/bff-api/backups/consent', { method: 'DELETE' });
+  const req = () =>
+    new Request('http://localhost:8082/bff-api/backups/consent', { method: 'DELETE' });
 
   it('switches every schedule off, AFTER the revocation succeeded', async () => {
     const order: string[] = [];
-    mockRevoke.mockImplementation(async () => { order.push('revoke'); });
-    mockClearSchedules.mockImplementation(async () => { order.push('clear'); return 1; });
+    mockRevoke.mockImplementation(async () => {
+      order.push('revoke');
+    });
+    mockClearSchedules.mockImplementation(async () => {
+      order.push('clear');
+      return 1;
+    });
 
     const res = await withdraw(req());
 

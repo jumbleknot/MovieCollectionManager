@@ -25,7 +25,12 @@ describe('PillButton', () => {
   it('forwards testID + accessibilityLabel and fires onPress', async () => {
     const onPress = jest.fn();
     const { getByTestId } = await renderDS(
-      <PillButton label="+ Create" testID="home-screen-create-button" accessibilityLabel="Create new collection" onPress={onPress} />,
+      <PillButton
+        label="+ Create"
+        testID="home-screen-create-button"
+        accessibilityLabel="Create new collection"
+        onPress={onPress}
+      />,
     );
     const node = getByTestId('home-screen-create-button');
     expect(node).toBeTruthy();

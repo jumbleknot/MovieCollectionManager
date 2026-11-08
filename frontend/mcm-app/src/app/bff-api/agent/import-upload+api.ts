@@ -52,7 +52,9 @@ export async function POST(req: Request): Promise<Response> {
       }
 
       // Minimal multipart surface — the project's TS lib types `FormData` without `get`.
-      const form = (await req.formData().catch(() => null)) as { get(name: string): unknown } | null;
+      const form = (await req.formData().catch(() => null)) as {
+        get(name: string): unknown;
+      } | null;
       const file = form?.get('file');
       if (!(file instanceof File)) {
         throw new AuthError(AuthErrorCode.INVALID_INPUT, 'No file provided', 400);

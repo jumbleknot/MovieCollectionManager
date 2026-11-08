@@ -106,8 +106,11 @@ function makeAxiosError(status: number, data: unknown): Error {
 
 const mockPayload = { sub: 'user-1', exp: 99999999999 };
 const mockUserProfile = {
-  id: 'user-1', username: 'tuser', roles: ['mc-user'],
-  accountStatus: 'active' as const, createdAt: '2026-01-01T00:00:00.000Z',
+  id: 'user-1',
+  username: 'tuser',
+  roles: ['mc-user'],
+  accountStatus: 'active' as const,
+  createdAt: '2026-01-01T00:00:00.000Z',
 };
 const noRoleUserProfile = { ...mockUserProfile, roles: [] };
 
@@ -125,7 +128,11 @@ const mockCollection = {
 describe('GET /bff-api/collections/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValue({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     mockMcClient.get.mockResolvedValue({ status: 200, data: mockCollection });
   });
 
@@ -143,7 +150,11 @@ describe('GET /bff-api/collections/:id', () => {
   });
 
   it('creates mc-service client with the extracted raw JWT', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: mockUserProfile, accessToken: 'get-jwt' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'get-jwt',
+    });
     await GET(...makeGetRequest());
     expect(createMcServiceClient).toHaveBeenCalledWith('get-jwt');
   });
@@ -155,7 +166,11 @@ describe('GET /bff-api/collections/:id', () => {
   });
 
   it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: noRoleUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     const res = await GET(...makeGetRequest());
     expect(res.status).toBe(403);
   });
@@ -181,8 +196,15 @@ describe('GET /bff-api/collections/:id', () => {
 describe('PATCH /bff-api/collections/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile, accessToken: 'raw-jwt-token' });
-    mockMcClient.patch.mockResolvedValue({ status: 200, data: { ...mockCollection, name: 'Updated' } });
+    (requireAuth as jest.Mock).mockResolvedValue({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
+    mockMcClient.patch.mockResolvedValue({
+      status: 200,
+      data: { ...mockCollection, name: 'Updated' },
+    });
   });
 
   it('returns 200 with updated collection from mc-service', async () => {
@@ -199,7 +221,11 @@ describe('PATCH /bff-api/collections/:id', () => {
   });
 
   it('creates mc-service client with the extracted raw JWT', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: mockUserProfile, accessToken: 'patch-jwt' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'patch-jwt',
+    });
     await PATCH(...makePatchRequest({ name: 'X' }));
     expect(createMcServiceClient).toHaveBeenCalledWith('patch-jwt');
   });
@@ -211,7 +237,11 @@ describe('PATCH /bff-api/collections/:id', () => {
   });
 
   it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: noRoleUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     const res = await PATCH(...makePatchRequest({ name: 'X' }));
     expect(res.status).toBe(403);
   });
@@ -250,7 +280,11 @@ describe('PATCH /bff-api/collections/:id', () => {
 describe('DELETE /bff-api/collections/:id', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    (requireAuth as jest.Mock).mockResolvedValue({ payload: mockPayload, user: mockUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValue({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     mockMcClient.delete.mockResolvedValue({ status: 204, data: null });
   });
 
@@ -265,7 +299,11 @@ describe('DELETE /bff-api/collections/:id', () => {
   });
 
   it('creates mc-service client with the extracted raw JWT', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: mockUserProfile, accessToken: 'delete-jwt' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: mockUserProfile,
+      accessToken: 'delete-jwt',
+    });
     await DELETE(...makeDeleteRequest());
     expect(createMcServiceClient).toHaveBeenCalledWith('delete-jwt');
   });
@@ -277,7 +315,11 @@ describe('DELETE /bff-api/collections/:id', () => {
   });
 
   it('returns 403 when authenticated user lacks mc-user and mc-admin roles', async () => {
-    (requireAuth as jest.Mock).mockResolvedValueOnce({ payload: mockPayload, user: noRoleUserProfile, accessToken: 'raw-jwt-token' });
+    (requireAuth as jest.Mock).mockResolvedValueOnce({
+      payload: mockPayload,
+      user: noRoleUserProfile,
+      accessToken: 'raw-jwt-token',
+    });
     const res = await DELETE(...makeDeleteRequest());
     expect(res.status).toBe(403);
   });

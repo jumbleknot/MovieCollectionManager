@@ -45,7 +45,13 @@ jest.mock('@/bff-server/keycloak', () => ({
 }));
 jest.mock('@/bff-server/token-service', () => ({ validateJwt: jest.fn() }));
 jest.mock('@/bff-server/logger', () => ({
-  logger: { audit: jest.fn(), warn: jest.fn(), error: jest.fn(), info: jest.fn(), debug: jest.fn() },
+  logger: {
+    audit: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
+  },
 }));
 
 const mockedLock = setLockIfAbsent as jest.MockedFunction<typeof setLockIfAbsent>;
@@ -89,7 +95,9 @@ function grant(access = 'eyJ.renewed-access.sig', refresh = 'eyJ.renewed-refresh
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockedValidate.mockResolvedValue({ payload: { sub: 'member-a' } } as Awaited<ReturnType<typeof validateJwt>>);
+  mockedValidate.mockResolvedValue({ payload: { sub: 'member-a' } } as Awaited<
+    ReturnType<typeof validateJwt>
+  >);
 });
 
 describe('sealing (FR-017, SC-008)', () => {
@@ -115,7 +123,11 @@ describe('sealing (FR-017, SC-008)', () => {
   it('keeps the expiry times in clear, so a session can be aged without the key', () => {
     const t = tokens();
     const record = JSON.parse(sealSessionTokens(SESSION, t)) as Record<string, unknown>;
-    expect(record).toMatchObject({ v: 1, accessExpiresAt: t.accessExpiresAt, refreshExpiresAt: t.refreshExpiresAt });
+    expect(record).toMatchObject({
+      v: 1,
+      accessExpiresAt: t.accessExpiresAt,
+      refreshExpiresAt: t.refreshExpiresAt,
+    });
     const aged = JSON.stringify({ ...record, accessExpiresAt: 0 });
     expect(openSessionTokens(SESSION, aged).accessExpiresAt).toBe(0);
   });
@@ -138,13 +150,18 @@ describe('ensureFreshTokens (FR-018, FR-019)', () => {
   it('renews a token about to expire, stores the result sealed, and checks its owner', async () => {
     mockedLock.mockResolvedValueOnce(true);
     mockedRefresh.mockResolvedValueOnce(grant());
-    const renewed = await ensureFreshTokens(SESSION, tokens({ accessExpiresAt: Date.now() + 5_000 }));
+    const renewed = await ensureFreshTokens(
+      SESSION,
+      tokens({ accessExpiresAt: Date.now() + 5_000 }),
+    );
 
     expect(mockedRefresh).toHaveBeenCalledWith(REFRESH);
     expect(renewed.accessToken).toBe('eyJ.renewed-access.sig');
     expect(mockedValidate).toHaveBeenCalledWith('eyJ.renewed-access.sig');
     const [, stored] = (cacheSessionTokens as jest.Mock).mock.calls[0];
-    expect(openSessionTokens(SESSION, stored as string).refreshToken).toBe('eyJ.renewed-refresh.sig');
+    expect(openSessionTokens(SESSION, stored as string).refreshToken).toBe(
+      'eyJ.renewed-refresh.sig',
+    );
     expect(releaseLockIfHeld).toHaveBeenCalledWith('session-renew:sess-1', expect.any(String));
   });
 
@@ -167,12 +184,17 @@ describe('ensureFreshTokens (FR-018, FR-019)', () => {
     (cacheSessionTokens as jest.Mock).mockImplementation(async (_s: Session, raw: string) => {
       storedByWinner = raw;
     });
-    mockedRecord.mockImplementation(async () => storedByWinner ?? sealSessionTokens(SESSION, stale));
+    mockedRecord.mockImplementation(
+      async () => storedByWinner ?? sealSessionTokens(SESSION, stale),
+    );
     mockedRefresh.mockImplementation(
       () => new Promise((resolve) => setTimeout(() => resolve(grant()), 50)),
     );
 
-    const [a, b] = await Promise.all([ensureFreshTokens(SESSION, stale), ensureFreshTokens(SESSION, stale)]);
+    const [a, b] = await Promise.all([
+      ensureFreshTokens(SESSION, stale),
+      ensureFreshTokens(SESSION, stale),
+    ]);
 
     expect(mockedRefresh).toHaveBeenCalledTimes(1);
     expect(a.accessToken).toBe('eyJ.renewed-access.sig');
@@ -181,7 +203,9 @@ describe('ensureFreshTokens (FR-018, FR-019)', () => {
 
   it('a rejected renewal ends the session: both keys deleted, audited, 401 REFRESH_FAILED', async () => {
     mockedLock.mockResolvedValueOnce(true);
-    mockedRefresh.mockRejectedValueOnce(new AuthError(AuthErrorCode.REFRESH_FAILED, 'rejected', 401));
+    mockedRefresh.mockRejectedValueOnce(
+      new AuthError(AuthErrorCode.REFRESH_FAILED, 'rejected', 401),
+    );
     await expect(ensureFreshTokens(SESSION, tokens({ accessExpiresAt: 0 }))).rejects.toMatchObject({
       statusCode: 401,
       code: AuthErrorCode.REFRESH_FAILED,
@@ -206,7 +230,9 @@ describe('ensureFreshTokens (FR-018, FR-019)', () => {
   it('a renewed token for someone else is refused: nothing persisted, its refresh token revoked (FR-006)', async () => {
     mockedLock.mockResolvedValueOnce(true);
     mockedRefresh.mockResolvedValueOnce(grant('eyJ.b-access.sig', 'eyJ.b-refresh.sig'));
-    mockedValidate.mockResolvedValueOnce({ payload: { sub: 'member-b' } } as Awaited<ReturnType<typeof validateJwt>>);
+    mockedValidate.mockResolvedValueOnce({ payload: { sub: 'member-b' } } as Awaited<
+      ReturnType<typeof validateJwt>
+    >);
 
     await expect(ensureFreshTokens(SESSION, tokens({ accessExpiresAt: 0 }))).rejects.toMatchObject({
       statusCode: 401,
@@ -215,7 +241,9 @@ describe('ensureFreshTokens (FR-018, FR-019)', () => {
     expect(cacheSessionTokens).not.toHaveBeenCalled();
     expect(revokeToken).toHaveBeenCalledWith('eyJ.b-refresh.sig', 'refresh_token');
     expect(deleteSession).toHaveBeenCalledWith('sess-1', 'member-a');
-    const audits = (logger.audit as jest.Mock).mock.calls.filter(([e]) => e === 'session_refresh_owner_mismatch');
+    const audits = (logger.audit as jest.Mock).mock.calls.filter(
+      ([e]) => e === 'session_refresh_owner_mismatch',
+    );
     expect(audits).toEqual([['session_refresh_owner_mismatch', { userId: 'member-a' }]]);
   });
 
@@ -235,7 +263,10 @@ describe('ensureFreshTokens (FR-018, FR-019)', () => {
       mockedLock.mockResolvedValue(false);
       mockedRecord.mockResolvedValue(sealSessionTokens(SESSION, stale));
       const pending = ensureFreshTokens(SESSION, stale);
-      const assertion = expect(pending).rejects.toMatchObject({ statusCode: 503, code: AuthErrorCode.SESSION_RENEWAL_PENDING });
+      const assertion = expect(pending).rejects.toMatchObject({
+        statusCode: 503,
+        code: AuthErrorCode.SESSION_RENEWAL_PENDING,
+      });
       await jest.advanceTimersByTimeAsync(6_000);
       await assertion;
       expect(mockedRefresh).not.toHaveBeenCalled();

@@ -29,7 +29,11 @@ export type ApprovalRequestPayload = {
   type: string;
   proposalId: string;
   kind: string;
-  target?: { collection_id?: string | null; name?: string | null; create_if_missing?: boolean } | null;
+  target?: {
+    collection_id?: string | null;
+    name?: string | null;
+    create_if_missing?: boolean;
+  } | null;
   items: ApprovalItem[];
 };
 
@@ -55,11 +59,7 @@ export function ApprovalRequest({
     <View testID="approval-request" style={styles.card}>
       <Text style={styles.heading}>Approve these changes?</Text>
       {payload.items.map((item) => (
-        <Text
-          key={item.itemId}
-          testID={`approval-request-item-${item.itemId}`}
-          style={styles.item}
-        >
+        <Text key={item.itemId} testID={`approval-request-item-${item.itemId}`} style={styles.item}>
           {itemLabel(item, payload.target)}
         </Text>
       ))}
@@ -180,19 +180,20 @@ function itemLabel(item: ApprovalItem, target: ApprovalRequestPayload['target'])
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  // HITL approval card — an attention surface (primaryContainer) distinct from
-  // ordinary message bubbles, so a write proposal reads as "needs your decision".
-  card: {
-    backgroundColor: theme.surface3?.val,
-    borderWidth: 1,
-    borderColor: theme.primary?.val,
-    borderRadius: 10,
-    padding: 10,
-    marginVertical: 4,
-    gap: 6,
-  },
-  heading: { fontFamily: 'Outfit', fontSize: 14, fontWeight: '600', color: theme.onSurface?.val },
-  item: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
-  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    // HITL approval card — an attention surface (primaryContainer) distinct from
+    // ordinary message bubbles, so a write proposal reads as "needs your decision".
+    card: {
+      backgroundColor: theme.surface3?.val,
+      borderWidth: 1,
+      borderColor: theme.primary?.val,
+      borderRadius: 10,
+      padding: 10,
+      marginVertical: 4,
+      gap: 6,
+    },
+    heading: { fontFamily: 'Outfit', fontSize: 14, fontWeight: '600', color: theme.onSurface?.val },
+    item: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
+    actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 4 },
+  });

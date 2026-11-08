@@ -43,7 +43,12 @@ const copilotkitState = { runAgent, getAgent: () => agentState };
 
 function setImportState(over: Partial<ReturnType<typeof importHook.useSpreadsheetImport>> = {}) {
   mockedUseImport.mockReturnValue({
-    status: 'idle', filename: null, error: null, uploadFile, reset, ...over,
+    status: 'idle',
+    filename: null,
+    error: null,
+    uploadFile,
+    reset,
+    ...over,
   });
 }
 

@@ -45,21 +45,41 @@ const MOVIE_TITLE = 'Coherence';
 async function gotoHome(page: Page): Promise<void> {
   await page.goto(`${BASE}/home`);
   const result = await Promise.race([
-    page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 }).then(() => 'home' as const),
-    page.waitForSelector('[data-testid="collection-screen-add-movie"]', { state: 'visible', timeout: 60000 }).then(() => 'collection' as const),
+    page
+      .waitForSelector('[data-testid="home-screen-create-button"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'home' as const),
+    page
+      .waitForSelector('[data-testid="collection-screen-add-movie"]', {
+        state: 'visible',
+        timeout: 60000,
+      })
+      .then(() => 'collection' as const),
   ]).catch(() => null);
   if (result === 'collection') {
     await page.goto(`${BASE}/home`);
-    await page.waitForSelector('[data-testid="home-screen-create-button"]', { state: 'visible', timeout: 60000 });
+    await page.waitForSelector('[data-testid="home-screen-create-button"]', {
+      state: 'visible',
+      timeout: 60000,
+    });
     return;
   }
-  if (!result) throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
+  if (!result)
+    throw new Error('gotoHome: home screen did not render — is the global-setup session valid?');
 }
 
 async function openDock(page: Page): Promise<void> {
-  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', { state: 'visible', timeout: 60000 });
+  await page.waitForSelector('[data-testid="assistant-dock-toggle"]', {
+    state: 'visible',
+    timeout: 60000,
+  });
   await page.click('[data-testid="assistant-dock-toggle"]');
-  await page.waitForSelector('[data-testid="assistant-dock-panel"]', { state: 'visible', timeout: 10000 });
+  await page.waitForSelector('[data-testid="assistant-dock-panel"]', {
+    state: 'visible',
+    timeout: 10000,
+  });
 }
 
 async function askToAdd(page: Page, collectionName: string): Promise<void> {
@@ -88,61 +108,66 @@ test.describe('Assistant add flow (feature 012, US1)', () => {
   // The write after approval is deterministic code and is still asserted here; this tier still runs
   // on every `main` push and publishes its counts. The reject test below stays @gate: no flake of it
   // was recorded in that window.
-  test('approve creates the collection and adds the movie once (create-if-missing)', { tag: '@model-decision' }, async ({
-    page,
-    request,
-  }) => {
-    test.setTimeout(300_000);
-    const collectionName = `t037-add-${Date.now()}`;
-    ownCollection(collectionName); // the ASSISTANT creates it (create-if-missing) — claim it up front
-    await gotoHome(page);
-    await openDock(page);
-    await askToAdd(page, collectionName);
+  test(
+    'approve creates the collection and adds the movie once (create-if-missing)',
+    { tag: '@model-decision' },
+    async ({ page, request }) => {
+      test.setTimeout(300_000);
+      const collectionName = `t037-add-${Date.now()}`;
+      ownCollection(collectionName); // the ASSISTANT creates it (create-if-missing) — claim it up front
+      await gotoHome(page);
+      await openDock(page);
+      await askToAdd(page, collectionName);
 
-    // 040 US4: the add is gated on "Do you own this movie?" BEFORE the proposal is built. "No"
-    // ends the ownership chain at once — this spec is about the approval gate, not ownership.
-    // 059 US2: the children's question now opens the chain, ahead of ownership.
-    await answerChildrens(page);
-    await answerOwnership(page);
+      // 040 US4: the add is gated on "Do you own this movie?" BEFORE the proposal is built. "No"
+      // ends the ownership chain at once — this spec is about the approval gate, not ownership.
+      // 059 US2: the children's question now opens the chain, ahead of ownership.
+      await answerChildrens(page);
+      await answerOwnership(page);
 
-    // The HITL approval card appears once enrichment + the proposal are ready. Nothing is
-    // written yet — the collection must not exist before approval.
-    const approval = page.locator('[data-testid="approval-request"]');
-    await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
-    await expect(approval).toContainText(MOVIE_TITLE);
-    expect(await findCollection(request, collectionName)).toBeUndefined();
+      // The HITL approval card appears once enrichment + the proposal are ready. Nothing is
+      // written yet — the collection must not exist before approval.
+      const approval = page.locator('[data-testid="approval-request"]');
+      await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
+      await expect(approval).toContainText(MOVIE_TITLE);
+      expect(await findCollection(request, collectionName)).toBeUndefined();
 
-    // Approve → the create-if-missing collection + the movie are applied.
-    await page.click('[data-testid="approval-approve"]');
-    // Wait for the WRITE, not for the model's confirmation wording (item #323) — and for the write
-    // this test is ABOUT, which is the movie, not the collection that create-if-missing necessarily
-    // makes first (item #568; the ordering and the measured failure are documented on the helper).
-    const { movies } = await waitForAddedMovies(request, collectionName, 1, DONE_TIMEOUT);
-    // Restated rather than implied: "adds the movie once" is this test's headline property, and the
-    // helper is only trustworthy for it while the count it was asked for is visible at the call site.
-    expect(movies).toHaveLength(1);
-    expect(movies[0].title).toBe(MOVIE_TITLE);
-  });
+      // Approve → the create-if-missing collection + the movie are applied.
+      await page.click('[data-testid="approval-approve"]');
+      // Wait for the WRITE, not for the model's confirmation wording (item #323) — and for the write
+      // this test is ABOUT, which is the movie, not the collection that create-if-missing necessarily
+      // makes first (item #568; the ordering and the measured failure are documented on the helper).
+      const { movies } = await waitForAddedMovies(request, collectionName, 1, DONE_TIMEOUT);
+      // Restated rather than implied: "adds the movie once" is this test's headline property, and the
+      // helper is only trustworthy for it while the count it was asked for is visible at the call site.
+      expect(movies).toHaveLength(1);
+      expect(movies[0].title).toBe(MOVIE_TITLE);
+    },
+  );
 
-  test('reject leaves the collection uncreated (no writes)', { tag: '@gate' }, async ({ page, request }) => {
-    test.setTimeout(300_000);
-    const collectionName = `t037-reject-${Date.now()}`;
-    ownCollection(collectionName);
-    await gotoHome(page);
-    await openDock(page);
-    await askToAdd(page, collectionName);
-    // 059 US2: the children's question now opens the chain, ahead of ownership.
-    await answerChildrens(page);
-    await answerOwnership(page);
+  test(
+    'reject leaves the collection uncreated (no writes)',
+    { tag: '@gate' },
+    async ({ page, request }) => {
+      test.setTimeout(300_000);
+      const collectionName = `t037-reject-${Date.now()}`;
+      ownCollection(collectionName);
+      await gotoHome(page);
+      await openDock(page);
+      await askToAdd(page, collectionName);
+      // 059 US2: the children's question now opens the chain, ahead of ownership.
+      await answerChildrens(page);
+      await answerOwnership(page);
 
-    const approval = page.locator('[data-testid="approval-request"]');
-    await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
+      const approval = page.locator('[data-testid="approval-request"]');
+      await expect(approval).toBeVisible({ timeout: APPROVAL_TIMEOUT });
 
-    await page.click('[data-testid="approval-reject"]');
-    await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toBeVisible({
-      timeout: DONE_TIMEOUT,
-    });
-    // FR-007: nothing persisted on reject.
-    expect(await findCollection(request, collectionName)).toBeUndefined();
-  });
+      await page.click('[data-testid="approval-reject"]');
+      await expect(page.locator('[data-testid="assistant-msg-assistant"]').last()).toBeVisible({
+        timeout: DONE_TIMEOUT,
+      });
+      // FR-007: nothing persisted on reject.
+      expect(await findCollection(request, collectionName)).toBeUndefined();
+    },
+  );
 });

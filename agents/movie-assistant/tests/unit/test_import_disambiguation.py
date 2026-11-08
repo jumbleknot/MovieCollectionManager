@@ -110,8 +110,9 @@ def test_high_confidence_columns_need_no_prompt() -> None:
 
 
 def test_uncertain_trailing_word_prompts_for_article() -> None:
-    tab = _tab("Favourites", rows=[{"Title": "Goodbye, Lenin!", "Year": "2003",
-                                     "Video Type": "Movie"}])
+    tab = _tab(
+        "Favourites", rows=[{"Title": "Goodbye, Lenin!", "Year": "2003", "Video Type": "Movie"}]
+    )
     prompts = collect_import_disambiguations([tab], _COLLECTIONS, {})
     art = [p for p in prompts if p.kind == "article"]
     assert len(art) == 1
@@ -122,8 +123,7 @@ def test_uncertain_trailing_word_prompts_for_article() -> None:
 
 
 def test_clear_article_title_needs_no_prompt() -> None:
-    tab = _tab("Favourites", rows=[{"Title": "Matrix, The", "Year": "1999",
-                                    "Video Type": "Movie"}])
+    tab = _tab("Favourites", rows=[{"Title": "Matrix, The", "Year": "1999", "Video Type": "Movie"}])
     prompts = collect_import_disambiguations([tab], _COLLECTIONS, {})
     assert [p for p in prompts if p.kind == "article"] == []  # auto-normalizes, no question
 
@@ -163,11 +163,16 @@ def test_apply_pick_records_the_choice_into_resolutions() -> None:
 def test_apply_column_pick_records_attribute() -> None:
     tab = _tab(
         "Favourites",
-        columns=[{"header": "Title"}, {"header": "Year"}, {"header": "Video Type"},
-                 {"header": "Rating", "sampleValues": ["loved it"]}],
+        columns=[
+            {"header": "Title"},
+            {"header": "Year"},
+            {"header": "Video Type"},
+            {"header": "Rating", "sampleValues": ["loved it"]},
+        ],
     )
-    prompt = [p for p in collect_import_disambiguations([tab], _COLLECTIONS, {})
-              if p.kind == "column"][0]
+    prompt = [
+        p for p in collect_import_disambiguations([tab], _COLLECTIONS, {}) if p.kind == "column"
+    ][0]
     chosen = next(o for o in prompt.options if o["attribute"] == "rated")
     resolutions = apply_import_pick({}, prompt, chosen)
     assert resolutions["column"]["Rating"] == "rated"

@@ -63,14 +63,19 @@ const movie = (title: string, extra: Record<string, unknown> = {}) => ({
   outline: 'An outline',
   plot: 'A longer plot description.',
   runtime: 136,
-  externalIds: [{ system: 'IMDB', uniqueId: 'tt0133093', url: 'https://www.imdb.com/title/tt0133093/' }],
+  externalIds: [
+    { system: 'IMDB', uniqueId: 'tt0133093', url: 'https://www.imdb.com/title/tt0133093/' },
+  ],
   ...extra,
 });
 
 async function listCollections(): Promise<Array<{ id: string; name: string }>> {
   const res = await bff.get('/bff-api/collections', auth());
   const body = res.data as Array<{ collectionId?: string; id?: string; name: string }>;
-  return (Array.isArray(body) ? body : []).map((c) => ({ id: (c.collectionId ?? c.id)!, name: c.name }));
+  return (Array.isArray(body) ? body : []).map((c) => ({
+    id: (c.collectionId ?? c.id)!,
+    name: c.name,
+  }));
 }
 
 /** The full live state, as the comparison baseline for SC-003. */
@@ -96,7 +101,11 @@ beforeAll(async () => {
   session = (await loginSession(user.username, user.password)).cookie;
   ({ accessToken: token } = await getTestTokens(user.username, user.password));
 
-  const source = await bff.post('/bff-api/collections', { name: `Restore Source ${randomUUID().slice(0, 8)}` }, auth());
+  const source = await bff.post(
+    '/bff-api/collections',
+    { name: `Restore Source ${randomUUID().slice(0, 8)}` },
+    auth(),
+  );
   sourceCollectionId = source.data.collectionId ?? source.data.id;
   for (const title of ['Alpha', 'Beta', 'Gamma']) {
     await bff.post(`/bff-api/collections/${sourceCollectionId}/movies`, movie(title), auth());
@@ -110,7 +119,11 @@ beforeAll(async () => {
     auth(),
   );
   bystanderCollectionId = bystander.data.collectionId ?? bystander.data.id;
-  await bff.post(`/bff-api/collections/${bystanderCollectionId}/movies`, movie('Untouched'), auth());
+  await bff.post(
+    `/bff-api/collections/${bystanderCollectionId}/movies`,
+    movie('Untouched'),
+    auth(),
+  );
 }, 300_000);
 
 afterAll(async () => {
@@ -130,7 +143,12 @@ describe('restoring is non-destructive (SC-003 — the safety argument)', () => 
     const bytes = await artifactOfSource();
     const before = await fullLiveState();
 
-    const result = await restoreFromBytes({ userId: user.userId, jwt: token, bytes, jobId: 'job-restore' });
+    const result = await restoreFromBytes({
+      userId: user.userId,
+      jwt: token,
+      bytes,
+      jobId: 'job-restore',
+    });
     expect(result.createdCollectionIds).toHaveLength(1);
 
     // Re-read the whole live state and compare, EXCLUDING the newly created collection.
@@ -154,10 +172,17 @@ describe('restoring is non-destructive (SC-003 — the safety argument)', () => 
 
   it('restores into a NEW collection rather than over the original (FR-029)', async () => {
     const bytes = await artifactOfSource();
-    const result = await restoreFromBytes({ userId: user.userId, jwt: token, bytes, jobId: 'job-restore' });
+    const result = await restoreFromBytes({
+      userId: user.userId,
+      jwt: token,
+      bytes,
+      jobId: 'job-restore',
+    });
     expect(result.createdCollectionIds).not.toContain(sourceCollectionId);
 
-    const names = (await listCollections()).filter((c) => result.createdCollectionIds.includes(c.id));
+    const names = (await listCollections()).filter((c) =>
+      result.createdCollectionIds.includes(c.id),
+    );
     // `<name> (backup <timestamp>)` — recognisable, and it is what keeps a second restore of
     // the same version legal under the case-insensitive unique index on collection names.
     expect(names[0].name).toMatch(/\(backup .+\)$/);
@@ -167,7 +192,12 @@ describe('restoring is non-destructive (SC-003 — the safety argument)', () => 
 describe('fidelity (SC-002)', () => {
   it('restores every movie, with every metadata field and external identifier', async () => {
     const bytes = await artifactOfSource();
-    const result = await restoreFromBytes({ userId: user.userId, jwt: token, bytes, jobId: 'job-restore' });
+    const result = await restoreFromBytes({
+      userId: user.userId,
+      jwt: token,
+      bytes,
+      jobId: 'job-restore',
+    });
 
     const restored = await readSnapshot(token, result.createdCollectionIds);
     const original = await readSnapshot(token, [sourceCollectionId]);
@@ -178,7 +208,10 @@ describe('fidelity (SC-002)', () => {
     // movie is a new record and cannot carry the old one's id or timestamps.
     const strip = (m: unknown) => {
       const { movieId, collectionId, createdAt, updatedAt, ...rest } = m as Record<string, unknown>;
-      void movieId; void collectionId; void createdAt; void updatedAt;
+      void movieId;
+      void collectionId;
+      void createdAt;
+      void updatedAt;
       return rest;
     };
     const sortByTitle = (ms: unknown[]) =>
@@ -189,9 +222,16 @@ describe('fidelity (SC-002)', () => {
 
   it('preserves external identifiers exactly, including their URLs', async () => {
     const bytes = await artifactOfSource();
-    const result = await restoreFromBytes({ userId: user.userId, jwt: token, bytes, jobId: 'job-restore' });
+    const result = await restoreFromBytes({
+      userId: user.userId,
+      jwt: token,
+      bytes,
+      jobId: 'job-restore',
+    });
     const restored = await readSnapshot(token, result.createdCollectionIds);
-    const first = restored[0].movies[0] as { externalIds: Array<{ system: string; uniqueId: string }> };
+    const first = restored[0].movies[0] as {
+      externalIds: Array<{ system: string; uniqueId: string }>;
+    };
     expect(first.externalIds[0]).toMatchObject({ system: 'IMDB', uniqueId: 'tt0133093' });
   }, 300_000);
 });
@@ -203,8 +243,18 @@ describe('restoring the same version twice', () => {
     // would collide without a distinguishing suffix — and the second would fail at exactly the
     // moment a user was retrying because they were unsure the first had worked.
     const bytes = await artifactOfSource();
-    const first = await restoreFromBytes({ userId: user.userId, jwt: token, bytes, jobId: 'job-restore' });
-    const second = await restoreFromBytes({ userId: user.userId, jwt: token, bytes, jobId: 'job-restore' });
+    const first = await restoreFromBytes({
+      userId: user.userId,
+      jwt: token,
+      bytes,
+      jobId: 'job-restore',
+    });
+    const second = await restoreFromBytes({
+      userId: user.userId,
+      jwt: token,
+      bytes,
+      jobId: 'job-restore',
+    });
 
     expect(first.createdCollectionIds[0]).not.toBe(second.createdCollectionIds[0]);
     const names = (await listCollections())
@@ -217,7 +267,12 @@ describe('restoring the same version twice', () => {
 describe('identity and partial failure', () => {
   it('writes AS THE USER, so another user cannot see the restored collection', async () => {
     const bytes = await artifactOfSource();
-    const result = await restoreFromBytes({ userId: user.userId, jwt: token, bytes, jobId: 'job-restore' });
+    const result = await restoreFromBytes({
+      userId: user.userId,
+      jwt: token,
+      bytes,
+      jobId: 'job-restore',
+    });
 
     const other = await createTestUser('bk-restore-other');
     try {
@@ -240,7 +295,12 @@ describe('identity and partial failure', () => {
     withBadRecord[0].movies.push({ ...movie(''), title: '' });
     const bytes = compressArtifact(buildArtifact('job-restore', withBadRecord));
 
-    const result = await restoreFromBytes({ userId: user.userId, jwt: token, bytes, jobId: 'job-restore' });
+    const result = await restoreFromBytes({
+      userId: user.userId,
+      jwt: token,
+      bytes,
+      jobId: 'job-restore',
+    });
 
     expect(result.partial).toBe(true);
     expect(result.movieCount).toBe(collections[0].movies.length);

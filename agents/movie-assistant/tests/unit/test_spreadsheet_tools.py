@@ -31,9 +31,7 @@ def _recording_call() -> tuple[list[dict[str, Any]], Any]:
     async def call(
         url: str, tool_name: str, arguments: dict[str, Any], token: str | None
     ) -> McpCallResult:
-        calls.append(
-            {"url": url, "tool": tool_name, "arguments": arguments, "token": token}
-        )
+        calls.append({"url": url, "tool": tool_name, "arguments": arguments, "token": token})
         return McpCallResult(is_error=False, data={"tabs": []}, text="")
 
     return calls, call

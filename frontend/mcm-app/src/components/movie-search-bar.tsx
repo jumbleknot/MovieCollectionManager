@@ -31,7 +31,11 @@ interface MovieSearchBarProps {
 
 // Re-skinned (feature 015): MD3 docked search-bar look — a surfaceVariant pill with a
 // leading magnifier. NoAutoFillInput + both testIDs (movie-search-input/-clear) preserved.
-export function MovieSearchBar({ value, onSearch, placeholder = 'Search movies…' }: MovieSearchBarProps) {
+export function MovieSearchBar({
+  value,
+  onSearch,
+  placeholder = 'Search movies…',
+}: MovieSearchBarProps) {
   const theme = useTheme();
   return (
     <View style={[styles.container, { backgroundColor: theme.surfaceVariant?.val }]}>

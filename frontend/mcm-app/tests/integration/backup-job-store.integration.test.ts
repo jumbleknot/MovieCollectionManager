@@ -38,8 +38,12 @@ const destinationInput = (label: string) => ({
 });
 
 beforeAll(async () => {
-  destinationA = (await destinationStore.createDestination(USER_A, destinationInput(`a-${randomUUID()}`))).id;
-  destinationB = (await destinationStore.createDestination(USER_B, destinationInput(`b-${randomUUID()}`))).id;
+  destinationA = (
+    await destinationStore.createDestination(USER_A, destinationInput(`a-${randomUUID()}`))
+  ).id;
+  destinationB = (
+    await destinationStore.createDestination(USER_B, destinationInput(`b-${randomUUID()}`))
+  ).id;
 });
 
 afterAll(async () => {
@@ -61,7 +65,10 @@ const jobInput = (overrides: Record<string, unknown> = {}) => ({
 
 describe('round-trip', () => {
   it('stores collectionIds, keepLast and enabled as given', async () => {
-    const job = await jobStore.createJob(USER_A, jobInput({ collectionIds: ['c1', 'c2'], keepLast: 30, enabled: false }));
+    const job = await jobStore.createJob(
+      USER_A,
+      jobInput({ collectionIds: ['c1', 'c2'], keepLast: 30, enabled: false }),
+    );
     const read = await jobStore.getJob(USER_A, job.id);
     expect(read?.collectionIds).toEqual(['c1', 'c2']);
     expect(read?.keepLast).toBe(30);
@@ -100,18 +107,25 @@ describe('validation', () => {
     // Checked against the caller's id, never trusted from the body. Otherwise a user could
     // aim a job at another user's destination and have this server write their collection
     // into storage they do not control.
-    await expect(jobStore.createJob(USER_A, jobInput({ destinationId: destinationB }))).rejects.toThrow();
+    await expect(
+      jobStore.createJob(USER_A, jobInput({ destinationId: destinationB })),
+    ).rejects.toThrow();
   });
 
   it('rejects a destination that does not exist at all', async () => {
     await expect(
-      jobStore.createJob(USER_A, jobInput({ destinationId: '00000000-0000-4000-8000-000000000000' })),
+      jobStore.createJob(
+        USER_A,
+        jobInput({ destinationId: '00000000-0000-4000-8000-000000000000' }),
+      ),
     ).rejects.toThrow();
   });
 
   it('rejects repointing a job at a foreign destination on UPDATE, not only on create', async () => {
     const job = await jobStore.createJob(USER_A, jobInput());
-    await expect(jobStore.updateJob(USER_A, job.id, { destinationId: destinationB })).rejects.toThrow();
+    await expect(
+      jobStore.updateJob(USER_A, job.id, { destinationId: destinationB }),
+    ).rejects.toThrow();
   });
 });
 
@@ -137,7 +151,11 @@ describe('lastRun is a denormalised copy', () => {
     // So `lastRun` is a copy that can briefly lag, and the run collection stays authoritative.
     const job = await jobStore.createJob(USER_A, jobInput());
     const run = await runStore.startRun(USER_A, job.id, 'manual');
-    await runStore.finishRun(run._id, { status: 'success', artifactKey: 'k', collectionCounts: [] });
+    await runStore.finishRun(run._id, {
+      status: 'success',
+      artifactKey: 'k',
+      collectionCounts: [],
+    });
 
     await jobStore.recordLastRun(USER_A, job.id, {
       runId: run._id,

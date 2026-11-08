@@ -40,7 +40,9 @@ let inFlight: Promise<AssistantRuntimeModule> | null = null;
  * `importer` is injectable so the contract above is unit-testable without mocking the module
  * system; production always uses the default.
  */
-export function loadAssistantRuntime(importer: Importer = importRuntime): Promise<AssistantRuntimeModule> {
+export function loadAssistantRuntime(
+  importer: Importer = importRuntime,
+): Promise<AssistantRuntimeModule> {
   if (inFlight) return inFlight;
   const attempt = importer().catch((err: unknown) => {
     // Clear BEFORE rethrowing, so every concurrent caller sees this rejection while the next

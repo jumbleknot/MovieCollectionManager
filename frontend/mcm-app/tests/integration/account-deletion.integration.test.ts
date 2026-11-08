@@ -24,10 +24,7 @@ import {
   findUsersByUsername,
   type TestUser,
 } from './helpers/keycloak-test-client';
-import {
-  acquireOfflineRefreshToken,
-  offlineTokenStillWorks,
-} from './helpers/offline-token-flow';
+import { acquireOfflineRefreshToken, offlineTokenStillWorks } from './helpers/offline-token-flow';
 import { describeBackupTargets, assertBackupTargetsPresent } from './helpers/backup-targets';
 
 import * as offlineToken from '@/bff-server/backup-offline-token';
@@ -193,7 +190,9 @@ describeBackupTargets('account deletion', () => {
       stepsWithoutCollections(),
     );
 
-    expect(await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId })).toBe(0);
+    expect(
+      await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId }),
+    ).toBe(0);
     expect(await (await getBackupJobsCollection()).countDocuments({ userId: user.userId })).toBe(0);
     expect(await (await getBackupRunsCollection()).countDocuments({ userId: user.userId })).toBe(0);
     expect(await getByUserId(user.userId)).toBeNull();
@@ -252,7 +251,9 @@ describeBackupTargets('account deletion', () => {
 
     // Every record survives, the account survives, and the permission is still live — which is
     // the whole point: it remains reachable, so the deletion can be retried.
-    expect(await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId })).toBe(1);
+    expect(
+      await (await getBackupDestinationsCollection()).countDocuments({ userId: user.userId }),
+    ).toBe(1);
     expect(await findUsersByUsername(user.username)).toHaveLength(1);
     expect(await offlineTokenStillWorks(offlineRefresh)).toBe(true);
   });
@@ -364,9 +365,15 @@ describeBackupTargets('account deletion', () => {
     const reborn = await createTestUser('t019-reborn');
     try {
       expect(reborn.userId).not.toBe(user.userId);
-      expect(await (await getBackupDestinationsCollection()).countDocuments({ userId: reborn.userId })).toBe(0);
-      expect(await (await getBackupJobsCollection()).countDocuments({ userId: reborn.userId })).toBe(0);
-      expect(await (await getBackupRunsCollection()).countDocuments({ userId: reborn.userId })).toBe(0);
+      expect(
+        await (await getBackupDestinationsCollection()).countDocuments({ userId: reborn.userId }),
+      ).toBe(0);
+      expect(
+        await (await getBackupJobsCollection()).countDocuments({ userId: reborn.userId }),
+      ).toBe(0);
+      expect(
+        await (await getBackupRunsCollection()).countDocuments({ userId: reborn.userId }),
+      ).toBe(0);
       expect(await getByUserId(reborn.userId)).toBeNull();
     } finally {
       await deleteTestUser(reborn.userId);

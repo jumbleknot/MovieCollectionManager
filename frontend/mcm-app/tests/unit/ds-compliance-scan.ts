@@ -27,12 +27,15 @@ export const FONT_SCALE = new Set([11, 12, 14, 16, 18, 22, 24, 28, 32, 36, 45, 5
 export const MAX_LOADED_WEIGHT = 700;
 
 export type Violation = { file: string; line: number; rule: string; snippet: string };
-export interface StyleBlock { body: string; start: number }
+export interface StyleBlock {
+  body: string;
+  start: number;
+}
 export interface ScanFile {
   file: string;
   rawLines: string[];
-  code: string;       // neutralized source
-  nl: number[];       // newline offsets within `code`
+  code: string; // neutralized source
+  nl: number[]; // newline offsets within `code`
   blocks: StyleBlock[];
 }
 
@@ -71,26 +74,68 @@ export function neutralize(src: string): string {
     const c = src[i];
     const c2 = src[i + 1];
     if (state === 'code') {
-      if (c === '/' && c2 === '/') { state = 'line'; i += 2; continue; }
-      if (c === '/' && c2 === '*') { state = 'block'; i += 2; continue; }
-      if (c === "'") { state = 'sq'; i++; continue; }
-      if (c === '"') { state = 'dq'; i++; continue; }
-      if (c === '`') { state = 'tpl'; i++; continue; }
-      i++; continue;
+      if (c === '/' && c2 === '/') {
+        state = 'line';
+        i += 2;
+        continue;
+      }
+      if (c === '/' && c2 === '*') {
+        state = 'block';
+        i += 2;
+        continue;
+      }
+      if (c === "'") {
+        state = 'sq';
+        i++;
+        continue;
+      }
+      if (c === '"') {
+        state = 'dq';
+        i++;
+        continue;
+      }
+      if (c === '`') {
+        state = 'tpl';
+        i++;
+        continue;
+      }
+      i++;
+      continue;
     }
     if (state === 'line') {
-      if (c === '\n') { state = 'code'; i++; continue; }
-      out[i] = ' '; i++; continue;
+      if (c === '\n') {
+        state = 'code';
+        i++;
+        continue;
+      }
+      out[i] = ' ';
+      i++;
+      continue;
     }
     if (state === 'block') {
-      if (c === '*' && c2 === '/') { out[i] = ' '; out[i + 1] = ' '; state = 'code'; i += 2; continue; }
+      if (c === '*' && c2 === '/') {
+        out[i] = ' ';
+        out[i + 1] = ' ';
+        state = 'code';
+        i += 2;
+        continue;
+      }
       if (c !== '\n') out[i] = ' ';
-      i++; continue;
+      i++;
+      continue;
     }
     const close = state === 'sq' ? "'" : state === 'dq' ? '"' : '`';
-    if (c === '\\') { i += 2; continue; }
-    if (c === close) { state = 'code'; i++; continue; }
-    i++; continue;
+    if (c === '\\') {
+      i += 2;
+      continue;
+    }
+    if (c === close) {
+      state = 'code';
+      i++;
+      continue;
+    }
+    i++;
+    continue;
   }
   return out.join('');
 }
@@ -102,7 +147,8 @@ function newlineOffsets(code: string): number[] {
   return nl;
 }
 export function lineOf(nl: number[], index: number): number {
-  let lo = 0, hi = nl.length;
+  let lo = 0,
+    hi = nl.length;
   while (lo < hi) {
     const mid = (lo + hi) >> 1;
     if (nl[mid] < index) lo = mid + 1;
@@ -122,7 +168,10 @@ export function styleSheetBlocks(code: string): StyleBlock[] {
     let i = open;
     for (; i < code.length; i++) {
       if (code[i] === '{') depth++;
-      else if (code[i] === '}') { depth--; if (depth === 0) break; }
+      else if (code[i] === '}') {
+        depth--;
+        if (depth === 0) break;
+      }
     }
     blocks.push({ body: code.slice(open + 1, i), start: open + 1 });
   }
@@ -135,15 +184,25 @@ export function styleSheetBlocks(code: string): StyleBlock[] {
  * being skipped by a flat `[^{}]*` match (finding #4). `inner` is the full body between the entry's
  * braces (including any nested objects); `index` is relative to `body`.
  */
-export function topLevelStyleEntries(body: string): { name: string; inner: string; index: number }[] {
+export function topLevelStyleEntries(
+  body: string,
+): { name: string; inner: string; index: number }[] {
   const out: { name: string; inner: string; index: number }[] = [];
   let depth = 0;
   let i = 0;
   const n = body.length;
   while (i < n) {
     const c = body[i];
-    if (c === '{') { depth++; i++; continue; }
-    if (c === '}') { depth--; i++; continue; }
+    if (c === '{') {
+      depth++;
+      i++;
+      continue;
+    }
+    if (c === '}') {
+      depth--;
+      i++;
+      continue;
+    }
     if (depth === 0) {
       const m = /^(\w+)\s*:\s*\{/.exec(body.slice(i));
       if (m) {
@@ -153,7 +212,10 @@ export function topLevelStyleEntries(body: string): { name: string; inner: strin
         let j = open;
         for (; j < n; j++) {
           if (body[j] === '{') d++;
-          else if (body[j] === '}') { d--; if (d === 0) break; }
+          else if (body[j] === '}') {
+            d--;
+            if (d === 0) break;
+          }
         }
         out.push({ name: m[1], inner: body.slice(open + 1, j), index: nameIdx });
         i = j + 1;
@@ -167,8 +229,7 @@ export function topLevelStyleEntries(body: string): { name: string; inner: strin
 
 /** A rule is exempt at `line` (1-based) if that line or the previous non-blank line carries the marker. */
 export function isExempt(rawLines: string[], line: number, rule: string): boolean {
-  const marker = (s: string) =>
-    s.includes(`ds-exempt(${rule})`) || s.includes('ds-exempt(all)');
+  const marker = (s: string) => s.includes(`ds-exempt(${rule})`) || s.includes('ds-exempt(all)');
   if (marker(rawLines[line - 1] ?? '')) return true;
   for (let p = line - 2; p >= 0; p--) {
     const t = (rawLines[p] ?? '').trim();
@@ -207,7 +268,12 @@ export function scanR1(files: ScanFile[]): Violation[] {
     while ((m = COLOUR_RE.exec(f.code))) {
       const line = lineOf(f.nl, m.index);
       if (isExempt(f.rawLines, line, 'R1')) continue;
-      out.push({ file: f.file, line, rule: 'R1 no-hardcoded-colour', snippet: f.rawLines[line - 1] ?? m[0] });
+      out.push({
+        file: f.file,
+        line,
+        rule: 'R1 no-hardcoded-colour',
+        snippet: f.rawLines[line - 1] ?? m[0],
+      });
     }
   }
   return out;
@@ -226,7 +292,12 @@ export function scanR2(files: ScanFile[]): Violation[] {
       if (FONT_SCALE.has(size)) continue;
       const line = lineOf(f.nl, m.index);
       if (isExempt(f.rawLines, line, 'R2')) continue;
-      out.push({ file: f.file, line, rule: `R2 off-scale-font(${size})`, snippet: f.rawLines[line - 1] ?? '' });
+      out.push({
+        file: f.file,
+        line,
+        rule: `R2 off-scale-font(${size})`,
+        snippet: f.rawLines[line - 1] ?? '',
+      });
     }
   }
   return out;
@@ -244,7 +315,12 @@ export function scanR3(files: ScanFile[]): Violation[] {
         if (FAMILY_OK.test(entry.inner)) continue;
         const line = lineOf(f.nl, block.start + entry.index);
         if (isExempt(f.rawLines, line, 'R3')) continue;
-        out.push({ file: f.file, line, rule: `R3 missing-font-family(${entry.name})`, snippet: f.rawLines[line - 1] ?? '' });
+        out.push({
+          file: f.file,
+          line,
+          rule: `R3 missing-font-family(${entry.name})`,
+          snippet: f.rawLines[line - 1] ?? '',
+        });
       }
     }
   }
@@ -293,7 +369,12 @@ export function scanR4(files: ScanFile[]): Violation[] {
       if (!styleUnionIsButton(f.blocks, names, styleAttr)) continue;
       const line = lineOf(f.nl, start);
       if (isExempt(f.rawLines, line, 'R4')) continue;
-      out.push({ file: f.file, line, rule: `R4 bespoke-button(${tag})`, snippet: f.rawLines[line - 1] ?? '' });
+      out.push({
+        file: f.file,
+        line,
+        rule: `R4 bespoke-button(${tag})`,
+        snippet: f.rawLines[line - 1] ?? '',
+      });
     }
   }
   return out;
@@ -313,7 +394,12 @@ export function scanR5(files: ScanFile[], agentDir: string): Violation[] {
       const line = lineOf(f.nl, m.index);
       if (isExempt(f.rawLines, line, 'R5')) continue;
       if (seen.has(norm)) {
-        out.push({ file: f.file, line, rule: 'R5 duplicated-pill-style', snippet: `${f.rawLines[line - 1]?.trim()} (also in ${seen.get(norm)!})` });
+        out.push({
+          file: f.file,
+          line,
+          rule: 'R5 duplicated-pill-style',
+          snippet: `${f.rawLines[line - 1]?.trim()} (also in ${seen.get(norm)!})`,
+        });
       } else {
         seen.set(norm, f.file);
       }
@@ -337,7 +423,12 @@ export function scanR6(files: ScanFile[]): Violation[] {
       if (!bad.length) continue;
       const line = lineOf(f.nl, m.index);
       if (isExempt(f.rawLines, line, 'R6')) continue;
-      out.push({ file: f.file, line, rule: `R6 synthesized-weight(${bad[0]})`, snippet: f.rawLines[line - 1] ?? '' });
+      out.push({
+        file: f.file,
+        line,
+        rule: `R6 synthesized-weight(${bad[0]})`,
+        snippet: f.rawLines[line - 1] ?? '',
+      });
     }
   }
   return out;
@@ -354,7 +445,12 @@ export function scanR7(files: ScanFile[]): Violation[] {
     while ((m = MODAL_RE.exec(f.code))) {
       const line = lineOf(f.nl, m.index);
       if (isExempt(f.rawLines, line, 'R7')) continue;
-      out.push({ file: f.file, line, rule: 'R7 reinvented-surface(Modal)', snippet: f.rawLines[line - 1] ?? '' });
+      out.push({
+        file: f.file,
+        line,
+        rule: 'R7 reinvented-surface(Modal)',
+        snippet: f.rawLines[line - 1] ?? '',
+      });
     }
   }
   return out;

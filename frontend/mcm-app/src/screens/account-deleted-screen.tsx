@@ -30,13 +30,13 @@ export function AccountDeletedScreen(): React.JSX.Element {
       <Text style={[styles.title, { color: theme.color?.val }]}>Your account has been deleted</Text>
 
       <Text style={[styles.body, { color: theme.color?.val }]}>
-        Your collections, backup settings and assistant configuration have been permanently
-        removed, and the permission this app held to act on your behalf has been withdrawn.
+        Your collections, backup settings and assistant configuration have been permanently removed,
+        and the permission this app held to act on your behalf has been withdrawn.
       </Text>
 
       <Text style={[styles.body, { color: theme.color?.val }]}>
-        The backup files at your own storage were left untouched. They are yours, and you still
-        have the credentials to reach them.
+        The backup files at your own storage were left untouched. They are yours, and you still have
+        the credentials to reach them.
       </Text>
 
       <TextButton

@@ -44,10 +44,17 @@ describe('the BFF refuses a bearer credential (feature 085 US3)', () => {
     ['GET', '/bff-api/collections'],
     ['GET', '/bff-api/agent/run'],
     ['GET', '/bff-api/agent/config'],
-  ])('a valid bearer alone on %s %s is refused as unauthenticated (AS-1, SC-004)', async (method, path) => {
-    const res = await bff.request({ method, url: path, headers: { Authorization: `Bearer ${bearerB}` } });
-    expect(res.status).toBe(401);
-  });
+  ])(
+    'a valid bearer alone on %s %s is refused as unauthenticated (AS-1, SC-004)',
+    async (method, path) => {
+      const res = await bff.request({
+        method,
+        url: path,
+        headers: { Authorization: `Bearer ${bearerB}` },
+      });
+      expect(res.status).toBe(401);
+    },
+  );
 
   it("a bearer beside a session cookie is ignored: the caller is the SESSION's member (AS-2)", async () => {
     const a = await loginSession(memberA.username, memberA.password);

@@ -10,11 +10,7 @@
  * only the identity-provider verification state, per US5's note.
  */
 import { randomUUID } from 'node:crypto';
-import {
-  deleteTestUser,
-  getUserById,
-  getUserClientRoles,
-} from './helpers/keycloak-test-client';
+import { deleteTestUser, getUserById, getUserClientRoles } from './helpers/keycloak-test-client';
 import { createBffClient } from './helpers/bff-test-server';
 
 const bff = createBffClient();

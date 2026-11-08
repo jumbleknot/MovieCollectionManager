@@ -59,7 +59,11 @@ function FilterSection({ filterKey, label, options, activeValue, onPress }: Filt
   return (
     <View testID={`filter-section-${filterKey}`} style={styles.section}>
       <Text style={styles.sectionLabel}>{label}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.chips}
+      >
         {options.map((opt) => {
           const isActive = opt === activeValue;
           return (
@@ -112,7 +116,9 @@ export function MovieFilterPanel({
           filterKey="owned"
           label="Owned"
           options={OWNED_RIPPED_OPTIONS}
-          activeValue={activeFilters.owned === true ? 'Yes' : activeFilters.owned === false ? 'No' : undefined}
+          activeValue={
+            activeFilters.owned === true ? 'Yes' : activeFilters.owned === false ? 'No' : undefined
+          }
           onPress={(v) => onFilterChange('owned', v)}
         />
         <FilterSection
@@ -126,7 +132,13 @@ export function MovieFilterPanel({
           filterKey="ripped"
           label="Ripped"
           options={OWNED_RIPPED_OPTIONS}
-          activeValue={activeFilters.ripped === true ? 'Yes' : activeFilters.ripped === false ? 'No' : undefined}
+          activeValue={
+            activeFilters.ripped === true
+              ? 'Yes'
+              : activeFilters.ripped === false
+                ? 'No'
+                : undefined
+          }
           onPress={(v) => onFilterChange('ripped', v)}
         />
         <FilterSection
@@ -148,7 +160,11 @@ export function MovieFilterPanel({
           label="Decade"
           options={filterOptions.decades}
           activeValue={activeFilters.decade}
-          onPress={(v) => v === undefined ? onFilterChange('decade', undefined) : onFilterChange('decade', Number(v))}
+          onPress={(v) =>
+            v === undefined
+              ? onFilterChange('decade', undefined)
+              : onFilterChange('decade', Number(v))
+          }
         />
         <FilterSection
           filterKey="language"
@@ -183,38 +199,39 @@ export function MovieFilterPanel({
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  container: {
-    backgroundColor: theme.background?.val,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: theme.outlineVariant?.val,
-    minHeight: 36,
-    maxHeight: 220,
-  },
-  loadingRow: {
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scroll: {
-    flex: 1,
-  },
-  section: {
-    paddingHorizontal: 12,
-    paddingTop: 8,
-  },
-  sectionLabel: {
-    fontFamily: 'Inter',
-    fontSize: 11,
-    fontWeight: '600',
-    color: theme.onSurfaceVariant?.val,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  chips: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingBottom: 8,
-  },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    container: {
+      backgroundColor: theme.background?.val,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: theme.outlineVariant?.val,
+      minHeight: 36,
+      maxHeight: 220,
+    },
+    loadingRow: {
+      height: 36,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    scroll: {
+      flex: 1,
+    },
+    section: {
+      paddingHorizontal: 12,
+      paddingTop: 8,
+    },
+    sectionLabel: {
+      fontFamily: 'Inter',
+      fontSize: 11,
+      fontWeight: '600',
+      color: theme.onSurfaceVariant?.val,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      marginBottom: 4,
+    },
+    chips: {
+      flexDirection: 'row',
+      gap: 8,
+      paddingBottom: 8,
+    },
+  });

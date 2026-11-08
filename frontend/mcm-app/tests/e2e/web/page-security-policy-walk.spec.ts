@@ -38,7 +38,8 @@ test.describe('@gate the browser refuses nothing on the app pages', () => {
 
   test.beforeAll(async () => {
     if (!keycloakAdminEnabled()) {
-      if (process.env['CI']) throw new Error('Keycloak admin credentials are required for this walk under CI');
+      if (process.env['CI'])
+        throw new Error('Keycloak admin credentials are required for this walk under CI');
       test.skip(true, 'Keycloak admin credentials are not configured');
     }
     user = await createUserWithRoles('e2e-csp', ['mc-user']);
@@ -67,43 +68,53 @@ test.describe('@gate the browser refuses nothing on the app pages', () => {
     await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 60_000 });
   }
 
-  test('sign-in, hard reload, deep link and in-app navigation are all clean', { tag: '@gate' }, async ({ page }) => {
-    test.setTimeout(180_000);
-    const watch = await watchSecurityPolicy(page.context(), BASE);
+  test(
+    'sign-in, hard reload, deep link and in-app navigation are all clean',
+    { tag: '@gate' },
+    async ({ page }) => {
+      test.setTimeout(180_000);
+      const watch = await watchSecurityPolicy(page.context(), BASE);
 
-    const loginResponse = await page.goto(`${BASE}/(auth)/login`);
-    assertRightServer(loginResponse);
-    await page.waitForSelector('[data-testid="login-screen"]', { timeout: 20_000 });
-    watch.assertClean('first load of the login page');
-    await watch.proveCanSee(page);
+      const loginResponse = await page.goto(`${BASE}/(auth)/login`);
+      assertRightServer(loginResponse);
+      await page.waitForSelector('[data-testid="login-screen"]', { timeout: 20_000 });
+      watch.assertClean('first load of the login page');
+      await watch.proveCanSee(page);
 
-    await signIn(page);
-    watch.assertClean('sign-in');
+      await signIn(page);
+      watch.assertClean('sign-in');
 
-    await page.reload();
-    await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 60_000 });
-    watch.assertClean('hard reload of /home');
+      await page.reload();
+      await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 60_000 });
+      watch.assertClean('hard reload of /home');
 
-    const name = `csp-walk-${Date.now()}`;
-    ownCollection(name);
-    const created = await page.request.post(`${BASE}/bff-api/collections`, { data: { name } });
-    expect(created.ok(), `creating ${name} answered ${created.status()}`).toBeTruthy();
-    const { collectionId } = (await created.json()) as { collectionId: string };
-    await page.goto(`${BASE}/collections/${collectionId}`);
-    await expect(page.getByTestId('collection-screen-add-movie')).toBeVisible({ timeout: 60_000 });
-    watch.assertClean('deep link to a collection');
+      const name = `csp-walk-${Date.now()}`;
+      ownCollection(name);
+      const created = await page.request.post(`${BASE}/bff-api/collections`, { data: { name } });
+      expect(created.ok(), `creating ${name} answered ${created.status()}`).toBeTruthy();
+      const { collectionId } = (await created.json()) as { collectionId: string };
+      await page.goto(`${BASE}/collections/${collectionId}`);
+      await expect(page.getByTestId('collection-screen-add-movie')).toBeVisible({
+        timeout: 60_000,
+      });
+      watch.assertClean('deep link to a collection');
 
-    await page.getByTestId('nav-settings').click();
-    await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 30_000 });
-    watch.assertClean('in-app navigation to Settings');
-  });
+      await page.getByTestId('nav-settings').click();
+      await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 30_000 });
+      watch.assertClean('in-app navigation to Settings');
+    },
+  );
 
-  test('an unknown page answers 404, and a page is not served as immutable', { tag: '@gate' }, async ({ page }) => {
-    const missing = await page.request.get(`${BASE}/no-such-page`);
-    expect(missing.status()).toBe(404);
+  test(
+    'an unknown page answers 404, and a page is not served as immutable',
+    { tag: '@gate' },
+    async ({ page }) => {
+      const missing = await page.request.get(`${BASE}/no-such-page`);
+      expect(missing.status()).toBe(404);
 
-    const login = await page.request.get(`${BASE}/(auth)/login`);
-    expect(login.status()).toBe(200);
-    expect(login.headers()['cache-control'] ?? '').not.toContain('immutable');
-  });
+      const login = await page.request.get(`${BASE}/(auth)/login`);
+      expect(login.status()).toBe(200);
+      expect(login.headers()['cache-control'] ?? '').not.toContain('immutable');
+    },
+  );
 });

@@ -40,7 +40,7 @@ export function MovieDetailScreen(): React.JSX.Element {
     if (movieId) {
       getMovie(movieId);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [movieId]);
 
   // T072: the assistant can update THIS movie while the detail screen is focused — re-fetch it
@@ -80,14 +80,22 @@ export function MovieDetailScreen(): React.JSX.Element {
 
   if (isLoading) {
     return (
-      <View style={[styles.centered, { backgroundColor: theme.background?.val }]} testID="movie-detail-screen-loading">
+      <View
+        style={[styles.centered, { backgroundColor: theme.background?.val }]}
+        testID="movie-detail-screen-loading"
+      >
         <ActivityIndicator size="large" color={theme.primary?.val} />
       </View>
     );
   }
 
   if (!movie) {
-    return <View style={[styles.centered, { backgroundColor: theme.background?.val }]} testID="movie-detail-screen-empty" />;
+    return (
+      <View
+        style={[styles.centered, { backgroundColor: theme.background?.val }]}
+        testID="movie-detail-screen-empty"
+      />
+    );
   }
 
   if (isEditing) {
@@ -107,7 +115,10 @@ export function MovieDetailScreen(): React.JSX.Element {
     <View style={[styles.screen, { backgroundColor: theme.background?.val }]}>
       {/* Back button — themed so the bar isn't a high-contrast white block in dark mode. */}
       <TouchableOpacity
-        style={[styles.backButton, { backgroundColor: theme.surface1?.val, borderBottomColor: theme.outlineVariant?.val }]}
+        style={[
+          styles.backButton,
+          { backgroundColor: theme.surface1?.val, borderBottomColor: theme.outlineVariant?.val },
+        ]}
         onPress={() => router.back()}
         testID="movie-detail-back-button"
         accessibilityRole="button"
@@ -116,11 +127,7 @@ export function MovieDetailScreen(): React.JSX.Element {
         <Text style={[styles.backText, { color: theme.primary?.val }]}>← Back</Text>
       </TouchableOpacity>
 
-      <MovieDetail
-        movie={movie}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+      <MovieDetail movie={movie} onEdit={handleEdit} onDelete={handleDelete} />
       <DeleteConfirmationDialog
         visible={isDeleteDialogVisible}
         entityName={movie.title}

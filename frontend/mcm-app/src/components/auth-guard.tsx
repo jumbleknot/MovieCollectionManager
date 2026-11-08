@@ -16,14 +16,16 @@ interface AuthGuardProps {
   requiredRole?: ClientRole | 'mc-user' | 'mc-admin';
 }
 
-export function AuthGuard({ children, requiredRole = 'mc-user' }: AuthGuardProps): React.JSX.Element | null {
+export function AuthGuard({
+  children,
+  requiredRole = 'mc-user',
+}: AuthGuardProps): React.JSX.Element | null {
   const { isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
 
   const roles = user?.roles ?? [];
   const hasRole =
-    roles.includes('mc-admin') ||
-    (requiredRole === 'mc-user' && roles.includes('mc-user'));
+    roles.includes('mc-admin') || (requiredRole === 'mc-user' && roles.includes('mc-user'));
 
   React.useEffect(() => {
     if (isLoading) return;

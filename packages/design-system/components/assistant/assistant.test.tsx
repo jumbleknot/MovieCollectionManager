@@ -110,9 +110,7 @@ describe('ApprovalBubble', () => {
   });
 
   it('shows the approved status and hides the actions once approved', async () => {
-    const { getByText, queryByText } = await renderDS(
-      <ApprovalBubble {...baseProps} approved />,
-    );
+    const { getByText, queryByText } = await renderDS(<ApprovalBubble {...baseProps} approved />);
     expect(getByText(/Approved/)).toBeTruthy();
     expect(queryByText('Approve')).toBeNull();
   });

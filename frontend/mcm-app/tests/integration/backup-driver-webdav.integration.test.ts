@@ -47,19 +47,28 @@ function destination(overrides: Partial<WebdavBackupDestination> = {}): WebdavBa
   };
 }
 
-const driverFor = (d: WebdavBackupDestination, secret = DAV_PASSWORD) => createBackupDriver(d, secret);
+const driverFor = (d: WebdavBackupDestination, secret = DAV_PASSWORD) =>
+  createBackupDriver(d, secret);
 
 beforeAll(() => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { env } = require('@/config/env') as { env: { backupAllowedDestinationHosts: string } };
-  const hosts = new Set(env.backupAllowedDestinationHosts.split(',').map((h) => h.trim()).filter(Boolean));
+  const hosts = new Set(
+    env.backupAllowedDestinationHosts
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean),
+  );
   hosts.add(new URL(DAV_ENDPOINT).hostname);
   env.backupAllowedDestinationHosts = [...hosts].join(',');
 });
 
-itBackupTargets('has the backup destinations up — otherwise every case below is one failure', () => {
-  assertBackupTargetsPresent();
-});
+itBackupTargets(
+  'has the backup destinations up — otherwise every case below is one failure',
+  () => {
+    assertBackupTargetsPresent();
+  },
+);
 
 describeBackupTargets('put / get', () => {
   it('round-trips binary bytes exactly', async () => {

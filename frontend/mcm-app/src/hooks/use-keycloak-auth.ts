@@ -82,7 +82,7 @@ export function useKeycloakAuth({
         onError?.(err instanceof Error ? err.message : 'Login failed.');
       });
     }
-  }, [response]);  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [response]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handlePromptAsync(): Promise<void> {
     if (!request) {
@@ -99,7 +99,9 @@ export function useKeycloakAuth({
     try {
       await promptAsync();
     } catch (err) {
-      onError?.(err instanceof Error ? err.message : 'Failed to connect to authentication service.');
+      onError?.(
+        err instanceof Error ? err.message : 'Failed to connect to authentication service.',
+      );
     }
   }
 

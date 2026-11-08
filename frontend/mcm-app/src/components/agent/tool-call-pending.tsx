@@ -37,14 +37,15 @@ export function ToolCallPending({ label }: ToolCallPendingProps) {
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  card: {
-    padding: 8,
-    marginVertical: 4,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.outlineVariant?.val,
-    backgroundColor: theme.surface2?.val,
-  },
-  label: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    card: {
+      padding: 8,
+      marginVertical: 4,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.outlineVariant?.val,
+      backgroundColor: theme.surface2?.val,
+    },
+    label: { fontFamily: 'Inter', fontSize: 12, color: theme.onSurfaceVariant?.val },
+  });

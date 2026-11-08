@@ -92,7 +92,10 @@ interface UseMoviesReturn {
 
   // ── Filters ───────────────────────────────────────────────────────────────
   filters: MovieListFilters;
-  setFilter: <K extends keyof MovieListFilters>(key: K, value: MovieListFilters[K]) => Promise<void>;
+  setFilter: <K extends keyof MovieListFilters>(
+    key: K,
+    value: MovieListFilters[K],
+  ) => Promise<void>;
   clearFilters: () => Promise<void>;
 
   // ── Filter options ────────────────────────────────────────────────────────
@@ -158,10 +161,7 @@ export function useMovies(collectionId: string): UseMoviesReturn {
       if (currentSearch) params.search = currentSearch;
       if (cursor) params.cursor = cursor;
 
-      const res = await apiClient.get(
-        `/bff-api/collections/${collectionId}/movies`,
-        { params },
-      );
+      const res = await apiClient.get(`/bff-api/collections/${collectionId}/movies`, { params });
       return res.data as { items: Movie[]; nextCursor: string | null };
     },
     [collectionId],
@@ -317,9 +317,7 @@ export function useMovies(collectionId: string): UseMoviesReturn {
   const fetchFilterOptions = useCallback(async (): Promise<void> => {
     setIsLoadingFilterOptions(true);
     try {
-      const res = await apiClient.get(
-        `/bff-api/collections/${collectionId}/movies/filter-options`,
-      );
+      const res = await apiClient.get(`/bff-api/collections/${collectionId}/movies/filter-options`);
       setFilterOptions(res.data as FilterOptionsData);
     } catch {
       // Non-fatal: filter options are a UI enhancement
@@ -335,9 +333,7 @@ export function useMovies(collectionId: string): UseMoviesReturn {
       setIsLoading(true);
       setError(null);
       try {
-        const res = await apiClient.get(
-          `/bff-api/collections/${collectionId}/movies/${movieId}`,
-        );
+        const res = await apiClient.get(`/bff-api/collections/${collectionId}/movies/${movieId}`);
         setMovie(res.data as Movie);
       } catch {
         setError('Failed to load movie');
@@ -352,10 +348,7 @@ export function useMovies(collectionId: string): UseMoviesReturn {
     async (req: CreateMovieRequest): Promise<void> => {
       setError(null);
       try {
-        const res = await apiClient.post(
-          `/bff-api/collections/${collectionId}/movies`,
-          req,
-        );
+        const res = await apiClient.post(`/bff-api/collections/${collectionId}/movies`, req);
         setMovie(res.data as Movie);
       } catch (err) {
         const msg = extractErrorMessage(err, 'Failed to create movie');
@@ -388,9 +381,7 @@ export function useMovies(collectionId: string): UseMoviesReturn {
     async (movieId: string): Promise<void> => {
       setError(null);
       try {
-        await apiClient.delete(
-          `/bff-api/collections/${collectionId}/movies/${movieId}`,
-        );
+        await apiClient.delete(`/bff-api/collections/${collectionId}/movies/${movieId}`);
         // Optimistic list removal — remove from movies list if present
         setMovies((prev) => prev.filter((m) => m.movieId !== movieId));
         // Clear the single-movie state if it matches the deleted movie

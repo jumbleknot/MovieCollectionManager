@@ -71,10 +71,9 @@ export async function sendVerificationEmail(userId: string, redirectUri?: string
 export async function isEmailVerified(userId: string): Promise<boolean> {
   const adminToken = await getAdminToken();
 
-  const res = await fetch(
-    `${env.keycloakAdminApiBase}/users/${userId}`,
-    { headers: { Authorization: `Bearer ${adminToken}` } },
-  );
+  const res = await fetch(`${env.keycloakAdminApiBase}/users/${userId}`, {
+    headers: { Authorization: `Bearer ${adminToken}` },
+  });
 
   if (!res.ok) {
     throw new AuthError(AuthErrorCode.UNAUTHORIZED, 'User not found', 404);

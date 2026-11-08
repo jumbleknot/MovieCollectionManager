@@ -57,9 +57,9 @@ const loadFailRate = new Rate('load_failures');
 
 export const options = {
   stages: [
-    { duration: '30s', target: 25 },   // ramp up to 25 VUs
-    { duration: '2m', target: 100 },   // sustain at 100 concurrent users
-    { duration: '30s', target: 0 },    // ramp down
+    { duration: '30s', target: 25 }, // ramp up to 25 VUs
+    { duration: '2m', target: 100 }, // sustain at 100 concurrent users
+    { duration: '30s', target: 0 }, // ramp down
   ],
   thresholds: {
     /** SC-004: Home screen collection list must load in < 3s at p95 */
@@ -86,8 +86,19 @@ const RATINGS = ['G', 'PG', 'PG-13', 'R', 'NR', 'Unrated'] as const;
 const MEDIA_FORMATS = ['DVD', 'Blu-Ray', 'UHD Blu-Ray'] as const;
 /** Sample genres for realistic data variety */
 const GENRES = [
-  'Action', 'Adventure', 'Animation', 'Comedy', 'Crime', 'Documentary',
-  'Drama', 'Fantasy', 'Horror', 'Mystery', 'Romance', 'Sci-Fi', 'Thriller',
+  'Action',
+  'Adventure',
+  'Animation',
+  'Comedy',
+  'Crime',
+  'Documentary',
+  'Drama',
+  'Fantasy',
+  'Horror',
+  'Mystery',
+  'Romance',
+  'Sci-Fi',
+  'Thriller',
 ] as const;
 
 // ─── Seed data helpers ─────────────────────────────────────────────────────────
@@ -95,13 +106,13 @@ const GENRES = [
 /** Build a single movie payload for index `i` (0-based). */
 function moviePayload(i: number): string {
   const contentType = CONTENT_TYPES[i % CONTENT_TYPES.length];
-  const owned = i % 4 !== 0;                    // 75% owned
-  const ripped = owned && i % 3 === 0;          // ~25% ripped (only when owned)
+  const owned = i % 4 !== 0; // 75% owned
+  const ripped = owned && i % 3 === 0; // ~25% ripped (only when owned)
   const genre = GENRES[i % GENRES.length];
 
   return JSON.stringify({
     title: `Load Test ${genre} Movie ${i + 1}`,
-    year: 1970 + (i % 55),                      // 1970–2024
+    year: 1970 + (i % 55), // 1970–2024
     contentType,
     language: i % 10 === 0 ? 'French' : 'English',
     owned,
@@ -109,10 +120,7 @@ function moviePayload(i: number): string {
     childrens: i % 20 === 0,
     rated: RATINGS[i % RATINGS.length],
     directors: [`Director ${(i % 50) + 1}`],
-    actors: [
-      `Actor ${(i % 100) + 1}`,
-      `Actor ${((i + 1) % 100) + 1}`,
-    ],
+    actors: [`Actor ${(i % 100) + 1}`, `Actor ${((i + 1) % 100) + 1}`],
     genres: [genre],
     tags: [],
     movieSet: null,
@@ -138,8 +146,8 @@ export function setup(): { collectionId: string | null; cookie: string } {
   if (!LOAD_TEST_COOKIE) {
     console.warn(
       '[load] LOAD_TEST_COOKIE is not set. ' +
-      'All requests will be unauthenticated and return 401. ' +
-      'See test file header for instructions on obtaining a session cookie.',
+        'All requests will be unauthenticated and return 401. ' +
+        'See test file header for instructions on obtaining a session cookie.',
     );
   }
 
@@ -158,7 +166,7 @@ export function setup(): { collectionId: string | null; cookie: string } {
   if (createRes.status !== 201 && createRes.status !== 200) {
     console.error(
       `[load] setup: Failed to create test collection. ` +
-      `HTTP ${createRes.status}: ${createRes.body}`,
+        `HTTP ${createRes.status}: ${createRes.body}`,
     );
     return { collectionId: null, cookie: LOAD_TEST_COOKIE };
   }
@@ -192,7 +200,7 @@ export function setup(): { collectionId: string | null; cookie: string } {
 
     // Send BATCH_SIZE requests concurrently
     const responses = http.batch(requests) as { status: number }[];
-    const batchFailed = responses.filter(r => r.status !== 201 && r.status !== 200).length;
+    const batchFailed = responses.filter((r) => r.status !== 201 && r.status !== 200).length;
     const batchSeeded = BATCH_SIZE - batchFailed;
 
     totalSeeded += batchSeeded;
@@ -210,7 +218,7 @@ export function setup(): { collectionId: string | null; cookie: string } {
 
   console.log(
     `[load] setup: Seeded ${totalSeeded}/${TOTAL_MOVIES} movies ` +
-    `(${totalFailed} failed) in collection ${collectionId}`,
+      `(${totalFailed} failed) in collection ${collectionId}`,
   );
 
   return { collectionId, cookie: LOAD_TEST_COOKIE };
@@ -238,10 +246,10 @@ export default function (data: { collectionId: string | null; cookie: string }):
   };
 
   // ── SC-004: Home screen — list all user collections ──────────────────────────
-  const collectionsRes = http.get(
-    `${BASE_URL}/bff-api/collections`,
-    { headers: authHeaders, tags: { name: 'collections_list' } },
-  );
+  const collectionsRes = http.get(`${BASE_URL}/bff-api/collections`, {
+    headers: authHeaders,
+    tags: { name: 'collections_list' },
+  });
   collectionsListDuration.add(collectionsRes.timings.duration);
   loadFailRate.add(collectionsRes.status !== 200 ? 1 : 0);
   check(collectionsRes, {
@@ -250,10 +258,10 @@ export default function (data: { collectionId: string | null; cookie: string }):
   });
 
   // ── SC-006: Movie list — first page (50 movies) from 10,000-movie collection ─
-  const moviesRes = http.get(
-    `${BASE_URL}/bff-api/collections/${data.collectionId}/movies`,
-    { headers: authHeaders, tags: { name: 'movies_list' } },
-  );
+  const moviesRes = http.get(`${BASE_URL}/bff-api/collections/${data.collectionId}/movies`, {
+    headers: authHeaders,
+    tags: { name: 'movies_list' },
+  });
   moviesListDuration.add(moviesRes.timings.duration);
   loadFailRate.add(moviesRes.status !== 200 ? 1 : 0);
   check(moviesRes, {
@@ -296,18 +304,17 @@ export function teardown(data: { collectionId: string | null; cookie: string }):
     Cookie: data.cookie,
   };
 
-  const deleteRes = http.del(
-    `${BASE_URL}/bff-api/collections/${data.collectionId}`,
-    null,
-    { headers: authHeaders, tags: { name: 'teardown_delete_collection' } },
-  );
+  const deleteRes = http.del(`${BASE_URL}/bff-api/collections/${data.collectionId}`, null, {
+    headers: authHeaders,
+    tags: { name: 'teardown_delete_collection' },
+  });
 
   if (deleteRes.status === 200 || deleteRes.status === 204) {
     console.log(`[load] teardown: Deleted collection ${data.collectionId}`);
   } else {
     console.warn(
       `[load] teardown: Failed to delete collection ${data.collectionId}. ` +
-      `HTTP ${deleteRes.status} — clean up manually.`,
+        `HTTP ${deleteRes.status} — clean up manually.`,
     );
   }
 }

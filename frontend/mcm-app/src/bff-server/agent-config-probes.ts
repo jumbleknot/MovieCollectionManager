@@ -129,7 +129,10 @@ async function timedPinnedGet(
       // Timeout or connection error — both are "couldn't reach / verify". The raw error is NEVER
       // surfaced: it can carry the resolved address and internal resolver detail.
       return {
-        reason: err instanceof ProbeTimeout ? 'Timed out after 5s — service unreachable' : unreachableReason,
+        reason:
+          err instanceof ProbeTimeout
+            ? 'Timed out after 5s — service unreachable'
+            : unreachableReason,
       };
     }
     if (status >= 500 && status < 600 && attempt < PROBE_MAX_ATTEMPTS) {
@@ -150,7 +153,8 @@ export async function probeAnthropic(key: string): Promise<ProbeStatus> {
     { method: 'GET', headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01' } },
     (res) => {
       if (res.ok) return 'ok';
-      if (res.status === 401 || res.status === 403) return { reason: 'Authentication failed (invalid key)' };
+      if (res.status === 401 || res.status === 403)
+        return { reason: 'Authentication failed (invalid key)' };
       return { reason: `Anthropic responded ${res.status}` };
     },
     'Could not reach the Anthropic API',
@@ -165,7 +169,8 @@ export async function probeTmdb(key: string): Promise<ProbeStatus> {
     { method: 'GET' },
     (res) => {
       if (res.ok) return 'ok';
-      if (res.status === 401 || res.status === 403) return { reason: 'Authentication failed (invalid key)' };
+      if (res.status === 401 || res.status === 403)
+        return { reason: 'Authentication failed (invalid key)' };
       return { reason: `TMDB responded ${res.status}` };
     },
     'Could not reach the TMDB API',

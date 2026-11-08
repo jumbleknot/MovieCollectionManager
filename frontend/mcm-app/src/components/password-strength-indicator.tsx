@@ -12,7 +12,9 @@ interface PasswordStrengthIndicatorProps {
   password: string;
 }
 
-export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicatorProps): React.JSX.Element | null {
+export function PasswordStrengthIndicator({
+  password,
+}: PasswordStrengthIndicatorProps): React.JSX.Element | null {
   const theme = useTheme();
   if (!password) return null;
 
@@ -20,7 +22,8 @@ export function PasswordStrengthIndicator({ password }: PasswordStrengthIndicato
 
   // Strength feedback maps to semantic theme roles: weak → error, medium → tertiary (the
   // sanctioned amber/orange accent), strong → the new success role (feature 017 SC-004).
-  const strengthColor = score <= 2 ? theme.error?.val : score <= 3 ? theme.tertiary?.val : theme.success?.val;
+  const strengthColor =
+    score <= 2 ? theme.error?.val : score <= 3 ? theme.tertiary?.val : theme.success?.val;
 
   return (
     <View style={styles.container} testID="password-strength-indicator">
@@ -58,10 +61,20 @@ function CheckItem({ label, passed }: CheckItemProps): React.JSX.Element {
   const theme = useTheme();
   return (
     <View style={styles.checkItem}>
-      <Text style={[styles.checkIcon, { color: passed ? theme.success?.val : theme.onSurfaceVariant?.val }]}>
+      <Text
+        style={[
+          styles.checkIcon,
+          { color: passed ? theme.success?.val : theme.onSurfaceVariant?.val },
+        ]}
+      >
         {passed ? '✓' : '○'}
       </Text>
-      <Text style={[styles.checkLabel, { color: passed ? theme.onSurface?.val : theme.onSurfaceVariant?.val }]}>
+      <Text
+        style={[
+          styles.checkLabel,
+          { color: passed ? theme.onSurface?.val : theme.onSurfaceVariant?.val },
+        ]}
+      >
         {label}
       </Text>
     </View>

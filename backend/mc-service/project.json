@@ -37,7 +37,7 @@
     "lint": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "cargo clippy --manifest-path backend/mc-service/Cargo.toml -p mc-service --all-targets -- -D warnings",
+        "command": "cargo fmt --manifest-path backend/mc-service/Cargo.toml -p mc-service --check && cargo clippy --manifest-path backend/mc-service/Cargo.toml -p mc-service --all-targets -- -D warnings",
         "cwd": "{workspaceRoot}"
       },
       "cache": true,

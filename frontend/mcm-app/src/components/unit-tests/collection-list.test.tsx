@@ -37,7 +37,7 @@ const COL_2: CollectionSummary = {
 
 async function renderList(
   collections: CollectionSummary[],
-  overrides: Record<string, unknown> = {}
+  overrides: Record<string, unknown> = {},
 ) {
   const onCollectionTap = jest.fn();
   const onEdit = jest.fn();
@@ -52,7 +52,7 @@ async function renderList(
       onSetDefault={onSetDefault}
       onDelete={onDelete}
       {...overrides}
-    />
+    />,
   );
   return { ...utils, onCollectionTap, onEdit, onSetDefault, onDelete };
 }

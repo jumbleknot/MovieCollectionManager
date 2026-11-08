@@ -35,11 +35,7 @@ const ROLE_LABELS: Record<RenderCollectionSummaryProps['role'], string> = {
   viewer: 'Viewer',
 };
 
-export function RenderCollectionSummary({
-  name,
-  movieCount,
-  role,
-}: RenderCollectionSummaryProps) {
+export function RenderCollectionSummary({ name, movieCount, role }: RenderCollectionSummaryProps) {
   const styles = makeStyles(useTheme());
   return (
     <View testID="render-collection-summary" style={styles.card}>
@@ -93,18 +89,30 @@ export function useRenderCollectionSummaryTool(): void {
 
 type Theme = ReturnType<typeof useTheme>;
 
-const makeStyles = (theme: Theme) => StyleSheet.create({
-  card: {
-    padding: 10,
-    backgroundColor: theme.surface2?.val,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: theme.outlineVariant?.val,
-    marginVertical: 4,
-    gap: 4,
-  },
-  name: { fontFamily: 'Outfit-SemiBold', fontSize: 16, fontWeight: '600', color: theme.onSurface?.val },
-  metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  count: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
-  role: { fontFamily: 'Inter', fontSize: 11, color: theme.onSurfaceVariant?.val, textTransform: 'uppercase' as const, letterSpacing: 0.5 },
-});
+const makeStyles = (theme: Theme) =>
+  StyleSheet.create({
+    card: {
+      padding: 10,
+      backgroundColor: theme.surface2?.val,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: theme.outlineVariant?.val,
+      marginVertical: 4,
+      gap: 4,
+    },
+    name: {
+      fontFamily: 'Outfit-SemiBold',
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.onSurface?.val,
+    },
+    metaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    count: { fontFamily: 'Inter', fontSize: 14, color: theme.onSurfaceVariant?.val },
+    role: {
+      fontFamily: 'Inter',
+      fontSize: 11,
+      color: theme.onSurfaceVariant?.val,
+      textTransform: 'uppercase' as const,
+      letterSpacing: 0.5,
+    },
+  });

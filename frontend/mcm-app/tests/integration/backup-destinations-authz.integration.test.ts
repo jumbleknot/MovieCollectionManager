@@ -28,13 +28,13 @@ import {
 import { loginSession } from './helpers/bff-session';
 import { getBackupDestinationsCollection, closeMongo } from '@/bff-server/mongo-client';
 
-import {
-  describeBackupTargets,
-  itBackupTargets,
-  assertBackupTargetsPresent,
-} from './helpers/backup-targets';
+import { describeBackupTargets, assertBackupTargetsPresent } from './helpers/backup-targets';
 
 const bff = createBffClient();
+
+// Fails here, naming the missing input, when MCM_REQUIRE_BACKUP_TARGETS=1 and the targets are
+// down, instead of as N connection errors below. Jest runs no hook when every test is skipped.
+beforeAll(() => assertBackupTargetsPresent());
 const BASE = '/bff-api/backups/destinations';
 
 let userA: TestUser;
@@ -50,7 +50,8 @@ const authB = () => ({ headers: { Cookie: tokenB } });
 // `https://s3.example.com` is refused on save with a 400, and correctly so: the guard RESOLVES
 // the host, and a name that does not resolve is not safe, it is unknown. Using a placeholder
 // here made the positive control fail for a reason that had nothing to do with authorization.
-const S3_ENDPOINT = process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-rustfs:9000';
+const S3_ENDPOINT =
+  process.env.BACKUP_TEST_S3_INTERNAL_ENDPOINT || 'http://mcm-bff-backup-rustfs:9000';
 
 const s3Body = (label: string) => ({
   type: 's3',
@@ -142,14 +143,18 @@ describeBackupTargets('no route accepts a userId from the request', () => {
     // makes the attempt VISIBLE, in the response and in the logs, instead of letting a client
     // believe it set something it did not. That is the difference between a control that is
     // enforced and one that merely happens to hold.
-    const before = await (await getBackupDestinationsCollection()).countDocuments({ userId: userA.userId });
+    const before = await (
+      await getBackupDestinationsCollection()
+    ).countDocuments({ userId: userA.userId });
     const res = await bff.post(
       BASE,
       { ...s3Body(`spoof-${Date.now()}`), userId: userA.userId, _id: 'chosen-by-caller' },
       authB(),
     );
     expect(res.status).toBe(400);
-    const after = await (await getBackupDestinationsCollection()).countDocuments({ userId: userA.userId });
+    const after = await (
+      await getBackupDestinationsCollection()
+    ).countDocuments({ userId: userA.userId });
     expect(after).toBe(before);
   });
 

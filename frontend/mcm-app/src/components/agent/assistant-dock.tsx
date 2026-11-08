@@ -26,9 +26,15 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { AssistantAvatar } from '@mcm/design-system';
 
-import { AssistantPanelError, AssistantPanelLoading } from '@/components/agent/assistant-panel-fallback';
+import {
+  AssistantPanelError,
+  AssistantPanelLoading,
+} from '@/components/agent/assistant-panel-fallback';
 import { useAssistantRuntimePrefetch } from '@/hooks/use-assistant-runtime';
-import { loadAssistantRuntime, type AssistantRuntimeModule } from '@/utils/assistant-runtime-loader';
+import {
+  loadAssistantRuntime,
+  type AssistantRuntimeModule,
+} from '@/utils/assistant-runtime-loader';
 
 type PanelComponent = AssistantRuntimeModule['default'];
 
@@ -101,6 +107,16 @@ const makeStyles = (theme: Theme) => ({
   // unoccupied app-wide. The container is pointerEvents="box-none" so only the toggle/panel
   // themselves capture events.
   dock: { position: 'absolute' as const, left: 16, bottom: 16, alignItems: 'flex-start' as const },
-  toggle: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8, backgroundColor: theme.surface3?.val, borderRadius: 24, paddingHorizontal: 16, paddingVertical: 10, borderWidth: 1, borderColor: theme.outlineVariant?.val },
+  toggle: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+    backgroundColor: theme.surface3?.val,
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: theme.outlineVariant?.val,
+  },
   toggleText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' as const },
 });

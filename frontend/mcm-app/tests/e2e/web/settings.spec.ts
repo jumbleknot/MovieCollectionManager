@@ -24,7 +24,9 @@ test.describe('Settings destination', () => {
     await expect(page.getByTestId('nav-profile')).toHaveCount(0);
   });
 
-  test('selecting Settings lands on the Profile area with the sub-navigation above it', async ({ page }) => {
+  test('selecting Settings lands on the Profile area with the sub-navigation above it', async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/home`);
     await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 60000 });
 
@@ -87,7 +89,11 @@ test.describe('Settings destination', () => {
     await expect.poll(() => reported, { timeout: 20000 }).toContain('settings-assistant');
 
     // Nothing outside the allowlisted vocabulary rode this channel.
-    expect(reported.every((s) => /^(home|collection|movie-detail|settings(-assistant|-backups|-admin)?)$/.test(s))).toBe(true);
+    expect(
+      reported.every((s) =>
+        /^(home|collection|movie-detail|settings(-assistant|-backups|-admin)?)$/.test(s),
+      ),
+    ).toBe(true);
   });
 
   /**
@@ -98,7 +104,9 @@ test.describe('Settings destination', () => {
    * reached the DOM while `aria-selected` was null on every entry — assistive technology was told
    * what the elements were and never which was current.
    */
-  test('each sub-navigation entry announces as a menu item and announces which is current', async ({ page }) => {
+  test('each sub-navigation entry announces as a menu item and announces which is current', async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/(app)/settings`);
     await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 30000 });
 
@@ -110,12 +118,21 @@ test.describe('Settings destination', () => {
       await expect(page.getByTestId(id)).toHaveAttribute('role', 'menuitem');
     }
     await expect(page.getByTestId('settings-nav-profile')).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByTestId('settings-nav-assistant')).not.toHaveAttribute('aria-current', 'page');
+    await expect(page.getByTestId('settings-nav-assistant')).not.toHaveAttribute(
+      'aria-current',
+      'page',
+    );
 
     await page.getByTestId('settings-nav-assistant').click();
     await expect(page.getByTestId('settings-assistant-screen')).toBeVisible({ timeout: 30000 });
-    await expect(page.getByTestId('settings-nav-assistant')).toHaveAttribute('aria-current', 'page');
-    await expect(page.getByTestId('settings-nav-profile')).not.toHaveAttribute('aria-current', 'page');
+    await expect(page.getByTestId('settings-nav-assistant')).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await expect(page.getByTestId('settings-nav-profile')).not.toHaveAttribute(
+      'aria-current',
+      'page',
+    );
   });
 
   /**
@@ -139,7 +156,9 @@ test.describe('Settings destination', () => {
     }
   });
 
-  test('the settings navigation sits on the app surface, not the navigator default', async ({ page }) => {
+  test('the settings navigation sits on the app surface, not the navigator default', async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/(app)/settings`);
     await expect(page.getByTestId('settings-profile-screen')).toBeVisible({ timeout: 30000 });
 
@@ -166,10 +185,13 @@ test.describe('Settings destination', () => {
     });
 
     // Nothing painted at all would mean the band is whatever shows through — the original defect.
-    expect(nearest, 'no painted ancestor: the settings nav sits on an untinted surface').not.toBeNull();
+    expect(
+      nearest,
+      'no painted ancestor: the settings nav sits on an untinted surface',
+    ).not.toBeNull();
     expect(
       nearest!.bg,
-      'the nearest painted surface behind the settings nav is React Navigation\'s light default',
+      "the nearest painted surface behind the settings nav is React Navigation's light default",
     ).not.toBe('rgb(242, 242, 242)');
   });
 
@@ -230,7 +252,9 @@ test.describe('Settings destination', () => {
  * so the assertion fails for the right reason instead of passing because nothing was ever there.
  */
 test.describe('Settings — old addresses', () => {
-  test('the pre-split profile address renders neither the settings shell nor profile content', async ({ page }) => {
+  test('the pre-split profile address renders neither the settings shell nor profile content', async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/(app)/profile`);
 
     await expect(page.getByTestId('settings-nav')).toHaveCount(0);
@@ -254,7 +278,9 @@ test.describe('Settings — old addresses', () => {
     await expect(page.getByTestId('navigation-bar')).toBeVisible();
   });
 
-  test('the pre-split admin-settings address is unmatched, not merely refused', async ({ page }) => {
+  test('the pre-split admin-settings address is unmatched, not merely refused', async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/(app)/admin/settings`);
 
     await expect(page.getByTestId('settings-nav')).toHaveCount(0);
@@ -283,7 +309,9 @@ test.describe('Settings — old addresses', () => {
  * the catch-all — and it is the case that exercises the affordance end to end.
  */
 test.describe('Unmatched addresses — feature 074', () => {
-  test('an address matching no route renders the branded screen and offers one way back', async ({ page }) => {
+  test('an address matching no route renders the branded screen and offers one way back', async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/total-nonsense-no-such-route`);
 
     await expect(page.getByTestId('not-found-screen')).toBeVisible({ timeout: 30000 });

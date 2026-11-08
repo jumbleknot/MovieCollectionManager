@@ -28,9 +28,13 @@ import { getAgentConfigCollection, closeMongo } from '@/bff-server/mongo-client'
 const bff = createBffClient();
 const CONSENT = '/bff-api/backups/consent';
 
-const CREDS_PRESENT = Boolean(process.env.KEYCLOAK_SERVICE_CLIENT_SECRET && process.env.E2E_TEST_PASSWORD);
+const CREDS_PRESENT = Boolean(
+  process.env.KEYCLOAK_SERVICE_CLIENT_SECRET && process.env.E2E_TEST_PASSWORD,
+);
 if (!CREDS_PRESENT && process.env.MCM_REQUIRE_LIVE_STACK === '1') {
-  throw new Error('backup-consent-routes requires KEYCLOAK_SERVICE_CLIENT_SECRET and E2E_TEST_PASSWORD');
+  throw new Error(
+    'backup-consent-routes requires KEYCLOAK_SERVICE_CLIENT_SECRET and E2E_TEST_PASSWORD',
+  );
 }
 const describeLive = CREDS_PRESENT ? describe : describe.skip;
 
@@ -114,7 +118,7 @@ describeLive('backup consent route', () => {
     expect(String(res.data.detail ?? res.data.title)).toMatch(/start again/i);
   });
 
-  it('one user cannot start or complete another user\'s consent', async () => {
+  it("one user cannot start or complete another user's consent", async () => {
     // A started in the line below; B's callback must not be able to complete it. The pending
     // request is keyed by the AUTHENTICATED user, so B's callback simply finds nothing.
     await bff.get(`${CONSENT}?start=1`, authA());

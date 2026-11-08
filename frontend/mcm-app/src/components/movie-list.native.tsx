@@ -86,7 +86,12 @@ function MovieCardRow({ movie, onPress }: MovieCardRowProps) {
       </Text>
 
       {meta.length > 0 && (
-        <Text fontFamily="body" fontSize={14} letterSpacing={0.4} color={theme.onSurfaceVariant?.val}>
+        <Text
+          fontFamily="body"
+          fontSize={14}
+          letterSpacing={0.4}
+          color={theme.onSurfaceVariant?.val}
+        >
           {meta}
         </Text>
       )}
@@ -159,7 +164,14 @@ export function MovieList({
       borderBottomWidth={2}
       borderBottomColor={theme.primary?.val}
     >
-      <Text fontFamily="body" fontSize={12} fontWeight="500" color={theme.primary?.val} textTransform="uppercase" letterSpacing={0.5}>
+      <Text
+        fontFamily="body"
+        fontSize={12}
+        fontWeight="500"
+        color={theme.primary?.val}
+        textTransform="uppercase"
+        letterSpacing={0.5}
+      >
         Movies
       </Text>
     </XStack>
@@ -169,7 +181,13 @@ export function MovieList({
     return (
       <YStack flex={1}>
         {header}
-        <YStack testID="movie-list-empty" flex={1} alignItems="center" justifyContent="center" paddingVertical={48}>
+        <YStack
+          testID="movie-list-empty"
+          flex={1}
+          alignItems="center"
+          justifyContent="center"
+          paddingVertical={48}
+        >
           <Text fontFamily="body" fontSize={16} color={theme.onSurfaceVariant?.val}>
             No movies found
           </Text>

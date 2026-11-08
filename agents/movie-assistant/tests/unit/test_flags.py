@@ -74,9 +74,7 @@ def test_unleashflags_cache_directory_env_override() -> None:
     with patch("UnleashClient.UnleashClient") as mock_client:
         from src.flags import UnleashFlags
 
-        UnleashFlags(
-            "http://unleash.example/api", {"UNLEASH_CACHE_DIR": "/var/cache/unleash"}
-        )
+        UnleashFlags("http://unleash.example/api", {"UNLEASH_CACHE_DIR": "/var/cache/unleash"})
 
     _, kwargs = mock_client.call_args
     assert kwargs.get("cache_directory") == "/var/cache/unleash"

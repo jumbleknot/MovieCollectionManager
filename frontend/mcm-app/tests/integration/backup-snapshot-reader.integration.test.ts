@@ -76,9 +76,17 @@ beforeAll(async () => {
   session = (await loginSession(user.username, user.password)).cookie;
   ({ accessToken: token } = await getTestTokens(user.username, user.password));
 
-  const big = await bff.post('/bff-api/collections', { name: `Snap Big ${randomUUID().slice(0, 8)}` }, auth());
+  const big = await bff.post(
+    '/bff-api/collections',
+    { name: `Snap Big ${randomUUID().slice(0, 8)}` },
+    auth(),
+  );
   bigCollectionId = big.data.collectionId ?? big.data.id;
-  const small = await bff.post('/bff-api/collections', { name: `Snap Small ${randomUUID().slice(0, 8)}` }, auth());
+  const small = await bff.post(
+    '/bff-api/collections',
+    { name: `Snap Small ${randomUUID().slice(0, 8)}` },
+    auth(),
+  );
   smallCollectionId = small.data.collectionId ?? small.data.id;
 
   for (let i = 0; i < SEED_MOVIES; i += 1) {
