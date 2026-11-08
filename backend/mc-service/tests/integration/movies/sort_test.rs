@@ -68,7 +68,12 @@ fn params(sort_by: &str, sort_dir: &str) -> ListMoviesParams {
 async fn default_sort_is_title_then_year() {
     let (repo, coll_id, db) = setup().await;
     // Insert out of order; two share the title "Alpha" with different years.
-    for (t, y) in [("Charlie", 2001), ("Alpha", 2010), ("Alpha", 1999), ("Bravo", 2005)] {
+    for (t, y) in [
+        ("Charlie", 2001),
+        ("Alpha", 2010),
+        ("Alpha", 1999),
+        ("Bravo", 2005),
+    ] {
         repo.create(&coll_id, "sort-owner", movie(t, y, false))
             .await
             .expect("seed");
@@ -78,7 +83,11 @@ async fn default_sort_is_title_then_year() {
         .await
         .expect("list");
     crate::common::cleanup_db(&db).await;
-    let got: Vec<(String, i32)> = list.items.iter().map(|m| (m.title.clone(), m.year)).collect();
+    let got: Vec<(String, i32)> = list
+        .items
+        .iter()
+        .map(|m| (m.title.clone(), m.year))
+        .collect();
     assert_eq!(
         got,
         vec![
@@ -165,7 +174,10 @@ async fn article_insensitive_sort_paginates_without_dup_or_skip() {
         .collect();
     let mut sorted = stripped.clone();
     sorted.sort();
-    assert_eq!(stripped, sorted, "pages arrive in global article-insensitive order");
+    assert_eq!(
+        stripped, sorted,
+        "pages arrive in global article-insensitive order"
+    );
     let mut uniq = seen.clone();
     uniq.sort();
     uniq.dedup();
@@ -257,9 +269,13 @@ async fn sort_applies_to_filtered_subset() {
 async fn cursor_minted_under_different_sort_is_rejected() {
     let (repo, coll_id, db) = setup().await;
     for i in 1..=51u32 {
-        repo.create(&coll_id, "sort-owner", movie(&format!("M {:03}", i), 2000, false))
-            .await
-            .expect("seed");
+        repo.create(
+            &coll_id,
+            "sort-owner",
+            movie(&format!("M {:03}", i), 2000, false),
+        )
+        .await
+        .expect("seed");
     }
     let first = repo
         .list(&coll_id, "sort-owner", params("title", "asc"))

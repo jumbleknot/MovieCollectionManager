@@ -984,5 +984,4 @@ mod tests {
             other => panic!("expected a case-insensitive regex, got {other:?}"),
         }
     }
-
 }

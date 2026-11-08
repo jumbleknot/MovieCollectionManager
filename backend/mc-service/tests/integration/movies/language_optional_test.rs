@@ -63,10 +63,17 @@ async fn create_movie_with_no_language_optional_persists_and_reads_back_none() {
     let (movie_repo, coll_id, db) = repos().await;
 
     let created = movie_repo
-        .create(&coll_id, "lang-owner", movie_without_language("No Language Film"))
+        .create(
+            &coll_id,
+            "lang-owner",
+            movie_without_language("No Language Film"),
+        )
         .await
         .expect("create with no language must succeed");
-    assert_eq!(created.language, None, "created movie language must be None");
+    assert_eq!(
+        created.language, None,
+        "created movie language must be None"
+    );
 
     let fetched = movie_repo
         .get_by_id(&coll_id, &created.id, "lang-owner")
@@ -74,7 +81,10 @@ async fn create_movie_with_no_language_optional_persists_and_reads_back_none() {
         .expect("get_by_id must succeed");
     crate::common::cleanup_db(&db).await;
 
-    assert_eq!(fetched.language, None, "persisted movie language must read back as None");
+    assert_eq!(
+        fetched.language, None,
+        "persisted movie language must read back as None"
+    );
 }
 
 #[tokio::test]
@@ -89,7 +99,11 @@ async fn filter_options_language_optional_excludes_absent_language() {
         .await
         .expect("create with language must succeed");
     movie_repo
-        .create(&coll_id, "lang-owner", movie_without_language("Lacks Language"))
+        .create(
+            &coll_id,
+            "lang-owner",
+            movie_without_language("Lacks Language"),
+        )
         .await
         .expect("create without language must succeed");
 
@@ -119,7 +133,11 @@ async fn list_movies_language_optional_returns_movie_with_none_language() {
     let (movie_repo, coll_id, db) = repos().await;
 
     movie_repo
-        .create(&coll_id, "lang-owner", movie_without_language("Listed No Language"))
+        .create(
+            &coll_id,
+            "lang-owner",
+            movie_without_language("Listed No Language"),
+        )
         .await
         .expect("create must succeed");
 
