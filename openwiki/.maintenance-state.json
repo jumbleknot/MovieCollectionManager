@@ -1,12 +1,12 @@
 {
-  "coveredCommit": "a3f390cde6c67b745a3011bac330d575bde5d245",
-  "coveredAt": "2026-11-07T23:44:37.501Z",
+  "coveredCommit": "5c80a050158627f6d77356d267e96b3352d6f126",
+  "coveredAt": "2026-11-08T03:13:16.545Z",
   "lastOutcome": "completed",
   "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
     "number": 960,
-    "headCommit": "a60be1439fd4bdf1a5b8f7fe2f8f78c386fee161",
+    "headCommit": "1f74429840c3be92d3208eb7509741f7ee2f9070",
     "markerBefore": "ecb1c5beb7c02083a560c0796180dfb2bd92695a",
     "slices": [
       {
@@ -19,29 +19,64 @@
         "areaExists": true,
         "reason": "source changed: frontend/mcm-app/README.md",
         "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/expo-app.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "projects",
+        "pages": [
+          "bff.md",
+          "expo-app.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: frontend/mcm-app/README.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/bff.md; openwiki/projects/expo-app.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "runbooks",
+        "pages": [
+          "android-emulator.md"
+        ],
+        "kind": "refresh",
+        "subjects": {},
+        "areaExists": true,
+        "reason": "source changed: docs/runbooks/android-emulator.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/android-emulator.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      },
+      {
+        "area": "process",
+        "pages": [
+          "constitution.md"
+        ],
+        "kind": "refresh",
+        "drift": true,
+        "subjects": {},
+        "areaExists": true,
+        "reason": "drift: .specify/memory/constitution.md changed after the page's stamp",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/process/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/process/constitution.md. The openwiki/process/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/process/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-11-07T23:44:37.880Z"
+    "updatedAt": "2026-11-08T03:13:17.032Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 1,
-    "elapsedSeconds": 511,
+    "pagesWritten": 10,
+    "elapsedSeconds": 3101,
     "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 66,
+    "calls": 960,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 300142,
-    "cached": 7364146,
+    "uncached": 4207133,
+    "cached": 102390698,
     "cacheWrite": 0,
-    "output": 93603,
-    "reasoning": 74278,
-    "ms": 456026,
-    "estCostUsd": 0.2466,
+    "output": 1675130,
+    "reasoning": 1404696,
+    "ms": 7624815,
+    "estCostUsd": 3.8866,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -51,11 +86,14 @@
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/expo-app.md"
+        "projects/bff.md",
+        "projects/expo-app.md",
+        "runbooks/android-emulator.md",
+        "process/constitution.md"
       ],
       "effort": null,
-      "deadlineStop": false,
-      "estCostUsd": 0.2466,
+      "deadlineStop": true,
+      "estCostUsd": 3.8866,
       "rateLimited": null
     }
   ],
