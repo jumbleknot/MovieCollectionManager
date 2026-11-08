@@ -118,11 +118,60 @@ function isBlockedIpv4(address: string): boolean {
   return false;
 }
 
+/**
+ * The eight 16-bit groups of an IPv6 address, or null. Expands `::` and a trailing dotted quad, so
+ * a prefix test sees the same bits whatever spelling arrived: `::127.0.0.1`, `::7f00:1` (what
+ * `new URL()` canonicalizes it to) and `0:0:0:0:0:0:7f00:1` are one address. A zone id is dropped.
+ */
+function ipv6Groups(address: string): number[] | null {
+  let host = address.toLowerCase().split('%')[0];
+  const dotted = /^(.*:)(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(host);
+  if (dotted) {
+    const o = dotted.slice(2).map(Number);
+    if (o.some((n) => n > 255)) return null;
+    host = `${dotted[1]}${((o[0] << 8) | o[1]).toString(16)}:${((o[2] << 8) | o[3]).toString(16)}`;
+  }
+  const halves = host.split('::');
+  if (halves.length > 2) return null;
+  const parse = (part: string) => (part ? part.split(':') : []);
+  const head = parse(halves[0]);
+  const tail = halves.length === 2 ? parse(halves[1]) : [];
+  const missing = 8 - head.length - tail.length;
+  if (halves.length === 2 ? missing < 1 : missing !== 0) return null;
+  const all = [...head, ...Array<string>(halves.length === 2 ? missing : 0).fill('0'), ...tail];
+  if (all.some((g) => !/^[0-9a-f]{1,4}$/.test(g))) return null;
+  return all.map((g) => parseInt(g, 16));
+}
+
+/**
+ * Prefixes that carry an IPv4 address in their low 32 bits and are DENIED OUTRIGHT (spec 097,
+ * item #964). Each is a way to reach an IPv4 target the IPv4 check never sees:
+ *   ::/96            IPv4-compatible (deprecated by RFC 4291). Also covers `::` and `::1`.
+ *   ::ffff:0:0:0/96  IPv4-translated (SIIT, RFC 2765). `mappedIpv4` misses it: three groups follow ffff.
+ *   64:ff9b::/96     NAT64 well-known prefix (RFC 6052).
+ *   64:ff9b:1::/48   NAT64 local-use prefix (RFC 8215).
+ * Outright, not de-mapped like ::ffff:0:0/96: on a NAT64 path the gateway decides where the packet
+ * goes, so the embedded address is a request this server cannot verify. A destination behind DNS64
+ * on an IPv6-only network is legitimate, and gets in the way a NAS does, by its host being on the
+ * allow-list.
+ */
+function isEmbeddedIpv4Prefix(g: number[]): boolean {
+  const zero = (from: number, to: number) => g.slice(from, to).every((x) => x === 0);
+  if (zero(0, 6)) return true; // ::/96
+  if (zero(0, 4) && g[4] === 0xffff && g[5] === 0) return true; // ::ffff:0:0:0/96
+  if (g[0] === 0x64 && g[1] === 0xff9b && zero(2, 6)) return true; // 64:ff9b::/96
+  if (g[0] === 0x64 && g[1] === 0xff9b && g[2] === 1) return true; // 64:ff9b:1::/48
+  return false;
+}
+
 function isBlockedIpv6(address: string): boolean {
   const host = address.toLowerCase();
   const v4 = mappedIpv4(host);
   if (v4) return isBlockedIpv4(v4);
-  if (host === '::' || host === '::1') return true; // unspecified, loopback
+  const groups = ipv6Groups(host);
+  if (!groups) return true; // unparseable is not a reason to allow it
+  if (isEmbeddedIpv4Prefix(groups)) return true;
+  if (host === '::' || host === '::1') return true; // unspecified, loopback (also inside ::/96)
   if (/^fe[89ab]/.test(host)) return true; // fe80::/10 link-local
   if (/^f[cd]/.test(host)) return true; // fc00::/7 unique-local, incl. fd00:ec2::254 (IMDS)
   if (/^ff/.test(host)) return true; // ff00::/8 multicast

@@ -196,3 +196,45 @@ describe('group 4 — the allow-list', () => {
     expect(await rejectionReason('http://169.254.169.254/')).toMatch(/not allowed/i);
   });
 });
+
+describe('group 5 — IPv6 forms that embed an IPv4 address (spec 097, item #964 part 3)', () => {
+  // Each URL is written readably; `new URL()` rewrites it to the hex form in the comment, which is
+  // what the guard actually sees. A check written against the readable spelling never fires.
+  it.each([
+    ['IPv4-compatible loopback', 'http://[::127.0.0.1]/'], // -> ::7f00:1
+    ['IPv4-compatible metadata', 'http://[::169.254.169.254]/'], // -> ::a9fe:a9fe
+    ['IPv4-compatible PUBLIC — the whole deprecated ::/96 is denied', 'http://[::8.8.8.8]/'],
+    ['IPv4-compatible, fully written out', 'http://[0:0:0:0:0:0:a00:1]/'], // -> ::a00:1
+    ['NAT64 metadata', 'http://[64:ff9b::169.254.169.254]/'], // -> 64:ff9b::a9fe:a9fe
+    ['NAT64 private', 'http://[64:ff9b::10.0.0.1]/'], // -> 64:ff9b::a00:1
+    ['NAT64 public — denied outright, admitted only by allow-list', 'http://[64:ff9b::8.8.8.8]/'],
+    ['local-use NAT64 (RFC 8215)', 'http://[64:ff9b:1::10.0.0.1]/'], // -> 64:ff9b:1::a00:1
+    ['IPv4-translated (SIIT) private', 'http://[::ffff:0:10.0.0.1]/'], // -> ::ffff:0:a00:1
+  ])('rejects %s', async (_label, url) => {
+    expect(await rejectionReason(url)).toMatch(/not allowed/i);
+  });
+
+  it('rejects a name whose resolver answer is a NAT64 address, in either spelling', async () => {
+    for (const answer of ['64:ff9b::a9fe:a9fe', '64:ff9b::169.254.169.254', '::7f00:1']) {
+      expect(
+        await rejectionReason('http://backup.example.test/', resolverReturning(answer)),
+      ).toMatch(/not allowed/i);
+    }
+  });
+
+  it('still allows public IPv6 and a mapped PUBLIC IPv4', async () => {
+    for (const url of ['http://[2606:4700:4700::1111]/', 'http://[::ffff:8.8.8.8]/']) {
+      await expect(assertDestinationUrlAllowed(url, { lookup: neverCalled })).resolves.toEqual(
+        expect.objectContaining({ family: 6 }),
+      );
+    }
+  });
+
+  it('admits a NAT64 destination when the operator allow-lists its host', async () => {
+    mockEnv.backupAllowedDestinationHosts = 'nas.v6only.example';
+    const vetted = await assertDestinationUrlAllowed('http://nas.v6only.example/', {
+      lookup: resolverReturning('64:ff9b::c000:221'),
+    });
+    expect(vetted.address).toBe('64:ff9b::c000:221');
+  });
+});

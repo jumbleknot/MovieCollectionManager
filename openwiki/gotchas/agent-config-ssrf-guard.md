@@ -25,8 +25,20 @@ plus an optional `AGENT_OLLAMA_ALLOWED_HOSTS` allowlist for hardened multi-user 
   canonical hex (`::ffff:HHHH:HHHH`) forms back to the embedded IPv4 before applying the link-local
   range check.
 - **This is enforced twice for a reason.** The check runs at save (`validateOllamaUrl`) *and* again
-  at probe time, and the probe additionally uses `redirect: 'manual'` — a URL that passed the save
-  check could otherwise 30x-redirect to a blocked target at request time.
+  at probe time — a name that passed the save check can resolve somewhere else by the time a request
+  is made.
+- **A guard vets the URL it is given, never the one a redirect names — so neither client may follow
+  one.** A vetted server answering `307 Location: http://<internal>/` bounces the request to an
+  address no guard has seen. The BFF probe issues its GET with `http.request`, which has no
+  redirect-following code path at all (the older `redirect: 'manual'` on `fetch` was replaced in
+  item #542). The **gateway's** client did follow: `ollama-python` builds its httpx clients with
+  `follow_redirects=True`, its documented override of httpx's default, so "httpx does not follow by
+  default" was true and irrelevant. Measured 2026-11-08 (spec 097, item #964): a vetted loopback
+  server returning 307 sent both `invoke` and `ainvoke` on to the target. `models.py` now passes
+  `client_kwargs={"follow_redirects": False}`, which reaches the sync and async clients. Both sides are
+  pinned by tests that assert where the request did NOT land, against real sockets
+  (`tests/unit/test_ollama_redirects.py`, and the redirect case in `agent-config-probes.test.ts`),
+  so a dependency bump that renames the knob, or a refactor back to a following client, fails them.
 - **The guard RESOLVES the name — it was DNS-blind until item #542, and older notes say so.** It
   now resolves the host, checks **every** answer (not `answers[0]` — a record mixing one public and
   one blocked address is the shape that defeats a first-answer check), and the probe connects over a
@@ -65,6 +77,7 @@ difference matters at review time, because "the SSRF guard" is now ambiguous:
 | Default for private addresses | **Allowed** (a homelab Ollama is normally on the LAN) | **Denied**, unless explicitly allow-listed |
 | Loopback | Allowed only on `AGENT_OLLAMA_LOOPBACK_PORTS` (default 11434) | Denied unless allow-listed |
 | Rebinding between check and use | Covered in the BFF by pinning; see the gateway caveat below | Covered by connection pinning |
+| Embedded-IPv4 IPv6 forms | Mapped `::ffff:a.b.c.d` de-mapped and checked | Mapped de-mapped and checked; IPv4-compatible `::/96`, NAT64 `64:ff9b::/96` and `64:ff9b:1::/48` denied outright (spec 097) |
 
 The two now share their *mechanism* and still differ in their *policy*, which is the distinction
 worth holding on to. `createPinnedAgent` was moved out to `pinned-agent.ts` in item #542 so both can
@@ -77,8 +90,9 @@ remote storage the user owns, so private is the suspicious case and must be opte
 
 ## What is still NOT covered
 
-Item #542 closed the DNS-blindness and the unguarded gateway fetch. One residual risk remains, and
-it is named here rather than left for a reader to discover:
+Item #542 closed the DNS-blindness and the unguarded gateway fetch, and spec 097 closed the gateway's
+redirect-following. One residual risk remains, and it is named here rather than left for a reader to
+discover:
 
 **The gateway validates but does not PIN.** `src/ollama_guard.py` resolves and checks; `ChatOllama`
 then builds its own HTTP client, so the resolver is consulted again when the socket opens. That

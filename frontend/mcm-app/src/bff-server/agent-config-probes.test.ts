@@ -183,6 +183,34 @@ describe('probeOllama — guard, then a pinned request (review #3, item #542)', 
     expect(reason).not.toMatch(/127\.0\.0\.1|ECONNREFUSED/);
   });
 
+  // Spec 097 (item #964 part 1). A PIN, not a fix: `http.request` has no redirect-following code
+  // path, so this passed on first run. It exists so a refactor back to `fetch` (which follows by
+  // default) or a client library that follows cannot silently reopen the bounce the gateway's
+  // own Ollama client had. The assertion is where the request did NOT land, not a config flag.
+  it('does not follow a redirect: the 30x target is never contacted', async () => {
+    const target = await startOllamaStub(200);
+    const paths: string[] = [];
+    const redirector = http.createServer((req, res) => {
+      paths.push(req.url ?? '');
+      res.writeHead(307, { location: `http://127.0.0.1:${target.port}/api/tags` });
+      res.end();
+    });
+    await new Promise<void>((resolve) => redirector.listen(0, '127.0.0.1', () => resolve()));
+    const port = (redirector.address() as AddressInfo).port;
+    mockEnv.agentOllamaLoopbackPorts = String(port);
+    try {
+      const status = await probeOllama(`http://127.0.0.1:${port}`);
+      // Let a fire-and-forget follow-up land before asserting it did not happen.
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      expect(target.paths).toEqual([]);
+      expect(paths).toEqual(['/api/tags']);
+      expect(status).toEqual({ reason: 'Ollama responded 307' });
+    } finally {
+      await new Promise<void>((done) => redirector.close(() => done()));
+      await target.close();
+    }
+  });
+
   it('the socket goes to the VETTED address, not to whatever DNS says at connect time', async () => {
     const stub = await startOllamaStub(200);
     mockEnv.agentOllamaLoopbackPorts = String(stub.port);

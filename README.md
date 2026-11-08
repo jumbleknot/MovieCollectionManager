@@ -159,7 +159,7 @@ devcontainer up --workspace-folder /workspaces/mcm --config .devcontainer/sandbo
 
 ### Expo/Metro limitation — native mobile stays on the host
 
-The dev container covers backend/API development, compose-based test stacks, the **web target**, and the **Metro bundler** (watchman-backed, hot-reload at native speed). It never runs the **iOS Simulator** (macOS-only), and whether it can run the **Android emulator** depends on the path:
+The dev container covers backend/API development, compose-based test stacks, the **web target**, and the **Metro bundler** (Node file crawler, hot reload). It never runs the **iOS Simulator** (macOS-only), and whether it can run the **Android emulator** depends on the path:
 
 | Path | Android emulator |
 |---|---|

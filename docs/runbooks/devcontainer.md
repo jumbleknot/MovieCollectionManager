@@ -685,7 +685,7 @@ bug but is really the seed gate (missing TMDB or Anthropic key, or provider left
 sandbox microVM has no `/dev/kvm`. The full Android SDK + an `android-34`
 `google_apis` `x86_64` system image are **baked into the toolchain image**, and the privileged DinD
 container already passes through the host `/dev/kvm`, so a headless emulator boots with hardware
-accel. Same model as Rust/uv/watchman: the ~5 GB download happens at **image-build time**, before
+accel. Same model as Rust/uv: the ~5 GB download happens at **image-build time**, before
 the runtime egress firewall exists, so **no `dl.google.com` allowlist entry is needed** (and none
 should be added — see the "do NOT broaden the allow-list" rule above).
 
@@ -1004,7 +1004,7 @@ bash .devcontainer/verify/verify-engine-isolation.sh --host-check   # the host h
 
 ## Toolchain scope
 
-Pilot image = **Node 24 + pnpm (corepack) + watchman + DinD** on `node:24-bookworm`. Note: the
+Pilot image = **Node 24 + pnpm (corepack) + DinD** on `node:24-bookworm`. Note: the
 prod BFF deploys on **node:20**, but the repo's pinned pnpm 11 (`packageManager` in `package.json`) requires Node >= 22.13 (and loads `node:sqlite` at startup)
 (Node ≥ 22/24 only) — on Node 20, `pnpm install` crashes with `ERR_UNKNOWN_BUILTIN_MODULE`. So the
 dev container tracks the **dev toolchain's Node (24, same as the host)**; BFF runtime parity is a
@@ -1014,13 +1014,20 @@ them (`cargo`, `uv sync`, the Python integration tiers). Compose stacks still bu
 Rust/Python images *inside* nested Docker builds, so the pilot image does not need those toolchains
 for `pnpm nx build` / integration tests — it simply has them anyway.
 
-**The baked watchman does not run (measured 2026-11-08).** The prebuilt
-`watchman v2024.01.22.00` links `libcrypto.so.1.1`, and bookworm ships only `libcrypto.so.3`, so
-every call fails with `error while loading shared libraries: libcrypto.so.1.1`. `pnpm nx test mcm-app`
-is unaffected, but a bare `npx jest <file>` from `frontend/mcm-app` exits 1 printing only the watchman
-error, with no test result. That reads as a test failure, and it is not one. Run single files as
-`npx jest --no-watchman --maxWorkers=1 <paths>`. Metro falls back to its Node crawler. Fixing the image
-(a watchman build against OpenSSL 3, or dropping it) is item #963.
+**There is no watchman in the image (spec 097, item #963).** The prebuilt that used to be baked
+(`v2024.01.22.00`) linked `libcrypto.so.1.1`, which bookworm does not ship, so every call failed with
+`error while loading shared libraries: libcrypto.so.1.1`. A bare `npx jest <file>` then exited 1
+printing only that error, which read as a test failure. No upstream Linux prebuilt fits bookworm
+(measured 2026-11-08 across every release with a `linux.zip`): through `v2024.04.15.00` they link
+OpenSSL 1.1, and from `v2025.03.03.00` they link OpenSSL 3 but need `GLIBC_2.38` against bookworm's
+2.36. So it was removed rather than bumped. **Metro and jest use their Node crawler** when the binary
+is absent, with no warning and no flag needed: `npx jest <file>` from `frontend/mcm-app` just runs.
+File watching works; on a very large tree the first crawl is slower than watchman's, which this repo
+has not measured as noticeable. `--no-watchman` is no longer needed, but is harmless.
+
+**A broken binary on `PATH` is worse than none.** Jest only falls back when `watchman` is *absent*;
+one that is present and crashes takes the run down with it. A container built before this change
+still carries the broken binary until it is rebuilt; until then, keep `--no-watchman`.
 
 ## Spec Kit — `pwsh` is half of the SDD toolchain (item #221)
 

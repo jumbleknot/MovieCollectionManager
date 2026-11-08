@@ -50,8 +50,12 @@ jest.mock('@/utils/api-client', () => ({
 /**
  * Resolves the assistant-config context, or throws if it is not an ancestor. Built inside a
  * factory-safe helper because jest hoists module factories above every file-scope binding.
+ *
+ * A COMPONENT, rendered with createElement, not a function the mocks call: it calls a hook, and a
+ * hook belongs in a component's render (react-hooks/rules-of-hooks, spec 097). jest's hoist guard
+ * accepts the `Mock` prefix case-insensitively, so the capitalized name is still usable in a factory.
  */
-function mockConfigProbe(testID: string) {
+function MockConfigProbe({ testID }: { testID: string }) {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const ReactLocal = require('react');
   // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -67,11 +71,12 @@ jest.mock('expo-router', () => ({
   usePathname: () => '/(app)/settings',
   Link: ({ children }: { children: React.ReactNode }) => children,
   // The router supplies no children in a jest tree, so stand a probe at the Stack's position.
-  Stack: () => mockConfigProbe('probe-under-stack'),
+  Stack: () => require('react').createElement(MockConfigProbe, { testID: 'probe-under-stack' }),
 }));
 
 jest.mock('@/components/agent/assistant-dock', () => ({
-  AssistantDock: () => mockConfigProbe('probe-under-dock'),
+  AssistantDock: () =>
+    require('react').createElement(MockConfigProbe, { testID: 'probe-under-dock' }),
 }));
 
 jest.mock('@/hooks/use-auth', () => ({

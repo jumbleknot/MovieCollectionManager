@@ -319,6 +319,13 @@ def _build_real_chat_model(spec: ModelSpec, env: Mapping[str, str]) -> "BaseChat
             model=spec.model_id,
             temperature=spec.temperature,
             base_url=base_url,
+            # NEVER follow a redirect (spec 097, item #964). The guard above vets only the address
+            # the URL names. `ollama-python` builds its httpx clients with follow_redirects=True
+            # (its documented override of httpx's default), so a vetted server could 307 the
+            # gateway to any internal address no guard has seen. `client_kwargs` reaches BOTH the
+            # sync and async clients. Proven by tests/unit/test_ollama_redirects.py against real
+            # sockets; an ollama/langchain-ollama bump that renames this knob fails those tests.
+            client_kwargs={"follow_redirects": False},
         )
 
     if spec.provider == "anthropic":
