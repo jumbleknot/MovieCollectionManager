@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:a1b98c3f3004b30e15b55361482265f82e7023764fc0beda8c164b7a6fd63d72",
+  "pageVersion": "sha256:f976f2d818978ddfb48f2d93abb6c46eca1b491f62611997cf1c23a101dbdd12",
   "claims": [
     {
       "id": "claim_11a6fc3e30364364a243795252e59199",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         },
         {
           "resource": "repo://backend/mc-service/src/api/middleware/error_handler.rs",
@@ -280,19 +280,31 @@
     },
     {
       "id": "claim_cddbccde8cd443748bbb66334d9ad11a",
-      "statement": "The BFF client's generic getErrorMessage() in src/utils/errors.ts understands only an auth-vocabulary body with a `code` member, so an RFC 9457 refusal that carries title/detail instead collapses to the generic 'An unexpected error occurred. Please try again.' Two call sites compensate by reading the problem members directly — extractErrorMessage() in src/hooks/use-movies.ts and backupErrorMessage() in src/hooks/backup-error-message.ts, both preferring detail then title — and the latter's comment records the general gap as a separate item rather than widening the shared auth error mapper.",
+      "statement": "The BFF client's generic getErrorMessage() in src/utils/errors.ts understands only an auth-vocabulary body with a `code` member, so an RFC 9457 refusal that carries title/detail instead collapses to the generic 'An unexpected error occurred. Please try again.' Several call sites therefore read the problem members directly: extractErrorMessage() in src/hooks/use-movies.ts (detail, then title, then message) and backupErrorMessage() in src/hooks/backup-error-message.ts (detail then title, falling back to getErrorMessage), plus the upload catch in src/hooks/use-spreadsheet-import.ts (detail), failureReason() in src/bff-server/backup-restore-writer.ts (title, then 'mc-service answered HTTP {status}') and test() in src/hooks/use-assistant-config.tsx (title). backupErrorMessage's comment records the general gap as a separate item rather than widening the shared auth error mapper.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/hooks/backup-error-message.ts",
-          "version": "repo-file-v1:sha256:c9a7dbdd48554dd33940540351a53d6b3164200d1908d16e82a127dcf9ec83f1"
+          "resource": "repo://frontend/mcm-app/src/bff-server/backup-restore-writer.ts#L96-L102",
+          "version": "repo-lines-v1:sha256:4e99a6625aa02b60324d5f25a08210673356b9add279ed9b198f687b04d9b03c:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMGRkZmI0N2UwYTY5ZTJjZDYwNTMzZTU2YzNlM2M0MzI2ZDFiYTM1N2JhNzdjODM4OTMzNTM4Y2NjYmRkN2VlZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNWM4ZTFiNDNmOWY2MjY3NDMzNDRmZWZhNmU0NjFmNjhhZDVlODcxNGU1OGRjOWRjNjY0YThmYzIxNDMzNzBmMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNjI1MTc2YjNiMWI1ZDZhMWNmNjc4ZWRkM2Y3N2FkZTZhZTVmNDFmOTI4Y2Q2MTU3MjViZGNlYTYzYTYxMWE4YyJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/hooks/use-movies.ts",
-          "version": "repo-file-v1:sha256:53ca4e5343268ddbb5c3bbbd5e46acc9726814da9167501c8e54f3b3908bd9e0"
+          "resource": "repo://frontend/mcm-app/src/hooks/backup-error-message.ts#L1-L39",
+          "version": "repo-lines-v1:sha256:c9a7dbdd48554dd33940540351a53d6b3164200d1908d16e82a127dcf9ec83f1:eyJzZWxlY3RlZExpbmVDb3VudCI6MzksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/src/utils/errors.ts",
-          "version": "repo-file-v1:sha256:0c00e4eabe5c257a50244654a6b0bcb29547fc659a0a38c536bd66ef8f91ae8d"
+          "resource": "repo://frontend/mcm-app/src/hooks/use-assistant-config.tsx#L91-L102",
+          "version": "repo-lines-v1:sha256:fc9863b1750e7602f5093b18c6013e41716064a15028656c9c0ca00d98a6fd3a:eyJzZWxlY3RlZExpbmVDb3VudCI6MTIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNiYjI4OWI4ODcxMTE4NWFiNTIyYWM1ZjkzOTNiYzk0MmU5MzU0ZmRjMjU3ZjZjZWRhM2E1ZjUxZWI2NGU4MzQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjFmMWViNDA0OWM3NmQzMGU1NjI0YzliZTE1ZTEwNzQ3YWU0MDcyMWM2MTk5NmQ0ZWZiMTdmOTk0MDE1MGJlZjgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjVjNzc0ZTE0OTA0MGM0ZjY4N2Q3MDU2MDNhNzE2NmUzM2M3ZDFhMTNiMzFhNTc5YjQ1MWI0MGNjOTZkODIxNDQifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-movies.ts#L47-L60",
+          "version": "repo-lines-v1:sha256:351b40e68bf8007c3de82003e3fde5998d3cad9cdba52a08901eeeb582693aed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjY1Yjg0OTlhMjIzNTg2NDJkNjRkYzg5M2I1MDg3MGQxYjkyYjdlYjU5ZDJlMWQ2ZGI1ODBmNWI5ZTZjMjY5NjEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjkyYmZmZDk5YWFmNjJjYzFkZjgwMzM3MDAyMzEyNzc3YmYwOTFiNzlkOTM1MzJlMmZmMDRkZTcyM2QxYzYyNDMifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/hooks/use-spreadsheet-import.ts#L50-L56",
+          "version": "repo-lines-v1:sha256:56e713fbc19b80a8ed4997bb7f5da302c8366045243ff048c80c599ec3c74629:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTU2YTc2ZmRmMjdkZTE4ZTc5ZGM1ZTYwNjA5YjE5ODYxODhkNzk3ZWZlZDQwYmMwNTExOWQwMzcxOWQ1ZmEzYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOGY0YTRmZGJhNDM5M2I5ODRlYzE2MGNjMjMxMmYyOGE1NGE4ZDhjODk1NTliMmFkYWFiMTYwYzdiZmI5ODQ0NyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTI5OWM2MjlhZWEyNDllOTAxZmQxMGYzMGIwZjg2NTk4NDY3OTRlZGU3YzgxYWIyYjAxODMzZDE0ZmJjMDYzNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWYwYWI4MzQxNWU0M2VkZTYzN2Q4OTkzNDMwYjY4MjI5ODBiZGEwZmYzMTQ5Mzc5YmM4YjIxNzE2MDY5NTJjMyJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/src/utils/errors.ts#L116-L122",
+          "version": "repo-lines-v1:sha256:e4cdc9c1a2f704be8c82f51a22b22ce3e7ac9bf9446665b4a6e3a9962d7f0a75:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTZiODVkYjhlMjhiMjg4NmUzMTEyZGNkMmFmODM3MDk2NjM2MTA5YWQ2N2Q3NDJkOGVkNjlkODUwNWYzYmFiYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
         }
       ]
     },
@@ -347,10 +359,40 @@
           "version": "repo-file-v1:sha256:f9920486c62014e33dd742c3a754d24b0f6fbc15ae4aa5ca2ee54e16de7ca4d7"
         }
       ]
+    },
+    {
+      "id": "claim_595aa49d84f0449e999fce7848ed75bc",
+      "statement": "mc-service installs no axum rejection mapper, so a request the framework's own extractors cannot deserialize never reaches problem_response(): a JSON body of the wrong shape (a missing required field or a wrong type) is answered with axum's own 422, a syntactically invalid body with its 400, a missing or wrong Content-Type with its 415, and query parameters that fail to deserialize with its 400 — bodies carrying neither the mc-service.example type namespace nor the type/title/detail members. api-specs/mc-service-api.yaml declares application/problem+json for BadRequest, Unauthorized, Forbidden, NotFound and Conflict and declares no 422 at all, so that path has no contract schema, and no test in the suite exercises it (the 400 INVALID_INPUT assertions call the command handlers directly rather than over HTTP). The 422 is corroborated from the other side by docs/runbooks/agent-layer.md, which records that the agent's movie payload sends `rated` as a present key precisely because CreateMovieDto 422s an omission.",
+      "evidence": [
+        {
+          "resource": "repo://api-specs/mc-service-api.yaml#L381-L433",
+          "version": "repo-lines-v1:sha256:7557418c75b66168fdc21dd154d7adc7fae6826291ddfc4246c66b00343b1b0a:eyJzZWxlY3RlZExpbmVDb3VudCI6NTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjZjNzQ3MWNjN2UwODU2MDM4MjU5MTI3MTM3M2U0ZTMyMTU4NzcyM2ZmOGQyYmY0NTE0NzhhNjQ2ZjdiYWQ2MGEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImNlYWZhYTQ5YmE4NWE4ZWI5ZDVmNmM3ZjhlNzllYjY4ZDZjYzFmNmExYzVhODdhZjk2Y2QwNjIzODQ0NWUyZTYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImU1ZjQyMDhmYmU2NmIxZThhOTUyNzA2YTcwMjBlZWI4ZWVhOWIxNmRkNzgxNTdhYzBjNDg2NjJkOTQwMmJkNDEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImZmOWQwN2M5NmM0ZjJmOGE1NDVhNmNmM2ExZjQ4MTc0N2ZhMjdiM2YwNzhjMzJhMjFmZTYwYzExODQ5OTgyZDUifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/movies/create.rs#L18-L23",
+          "version": "repo-lines-v1:sha256:e43e5d29c6a0506f72840aa07682c945c751022f3b7a08765cd3dbfa34ec5db8:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjE4MDcwZTdmOGI5NTkyN2FlNmM2NGRjM2E0YjQ2NTJlN2E0ZmQxZDgxN2VkMThkMmFkOTM0NzAyMWM0YzdhYyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQxMjg4MTYwMTM1Y2E5YmE2MmQ3ZjdkMzczYzUxMGJhZGQ5MzFkNDhkNmNiMjU3NjBlYTM5ZmI2YzIxYjVhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMjE2YTIxMGI4OThkYmNkYmMzODI0MWFkOGM2MDJhNzA1M2RlZDAzNWY0OGM1YmY4ODIwMTk0OWU4ZjAyNmE3YiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzNkNjI0ZjZhYzVhOTRmMjc2MGNiNWJiZGYxOTgwYWNlZDc4ZjAyMzBkODhhNGRjYWZkYmI5MTJhY2VmYThmYyJ9"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/movies/list.rs#L74-L84",
+          "version": "repo-lines-v1:sha256:478ecd02f82848ff859a31bcd8eaf23548806c1243e185376c8cf6d32e9520e4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImViYzQ0ZjVjYjQyNjFkYzdhNzBjZTljZDAyZjI0MmNiNzkxODM3MzE3YzMyOGJlNGRkNzhmMGMzYWI1YTNiZDciLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4OTNmNDBlMzc4MWViODk2YzgyZDA0NmEwODA2N2ExMWUzNWNkZjJmMWRmYWYyNmZlYTkwYjhkYjY2NzY0MTMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImM5MTQ1ZGI2NWZkZjQ4ZDQ2NmUyN2MzODcyNDBmMmU0YWJhOWU3MTU3NjA1N2NiNWI1M2M0MjIzNmJkODk0MTgiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJmOGU4MDEyMjcwZThhMDA5YmUzNjQxZmY1OWM0ZTQxOWJhMGMxY2I0MmM0YmNjZTk4MjA0Y2FkYjRmOGIxY2IifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/src/api/router.rs#L152-L202",
+          "version": "repo-lines-v1:sha256:c57588472a2326a8877853aeaa44d23f188a7dd0cd4ff4590c0453e934612dd0:eyJzZWxlY3RlZExpbmVDb3VudCI6NTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU2OTIwZWZlYThkNGEzNDk2MDU5NWEwMzJlMzNhOWYwMzQ4MzgxZGMyNDY1N2NjYWFhOTIxZDhiOTYzODE2MjUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdjYWJmMmVhNzM3Nzg5M2NkMDg4MDY0MDgyZmE5YjBlMjQzYmE3ZTIzZjI4NGM2YWEzYWEyNzdmMzZmNmNjNDQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZhNDI0NWZlOWVkYTNjZGVkZTllMGM3OWVjMWU5YjcyNzIzMGRmMDkwMGNhZWVkNDZkOTk4M2VlMjAwZDhkNWMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjJlNDgxNDg1ODE0YzliZTZhZGVlODk5ZGNlYmJiMmFkMWViNjgzODA3MjcxZDVlMTZlNjgzMzc1YzRlNjEyNTYifQ"
+        },
+        {
+          "resource": "repo://backend/mc-service/tests/integration/collections/http_test.rs#L184-L192",
+          "version": "repo-lines-v1:sha256:a17316d601f31f1f838e8bdb7121f973d06de30a2ba51439c9597714e40b82f0:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTA3YzE1MzM4YWI3ODc0ZjNhMTQzNTYwNTc3MzIwN2RlOTQzNWFhMmFjNzM3N2MzZjNiZDNhZmQ4MjI2ZDY2MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDFiYTQ3MTljODBiNmZlOTExYjA5MWE3YzA1MTI0YjY0ZWVlY2U5NjRlMDljMDU4ZWY4Zjk4MDVkYWNhNTQ2YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYTU5Mzc2NzkxZTY5NDc2ZjdhMDcxODk2ZGMyNWI5MTM3ZWY4NDIzZTNlOTYzNDBjY2ZhYzMzMjNkNDJjYTUxZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTk0NzRhZGU5YTY5M2JkNWJjMTE4OThkODFjM2IwNDczYWEzNDNjYzkxNzZhYTdjNjM3NjU2ZGJiYTBhMzM5MCJ9"
+        },
+        {
+          "resource": "repo://docs/runbooks/agent-layer.md#L175-L181",
+          "version": "repo-lines-v1:sha256:ebab9bfd46f2d013fc76d64b48d2f1170836e0d15050f152d5e939aa2fba0442:eyJzZWxlY3RlZExpbmVDb3VudCI6NywiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDE1OTcyZDc3ZjEyMTc1NjFmOWExYzAwNzJiYzNhNTA5YmQ5YzE5ZDhjNjMyOTNlNGJlZThjZDI0MDNhYWI2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTI1NjFkMDI4OTBiOTIzZTY4ZjkyOGM3ODc1NGRlOGJlYTgzN2MyYjRjNzhhM2QxMjc2M2I5YTY5ZTBhODg3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDMzNmUyYjg3ODBiMmZjMjdhNjc2OTM4NmUwNTk2MWJmNjM0NzM4ZGJiY2UwN2MxYjIxM2M5NjQyZDA0YjdkZSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDM1MWY0YTlhNjZjOWE5ZWIxYWU5MjE2NWViZGUyMjFhZDUyODVkNmYxZWVlZTVjMjg1M2RjNjQ1ZWM4NmRjZiJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-07T05:05:27.957Z"
+    "at": "2026-11-08T02:21:41.463Z"
   }
 }

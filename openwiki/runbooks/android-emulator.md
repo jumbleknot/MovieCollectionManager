@@ -1,7 +1,7 @@
 ---
 type: Runbook
 title: Android emulator & APK builds (mobile E2E)
-description: The decision rule for where to run mobile E2E flows — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone APK and its in-bundle localhost:8082 guard, the launch check that must pass before any flow runs and the app-ci / android-launch commit status that reports it, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
+description: The decision rule for where each mobile E2E flow runs — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone release APK with its in-bundle localhost guard and explicit Gradle heap, the launch check that must pass before any flow and the app-ci / android-launch commit status that reports it, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
 tags: [android, mobile, emulator, apk, ci, runbook]
 sources:
@@ -21,6 +21,8 @@ sources:
     resource: repo://frontend/mcm-app/plugins/with-dev-cleartext.js
   - id: openwiki-source-57b4f1588cb74332de8a1a9a
     resource: repo://frontend/mcm-app/scripts/build-apk.mjs
+  - id: openwiki-source-9b6d0e4c85a72f13d0be4831
+    resource: repo://frontend/mcm-app/scripts/maestro-e2e.mjs
   - id: openwiki-source-23775c3de52f3ab95a13cb8b
     resource: repo://README.md
   - id: openwiki-source-856fe57cb2b44e0e87aa00fa
@@ -71,10 +73,11 @@ sources:
     resource: repo://scripts/mobile-flows.mjs
   - id: openwiki-source-11ba1741c25b3030e34f4dd8
     resource: repo://scripts/publish-android-launch.mjs
-generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+  - id: openwiki-source-4f2a91c7de6b3085a1c74e29
+    resource: repo://scripts/__tests__/prod-apk-gradle-heap.guard.test.mjs
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T19:02:58.048Z
+    at: 2026-11-08T02:21:41.463Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -238,6 +241,17 @@ Several details of the mobile half are load-bearing when editing it:
   (`metro-cache`, `metro-file-map*`, `metro-symbolicate*`, `haste-map*`) so the current env is
   re-inlined, and the workflow disables the Gradle daemon
   (`GRADLE_OPTS=-Dorg.gradle.daemon=false`), because a reused daemon keeps the env it started with.
+- **The release build also needs an explicit Gradle heap.** The same step writes
+  `org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g -XX:+ExitOnOutOfMemoryError …` into the
+  **user-level** `${GRADLE_USER_HOME:-$HOME/.gradle}/gradle.properties` *before* it invokes
+  `mcm-app:build-apk`. The project's own `gradle.properties` cannot carry it: `android/` is regenerated
+  by `expo prebuild --clean`, so the Expo template's `-Xmx2048m` comes back every time — and that is
+  the value that OOMed a release build (run 6766), leaving Gradle running rather than failing. The
+  fail-fast flag matters as much as the heap: an OOM without `ExitOnOutOfMemoryError` hangs the step
+  into a job kill, and a killed job never runs the digest. `cd-deploy`'s `prod-apk` build carries the
+  same block with the same heap, and `scripts/__tests__/prod-apk-gradle-heap.guard.test.mjs` asserts
+  the heap exceeds the 2 GB template default, that the flag is present, that the write precedes the
+  build, and that the two workflows still agree.
 - **A missing KVM capability fails the job; it never skips the mobile suite.** The `app-e2e` job's
   **`Verify KVM is available`** step (wrapped by `scripts/ci-log-step.sh` as
   `app-e2e-verify-kvm-available`, and so named in the failure digest) runs before the emulator step: it
@@ -355,8 +369,9 @@ states the sample it was derived from, and the rule is `max(observed) × 3`, rou
 floored at 300 s, applied only to a step with at least 10 observed (non-killed) samples — the ×3 is the
 largest retry bound any wrapped step has (`ci-mobile-agent-flows.sh` runs each flow under `max=3`,
 Playwright is `retries: 1`), so a run where every retry fires still has headroom. Today
-`maestro-agent-flows` is the loosest calibrated row at 2580 s (n=27, max 844 s), `web-e2e` is 840 s, and
-most steps sit on the 300 s floor. A wrapped step with **no calibrated row** does not run unbounded: it
+`maestro-agent-flows` is the loosest calibrated row at 2580 s (n=27, max 844 s), the release-APK step
+`app-e2e-build-embedded-bundle-e2e` is 900 s, `web-e2e` is 840 s, and most steps sit on the 300 s floor.
+A wrapped step with **no calibrated row** does not run unbounded: it
 is bounded by the job-wide `CI_STEP_TIMEOUT_SECONDS: '2700'` **backstop**, and `ci-log-step.sh` says in
 its own warning which of the two sources the value came from. Every `app-e2e` step in that state is
 recorded as a commented backstop row in the table, so a guard can tell *seen, not calibrated* from
@@ -434,7 +449,7 @@ through `adb reverse`.
   no artifact API, so only a human clicking through the UI can retrieve that one. The shelf is
   **count-based** — the newest five versions, pruned at publish time and roughly 109 MB each — so pin
   anything that must outlive that window as `<version>-keep`. Recipe:
-  [Homelab server setup §6.7](./server-setup.md).
+  [Homelab server setup §6.7](../../docs/runbooks/Server-Setup-Runbook.md#67-the-generic-package-registry--where-the-prod-apk-lives).
 - **A release APK can only reach the dev BFF because a config plugin allowlists cleartext for it.**
   Android blocks `http://` at `targetSdk >= 28`, and Expo relaxes that only in the *debug* manifest —
   so the standalone release APK the mobile suite installs would fail the login POST with `ERR_NETWORK`

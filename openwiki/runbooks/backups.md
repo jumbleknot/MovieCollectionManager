@@ -111,7 +111,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T05:05:27.957Z
+    at: 2026-11-08T02:21:41.463Z
 ---
 
 # Per-user collection backups (scheduled & on-demand)
@@ -324,6 +324,14 @@ is removed, nothing fails loudly at boot — the schedule simply never turns on,
 is Keycloak's `Invalid parameter: redirect_uri`. `tests/unit/bff-server-trust-proxy.test.ts` is the
 regression gate that makes either removal visible without a production deploy; see
 [Expo Router and transport traps](../gotchas/expo-router-and-transport-traps.md) for the full trap.
+
+Why that gate had to be rebuilt before it was worth anything: the scheme assertion used to run against
+a stand-in that computed and echoed the origin itself (`X-Test-Origin`), so it tested the stub's belief
+about the adapter rather than the adapter's behaviour — green throughout, while production refused the
+callback. Feature 087 moved the assertion onto the real `expo-server` adapter and deleted that echo.
+The stub survives only in `bff-server-adapter.test.ts`, where the subject really is the express layer
+in front of the handler and where the URL assertions now expect the absolute form. Treat any harness
+that re-implements the thing it is checking as unpinned.
 
 ## The consent runs on its own Keycloak client (feature 083)
 

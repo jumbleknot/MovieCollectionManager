@@ -1,7 +1,7 @@
 ---
 type: Service
 title: BFF (Backend-for-Frontend)
-description: The Node.js server-side layer embedded in the mcm-app Expo Router process — the server-held-token session contract (one opaque session cookie, no bearer path in any environment) with the unauthenticated redirect-URI reconciliation route and the dedicated Keycloak client the backup consent runs as, the fail-closed run-scoped agent identity (a refused RFC 8693 mint becomes the route's own 401/503 instead of an identity-less turn), its own MongoDB and Redis state for per-user agent config and scheduled collection backups, the ordered account-deletion pipeline with its step-up re-authentication, the hand-written S3 signer behind the backup driver boundary, and the server.js and web security-header boundary the image ships with.
+description: The Node.js server-side layer embedded in the mcm-app Expo Router process — the six bff-api route groups over the shared server-side spine (cookie-only requireAuth, JWKS token validation, the request-scoped redacting logger, the append-only audit sink), the server-held-token session contract (one opaque session cookie, no bearer path in any environment) with the unauthenticated redirect-URI reconciliation route and the dedicated Keycloak client the backup consent runs as, the fail-closed run-scoped agent identity (a refused RFC 8693 mint becomes the route's own 401/503 instead of an identity-less turn), its own MongoDB and Redis state for per-user agent config with live credential probes and for scheduled collection backups across two destination drivers (S3 and WebDAV) with version listing, retention pruning and a create-only restore, the ordered account-deletion pipeline with its step-up re-authentication, the hand-written S3 signer behind the backup driver boundary, the SDK 58 static web output that keeps prerendered pages and the API routes in one Node process, and the server.js and web security-header boundary the image ships with.
 resource: frontend/mcm-app/README.md
 tags: [bff, expo-router, auth, keycloak, proxy, nodejs, mongodb, redis, backups, s3, account-deletion]
 sources:
@@ -184,7 +184,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T19:55:04.696Z
+    at: 2026-11-08T02:21:41.463Z
 ---
 
 
@@ -199,16 +199,33 @@ this one). This split exists so the client never holds a raw
 credential — see [Auth chain](../invariants/auth-chain.md), which the BFF is the primary
 enforcement point for.
 
-Route groups: `bff-api/auth/*` (login, refresh, logout, registration, email verification,
-the public registration-status read, and `init` — the once-per-app-mount route that reconciles
-the Keycloak client's redirect-URI list, described below), `bff-api/collections/*` and
-`.../movies/*` (proxy CRUD to [mc-service](./mc-service.md)),
-`bff-api/agent/*` (`run` and `resume` forward turns to the [Agent Gateway](./agent-gateway.md) over
-AG-UI, with `ui-state`, `ui-action`, `import-upload`, `export-download` and `config` around them — the
-section below is what those handlers do beyond proxying), `bff-api/backups/*`
-(destinations, jobs, the consent callback, and the internal scheduling tick),
-`bff-api/account/*` (the account-deletion challenge and its step-up callback),
-`bff-api/admin/settings`. Every proxy
+The app is on **Expo SDK 58** (`expo ~58.0.23`, `expo-router ~58.0.30`, `expo-server ~58.0.6`,
+`react-native 0.88.1`, `react 19.3.0`, `express ^5.3.0`, `zod ^4.4.3` — the manifest is
+[`frontend/mcm-app/package.json`](../../frontend/mcm-app/package.json)). One consequence lands on this
+page: `app.json` sets `web.output` to `"static"` and the `expo-router` plugin entry to
+`{ "apiRoutes": true, "asyncRoutes": { "web": false } }`, so pages are rendered to HTML at **build**
+time while the 38 API routes — the BFF — still run in the same Node process behind `server.js`. On
+SDK 58 the literal `"output": "server"` means *per-request* rendering, which is a different runtime
+from the one this app is built and tested on; and SDK 58's plugin with no options turns
+`asyncRoutes.web` **on**, which is why that value is written out rather than omitted. A page that
+throws while rendering fails `expo export` with `Failed to statically export route: <name>` — that is
+the guard, not flakiness. The measured route counts and the full rationale are in the README's
+[Web output mode section](../../frontend/mcm-app/README.md#web-output-mode-prerendered-pages-plus-api-routes-sdk-58).
+
+**Six route groups, 38 `+api.ts` handlers — and the inventory is enforced rather than remembered**
+(the coverage gate below globs it). `bff-api/auth/*` — `login`, `refresh`, `logout`, `register`,
+`resend-verification`, `verify-email`, `user`, the public `registration-status` read, and `init`, the
+once-per-app-mount route that reconciles the Keycloak client's redirect-URI list described below.
+`bff-api/collections/*` with its nested `.../movies/*` — proxy CRUD to
+[mc-service](./mc-service.md), plus `movies/count` and `movies/filter-options`.
+`bff-api/agent/*` — `run` and `resume` forward turns to the [Agent Gateway](./agent-gateway.md) over
+AG-UI, with `ui-state`, `ui-action`, `import-upload`, `export-download` and the `config/index` +
+`config/test` pair around them; the section below is what those handlers do beyond proxying.
+`bff-api/backups/*` — destinations (`index`, `[destinationId]`, `test`), jobs (`index`,
+`[jobId]/index`, `[jobId]/run`, `[jobId]/runs`, and the three artifact-facing ones `[jobId]/versions`,
+`[jobId]/restore`, `[jobId]/download`), the `consent` callback and the internal `tick`.
+`bff-api/account/*` — the account-deletion challenge and its step-up callback.
+`bff-api/admin/settings` — the global application settings. Every proxy
 route follows the same shape: `requireAuth()` → `requireMcUser()`/`requireMcAdmin()` RBAC check
 → a per-request `mc-service-client.ts` Axios instance carrying the member's **server-held** access
 token as `Authorization: Bearer` → `handleMcApiError()` translates mc-service's RFC 9457
@@ -232,6 +249,45 @@ holds a default-deny target→role allowlist (`NAVIGABLE_TARGETS` / `PREFILL_TAR
 assistant can never drive the UI somewhere the user themselves could not go. A new agent-navigable
 screen must be added to that map or it is refused — the allowlist is the single source of truth for
 what the agent may drive.
+
+## The server-side spine the six groups share
+
+The groups differ at the top and are identical underneath. `auth.ts` resolves the session cookie into
+a `UserProfile` (the bearer story is in the auth section below),
+`role-check.ts` turns that into `requireMcUser()` / `requireMcAdmin()` — `mc-admin` implicitly
+satisfies `mc-user`, which is why an admin-only screen does not need a second check — and
+`security-headers.ts` supplies the strict `default-src 'none'` CSP every handler answers with. Three
+more modules are shared, are easy to overlook, and each is the single point of failure for something
+you would not think to test:
+
+- **`token-service.ts` is the BFF's own JWT validator rather than a library call, and it fetches
+  JWKS from the *internal* origin.** It parses the token, accepts the issuer as either the public or
+  the internal Keycloak URL (both name the same instance and the signature check is the real proof),
+  reads the audience from `azp` because Keycloak access tokens put the client id there and leave
+  `aud` as `["account"]`, requires `exp` and honours `nbf`, then verifies the RSA signature after
+  building the PEM from the JWK's `n`/`e` by hand. JWKS is cached for 5 minutes, with a single forced
+  refetch when the `kid` is unknown (key rotation) — and the fetch deliberately uses
+  `env.keycloakUrl` rather than the build-inlined issuer, because `expo export` freezes the
+  browser-facing origin into the bundle and that host does not exist inside a container, while
+  signing keys are realm-global so the host used to fetch them is irrelevant. Consumers are
+  `login+api.ts`, `user+api.ts`, `auth.ts` and `session-tokens.ts`.
+- **`logger.ts` and `audit-sink.ts` are two channels, and only one of them can lose an event.**
+  `logger.ts` writes newline-delimited JSON with key-driven redaction (`SENSITIVE_KEYS`, extended with
+  the per-user agent-config secret field names and the master key), an `audit: true` + `action` shape
+  on the audit channel, warn/error on stderr and `debug` dropped entirely under `NODE_ENV=production`.
+  `audit-sink.ts` is the only thing that leaves the process: `audit(action, fields)` *always* calls
+  `logger.audit` with the original fields first, and only when `OPENSEARCH_URL` is set also
+  fire-and-forgets a redacted document to the append-only OpenSearch sink — never awaited on the
+  response path, never throwing, and strictly additive so an unset URL means exactly the previous
+  behaviour. The asymmetry is the design: the local log is the record, the sink is best-effort
+  telemetry, and a sink outage must not fail a request. `rate-limiter.ts` is the one caller that
+  deliberately uses `logger.audit` rather than `audit()` for `refresh_attempted`, because posting
+  every attempt to the external sink would change the BFF's outbound load while measuring it.
+- **`request-context.ts` is how a log line gets a request id.** An `AsyncLocalStorage` store,
+  `withRequestContext(handler)` minting a `randomUUID()` per entry, and `logger` reading it back — so
+  every route wrapper enters the context first (`withBackupRoute`, each agent handler, the account and
+  admin routes) and a handler that skips it produces log lines with no `requestId` rather than any
+  error at all.
 
 ## The agent routes: a protocol bridge, and the gates in front of it
 
@@ -467,8 +523,9 @@ across a service boundary into a backend service's store):
 - **Per-user agent config** (feature 018, `agent-config-service.ts` / `agent-config-store.ts`):
   each user's chosen LLM provider, encrypted API keys/Ollama URL, and TMDB key, so the assistant
   can run with the user's own credentials rather than a shared one. Secrets are AES-256-GCM
-  sealed with `AGENT_CONFIG_ENC_KEY`, decrypted only transiently per run, and never returned to
-  the client or logged. A user-supplied Ollama URL is validated against an SSRF guard
+  sealed with `AGENT_CONFIG_ENC_KEY`, each blob AAD-bound to `${userId}:${field}` so a cross-user or
+  cross-field mixup fails the GCM auth check, decrypted only transiently per run, and never returned
+  to the client or logged. A user-supplied Ollama URL is validated against an SSRF guard
   (`agent-config-ssrf.ts`) before it is ever saved or probed: by policy it allows private/LAN
   addresses ("bring your own Ollama" is the point), always blocks link-local and cloud-metadata
   addresses, and — since item #542 — narrows loopback to only the ports Ollama itself uses
@@ -476,6 +533,25 @@ across a service boundary into a backend service's store):
   server, not the user's own machine. See
   [SSRF guard: canonicalized IP, not hostname string](../gotchas/agent-config-ssrf-guard.md)
   for the mechanism shared with the backups guard below (do not re-derive it here).
+- **A credential is proved by a live probe before it is stored, and the probe is where the secrets
+  could leak.** `agent-config-probes.ts` makes one authenticated call per credential
+  (`GET /v1/models` for Anthropic, `GET /3/authentication` for TMDB, `GET {baseUrl}/api/tags` for
+  Ollama), each bounded by a 5-second `AbortController`, retrying only a transient upstream 5xx
+  (three attempts, short linear backoff) because a deterministic 401 and an unreachable host are not
+  transient. Three rules there are load-bearing rather than defensive: the raw provider response body
+  is **never** forwarded — outcomes are normalised to `'ok' | { reason }` — and neither is a raw
+  transport error, which can carry the resolved address or, for TMDB, the key itself in a query
+  parameter; redirects are never followed (`redirect: 'manual'`, and the Ollama probe uses
+  `http.request`, which follows none at all), because a vetted URL that 30x-bounces the BFF to a
+  blocked internal target has defeated the guard; and the Ollama probe **re-runs the resolving guard
+  at probe time** and pins the connection to the addresses it returned, since the answer for a name
+  can have changed since save time. The route shape follows: `PUT /bff-api/agent/config` is
+  validate-on-save in three ordered stages — shape → 400, missing prerequisite for an `enable` → 400,
+  live probes → 422 — and only on all-pass does it encrypt and upsert, with a secret omitted from the
+  body left untouched rather than cleared. `POST /bff-api/agent/config/test` re-probes the
+  already-stored, server-decrypted credentials and returns a per-credential status map with no body,
+  no secret entered and no secret returned; it answers 409 when there is nothing on file to test.
+  Both derive the owning `userId` from the validated session and never from the request body.
 - **Scheduled collection backups** (feature 073, `backup-*.ts`): per-user destinations
   (S3-compatible or WebDAV, credential sealed with a *separate* `BACKUP_CREDENTIAL_ENC_KEY`),
   jobs (what/where/how often/how many to keep), and run history. An unattended scheduled run
@@ -504,7 +580,10 @@ across a service boundary into a backend service's store):
 
 Redis is the BFF's other store, and it is not a cache of convenience: sessions and the sealed
 session-token records, the concurrent session cap, every rate-limit counter, the agent cost budget,
-the parked step-up/consent requests and the backup leader lock all live there.
+the parked step-up/consent requests, the single-use agent import/export file bytes
+(`transient-file-store.ts`, a deliberately separate module from `cache-service.ts` so the binary
+surface and the `import:file:` / `export:file:` namespaces stay isolated) and the backup leader lock
+all live there.
 
 Both collections' Mongo instance is a **standalone `mongod`, not a replica set** — there is no
 multi-document transaction available anywhere in the BFF's own store. That single fact shapes
@@ -565,6 +644,81 @@ that skips the check. `createBackupDriver()` is the only place a destination's `
   an ISO-8601 timestamp and therefore sort lexicographically in chronological order. A failed or
   `partial` run prunes nothing, and a prune failure never fails the run (it is recorded separately
   in `pruneFailureReason`).
+- **The second driver, WebDAV, exists because the S3 path cannot be assumed to generalise, and the
+  two structural differences are handled inside the driver so nothing above the interface has to
+  know which kind it has.** A WebDAV path is a *tree*, not a flat key space: `PUT` does not create
+  parent collections and answers 409, so a put walks the path and `MKCOL`s what is missing — assuming
+  S3 semantics gives a driver that fails on the first backup to a fresh server and works ever after,
+  the worst possible distribution for that bug. And the `MKCOL` target must carry a **trailing
+  slash**: RFC 4918 identifies a collection by a URL ending in `/`, Apache's `mod_dav` answers
+  `MKCOL /foo` with a 301 to `/foo/`, and this driver follows no redirects by design — measured when
+  the test destination moved from a lenient Go server to `mod_dav`, five driver cases went red on
+  `MKCOL failed: HTTP 301`, a bug that would otherwise have surfaced on a user's own NAS. The
+  `PROPFIND` parser is written against the protocol's *variation* rather than one server's output
+  (`removeNSPrefix` so `D:response` and `response` read identically, `href` accepted absolute or
+  path-only and percent-decoded), it drops collections from the listing because `Depth: 1` returns
+  the queried collection and its child collections as entries and each would otherwise appear as a
+  phantom zero-byte version, and it treats a 404 on the listing as "no versions yet" rather than an
+  error so a job's first listing works. `testConnection` mirrors the S3 three-way split plus the
+  write probe, with one honest caveat: servers differ on whether a bad password answers 401 or 403,
+  so a 403 is reported as authenticated-but-not-permitted and the write probe is what actually
+  separates the two.
+
+### Reading back: version listing, restore, and the paging trap
+
+The read side of a backup feature is where a silent truncation hides, so it is split into three
+modules with one rule each.
+
+- **The version list comes from the destination, not from run history** (`backup-version-lister.ts`).
+  Run history records what this system believes it did; the destination is the user's own storage and
+  is authoritative about its own contents — listing from history would hide an object someone removed
+  elsewhere and one this system never wrote, both of which the user needs to see precisely because
+  they can act on that storage directly. **Usable is not the same as present**: a zero-length or
+  unreadable object is listed (it exists and its space is used) but is never offered for restore —
+  hiding it would be a lie about the destination, and offering it would send the user to a failure at
+  the exact moment they are already in trouble. Deciding usability cannot be done on size alone (a
+  valid-looking gzip whose digest does not match is non-zero and parses), but opening every object
+  turns a page load into a download of the whole history, so only the newest five are opened and
+  verified and older ones are judged on what listing already told us — and an older one is verified
+  again before anything is written.
+- **A version key is guessable, so it is never a capability.** `keyBelongsToJob()` confines a
+  client-supplied key to this job's `<basePath>/<jobId>/` prefix *and* rejects any `..` segment,
+  because `startsWith` alone is necessary but not sufficient — a traversal in the remainder could walk
+  out of the prefix at the server. Both `download+api.ts` and `restore+api.ts` re-establish ownership
+  from the session on every request and answer 404 for a key outside the prefix, with the refusal
+  audit-logged as a reason *code* and never the key, which is attacker-supplied input. This is the
+  deliberate opposite of the agent dock's import/export handles, which *are* unguessable capabilities
+  (see the agent section above) — the two look similar and the reasoning is inverted.
+- **Restore is create-only, and the ordering is enforced structurally.** `restoreFromBytes` is the
+  only exported entry point in `backup-restore-writer.ts`: it decompresses, verifies and only then
+  calls a writer that is not exported, so a second caller cannot later be added that skips the check —
+  which is how a verify-then-write invariant usually decays. Nothing there updates or deletes; the
+  only write is a create, which is a stronger promise than "we are careful to restore into a new
+  collection" because no code path could do otherwise. Writes go through the unchanged
+  `createMcServiceClient(jwt)` seam *as the user*, so domain validation, DAC and audit apply exactly
+  as if the user had typed every record in — there is deliberately no privileged bulk-import path.
+  Restored names are `<name> (backup <timestamp>)`, and the suffix has to be *budgeted for* rather
+  than appended: mc-service caps a collection name at 50 characters, found by running it, and an
+  ordinary name plus the suffix answers 400 so the restore fails entirely for a collection the user
+  named perfectly reasonably. The suffix exists because collection-name uniqueness is enforced
+  case-insensitively at the MongoDB index level, so restoring the same version twice collides on the
+  second attempt — exactly when a user retries, unsure the first one worked — and the create steps the
+  suffix on a 409 up to 20 attempts. The timestamp is minute-resolution so two restores in the same
+  minute are the ordinary path, not an edge case. A rejected *movie* is recorded as a per-record
+  failure rather than aborting, so one field that no longer passes validation does not cost the user
+  the other four hundred; the result is reported `partial`, which is honest — not failed, because most
+  of it worked, and not successful, because not all of it did. Only mc-service's RFC 9457 `title` is
+  surfaced as a reason.
+- **Paging is where a silent truncation would come from, and the snapshot reader refuses to
+  truncate.** `backup-snapshot-reader.ts` follows mc-service's opaque compound keyset `nextCursor`
+  until it is null, because a reader that takes the first page and stops produces an artifact that
+  parses, verifies and matches its own manifest — and has lost data, surfacing at restore. A cursor
+  that repeats is an error either way (continuing loops for ever holding the run lock; reading it as
+  done truncates silently), so it throws, and a `MAX_PAGES` runaway guard turns a server bug into a
+  loud failed run rather than a process quietly spinning. Reads are the user's own, so a collection
+  they cannot see is one this cannot back up; a collection that disappeared between listing and read
+  is omitted rather than failing the whole run, and omitted *entirely* rather than recorded with zero
+  movies, because "zero movies" is indistinguishable from a collection the user emptied on purpose.
 
 **The backup integration suites are only as good as their skip behaviour, so they make it loud.**
 They run against real targets from their own compose file, and `tests/integration/helpers/backup-targets.ts`
