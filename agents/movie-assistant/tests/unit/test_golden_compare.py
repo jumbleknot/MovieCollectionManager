@@ -2,6 +2,41 @@
 
 from tests.golden.compare import compare_decision
 
+_MOVE_PLAN = {
+    "collection": "Sci-Fi",
+    "operations": [{"op": "move", "title": "Inception", "to": "Favorites"}],
+}
+
+
+def test_plan_source_with_collection_suffix_matches():
+    """Spec 093: the live-gate output that failed on 2026-11-07. The app resolves it."""
+    actual = {**_MOVE_PLAN, "collection": "Sci-Fi collection"}
+    ok, reason = compare_decision("plan", _MOVE_PLAN, actual, None)
+    assert ok, reason
+
+
+def test_plan_destination_with_collection_suffix_matches():
+    actual = {
+        "collection": "Sci-Fi",
+        "operations": [{"op": "move", "title": "Inception", "to": "Favorites Collection"}],
+    }
+    ok, reason = compare_decision("plan", _MOVE_PLAN, actual, None)
+    assert ok, reason
+
+
+def test_plan_wrong_collection_still_fails():
+    actual = {**_MOVE_PLAN, "collection": "Horror collection"}
+    ok, reason = compare_decision("plan", _MOVE_PLAN, actual, None)
+    assert not ok
+    assert "collection" in reason
+
+
+def test_plan_suffix_rule_is_one_way():
+    """An expected `Movie Collection` is a real name: a bare `Movie` must not match it."""
+    expected = {"collection": "Movie Collection", "operations": []}
+    ok, _ = compare_decision("plan", expected, {"collection": "Movie", "operations": []}, None)
+    assert not ok
+
 
 def test_intent_exact_match():
     ok, _ = compare_decision("intent", "add", "add", None)

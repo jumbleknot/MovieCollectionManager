@@ -1,24 +1,13 @@
 {
-  "coveredCommit": "ecb1c5beb7c02083a560c0796180dfb2bd92695a",
-  "coveredAt": "2026-11-07T20:11:35.995Z",
+  "coveredCommit": "a3f390cde6c67b745a3011bac330d575bde5d245",
+  "coveredAt": "2026-11-07T23:44:37.501Z",
   "lastOutcome": "completed",
-  "backlog": [
-    {
-      "area": "projects",
-      "pages": [
-        "expo-app.md"
-      ],
-      "kind": "refresh",
-      "subjects": {},
-      "areaExists": true,
-      "reason": "source changed: frontend/mcm-app/README.md"
-    }
-  ],
+  "backlog": [],
   "proposal": {
     "branch": "openwiki-maintenance",
-    "number": 957,
-    "headCommit": "c8bc04a7214006564c3742df70c49646b7191c8e",
-    "markerBefore": "fe91db2f86a564860537624b54aa89a72905f21b",
+    "number": 960,
+    "headCommit": "a60be1439fd4bdf1a5b8f7fe2f8f78c386fee161",
+    "markerBefore": "ecb1c5beb7c02083a560c0796180dfb2bd92695a",
     "slices": [
       {
         "area": "projects",
@@ -28,77 +17,45 @@
         "kind": "refresh",
         "subjects": {},
         "areaExists": true,
-        "reason": "source changed: frontend/mcm-app/README.md"
-      },
-      {
-        "area": "gotchas",
-        "pages": [
-          "playwright-testid-mapping.md"
-        ],
-        "kind": "refresh",
-        "drift": true,
-        "subjects": {},
-        "areaExists": true,
-        "reason": "drift: frontend/mcm-app/playwright.config.ts changed after the page's stamp"
-      },
-      {
-        "area": "projects",
-        "pages": [
-          "bff.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: frontend/mcm-app/README.md"
-      },
-      {
-        "area": "runbooks",
-        "pages": [
-          "e2e-testing.md"
-        ],
-        "kind": "refresh",
-        "subjects": {},
-        "areaExists": true,
-        "reason": "source changed: docs/runbooks/e2e-testing.md",
-        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/e2e-testing.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+        "reason": "source changed: frontend/mcm-app/README.md",
+        "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/expo-app.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
       }
     ],
-    "updatedAt": "2026-11-07T20:11:36.527Z"
+    "updatedAt": "2026-11-07T23:44:37.880Z"
   },
   "lastRunBudget": {
-    "pagesWritten": 14,
-    "elapsedSeconds": 996,
-    "stoppedAtBudget": true
+    "pagesWritten": 1,
+    "elapsedSeconds": 511,
+    "stoppedAtBudget": false
   },
   "escalations": {},
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 310,
+    "calls": 66,
     "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 1323158,
-    "cached": 28759026,
+    "uncached": 300142,
+    "cached": 7364146,
     "cacheWrite": 0,
-    "output": 456234,
-    "reasoning": 380351,
-    "ms": 2312368,
-    "estCostUsd": 1.117,
+    "output": 93603,
+    "reasoning": 74278,
+    "ms": 456026,
+    "estCostUsd": 0.2466,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": "low",
+    "reasoningEffort": null,
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
     {
       "pages": [
-        "projects/bff.md",
-        "runbooks/e2e-testing.md"
+        "projects/expo-app.md"
       ],
-      "effort": "low",
+      "effort": null,
       "deadlineStop": false,
-      "estCostUsd": 1.117,
+      "estCostUsd": 0.2466,
       "rateLimited": null
     }
   ],
