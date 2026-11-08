@@ -2,8 +2,9 @@
 
 `acquire_downscoped_token` is the single entry point the (US1) MCP-client tool path calls
 to obtain the mc-service token for a tool call: it OPA-authorizes the exchange, then
-re-exchanges the run-scoped subject token, caching the result per (user, audience) bounded
-by the exchanged token's ≤60 s TTL so a burst of tool calls in one run segment reuses it.
+re-exchanges the run-scoped subject token, caching the result per (user, audience, subject-token
+digest) bounded by the exchanged token's ≤60 s TTL, so a burst of tool calls in one run segment
+reuses it.
 A denied authorization raises before any exchange. Tokens are never logged or checkpointed.
 
 OPA and the Keycloak re-exchange are injected here (their own real-dependency tests cover
@@ -138,3 +139,51 @@ async def test_propagates_exchange_failure() -> None:
             _SUBJECT, user_id=_USER, authorize=authz, exchange=exchange,
             cache=DownscopedTokenCache(clock=_Clock()),
         )
+
+
+# ── Spec 094: the cache is keyed by the presented subject token, not the unverified `sub` ────────
+
+
+async def test_forged_token_with_same_sub_misses_the_cache() -> None:
+    """FR-001/SC-001: `user_id` is decoded without a signature check, so a hit on it alone would
+    hand a victim's cached token to anyone presenting a JWT with the victim's `sub`."""
+    cache = DownscopedTokenCache(clock=_Clock())
+    seen: list[str] = []
+
+    async def authz(user_id: str, audience: str) -> bool:
+        return True
+
+    async def exchange(subject_token: str) -> ExchangedToken:
+        seen.append(subject_token)
+        return ExchangedToken(token=f"tok-for-{subject_token}", expires_in=60)
+
+    victim = await acquire_downscoped_token(
+        "victim.jwt.sig", user_id=_USER, authorize=authz, exchange=exchange, cache=cache
+    )
+    forged = await acquire_downscoped_token(
+        "forged.jwt.sig", user_id=_USER, authorize=authz, exchange=exchange, cache=cache
+    )
+
+    assert victim == "tok-for-victim.jwt.sig"
+    assert forged != victim, "a different subject token must not be served the cached token"
+    assert seen == ["victim.jwt.sig", "forged.jwt.sig"], "the forged token must reach the exchange"
+
+
+def test_cache_does_not_hold_the_raw_subject_token() -> None:
+    """FR-002: the key is a digest; the subject token itself is never stored."""
+    cache = DownscopedTokenCache(clock=_Clock())
+    cache.put(_SUBJECT, _USER, "mc-service", "downscoped", 60)
+
+    assert cache.get(_SUBJECT, _USER, "mc-service") == "downscoped"
+    assert _SUBJECT not in repr(cache._store)
+
+
+def test_put_prunes_expired_entries() -> None:
+    """FR-004: per-token keys outnumber per-user keys, so expired entries go on write too."""
+    clock = _Clock()
+    cache = DownscopedTokenCache(clock=clock)
+    cache.put("old.jwt.sig", _USER, "mc-service", "old", 60)
+    clock.now += 61
+    cache.put("new.jwt.sig", _USER, "mc-service", "new", 60)
+
+    assert len(cache._store) == 1
