@@ -18,7 +18,7 @@
  */
 
 import React, { useState } from 'react'
-import { TextInput, type TextInputProps } from 'react-native'
+import { TextInput, type TextInputInstance, type TextInputProps } from 'react-native'
 import { View, useTheme } from '@tamagui/core'
 import { Text } from '../primitives/Text'
 import { XStack } from '@tamagui/stacks'
@@ -37,7 +37,7 @@ export interface SearchBarProps extends Omit<TextInputProps, 'style'> {
   disabled?:      boolean
 }
 
-export const SearchBar = React.forwardRef<TextInput, SearchBarProps>(function SearchBar(
+export const SearchBar = React.forwardRef<TextInputInstance, SearchBarProps>(function SearchBar(
   {
     variant       = 'docked',
     value         = '',

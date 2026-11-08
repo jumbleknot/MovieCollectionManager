@@ -24,7 +24,7 @@
  */
 
 import React, { useState, useCallback } from 'react'
-import { TextInput, Animated, type TextInputProps } from 'react-native'
+import { TextInput, Animated, type TextInputInstance, type TextInputProps } from 'react-native'
 import { View, useTheme } from '@tamagui/core'
 import { Text } from '../primitives/Text'
 import { XStack, YStack } from '@tamagui/stacks'
@@ -46,7 +46,7 @@ export interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   containerProps?: object
 }
 
-export const TextField = React.forwardRef<TextInput, TextFieldProps>(function TextField(
+export const TextField = React.forwardRef<TextInputInstance, TextFieldProps>(function TextField(
   {
     variant        = 'filled',
     label,

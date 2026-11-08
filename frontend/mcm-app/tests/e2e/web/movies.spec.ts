@@ -229,6 +229,11 @@ test.describe('Movie add/edit flows', () => {
     // Teardown: cancel the duplicate form, then navigate directly to the first movie
     // and delete it. Avoids clicking into a potentially long/scrolled list.
     await page.click('[data-testid="movie-form-cancel-button"]');
+    // Wait for Cancel's own navigation to land BEFORE the direct load. Cancel goes back with
+    // `history.back()`, which the browser runs asynchronously: measured on the SDK 58 branch
+    // (feature 087), it was applied AFTER `page.goto(movieDetailUrl)` had started, so the page
+    // reloaded the collection instead of the movie and the delete button never appeared.
+    await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
     await page.goto(movieDetailUrl);
     await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 15000 });
     await page.click('[data-testid="movie-detail-delete-button"]');

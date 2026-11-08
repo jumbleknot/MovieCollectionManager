@@ -29,6 +29,7 @@
 import React, { useRef, useState, useCallback } from 'react'
 import {
   ScrollView, KeyboardAvoidingView, Platform, TextInput, } from 'react-native'
+import type { ScrollViewInstance } from 'react-native'
 import { View, useTheme } from '@tamagui/core'
 import { Text } from '../primitives/Text'
 import { XStack, YStack } from '@tamagui/stacks'
@@ -288,7 +289,7 @@ export const AssistantPanel = React.memo<AssistantPanelProps>(function Assistant
   style,
 }) {
   const theme       = useTheme()
-  const scrollRef   = useRef<ScrollView>(null)
+  const scrollRef   = useRef<ScrollViewInstance>(null)
   const isEmpty     = messages.length === 0 && !isThinking
 
   return (

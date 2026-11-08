@@ -117,6 +117,20 @@ Each of these looked fine to every existing check during the SDK 58 spike, so ea
 | A page the browser refuses or crashes on | `tests/e2e/web/page-security-policy-walk.spec.ts`, in the `lifecycle` project | Each violation's directive, blocked URI and source |
 | A release APK that does not launch | `scripts/android-launch-smoke.sh` in `app-e2e`, reported as the commit status `app-ci / android-launch` | Which of launch, login screen and device log failed |
 
+## Web output mode: prerendered pages plus API routes (SDK 58)
+
+`app.json` sets `web.output` to `"static"` and the `expo-router` plugin to
+`{ "apiRoutes": true, "asyncRoutes": { "web": false } }` (feature 087). Pages are rendered to HTML at
+**build** time, and the 38 API routes, which are the BFF, still run in the same Node process behind
+`server.js`. So `dist/server` holds both the page HTML and the route functions, as before.
+
+- **Why not `"server"`:** on SDK 58 that value means per-request rendering, which is a different
+  runtime from the one this app was built and tested on.
+- **Why `asyncRoutes.web` is written out:** SDK 58's plugin with no options turns it **on**. It stays
+  off until item #938 decides otherwise.
+- **A page that throws while rendering fails `expo export`**, with `Failed to statically export
+  route: <name>`. That is the intended guard, not a flaky build.
+
 ## What ships in the BFF image (and what fails the build)
 
 The image carries the exported bundle plus **only the dependency closure `node server.js` can

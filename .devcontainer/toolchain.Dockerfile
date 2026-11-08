@@ -228,7 +228,7 @@ ENV PATH=${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools
 # time, and those are firewalled too. Pre-seeding that graph into the image is impractical, so the
 # supported local path remains the containerised one — see docs/runbooks/android-emulator.md. This
 # layer removes the FIRST wall, and makes the failure that follows an honest one.
-ARG GRADLE_VERSION=9.3.1
+ARG GRADLE_VERSION=9.4.1
 ENV GRADLE_USER_HOME=/home/${USERNAME}/.gradle
 RUN set -eux; \
     dist_dir="${GRADLE_USER_HOME}/wrapper/dists/gradle-${GRADLE_VERSION}-bin/baked"; \

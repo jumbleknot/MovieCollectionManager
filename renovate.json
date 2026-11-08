@@ -633,6 +633,7 @@
         "SDK 57 (measured 2026-10-17): expo-template-bare-minimum@57.0.32's android/ tree is byte-identical to SDK 56's",
         "(Gradle 9.3.1), and @react-native/gradle-plugin@0.86.3 builds with `kotlin { jvmToolchain(17) }` on AGP 8.12.0.",
         "RE-CHECK at each Expo SDK move: lift when that SDK's React Native gradle plugin moves jvmToolchain off 17.",
+        "RE-CHECKED 2026-11-07 at the SDK 58 move (feature 087): @react-native/gradle-plugin@0.88.1 still builds with `kotlin { jvmToolchain(17) }`. STILL HELD.",
         "THE CEILING IS A REGEX ON PURPOSE. This dep uses `semver-partial` versioning, and Renovate tries the dep's own",
         "versioning before npm semver: semver-partial COERCES '<18' to 18.0 and matches only 18.0.x, so the US1 value",
         "`allowedVersions: \"<18\"` admitted exactly JDK 18.0 and blocked 17 (2026-10-17 dashboard: `java-jdk 17 -> 18`).",
@@ -863,26 +864,6 @@
     },
     {
       "description": [
-        "test-renderer IS HELD BELOW 1.3 UNTIL REACT IS ON 19.3 \u2014 feature 081 US5c (PR #798), item #254.",
-        "@testing-library/react-native 14 renders through `test-renderer`. MEASURED 2026-10-18: test-renderer 1.3.x",
-        "depends on react-reconciler 0.34, which peers on react ^19.3; the workspace runs react 19.2.3, pinned to the",
-        "Expo SDK (the react lock above). So 1.3 cannot install cleanly until an Expo SDK move brings React 19.3.",
-        "OWN GROUP ON PURPOSE: a held member gates every member of a group with it, so test-renderer must not ride",
-        "`js patch/minor` (it would block every routine npm bump batched alongside it). MUST STAY AFTER the",
-        "`js patch/minor` and `js majors` rules: the last matching `groupName` wins.",
-        "THE CEILING IS A REGEX ON PURPOSE (the java-jdk lesson): a regex is evaluated before any versioning, so it",
-        "cannot be coerced into meaning something else. It admits 1.0.x-1.2.x patches and nothing from 1.3 on.",
-        "`allowedVersions` rather than `enabled: false`: 1.2.x patches are still wanted.",
-        "LIFT when react reaches 19.3 (an Expo SDK move): delete this rule, and let 1.3+ arrive in the routine groups.",
-        "renovate-workflow.guard.test.mjs asserts the ceiling on every track, its own group, and the ordering."
-      ],
-      "matchManagers": ["npm"],
-      "matchPackageNames": ["test-renderer"],
-      "groupName": "test-renderer (held: react 19.3)",
-      "allowedVersions": "/^1\\.[0-2]\\./"
-    },
-    {
-      "description": [
         "OVERRIDE MAJORS ARE NEVER PROPOSED — feature 081 US5a (research R2), item #254.",
         "Every keyed entry in pnpm-workspace.yaml `overrides:` is a SECURITY FLOOR: the key names the vulnerable span,",
         "the value forces the patched floor and CAPS it at the floor's own major (`undici@<6.27.0: '>=6.27.0 <7'`).",
@@ -904,40 +885,17 @@
     },
     {
       "description": [
-        "HELD: jest 30 (jest, babel-jest, @types/jest) — feature 081 US5, item #254; backlog item #792.",
-        "The test runner major is PINNED BY THE EXPO SDK's test preset. MEASURED 2026-10-18 (npm): jest-expo 57.0.6 (the",
-        "newest SDK-57 build, what frontend/mcm-app and packages/design-system declare as ~57.0.6) DEPENDS on the jest 29",
-        "family (babel-jest, @jest/globals, jest-snapshot, jest-environment-jsdom all ^29.2.1). Installing jest 30 beside it",
-        "runs two jest majors in one test process. jest-expo 58.0.11 (SDK 58) moves to ^30.0.0 and peers jest",
-        "'^29.0.0 || ^30.0.0' — so jest 30 becomes possible AT SDK 58, which is not this feature's target (OQ-1).",
-        "@types/jest is held with jest: US4 moved it to 29.5.14 to match the jest 29 runtime.",
-        "RE-CHECK RULE (FR-016): re-read the SDK's test-preset and transpiler-preset companion metadata at each new SDK.",
-        "LIFT when the jest-expo of the SDK in frontend/mcm-app/package.json depends on the jest 30 family; then move jest,",
-        "babel-jest and @types/jest together in the SDK PR.",
-        "dependencyDashboardApproval, NOT allowedVersions: an approval gate has no version semantics to get wrong (US4: a",
-        "'<18' ceiling admitted ONLY 18.0 under semver-partial). Its OWN group, because a branch's approval is",
-        "upgrades.some(u => u.dependencyDashboardApproval) (renovate@44 updates/generate.js) — left in `js majors` it would",
-        "gate every js major behind one tick. PATCH/MINOR are not matched and stay in `js patch/minor`, ungated.",
-        "ORDERED AFTER `js majors` (the last matching groupName wins). Asserted by renovate-workflow.guard.test.mjs."
-      ],
-      "matchManagers": ["npm"],
-      "matchPackageNames": ["jest", "babel-jest", "@types/jest"],
-      "matchUpdateTypes": ["major"],
-      "groupName": "held jest major",
-      "dependencyDashboardApproval": true,
-      "automerge": false
-    },
-    {
-      "description": [
         "HELD: babel 8 (@babel/core, @babel/runtime) — feature 081 US5, item #254; backlog item #793.",
         "The transpiler major is PINNED BY THE EXPO SDK's transpiler preset. MEASURED 2026-10-18 (npm):",
-        "babel-preset-expo 57.0.16 (what frontend/mcm-app declares as ~57.0.16) PEERS @babel/runtime ^7.20.0 and its plugin dependencies are",
+        "babel-preset-expo 57.0.16 (what frontend/mcm-app declared as ~57.0.16) PEERS @babel/runtime ^7.20.0 and its plugin dependencies are",
         "all ^7 (@babel/preset-typescript ^7.23.0, @babel/plugin-transform-typescript ^7.25.2, ...). SDK 58's",
         "babel-preset-expo 58.0.17 peers the same ^7.20.0, and expo 57.0.30 / 58.0.14 themselves depend on",
         "@babel/runtime ^7.20.0 — so babel 8 is blocked THROUGH SDK 58. (@babel/core 8 also needs node ^22.18 || >=24.11.)",
+        "RE-CHECKED 2026-11-07 at the SDK 58 move (feature 087): babel-preset-expo 58.0.24 still peers @babel/runtime ^7.20.0,",
+        "with @babel/preset-typescript ^7.23.0 and @babel/plugin-transform-typescript ^7.25.2. STILL HELD.",
         "RE-CHECK RULE (FR-016): re-read the SDK's test-preset and transpiler-preset companion metadata at each new SDK.",
         "LIFT when babel-preset-expo of the SDK in use peers @babel/runtime ^8 (and its plugin deps leave ^7).",
-        "Approval in its own group, for the same two reasons as the jest hold above. PATCH/MINOR stay in `js patch/minor`."
+        "Approval in its own group, for the same two reasons the jest hold had (lifted at SDK 58, feature 087): no version semantics, and a branch is gated if any member is. PATCH/MINOR stay in `js patch/minor`."
       ],
       "matchManagers": ["npm"],
       "matchPackageNames": ["@babel/core", "@babel/runtime"],
@@ -955,7 +913,7 @@
         "native port and ships no in-process compiler API (`bin` only), which is what typescript-eslint loads.",
         "RE-CHECK RULE (FR-016): re-read the lint parser's supported compiler range.",
         "LIFT when the latest @typescript-eslint/parser's typescript peer admits 7.",
-        "Approval in its own group, for the same two reasons as the jest hold above. PATCH/MINOR stay in `js patch/minor`."
+        "Approval in its own group, for the same two reasons the jest hold had (lifted at SDK 58, feature 087): no version semantics, and a branch is gated if any member is. PATCH/MINOR stay in `js patch/minor`."
       ],
       "matchManagers": ["npm"],
       "matchPackageNames": ["typescript"],
@@ -970,9 +928,11 @@
         "#795. A NATIVE module whose version the Expo SDK pins: MEASURED 2026-10-18 (the published tarballs'",
         "bundledNativeModules.json), expo 57.0.30 AND 58.0.14 both list 2.2.0. A version outside bundledNativeModules",
         "fails `expo install --check` and is a native-binary mismatch on Android.",
+        "RE-CHECKED 2026-11-07 at the SDK 58 move (feature 087): expo 58.0.23's bundledNativeModules.json lists 2.2.0",
+        "(3.1.1 is published). STILL HELD.",
         "RE-CHECK RULE: re-read the SDK's bundledNativeModules.json at each new SDK.",
         "LIFT when the SDK in use lists async-storage 3.x; then move it with `expo install`, in the SDK PR.",
-        "Approval in its own group, for the same two reasons as the jest hold above. PATCH/MINOR stay in `js patch/minor`."
+        "Approval in its own group, for the same two reasons the jest hold had (lifted at SDK 58, feature 087): no version semantics, and a branch is gated if any member is. PATCH/MINOR stay in `js patch/minor`."
       ],
       "matchManagers": ["npm"],
       "matchPackageNames": ["@react-native-async-storage/async-storage"],

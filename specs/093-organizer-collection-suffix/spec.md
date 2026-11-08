@@ -1,6 +1,6 @@
 # Spec 093: A collection named with a trailing "collection" still resolves
 
-**Status**: Implementing | **Date**: 2026-11-07 | **Input**: cd-deploy's live-model gate failed on the
+**Status**: Complete | **Date**: 2026-11-07 | **Input**: cd-deploy's live-model gate failed on the
 deploy of `858792ec` (#951)
 
 ## Problem

@@ -22,7 +22,8 @@ VERSION HISTORY:
 - v2.4.0: Test Type Integrity — sanctioned exception recorded for the agent golden tier (`golden`-marked model-decision tests MAY substitute the LLM dimension via the record/replay cassette seam). Scopes an existing prohibition; does not reverse or weaken it, and no other substitution is permitted anywhere. (2026-08-07)
 - v2.5.0: Performance Budgeting — **accepted exception** recorded for the mcm-app web client's cold load, whose measured Slow-3G time-to-interactive cannot meet the 2-second figure on a React-Native-Web + Tamagui stack. The exception is bounded by a committed byte budget rather than open-ended, and the 2-second rule stands unchanged for every other page and every other app. Adds a bounded exception; does not redefine the principle. (2026-09-26)
 - v2.6.0: Frontend stack baseline advanced — Expo SDK 56 → 57 (with React Native 0.86 and React 19.2 as the supporting runtime). No principle redefined — stack guidance only. (2026-10-17)
-- v2.7.0: Document database baseline advanced — `mongodb/mongodb-community-server:8.2.6-ubuntu2204-slim` (stale: 8.0.8-ubi9 was what actually ran) → `9.0-ubi9` (MongoDB 9.0, Red Hat UBI 9). No principle redefined — stack guidance only. (2026-10-20) [CURRENT]
+- v2.7.0: Document database baseline advanced — `mongodb/mongodb-community-server:8.2.6-ubuntu2204-slim` (stale: 8.0.8-ubi9 was what actually ran) → `9.0-ubi9` (MongoDB 9.0, Red Hat UBI 9). No principle redefined — stack guidance only. (2026-10-20)
+- v2.8.0: Frontend stack baseline advanced — Expo SDK 57 → 58 (with React Native 0.88 and React 19.3 as the supporting runtime). The BFF's web output mode changes from `server` to `static` with `apiRoutes: true` on the `expo-router` plugin, so pages stay prerendered at build time and API routes keep running in the same Node process; under SDK 58 the old literal `"output": "server"` would mean per-request rendering. The BFF container's Node line is corrected from a stale `node:24.14.1-alpine3.23` to `node:24.22.1-alpine3.23`, what `frontend/mcm-app/Dockerfile` runs. No principle redefined — stack guidance only. (2026-11-07) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -345,12 +346,12 @@ The following technologies MUST be used unless explicitly amended:
   - **React Native JS Engine:** Hermes
   - **React Native Architecture:** JavaScript Interface (JSI)
   - **Package Manager:** pnpm
-  - **Expo SDK:** Expo SDK 57 (must use `pnpm create expo-app --template default@sdk-57` to create an SDK 57 project), with React Native 0.86 and React 19.2 as the supporting runtime
+  - **Expo SDK:** Expo SDK 58 (must use `pnpm create expo-app --template default@sdk-58` to create an SDK 58 project), with React Native 0.88 and React 19.3 as the supporting runtime
   - **Dev Expo Build:** `eas build --local`
   - **Prod Expo Build:** `eas build`
 - **Monorepo Build Tool Integration:** @nx/expo plugin for Nx
-- **Backend-for-Frontend:** Expo Router API Routes implement BFF and deployed server-side (`app.json` web output set to server `"output": "server"`)
-  - **BFF API:** Expo Router API Routes deployed in a Node.js Docker container with same version of Node as used by React Native and Expo (`node:24.14.1-alpine3.23`, and install glibc compatibility `RUN apk add --no-cache gcompat`)
+- **Backend-for-Frontend:** Expo Router API Routes implement BFF and deployed server-side (`app.json` web output `"output": "static"`, with `apiRoutes: true` on the `expo-router` plugin: pages are prerendered at build time, and API routes run in the same Node process)
+  - **BFF API:** Expo Router API Routes deployed in a Node.js Docker container with same version of Node as used by React Native and Expo (`node:24.22.1-alpine3.23`, and install glibc compatibility `RUN apk add --no-cache gcompat`)
   - **BFF Cache:** Session state cached in separate Redis in-memory database Docker container (Docker image `redis:8.6.2-alpine3.23`)
 - **Protected Screens:** Expo Router must be used with protected routes to prevent access of screens that require authentication and authorization
 - **Authentication Library:** Expo AuthSession (expo-auth-session) must be used for implementing authentication
@@ -1018,4 +1019,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/runbooks/dev-environment-setup.md](docs/runbooks/dev-environment-setup.md) (separate from constitution).
 
-**Version**: 2.7.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-10-20
+**Version**: 2.8.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-11-07

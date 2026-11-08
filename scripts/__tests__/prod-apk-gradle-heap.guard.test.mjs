@@ -73,3 +73,37 @@ test('the build step times out before the job does, so the failure digest still 
   assert.ok(digest, 'prod-apk lost its Publish failure digest step');
   assert.match(String(digest.if ?? ''), /always\(\)/);
 });
+
+// ─── Feature 087 (FR-019, US4 scenario 5) — the PR-time release build gets the same heap ───────────────
+//
+// `app-ci`'s app-e2e job builds the same release APK (for the emulator) and had no heap line at all, so
+// it ran at the template's -Xmx2048m that OOMed run 6766. PR C's SDK 58 build is its first proof on that
+// path, so it carries #933's block too, with the same floor and the same fail-fast flag.
+
+const appCi = parseYaml(readFileSync(resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml'), 'utf8'));
+
+const appE2eBuildStep = () => {
+  const steps = (appCi?.jobs?.['app-e2e']?.steps ?? []).filter(
+    (s) => typeof s.run === 'string' && s.run.includes('mcm-app:build-apk'),
+  );
+  assert.equal(steps.length, 1, 'expected exactly one app-e2e step that runs mcm-app:build-apk');
+  return steps[0];
+};
+
+test('(087) app-e2e writes the same explicit Gradle heap to the USER-level gradle.properties', () => {
+  const run = appE2eBuildStep().run;
+  assert.match(run, /\$\{GRADLE_USER_HOME:-\$HOME\/\.gradle\}\/gradle\.properties/);
+  const args = jvmargs(run);
+  assert.ok(args, "app-e2e's build step sets no org.gradle.jvmargs — it builds at the template's -Xmx2048m");
+  assert.equal(xmxBytes(args), xmxBytes(jvmargs(buildStep().run)), `app-e2e and prod-apk heaps differ: ${args}`);
+});
+
+test('(087) a JVM OOM terminates the app-e2e build instead of hanging it', () => {
+  assert.match(jvmargs(appE2eBuildStep().run) ?? '', /-XX:\+ExitOnOutOfMemoryError/);
+});
+
+test('(087) app-e2e writes the heap BEFORE its build runs', () => {
+  const run = appE2eBuildStep().run;
+  const heapAt = run.indexOf('org.gradle.jvmargs');
+  assert.ok(heapAt >= 0 && heapAt < run.indexOf('mcm-app:build-apk'));
+});
