@@ -111,7 +111,8 @@ def other_users_collection() -> Iterator[str]:
         resp = httpx.post(
             f"{MC_SERVICE_URL}{_API}/collections",
             headers={"Authorization": f"Bearer {owner_token}", "Content-Type": "application/json"},
-            json={"name": f"other-{uuid.uuid4().hex[:8]}"}, timeout=15.0,
+            json={"name": f"other-{uuid.uuid4().hex[:8]}"},
+            timeout=15.0,
         )
         if resp.status_code != 201:
             pytest.skip(f"second user could not create a collection ({resp.status_code})")
@@ -120,8 +121,10 @@ def other_users_collection() -> Iterator[str]:
     finally:
         if collection_id and owner_token:
             httpx.request(
-                "DELETE", f"{MC_SERVICE_URL}{_API}/collections/{collection_id}",
-                headers={"Authorization": f"Bearer {owner_token}"}, timeout=15.0,
+                "DELETE",
+                f"{MC_SERVICE_URL}{_API}/collections/{collection_id}",
+                headers={"Authorization": f"Bearer {owner_token}"},
+                timeout=15.0,
             )
         kc_admin.delete_user(admin, uid)
 
@@ -146,23 +149,36 @@ async def _agent_add(subject_token: str, env: dict[str, str], collection_id: str
         )
 
     candidate = EnrichedMovieCandidate.model_validate(
-        {"sourceId": "tmdb:603", "title": "The Matrix", "year": 1999,
-         "genres": ["Science Fiction"], "language": "English", "matchConfidence": "exact"}
+        {
+            "sourceId": "tmdb:603",
+            "title": "The Matrix",
+            "year": 1999,
+            "genres": ["Science Fiction"],
+            "language": "English",
+            "matchConfidence": "exact",
+        }
     )
     return await invoke_tool(
-        agent="organizer", tool_name="add_movie",
-        arguments={"collectionId": collection_id, "movie": to_movie_payload(candidate),
-                   "idempotencyKey": "t045"},
+        agent="organizer",
+        tool_name="add_movie",
+        arguments={
+            "collectionId": collection_id,
+            "movie": to_movie_payload(candidate),
+            "idempotencyKey": "t045",
+        },
         server=McpServerConfig("movie-mcp", MOVIE_MCP_URL, needs_token=True),
-        subject_token=subject_token, call=call_mcp_tool,
-        limiter=AgentToolRateLimiter(max_calls=50, window_seconds=60), acquire_token=acquire,
+        subject_token=subject_token,
+        call=call_mcp_tool,
+        limiter=AgentToolRateLimiter(max_calls=50, window_seconds=60),
+        acquire_token=acquire,
     )
 
 
 def _direct_get_status(token: str, collection_id: str) -> int:
     resp = httpx.get(
         f"{MC_SERVICE_URL}{_API}/collections/{collection_id}",
-        headers={"Authorization": f"Bearer {token}"}, timeout=15.0,
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=15.0,
     )
     return resp.status_code
 
@@ -233,7 +249,8 @@ def other_users_named_collection() -> Iterator[dict[str, str]]:
         resp = httpx.post(
             f"{MC_SERVICE_URL}{_API}/collections",
             headers={"Authorization": f"Bearer {owner_token}", "Content-Type": "application/json"},
-            json={"name": name}, timeout=15.0,
+            json={"name": name},
+            timeout=15.0,
         )
         if resp.status_code != 201:
             pytest.skip(f"second user could not create a collection ({resp.status_code})")
@@ -242,8 +259,10 @@ def other_users_named_collection() -> Iterator[dict[str, str]]:
     finally:
         if collection_id and owner_token:
             httpx.request(
-                "DELETE", f"{MC_SERVICE_URL}{_API}/collections/{collection_id}",
-                headers={"Authorization": f"Bearer {owner_token}"}, timeout=15.0,
+                "DELETE",
+                f"{MC_SERVICE_URL}{_API}/collections/{collection_id}",
+                headers={"Authorization": f"Bearer {owner_token}"},
+                timeout=15.0,
             )
         kc_admin.delete_user(admin, uid)
 
@@ -256,10 +275,14 @@ def _live_cfg(reexchange_env: dict[str, str]) -> RuntimeNodeConfig:
         return await reexchange_for_mc_service(st, env=reexchange_env)
 
     return RuntimeNodeConfig(
-        web_api_mcp_url="http://unused/mcp", movie_mcp_url=MOVIE_MCP_URL,
+        web_api_mcp_url="http://unused/mcp",
+        movie_mcp_url=MOVIE_MCP_URL,
         spreadsheet_mcp_url=SPREADSHEET_MCP_URL,
         limiter=AgentToolRateLimiter(max_calls=200, window_seconds=60),
-        cache=DownscopedTokenCache(), authorize=authorize, exchange=exchange, call=call_mcp_tool,
+        cache=DownscopedTokenCache(),
+        authorize=authorize,
+        exchange=exchange,
+        call=call_mcp_tool,
     )
 
 
@@ -279,7 +302,8 @@ def _export_handle(result: dict[str, Any]) -> str | None:
 def _other_movie_count(token: str, collection_id: str) -> int:
     resp = httpx.get(
         f"{MC_SERVICE_URL}{_API}/collections/{collection_id}/movies",
-        headers={"Authorization": f"Bearer {token}"}, timeout=15.0,
+        headers={"Authorization": f"Bearer {token}"},
+        timeout=15.0,
     )
     resp.raise_for_status()
     body = resp.json()
@@ -295,8 +319,10 @@ async def test_export_cannot_select_another_users_collection(
     user_id = str(_claims(subject_token)["sub"])
     config = {
         "configurable": {
-            "thread_id": f"t046a-{uuid.uuid4().hex[:8]}", "subject_token": subject_token,
-            "user_id": user_id, "export_collection_ids": [other_users_named_collection["id"]],
+            "thread_id": f"t046a-{uuid.uuid4().hex[:8]}",
+            "subject_token": subject_token,
+            "user_id": user_id,
+            "export_collection_ids": [other_users_named_collection["id"]],
         }
     }
     result = await _graph(reexchange_env, "export").ainvoke(
@@ -330,8 +356,11 @@ async def test_import_cannot_write_to_another_users_collection(
     user_id = str(_claims(subject_token)["sub"])
     config = {
         "configurable": {
-            "thread_id": f"t038a-{uuid.uuid4().hex[:8]}", "subject_token": subject_token,
-            "user_id": user_id, "file_handle": handle, "filename": f"{other['name']}.csv",
+            "thread_id": f"t038a-{uuid.uuid4().hex[:8]}",
+            "subject_token": subject_token,
+            "user_id": user_id,
+            "file_handle": handle,
+            "filename": f"{other['name']}.csv",
         }
     }
     # The requester does NOT own a collection named like the other user's → the tab is unresolved →

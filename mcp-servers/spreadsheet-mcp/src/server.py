@@ -39,7 +39,6 @@ mcp = MCPServer("spreadsheet-mcp")
 _TRANSPORT_SECURITY = TransportSecuritySettings(enable_dns_rebinding_protection=False)
 
 
-
 @mcp.tool()
 async def parse_spreadsheet(
     fileHandle: str,  # noqa: N803 (MCP arg name)

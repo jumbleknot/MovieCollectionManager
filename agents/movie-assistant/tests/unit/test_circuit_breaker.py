@@ -143,9 +143,7 @@ def test_from_env_defaults_and_overrides() -> None:
 
 def test_degrade_check_true_forces_open_with_zero_failures() -> None:
     # A degrade_check=lambda: True forces the breaker open regardless of recorded outcomes.
-    b = ErrorRateBreaker(
-        threshold=0.5, window=10, cooldown_s=30, degrade_check=lambda: True
-    )
+    b = ErrorRateBreaker(threshold=0.5, window=10, cooldown_s=30, degrade_check=lambda: True)
     assert b.opened() is True  # no failures recorded — flag alone opens it
 
 

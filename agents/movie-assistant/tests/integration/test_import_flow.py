@@ -291,9 +291,7 @@ async def test_reimport_real_sample_updates_without_failures(
         second = await run("r2")
         assert second is not None
         # Re-import must be all updates with no SPURIOUS failures (the "35 could not" regression).
-        assert not unexpected(second), (
-            f"re-import had UNEXPECTED failures: {unexpected(second)}"
-        )
+        assert not unexpected(second), f"re-import had UNEXPECTED failures: {unexpected(second)}"
     finally:
         await _delete_collection(await fresh_token(), collection_id)
 
@@ -494,9 +492,7 @@ async def _count_all_movies(token: str, collection_id: str) -> int:
 
 def _scale_csv(rows: int) -> bytes:
     header = b"Title,Year,Video Type\n"
-    body = b"".join(
-        f"Scale Row {i:05d},{1950 + (i % 75)},Movie\n".encode() for i in range(rows)
-    )
+    body = b"".join(f"Scale Row {i:05d},{1950 + (i % 75)},Movie\n".encode() for i in range(rows))
     return header + body
 
 
@@ -520,8 +516,12 @@ async def test_import_scale_2000_rows_applies_every_eligible_row(
 
         started = time.monotonic()
         result = await _run_full_import(
-            graph, name=name, subject_token=subject_token, data=_scale_csv(rows),
-            tag="scale", ext="csv",
+            graph,
+            name=name,
+            subject_token=subject_token,
+            data=_scale_csv(rows),
+            tag="scale",
+            ext="csv",
         )
         elapsed = time.monotonic() - started
 
@@ -565,8 +565,12 @@ async def test_import_concurrent_message_is_answered_during_a_large_apply(
         companion = asyncio.create_task(keep_asking())
         try:
             result = await _run_full_import(
-                graph, name=name, subject_token=subject_token,
-                data=_scale_csv(rows), tag="concurrent", ext="csv",
+                graph,
+                name=name,
+                subject_token=subject_token,
+                data=_scale_csv(rows),
+                tag="concurrent",
+                ext="csv",
             )
         finally:
             stop.set()

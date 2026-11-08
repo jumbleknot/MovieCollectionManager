@@ -25,8 +25,11 @@ from src.nodes.supervisor import resolve_option
 
 # An ambiguous franchise title → several equally-likely matches.
 _OPTIONS: list[dict[str, Any]] = [
-    {"sourceId": "tmdb:22", "title": "Pirates of the Caribbean: The Curse of the Black Pearl",
-     "year": 2003},
+    {
+        "sourceId": "tmdb:22",
+        "title": "Pirates of the Caribbean: The Curse of the Black Pearl",
+        "year": 2003,
+    },
     {"sourceId": "tmdb:58", "title": "Pirates of the Caribbean: Dead Man's Chest", "year": 2006},
     {"sourceId": "tmdb:285", "title": "Pirates of the Caribbean: At World's End", "year": 2007},
 ]
@@ -34,8 +37,14 @@ _OPTIONS: list[dict[str, Any]] = [
 
 def _detail(source_id: str, title: str, year: int) -> dict[str, Any]:
     return {
-        "source": "tmdb", "sourceId": source_id, "title": title, "year": year,
-        "overview": "x", "genres": ["Adventure"], "posterUrl": "http://x", "language": "English",
+        "source": "tmdb",
+        "sourceId": source_id,
+        "title": title,
+        "year": year,
+        "overview": "x",
+        "genres": ["Adventure"],
+        "posterUrl": "http://x",
+        "language": "English",
     }
 
 
@@ -78,8 +87,11 @@ def _extract(messages: Any) -> dict[str, Any]:
     """Stub curator extraction: pull {title, collection} from the latest message only."""
     low = str(messages[-1].content if messages else "").lower()
     out: dict[str, Any] = {}
-    for key, title in (("pirates", "Pirates of the Caribbean"), ("matrix", "The Matrix"),
-                       ("inception", "Inception")):
+    for key, title in (
+        ("pirates", "Pirates of the Caribbean"),
+        ("matrix", "The Matrix"),
+        ("inception", "Inception"),
+    ):
         if key in low:
             out["title"] = title
             break
@@ -101,10 +113,18 @@ def _build(
     collections: list[dict[str, Any]] | None = None,
     execute_calls: list[Any] | None = None,
 ) -> Any:
-    cols = collections if collections is not None else [
-        {"collectionId": "0123456789abcdef01234567", "name": "Sci-Fi", "isDefault": False,
-         "movieCount": 0},
-    ]
+    cols = (
+        collections
+        if collections is not None
+        else [
+            {
+                "collectionId": "0123456789abcdef01234567",
+                "name": "Sci-Fi",
+                "isDefault": False,
+                "movieCount": 0,
+            },
+        ]
+    )
     calls = execute_calls if execute_calls is not None else []
 
     async def list_collections() -> list[dict[str, Any]]:
@@ -127,7 +147,6 @@ def _build(
 
 def _config(thread: str) -> dict[str, Any]:
     return {"configurable": {"thread_id": thread}}
-
 
 
 # 047 US4 extended the single ownership question into a chain (ownership → media formats →
@@ -202,9 +221,7 @@ async def test_ambiguous_this_is_captured_and_resolves_current_collection_after_
     assert turn1["match_confidence"] == "ambiguous"
     assert turn1["target_collection_name"] == "this"  # RC2: the "this" ref is captured + preserved
 
-    turn2 = await graph.ainvoke(
-        {"messages": [("user", "the first one")], "ui_snapshot": ui}, cfg
-    )
+    turn2 = await graph.ainvoke({"messages": [("user", "the first one")], "ui_snapshot": ui}, cfg)
     # The pick resolved → the question chain opens before the gate. 059 US2 moved the chain's
     # first question to "Is this a children's movie?"; the guarantee under test is that a
     # resolved pick pauses for the chain rather than proposing a write, so the stage is asserted
@@ -229,9 +246,7 @@ async def test_ambiguous_this_on_home_clarifies_after_pick() -> None:
     await graph.ainvoke(
         {"messages": [("user", "add Pirates of the Caribbean to this")], "ui_snapshot": ui}, cfg
     )
-    turn2 = await graph.ainvoke(
-        {"messages": [("user", "the first one")], "ui_snapshot": ui}, cfg
-    )
+    turn2 = await graph.ainvoke({"messages": [("user", "the first one")], "ui_snapshot": ui}, cfg)
     assert "__interrupt__" not in turn2  # unresolvable "this" → clarify, never auto-target
     assert turn2["add_stage"] == "awaiting_collection"
 
@@ -260,9 +275,7 @@ async def test_ambiguous_named_target_still_beats_a_this_in_the_message() -> Non
 async def test_ordinal_pick_resolves_and_proposes() -> None:
     graph = _build()
     cfg = _config("amb-ordinal")
-    await graph.ainvoke(
-        {"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg
-    )
+    await graph.ainvoke({"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg)
     await graph.ainvoke({"messages": [("user", "the first one")]}, cfg)  # pick → asks ownership
     result = await _answer_ownership(graph, cfg)  # "yes" → approval gate
     assert "__interrupt__" in result  # the pick resolved → proceeded to the approval gate
@@ -274,9 +287,7 @@ async def test_ordinal_pick_resolves_and_proposes() -> None:
 async def test_year_pick_resolves_to_matching_option() -> None:
     graph = _build()
     cfg = _config("amb-year")
-    await graph.ainvoke(
-        {"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg
-    )
+    await graph.ainvoke({"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg)
     await graph.ainvoke({"messages": [("user", "the 2006 one")]}, cfg)  # pick → asks ownership
     result = await _answer_ownership(graph, cfg)  # "yes" → approval gate
     assert "__interrupt__" in result
@@ -286,9 +297,7 @@ async def test_year_pick_resolves_to_matching_option() -> None:
 async def test_unresolvable_pick_reasks_without_proposing() -> None:
     graph = _build()
     cfg = _config("amb-bad")
-    await graph.ainvoke(
-        {"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg
-    )
+    await graph.ainvoke({"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg)
     # An in-domain reply that still doesn't pin a single option (no ordinal/year/full title).
     result = await graph.ainvoke({"messages": [("user", "the green pirates one")]}, cfg)
     assert "__interrupt__" not in result  # cannot resolve → re-ask, never guess (FR-014)
@@ -324,9 +333,7 @@ async def test_generic_target_without_default_clarifies_then_completes() -> None
     calls: list[Any] = []
     graph = _build(collections=cols, execute_calls=calls)
     cfg = _config("def-2")
-    clarify = await graph.ainvoke(
-        {"messages": [("user", "add The Matrix to my collection")]}, cfg
-    )
+    clarify = await graph.ainvoke({"messages": [("user", "add The Matrix to my collection")]}, cfg)
     assert "__interrupt__" not in clarify  # no default → ask which, never auto-create
     assert clarify["add_stage"] == "awaiting_collection"
     text = str(clarify["messages"][-1].content)
@@ -345,9 +352,7 @@ async def test_generic_target_without_default_clarifies_then_completes() -> None
 async def test_completed_add_does_not_leak_into_next_turn() -> None:
     graph = _build()
     cfg = _config("reset-1")
-    await graph.ainvoke(
-        {"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg
-    )
+    await graph.ainvoke({"messages": [("user", "add Pirates of the Caribbean to Sci-Fi")]}, cfg)
     await graph.ainvoke({"messages": [("user", "the first one")]}, cfg)  # pick → asks ownership
     await _answer_ownership(graph, cfg)  # "yes" → interrupt
     await graph.ainvoke(Command(resume={"decision": "approved"}), cfg)  # apply + reset

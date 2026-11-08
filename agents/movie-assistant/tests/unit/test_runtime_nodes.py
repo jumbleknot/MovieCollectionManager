@@ -34,8 +34,14 @@ from src.tools.mcp_tools import McpCallResult
 from src.tools.token_exchange import ExchangedToken
 
 _DETAILS = {
-    "source": "tmdb", "sourceId": "tmdb:603", "title": "The Matrix", "year": 1999,
-    "overview": "x", "genres": ["Science Fiction"], "posterUrl": "http://x", "language": "English",
+    "source": "tmdb",
+    "sourceId": "tmdb:603",
+    "title": "The Matrix",
+    "year": 1999,
+    "overview": "x",
+    "genres": ["Science Fiction"],
+    "posterUrl": "http://x",
+    "language": "English",
 }
 _EXISTING = [{"collectionId": "0123456789abcdef01234567", "name": "Sci-Fi", "movieCount": 0}]
 _DOWNSCOPED = "downscoped-mc-token"
@@ -164,8 +170,14 @@ def test_production_nodes_enabled_requires_both_mcp_urls() -> None:
 def test_build_runtime_nodes_returns_the_specialist_nodes() -> None:
     nodes = build_runtime_nodes(_cfg(_Recorder()))
     assert set(nodes) == {
-        "curator", "organizer", "navigator", "query", "search", "import_collection",
-        "export_collection", "approval_gate",
+        "curator",
+        "organizer",
+        "navigator",
+        "query",
+        "search",
+        "import_collection",
+        "export_collection",
+        "approval_gate",
     }
 
 
@@ -258,9 +270,7 @@ async def test_factory_graph_resolves_this_from_config_ui_snapshot() -> None:
         "current_screen": "collection",
         "collection_id": _EXISTING[0]["collectionId"],
     }
-    turn1 = await graph.ainvoke(
-        {"messages": [("user", "add The Matrix to this")]}, run_config
-    )
+    turn1 = await graph.ainvoke({"messages": [("user", "add The Matrix to this")]}, run_config)
     assert "__interrupt__" not in turn1  # 040 US4: asks ownership before the approval gate
     result = await _answer_ownership_chain(graph, run_config)  # answer → gate
     assert "__interrupt__" in result
@@ -461,16 +471,23 @@ async def test_import_progress_emits_state_snapshots_on_the_wire() -> None:
         return out
 
     base: dict[str, Any] = {
-        "threadId": thread, "state": {}, "tools": [], "context": [], "forwardedProps": {},
+        "threadId": thread,
+        "state": {},
+        "tools": [],
+        "context": [],
+        "forwardedProps": {},
     }
-    _events({**base, "runId": "r1",
-             "messages": [{"id": "m1", "role": "user", "content": "import"}]})
-    resumed = _events({
-        **base,
-        "runId": "r2",
-        "messages": [{"id": "m2", "role": "user", "content": "yes"}],
-        "forwardedProps": {"command": {"resume": {"decision": "approved"}}},
-    })
+    _events(
+        {**base, "runId": "r1", "messages": [{"id": "m1", "role": "user", "content": "import"}]}
+    )
+    resumed = _events(
+        {
+            **base,
+            "runId": "r2",
+            "messages": [{"id": "m2", "role": "user", "content": "yes"}],
+            "forwardedProps": {"command": {"resume": {"decision": "approved"}}},
+        }
+    )
 
     progress = [
         e["snapshot"]["import_applied"]

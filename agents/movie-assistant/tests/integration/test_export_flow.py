@@ -126,11 +126,27 @@ def _mc(token: str) -> httpx.AsyncClient:
 
 def _movie_body(title: str, genres: list[str], tags: list[str]) -> dict[str, Any]:
     return {
-        "title": title, "year": 1999, "contentType": "Movie", "language": "English",
-        "owned": True, "ripped": False, "childrens": False, "ownedMedia": [], "ripQuality": [],
-        "genres": genres, "rated": "R", "directors": [], "actors": [], "tags": tags,
-        "movieSet": None, "originalTitle": None, "releaseDate": None, "outline": None,
-        "plot": None, "runtime": None, "externalIds": [],
+        "title": title,
+        "year": 1999,
+        "contentType": "Movie",
+        "language": "English",
+        "owned": True,
+        "ripped": False,
+        "childrens": False,
+        "ownedMedia": [],
+        "ripQuality": [],
+        "genres": genres,
+        "rated": "R",
+        "directors": [],
+        "actors": [],
+        "tags": tags,
+        "movieSet": None,
+        "originalTitle": None,
+        "releaseDate": None,
+        "outline": None,
+        "plot": None,
+        "runtime": None,
+        "externalIds": [],
     }
 
 
@@ -182,7 +198,8 @@ async def test_export_round_trips_multi_value_sets(
     user_id = _sub(subject_token)
     name = f"rt-{uuid.uuid4().hex[:8]}"  # short ⇒ a clean ≤31-char sheet name
     collection_id = await _seed_collection(
-        token, name,
+        token,
+        name,
         [
             _movie_body("Zorgon", ["Sci-Fi", "Action"], ["cult", "favourite"]),
             _movie_body("Quaffle", ["Comedy"], []),
@@ -194,8 +211,10 @@ async def test_export_round_trips_multi_value_sets(
         # Export (read-only → no approval gate). Selected via export_collection_ids.
         export_cfg = {
             "configurable": {
-                "thread_id": f"{name}-exp", "subject_token": subject_token,
-                "user_id": user_id, "export_collection_ids": [collection_id],
+                "thread_id": f"{name}-exp",
+                "subject_token": subject_token,
+                "user_id": user_id,
+                "export_collection_ids": [collection_id],
             }
         }
         exported = await _graph(_live_cfg(reexchange_env), "export").ainvoke(
@@ -215,8 +234,11 @@ async def test_export_round_trips_multi_value_sets(
         await _seed_import(import_handle, blob)
         import_cfg = {
             "configurable": {
-                "thread_id": f"{name}-imp", "subject_token": subject_token, "user_id": user_id,
-                "file_handle": import_handle, "filename": f"{name}.xlsx",
+                "thread_id": f"{name}-imp",
+                "subject_token": subject_token,
+                "user_id": user_id,
+                "file_handle": import_handle,
+                "filename": f"{name}.xlsx",
             }
         }
         graph = _graph(_live_cfg(reexchange_env), "import")

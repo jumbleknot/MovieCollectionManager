@@ -43,9 +43,7 @@ def test_terminal_states_are_absorbing(terminal: str) -> None:
 
 def test_no_write_before_confirm() -> None:
     """SC-009 / FR-020: the only path into WRITE is an explicit confirm at PREVIEW."""
-    into_write = [
-        (s, sig) for (s, sig, nxt, _) in TRANSITIONS if nxt == ImportStage.WRITE
-    ]
+    into_write = [(s, sig) for (s, sig, nxt, _) in TRANSITIONS if nxt == ImportStage.WRITE]
     assert into_write == [(ImportStage.PREVIEW, "confirm")]
 
 

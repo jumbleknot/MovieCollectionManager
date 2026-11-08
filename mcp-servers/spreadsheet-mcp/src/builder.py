@@ -48,9 +48,7 @@ def build_workbook_bytes(
     used_names: set[str] = set()
 
     for tab in tabs:
-        sheet = workbook.create_sheet(
-            _unique_sheet_name(tab.get("collectionName", ""), used_names)
-        )
+        sheet = workbook.create_sheet(_unique_sheet_name(tab.get("collectionName", ""), used_names))
         columns = list(tab.get("columns", []))
         sheet.append(columns)
         for row in tab.get("rows", []):

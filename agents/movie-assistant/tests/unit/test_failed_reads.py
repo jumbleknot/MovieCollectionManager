@@ -156,10 +156,13 @@ async def test_navigator_unreadable_collections_is_not_an_empty_library() -> Non
 
 
 async def test_query_unreadable_count_is_not_zero() -> None:
-    """"How many movies do I have?" must never be answered "0" from a failed read."""
+    """ "How many movies do I have?" must never be answered "0" from a failed read."""
     call = _FailingTransport("count_movies")
     result = await _run(
-        call, "query", "how many movies do I have", "q-1",
+        call,
+        "query",
+        "how many movies do I have",
+        "q-1",
         query_extract=lambda _m: {"collection_ref": "Sci-Fi", "filter": None},
     )
 
@@ -184,7 +187,10 @@ async def test_export_does_not_write_a_truncated_file() -> None:
 async def test_organizer_unreadable_collections_does_not_claim_the_target_is_missing() -> None:
     call = _FailingTransport("list_collections")
     result = await _run(
-        call, "organize", "move The Matrix to my Favourites", "o-1",
+        call,
+        "organize",
+        "move The Matrix to my Favourites",
+        "o-1",
         plan=lambda _m: {
             "collection": "Favourites",
             "operations": [{"kind": "move", "title": "The Matrix"}],
@@ -200,7 +206,10 @@ async def test_organizer_unreadable_collections_does_not_claim_the_target_is_mis
 async def test_search_unreadable_collections_does_not_claim_the_film_is_absent() -> None:
     call = _FailingTransport("list_collections")
     result = await _run(
-        call, "search", "do I have The Matrix", "s-1",
+        call,
+        "search",
+        "do I have The Matrix",
+        "s-1",
         extract=lambda _m: {"title": "The Matrix", "year": None},
     )
 

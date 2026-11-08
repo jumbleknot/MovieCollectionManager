@@ -69,11 +69,27 @@ async def _web_mcp_reachable() -> bool:
 
 def _movie_body(title: str, year: int) -> dict[str, Any]:
     return {
-        "title": title, "year": year, "contentType": "Movie", "language": "English",
-        "owned": True, "ripped": False, "childrens": False, "ownedMedia": [], "ripQuality": [],
-        "genres": ["Sci-Fi"], "rated": "R", "directors": [], "actors": [], "tags": [],
-        "movieSet": None, "originalTitle": None, "releaseDate": None, "outline": None,
-        "plot": None, "runtime": None, "externalIds": [],
+        "title": title,
+        "year": year,
+        "contentType": "Movie",
+        "language": "English",
+        "owned": True,
+        "ripped": False,
+        "childrens": False,
+        "ownedMedia": [],
+        "ripQuality": [],
+        "genres": ["Sci-Fi"],
+        "rated": "R",
+        "directors": [],
+        "actors": [],
+        "tags": [],
+        "movieSet": None,
+        "originalTitle": None,
+        "releaseDate": None,
+        "outline": None,
+        "plot": None,
+        "runtime": None,
+        "externalIds": [],
     }
 
 

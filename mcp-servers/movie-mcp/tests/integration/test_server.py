@@ -40,11 +40,27 @@ def _payload(result: CallToolResult) -> Any:
 
 def _movie_body(title: str) -> dict[str, Any]:
     return {
-        "title": title, "year": 1999, "contentType": "Movie", "language": "English",
-        "owned": True, "ripped": False, "childrens": False, "ownedMedia": ["DVD"],
-        "ripQuality": [], "genres": ["Sci-Fi"], "rated": "R", "directors": [], "actors": [],
-        "tags": [], "movieSet": None, "originalTitle": None, "releaseDate": None,
-        "outline": None, "plot": None, "runtime": None, "externalIds": [],
+        "title": title,
+        "year": 1999,
+        "contentType": "Movie",
+        "language": "English",
+        "owned": True,
+        "ripped": False,
+        "childrens": False,
+        "ownedMedia": ["DVD"],
+        "ripQuality": [],
+        "genres": ["Sci-Fi"],
+        "rated": "R",
+        "directors": [],
+        "actors": [],
+        "tags": [],
+        "movieSet": None,
+        "originalTitle": None,
+        "releaseDate": None,
+        "outline": None,
+        "plot": None,
+        "runtime": None,
+        "externalIds": [],
     }
 
 
@@ -101,8 +117,11 @@ async def test_server_add_movie_persists(mc_token: str, temp_collection: str) ->
     async with Client(mcp) as session:
         add = await session.call_tool(
             "add_movie",
-            {"collectionId": temp_collection, "movie": _movie_body(title),
-             "idempotencyKey": "k-server-1"},
+            {
+                "collectionId": temp_collection,
+                "movie": _movie_body(title),
+                "idempotencyKey": "k-server-1",
+            },
         )
         assert not add.is_error
         listed = await session.call_tool("list_movies", {"collectionId": temp_collection})

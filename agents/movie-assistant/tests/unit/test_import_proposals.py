@@ -80,7 +80,10 @@ def test_summary_carries_plan_time_skipped_detail() -> None:
     """Enhancement 3: the per-row skip DETAIL (title + reason), not just a count, reaches the
     proposal summary so the final report can list what was skipped before any write."""
     tab = _tab(
-        "Sci-Fi", "c-scifi", [_item("Dune")], [],
+        "Sci-Fi",
+        "c-scifi",
+        [_item("Dune")],
+        [],
         skipped=[{"title": "Bad", "reason": "invalid Year"}],
     )
     summary = build_import_proposals(ImportPreview(tabs=[tab]), thread_id="t1")[0].import_summary
@@ -113,8 +116,11 @@ def test_update_item_carries_movie_ref_with_id() -> None:
 
 def test_idempotency_keys_preserved_from_plan_items() -> None:
     tab = _tab("Sci-Fi", "c-scifi", [_item("Dune", key="kd")], [_item("X", movie_id="m", key="kx")])
-    keys = {i.idempotency_key for p in build_import_proposals(ImportPreview(tabs=[tab]), "t1")
-            for i in p.items}
+    keys = {
+        i.idempotency_key
+        for p in build_import_proposals(ImportPreview(tabs=[tab]), "t1")
+        for i in p.items
+    }
     assert keys == {"kd", "kx"}
 
 
@@ -130,8 +136,14 @@ def test_large_import_stays_a_single_confirm_once_proposal() -> None:
 
 
 def test_tab_needing_collection_choice_is_excluded() -> None:
-    tab = _tab("Watchlist", None, [], [], needs_collection_choice=True,
-               collection_options=[{"collectionId": "c1", "name": "A"}])
+    tab = _tab(
+        "Watchlist",
+        None,
+        [],
+        [],
+        needs_collection_choice=True,
+        collection_options=[{"collectionId": "c1", "name": "A"}],
+    )
     assert build_import_proposals(ImportPreview(tabs=[tab]), thread_id="t1") == []
 
 

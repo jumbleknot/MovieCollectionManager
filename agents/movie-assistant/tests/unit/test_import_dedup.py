@@ -174,14 +174,14 @@ _PROBES: list[tuple[str, Any]] = [
     *[(str(r.get("title", "")), r.get("year")) for r in IMPORT_WHITESPACE_ROWS],
     *[(str(m["title"]), m["year"]) for m in IMPORT_EXISTING_MOVIES],
     *[(str(m["title"]), m["year"]) for m in NAV_SAME_TITLE_DIFFERENT_YEARS],
-    ("The Matrix", None),            # bare title, no year
-    ("the matrix", 1999),            # case + article insensitivity
-    ("  The Matrix  ", 1999),        # surrounding whitespace
-    ("", 1999),                      # blank title never matches
+    ("The Matrix", None),  # bare title, no year
+    ("the matrix", 1999),  # case + article insensitivity
+    ("  The Matrix  ", 1999),  # surrounding whitespace
+    ("", 1999),  # blank title never matches
     ("   ", None),
-    ("The Matrix", 1899),            # year mismatch
+    ("The Matrix", 1899),  # year mismatch
     ("Nonexistent Film", 2020),
-    ("The Thing", None),             # ambiguous when the catalogue holds two
+    ("The Thing", None),  # ambiguous when the catalogue holds two
 ]
 
 _CORPORA: list[list[dict[str, Any]]] = [

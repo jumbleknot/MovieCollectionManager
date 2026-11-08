@@ -28,9 +28,7 @@ from tests.fixtures.adversarial import (
 # Helpers to load the recorded cassette content
 # ---------------------------------------------------------------------------
 
-_CASSETTES_DIR = (
-    Path(__file__).resolve().parents[2] / "tests" / "golden" / "cassettes"
-)
+_CASSETTES_DIR = Path(__file__).resolve().parents[2] / "tests" / "golden" / "cassettes"
 
 
 def _cassette_plan_ops(cassette_id: str) -> list[dict]:

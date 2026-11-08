@@ -284,9 +284,15 @@ async def test_concurrent_apply_audit_emits_exactly_one_event_per_item(
         from src.nodes.approval_gate import ExecOutcome
 
         out = await invoke_tool(
-            agent="organizer", tool_name="add_movie", arguments={**args, "key": key},
-            server=_MOVIE, subject_token="subj", call=transport, limiter=limiter,
-            acquire_token=grant, skip_rate_limit=True,
+            agent="organizer",
+            tool_name="add_movie",
+            arguments={**args, "key": key},
+            server=_MOVIE,
+            subject_token="subj",
+            call=transport,
+            limiter=limiter,
+            acquire_token=grant,
+            skip_rate_limit=True,
         )
         return ExecOutcome(status="applied" if out.ok else "failed", data=out.data)
 
@@ -337,9 +343,15 @@ async def test_rq5_audit_sink_absorbs_a_2000_event_burst(monkeypatch: Any) -> No
         from src.nodes.approval_gate import ExecOutcome
 
         out = await invoke_tool(
-            agent="organizer", tool_name="add_movie", arguments={**args, "key": key},
-            server=_MOVIE, subject_token="subj", call=transport, limiter=limiter,
-            acquire_token=grant, skip_rate_limit=True,
+            agent="organizer",
+            tool_name="add_movie",
+            arguments={**args, "key": key},
+            server=_MOVIE,
+            subject_token="subj",
+            call=transport,
+            limiter=limiter,
+            acquire_token=grant,
+            skip_rate_limit=True,
         )
         return ExecOutcome(status="applied" if out.ok else "failed", data=out.data)
 

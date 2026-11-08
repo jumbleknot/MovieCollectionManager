@@ -81,24 +81,42 @@ def _import_proposal() -> Proposal:
         kind=ProposalKind.batch,
         items=[
             ProposalItem(
-                item_id="a0", operation=Operation.add,
-                movie_payload={"title": "Dune"}, movie_ref={"collectionId": "c1"},
-                diff={"tab": "Sci-Fi"}, idempotency_key="k0",
+                item_id="a0",
+                operation=Operation.add,
+                movie_payload={"title": "Dune"},
+                movie_ref={"collectionId": "c1"},
+                diff={"tab": "Sci-Fi"},
+                idempotency_key="k0",
             ),
             ProposalItem(
-                item_id="a1", operation=Operation.add,
-                movie_payload={"title": "Alien"}, movie_ref={"collectionId": "c2"},
-                diff={"tab": "Horror"}, idempotency_key="k1",
+                item_id="a1",
+                operation=Operation.add,
+                movie_payload={"title": "Alien"},
+                movie_ref={"collectionId": "c2"},
+                diff={"tab": "Horror"},
+                idempotency_key="k1",
             ),
         ],
         import_summary={
             "tabs": [
-                {"tabName": "Sci-Fi", "collectionName": "Sci-Fi", "createCount": 1,
-                 "updateCount": 0, "skippedCount": 0},
-                {"tabName": "Horror", "collectionName": "Horror", "createCount": 1,
-                 "updateCount": 0, "skippedCount": 0},
+                {
+                    "tabName": "Sci-Fi",
+                    "collectionName": "Sci-Fi",
+                    "createCount": 1,
+                    "updateCount": 0,
+                    "skippedCount": 0,
+                },
+                {
+                    "tabName": "Horror",
+                    "collectionName": "Horror",
+                    "createCount": 1,
+                    "updateCount": 0,
+                    "skippedCount": 0,
+                },
             ],
-            "ignoredTabs": [], "totalCreate": 2, "totalUpdate": 0,
+            "ignoredTabs": [],
+            "totalCreate": 2,
+            "totalUpdate": 0,
         },
     )
 
@@ -133,15 +151,20 @@ async def test_failed_item_records_title_and_reason_and_surfaces_in_summary() ->
         kind=ProposalKind.batch,
         items=[
             ProposalItem(
-                item_id="u0", operation=Operation.update,
+                item_id="u0",
+                operation=Operation.update,
                 movie_payload={"title": "Heat", "year": 1995},
                 movie_ref={"collectionId": "c1", "movieId": "m1"},
-                diff={"update_movie": "Heat", "tab": "Sample"}, idempotency_key="k0",
+                diff={"update_movie": "Heat", "tab": "Sample"},
+                idempotency_key="k0",
             ),
             ProposalItem(
-                item_id="a1", operation=Operation.add,
-                movie_payload={"title": "Dune"}, movie_ref={"collectionId": "c1"},
-                diff={"add_movie": "Dune", "tab": "Sample"}, idempotency_key="k1",
+                item_id="a1",
+                operation=Operation.add,
+                movie_payload={"title": "Dune"},
+                movie_ref={"collectionId": "c1"},
+                diff={"add_movie": "Dune", "tab": "Sample"},
+                idempotency_key="k1",
             ),
         ],
         import_summary={"tabs": [], "ignoredTabs": [], "totalCreate": 1, "totalUpdate": 1},
@@ -174,10 +197,12 @@ async def test_import_report_combines_plan_skips_and_apply_failures() -> None:
         kind=ProposalKind.batch,
         items=[
             ProposalItem(
-                item_id="u0", operation=Operation.update,
+                item_id="u0",
+                operation=Operation.update,
                 movie_payload={"title": "Heat"},
                 movie_ref={"collectionId": "c1", "movieId": "m1"},
-                diff={"update_movie": "Heat"}, idempotency_key="k0",
+                diff={"update_movie": "Heat"},
+                idempotency_key="k0",
             )
         ],
         import_summary={"tabs": [], "skipped": [{"title": "Bad", "reason": "invalid Year"}]},
@@ -331,8 +356,10 @@ async def test_duplicate_classification_is_stable_across_concurrent_completion_o
         title = str((args.get("movie") or {}).get("title") or "")
         index = int(title.rsplit(" ", 1)[-1] or 0)
         await asyncio.sleep((40 - index) * 0.0005)  # later rows finish first
-        return ExecOutcome(status="skipped_duplicate") if index % 2 else ExecOutcome(
-            status="applied", data={"movieId": "m"}
+        return (
+            ExecOutcome(status="skipped_duplicate")
+            if index % 2
+            else ExecOutcome(status="applied", data={"movieId": "m"})
         )
 
     result = await _apply(_bulk_proposal(40), execute=execute)

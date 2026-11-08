@@ -30,6 +30,7 @@ from src.guardrails.output_validators import (
 
 # ── PII ──────────────────────────────────────────────────────────────────────
 
+
 def test_scan_detects_email_phone_and_credit_card() -> None:
     text = "reach me at jane.doe@example.com or +1 (415) 555-0132, card 4111 1111 1111 1111"
     kinds = {f.kind for f in scan_for_pii(text)}
@@ -56,6 +57,7 @@ def test_invalid_card_number_not_flagged_luhn() -> None:
 
 # ── Prompt injection ─────────────────────────────────────────────────────────
 
+
 @pytest.mark.parametrize(
     "payload",
     [
@@ -73,6 +75,7 @@ def test_detect_prompt_injection_clean_text_is_empty() -> None:
 
 
 # ── Structural validation ────────────────────────────────────────────────────
+
 
 class _Candidate(BaseModel):
     title: str
@@ -93,6 +96,7 @@ def test_validate_structure_raises_typed_error_on_malformed() -> None:
 
 
 # ── Composed guards ──────────────────────────────────────────────────────────
+
 
 def test_guard_user_input_redacts_pii_and_reports_findings() -> None:
     result = guard_user_input("add movie, my email is jane.doe@example.com")

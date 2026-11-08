@@ -131,6 +131,7 @@ def detect_prompt_injection(text: str) -> list[str]:
 
 # ── Structural validation ────────────────────────────────────────────────────
 
+
 def validate_structure[ModelT: BaseModel](data: object, model: type[ModelT]) -> ModelT:
     """Validate `data` against `model`; raise StructuralValidationError if malformed."""
     try:
@@ -140,6 +141,7 @@ def validate_structure[ModelT: BaseModel](data: object, model: type[ModelT]) -> 
 
 
 # ── Composed guards (the call-site API) ──────────────────────────────────────
+
 
 @dataclass
 class GuardResult:

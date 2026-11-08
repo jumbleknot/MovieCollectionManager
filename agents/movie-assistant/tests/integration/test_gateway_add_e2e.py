@@ -110,8 +110,11 @@ def _cfg(reexchange_env: dict[str, str]) -> RuntimeNodeConfig:
 
 def _app(reexchange_env: dict[str, str]) -> Any:
     graph = build_runtime_graph(
-        {}, config=_cfg(reexchange_env), classifier=lambda _m: "add",
-        checkpointer=MemorySaver(), force=True,
+        {},
+        config=_cfg(reexchange_env),
+        classifier=lambda _m: "add",
+        checkpointer=MemorySaver(),
+        force=True,
     )
     return build_app(graph)
 

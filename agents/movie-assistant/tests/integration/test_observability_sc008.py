@@ -153,9 +153,14 @@ def test_sc008_per_turn_cost_and_p95_latency_in_budget_and_breach_visible() -> N
     spec = select_model_config("supervisor", env)  # claude-haiku tier
     _register_model_price(spec.model_id)
 
-    handler = build_langfuse_handler({**env, "LANGFUSE_HOST": LANGFUSE_HOST,
-                                      "LANGFUSE_PUBLIC_KEY": PUBLIC_KEY,
-                                      "LANGFUSE_SECRET_KEY": SECRET_KEY})
+    handler = build_langfuse_handler(
+        {
+            **env,
+            "LANGFUSE_HOST": LANGFUSE_HOST,
+            "LANGFUSE_PUBLIC_KEY": PUBLIC_KEY,
+            "LANGFUSE_SECRET_KEY": SECRET_KEY,
+        }
+    )
     assert handler is not None  # LangFuse configured
 
     model = build_chat_model(spec, env)

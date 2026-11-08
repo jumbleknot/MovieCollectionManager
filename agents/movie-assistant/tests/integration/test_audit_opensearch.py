@@ -49,6 +49,7 @@ _POLL_SLEEP_S = 0.5
 
 # ── skip guard (module-level) ──────────────────────────────────────────────────
 
+
 def _opensearch_reachable() -> bool:
     try:
         r = httpx.get(_OPENSEARCH_URL, verify=False, timeout=5)  # noqa: S501
@@ -68,6 +69,7 @@ _requires_opensearch = pytest.mark.skipif(
 
 
 # ── helpers ────────────────────────────────────────────────────────────────────
+
 
 def _url(path: str) -> str:
     return f"{_OPENSEARCH_URL.rstrip('/')}/{path.lstrip('/')}"

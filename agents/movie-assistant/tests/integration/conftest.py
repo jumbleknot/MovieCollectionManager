@@ -95,7 +95,6 @@ _LEGITIMATE_SKIPS = (
 )
 
 
-
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):  # noqa: ARG001 - pytest hook signature
     """Escalate stack-absent SKIPs to FAILUREs when MCM_REQUIRE_LIVE_STACK=1 (see above)."""

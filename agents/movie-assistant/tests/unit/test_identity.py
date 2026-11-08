@@ -42,7 +42,10 @@ async def test_authorizes_then_exchanges_and_returns_token() -> None:
         return ExchangedToken(token="downscoped-tok", expires_in=60)
 
     token = await acquire_downscoped_token(
-        _SUBJECT, user_id=_USER, authorize=authz, exchange=exchange,
+        _SUBJECT,
+        user_id=_USER,
+        authorize=authz,
+        exchange=exchange,
         cache=DownscopedTokenCache(clock=_Clock()),
     )
 
@@ -63,7 +66,10 @@ async def test_raises_permission_error_when_opa_denies_without_exchanging() -> N
 
     with pytest.raises(PermissionError):
         await acquire_downscoped_token(
-            _SUBJECT, user_id=_USER, authorize=authz, exchange=exchange,
+            _SUBJECT,
+            user_id=_USER,
+            authorize=authz,
+            exchange=exchange,
             cache=DownscopedTokenCache(clock=_Clock()),
         )
     assert exchanged is False  # denial short-circuits before any exchange
@@ -136,7 +142,10 @@ async def test_propagates_exchange_failure() -> None:
 
     with pytest.raises(TokenExchangeError):
         await acquire_downscoped_token(
-            _SUBJECT, user_id=_USER, authorize=authz, exchange=exchange,
+            _SUBJECT,
+            user_id=_USER,
+            authorize=authz,
+            exchange=exchange,
             cache=DownscopedTokenCache(clock=_Clock()),
         )
 

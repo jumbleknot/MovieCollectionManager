@@ -66,8 +66,9 @@ async def test_metadata_unavailable_skips_the_question_and_still_completes_the_a
 
     tok = (await reexchange_for_mc_service(subject_token, env=reexchange_env)).token
     name = f"t100-meta-{uuid.uuid4().hex[:8]}"
-    async with httpx.AsyncClient(base_url="http://localhost:3001",
-                                 headers={"Authorization": f"Bearer {tok}"}, timeout=20) as c:
+    async with httpx.AsyncClient(
+        base_url="http://localhost:3001", headers={"Authorization": f"Bearer {tok}"}, timeout=20
+    ) as c:
         cid = (await c.post(f"{_API}/collections", json={"name": name})).json()["collectionId"]
 
     async def authorize(_u: str, _a: str) -> bool:
@@ -77,14 +78,18 @@ async def test_metadata_unavailable_skips_the_question_and_still_completes_the_a
         return await reexchange_for_mc_service(s, env=reexchange_env)
 
     cfg = RuntimeNodeConfig(
-        web_api_mcp_url=WEB_API_MCP_URL, movie_mcp_url=MOVIE_MCP_URL,
+        web_api_mcp_url=WEB_API_MCP_URL,
+        movie_mcp_url=MOVIE_MCP_URL,
         limiter=AgentToolRateLimiter(max_calls=500, window_seconds=60),
-        cache=DownscopedTokenCache(), authorize=authorize, exchange=exchange,
+        cache=DownscopedTokenCache(),
+        authorize=authorize,
+        exchange=exchange,
         call=_fail_only_metadata,
         extract=lambda _m: {"title": "Coherence", "year": 2013, "collection": name},
     )
-    graph = build_graph(classifier=lambda _m: "add", checkpointer=MemorySaver(),
-                        **build_runtime_nodes(cfg))
+    graph = build_graph(
+        classifier=lambda _m: "add", checkpointer=MemorySaver(), **build_runtime_nodes(cfg)
+    )
     # The curator enriches via REAL web-api-mcp, which forwards the CALLER's own TMDB v3 key —
     # there is no shared env fallback (FR-021). Without it there is no candidate, no proposal, and
     # no ownership question, so the property under test is never reached.
@@ -130,8 +135,9 @@ async def test_metadata_unavailable_skips_the_question_and_still_completes_the_a
         for message in owned.get("messages") or []:
             for call in getattr(message, "tool_calls", None) or []:
                 args = call.get("args") or {}
-                options = [str(o.get("label") or o.get("value") or "") for o in
-                           (args.get("options") or [])]
+                options = [
+                    str(o.get("label") or o.get("value") or "") for o in (args.get("options") or [])
+                ]
                 for fmt in ("DVD", "Blu-Ray", "Blu-Ray 3D", "UHD Blu-Ray"):
                     assert fmt not in options, (
                         f"offered a GUESSED media-format list {options} with the metadata read "
@@ -151,8 +157,9 @@ async def test_metadata_unavailable_skips_the_question_and_still_completes_the_a
                     owned = await graph.ainvoke(Command(resume={"decision": "approved"}), config)
                     break
 
-        async with httpx.AsyncClient(base_url="http://localhost:3001",
-                                     headers={"Authorization": f"Bearer {tok}"}, timeout=20) as c:
+        async with httpx.AsyncClient(
+            base_url="http://localhost:3001", headers={"Authorization": f"Bearer {tok}"}, timeout=20
+        ) as c:
             movies = (await c.get(f"{_API}/collections/{cid}/movies")).json().get("items", [])
         titles = [m["title"] for m in movies]
         assert "Coherence" in titles, (
@@ -162,9 +169,12 @@ async def test_metadata_unavailable_skips_the_question_and_still_completes_the_a
         assert not (added.get("ownedMedia") or []), (
             f"recorded media formats {added.get('ownedMedia')} that were never offered"
         )
-        print(f"\n@@ T100 step 9: added={added['title']!r} owned={added.get('owned')} "
-              f"ownedMedia={added.get('ownedMedia')} — question skipped, nothing guessed")
+        print(
+            f"\n@@ T100 step 9: added={added['title']!r} owned={added.get('owned')} "
+            f"ownedMedia={added.get('ownedMedia')} — question skipped, nothing guessed"
+        )
     finally:
-        async with httpx.AsyncClient(base_url="http://localhost:3001",
-                                     headers={"Authorization": f"Bearer {tok}"}, timeout=20) as c:
+        async with httpx.AsyncClient(
+            base_url="http://localhost:3001", headers={"Authorization": f"Bearer {tok}"}, timeout=20
+        ) as c:
             await c.delete(f"{_API}/collections/{cid}")

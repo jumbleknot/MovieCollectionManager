@@ -60,22 +60,33 @@ async def test_organize_resolves_source_from_current_screen_not_default() -> Non
     # found nothing. A built proposal proves it found Coherence in the on-screen collection.
     async def list_movies(collection_id: str) -> list[dict[str, Any]]:
         if collection_id == _CURRENT_ID:
-            return [{"movieId": "m1", "collectionId": _CURRENT_ID, "title": "Coherence",
-                     "owned": False, "tags": []}]
+            return [
+                {
+                    "movieId": "m1",
+                    "collectionId": _CURRENT_ID,
+                    "title": "Coherence",
+                    "owned": False,
+                    "tags": [],
+                }
+            ]
         return []
 
     def plan(_messages: Any) -> dict[str, Any]:
-        return {"collection": None,
-                "operations": [{"op": "move", "title": "Coherence", "to": "Sci-Fi"}]}
+        return {
+            "collection": None,
+            "operations": [{"op": "move", "title": "Coherence", "to": "Sci-Fi"}],
+        }
 
     node = build_organizer(
         list_collections=_collections, list_movies=list_movies, plan=plan, gen_id=lambda: "p1"
     )
-    out = await node({
-        "intent": "organize",
-        "messages": [HumanMessage(content="move Coherence to Sci-Fi")],
-        "ui_snapshot": _CURRENT_SNAPSHOT,
-    })
+    out = await node(
+        {
+            "intent": "organize",
+            "messages": [HumanMessage(content="move Coherence to Sci-Fi")],
+            "ui_snapshot": _CURRENT_SNAPSHOT,
+        }
+    )
     assert out.get("pending_proposal") is not None  # resolved Coherence in the on-screen collection
 
 
@@ -84,11 +95,13 @@ async def test_navigate_resolves_current_screen_not_default() -> None:
         return []
 
     node = build_navigator(list_collections=_collections, list_movies=list_movies)
-    out = await node({
-        "intent": "navigate",
-        "messages": [HumanMessage(content="go back to this collection")],
-        "ui_snapshot": _CURRENT_SNAPSHOT,
-    })
+    out = await node(
+        {
+            "intent": "navigate",
+            "messages": [HumanMessage(content="go back to this collection")],
+            "ui_snapshot": _CURRENT_SNAPSHOT,
+        }
+    )
     call = out["messages"][-1].tool_calls[0]
     assert call["args"]["collectionId"] == _CURRENT_ID  # the viewed collection, not the default
 
@@ -101,14 +114,18 @@ async def test_query_resolves_current_screen_not_default() -> None:
         return 2 if collection_id == _CURRENT_ID else 99  # 99 = the default → wrong if misresolved
 
     node = build_query_node(
-        list_collections=_collections, list_movies=list_movies, count_movies=count_movies,
+        list_collections=_collections,
+        list_movies=list_movies,
+        count_movies=count_movies,
         extract=lambda _m: {"collection_ref": "this", "movie_title": None, "filter": {}},
     )
-    out = await node({
-        "intent": "query",
-        "messages": [HumanMessage(content="how many movies are in this collection")],
-        "ui_snapshot": _CURRENT_SNAPSHOT,
-    })
+    out = await node(
+        {
+            "intent": "query",
+            "messages": [HumanMessage(content="how many movies are in this collection")],
+            "ui_snapshot": _CURRENT_SNAPSHOT,
+        }
+    )
     text = str(out["messages"][-1].content)
     assert "Favorites" in text and "2 movie" in text  # answered for the viewed collection
 
@@ -127,11 +144,13 @@ async def test_search_resolves_current_screen_not_default() -> None:
     node = build_search_node(
         list_collections=_collections, list_movies=list_movies, web_search=web_search
     )
-    out = await node({
-        "intent": "search",
-        "messages": [HumanMessage(content="show me Coherence in this collection")],
-        "ui_snapshot": _CURRENT_SNAPSHOT,
-    })
+    out = await node(
+        {
+            "intent": "search",
+            "messages": [HumanMessage(content="show me Coherence in this collection")],
+            "ui_snapshot": _CURRENT_SNAPSHOT,
+        }
+    )
     # New Scope 1: the single match is offered as a button; the SEARCHED collection (search_scope)
     # proves it used the VIEWED collection (Favorites), not the default (Sci-Fi).
     assert out["search_scope"] == _CURRENT_ID

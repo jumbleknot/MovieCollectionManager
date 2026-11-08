@@ -99,7 +99,10 @@ def _config(thread: str) -> dict[str, Any]:
 
 def _graph(rec: _Recorder) -> Any:
     return build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
 
@@ -185,7 +188,10 @@ def _config_no_handle(thread: str) -> dict[str, Any]:
 async def test_live_faithful_pick_finalizes_without_reparse_or_handle() -> None:
     rec = _Recorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=_realistic_classifier, checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=_realistic_classifier,
+        checkpointer=MemorySaver(),
         force=True,
     )
     thread = "dis-live"
@@ -229,7 +235,10 @@ async def test_import_node_error_surfaces_message_not_silent_stop() -> None:
     # "import failed" message — never ends the run with a blank/no reply ("it just stopped").
     rec = _ParseCrashRecorder()
     graph = build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "import", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "import",
+        checkpointer=MemorySaver(),
         force=True,
     )
     result = await graph.ainvoke(

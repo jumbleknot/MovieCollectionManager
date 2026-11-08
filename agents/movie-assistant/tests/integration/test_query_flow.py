@@ -59,11 +59,27 @@ async def _require_movie_mcp() -> None:
 
 def _movie_body(title: str) -> dict[str, Any]:
     return {
-        "title": title, "year": 1999, "contentType": "Movie", "language": "English",
-        "owned": True, "ripped": False, "childrens": False, "ownedMedia": [], "ripQuality": [],
-        "genres": ["Sci-Fi"], "rated": "R", "directors": [], "actors": [], "tags": [],
-        "movieSet": None, "originalTitle": None, "releaseDate": None, "outline": None,
-        "plot": None, "runtime": None, "externalIds": [],
+        "title": title,
+        "year": 1999,
+        "contentType": "Movie",
+        "language": "English",
+        "owned": True,
+        "ripped": False,
+        "childrens": False,
+        "ownedMedia": [],
+        "ripQuality": [],
+        "genres": ["Sci-Fi"],
+        "rated": "R",
+        "directors": [],
+        "actors": [],
+        "tags": [],
+        "movieSet": None,
+        "originalTitle": None,
+        "releaseDate": None,
+        "outline": None,
+        "plot": None,
+        "runtime": None,
+        "externalIds": [],
     }
 
 

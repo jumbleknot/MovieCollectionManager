@@ -24,8 +24,16 @@ _COLLECTIONS = [
     {"collectionId": "c-drama", "name": "Drama"},
 ]
 _MOVIES = {
-    "c-scifi": [{"movieId": "m1", "title": "Dune", "year": 2021, "contentType": "Movie",
-                 "genres": ["Sci-Fi"], "owned": True}],
+    "c-scifi": [
+        {
+            "movieId": "m1",
+            "title": "Dune",
+            "year": 2021,
+            "contentType": "Movie",
+            "genres": ["Sci-Fi"],
+            "owned": True,
+        }
+    ],
     "c-drama": [{"movieId": "m2", "title": "Drive", "year": 2011, "contentType": "Movie"}],
 }
 _DOWNSCOPED = "downscoped-mc-token"
@@ -85,7 +93,10 @@ def _config(thread: str, ids: list[str] | None = None) -> dict[str, Any]:
 
 def _graph(rec: _ExportRecorder) -> Any:
     return build_runtime_graph(
-        {}, config=_cfg(rec), classifier=lambda _m: "export", checkpointer=MemorySaver(),
+        {},
+        config=_cfg(rec),
+        classifier=lambda _m: "export",
+        checkpointer=MemorySaver(),
         force=True,
     )
 
@@ -108,9 +119,7 @@ async def test_export_emits_a_download_ui_action_no_writes() -> None:
 
 async def test_export_reads_carry_downscoped_token_build_is_token_free() -> None:
     rec = _ExportRecorder()
-    await _graph(rec).ainvoke(
-        {"messages": [("user", "export everything")]}, _config("exp-2")
-    )
+    await _graph(rec).ainvoke({"messages": [("user", "export everything")]}, _config("exp-2"))
     assert [t for (n, _a, t) in rec.calls if n == "list_collections"] == [_DOWNSCOPED]
     # spreadsheet-mcp build is token-free.
     assert [t for (n, _a, t) in rec.calls if n == "build_workbook"] == [None]
@@ -127,9 +136,7 @@ async def test_export_default_exports_all_collections() -> None:
 
 async def test_export_selected_subset_only() -> None:
     rec = _ExportRecorder()
-    await _graph(rec).ainvoke(
-        {"messages": [("user", "export")]}, _config("exp-4", ids=["c-drama"])
-    )
+    await _graph(rec).ainvoke({"messages": [("user", "export")]}, _config("exp-4", ids=["c-drama"]))
     tabs = [args for (n, args, _t) in rec.calls if n == "build_workbook"][0]["tabs"]
     assert [t["collectionName"] for t in tabs] == ["Drama"]
     # Only the selected collection's movies were read.

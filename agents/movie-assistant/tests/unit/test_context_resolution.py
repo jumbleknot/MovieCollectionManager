@@ -42,7 +42,6 @@ def _organizer(collections: list[dict[str, Any]]) -> Any:
     return build_organizer(list_collections=list_collections, gen_id=lambda: "p1")
 
 
-
 # 047 US4 extended the single ownership question into a chain (ownership → media formats →
 # ripped → rip qualities), so a test that just wants to reach the approval gate must walk
 # whatever stages the flow asks for rather than assuming a fixed number of turns.
@@ -68,8 +67,13 @@ async def _resolve_add(node: Any, state: dict[str, Any], answer: str = "yes") ->
             return out
         reply = answer if stage == "awaiting_ownership" else _CHAIN_ANSWERS[stage]
         messages = [*messages, HumanMessage(content=reply)]
-        for key in ("add_target", "add_childrens", "add_owned_media", "add_ripped",
-                    "add_multi_pending"):
+        for key in (
+            "add_target",
+            "add_childrens",
+            "add_owned_media",
+            "add_ripped",
+            "add_multi_pending",
+        ):
             if key in out:
                 carried[key] = out[key]
         out = await node({**state, **carried, "add_stage": stage, "messages": messages})
@@ -109,9 +113,9 @@ def test_references_current_screen_true_cases() -> None:
 def test_references_current_screen_false_cases() -> None:
     for text in (
         "add The Matrix to Sci-Fi",
-        "the first one",          # a disambiguation pick — not a current-screen reference
+        "the first one",  # a disambiguation pick — not a current-screen reference
         "add The Matrix to my collection",
-        "where is my movie",      # 'where' must not match 'here'
+        "where is my movie",  # 'where' must not match 'here'
         "is there a sci-fi list",  # 'there' must not match 'here'
     ):
         assert not references_current_screen(text), text
@@ -149,11 +153,12 @@ def test_resolve_current_collection_unresolvable_returns_none() -> None:
 
 async def test_add_to_this_resolves_current_collection() -> None:
     node = _organizer(_COLLECTIONS)
-    out = await _resolve_add(node, 
+    out = await _resolve_add(
+        node,
         _state(
             message="add The Matrix to this",
             ui_snapshot={"current_screen": "collection", "collection_id": _SCI_FI_ID},
-        )
+        ),
     )
     proposal = out["pending_proposal"]
     assert proposal is not None
@@ -166,11 +171,12 @@ async def test_add_to_this_resolves_current_collection() -> None:
 async def test_add_to_this_on_home_clarifies(  # US3-AC2 / FR-014: never guess
 ) -> None:
     node = _organizer(_COLLECTIONS)
-    out = await _resolve_add(node, 
+    out = await _resolve_add(
+        node,
         _state(
             message="add The Matrix to this",
             ui_snapshot={"current_screen": "home", "collection_id": None},
-        )
+        ),
     )
     assert out.get("pending_proposal") is None
     assert out["messages"]  # asks the user to clarify which collection
@@ -180,12 +186,13 @@ async def test_add_to_this_on_home_clarifies(  # US3-AC2 / FR-014: never guess
 async def test_named_target_overrides_current_screen() -> None:
     # An explicitly named collection wins over the on-screen one (the user was specific).
     node = _organizer(_COLLECTIONS)
-    out = await _resolve_add(node, 
+    out = await _resolve_add(
+        node,
         _state(
             message="add The Matrix to Classics",
             target="Classics",
             ui_snapshot={"current_screen": "collection", "collection_id": _SCI_FI_ID},
-        )
+        ),
     )
     assert out["pending_proposal"].target_collection.collection_id == _CLASSICS_ID
 
@@ -194,12 +201,13 @@ async def test_llm_extracted_this_as_collection_resolves_current_not_creates() -
     # The curator sometimes extracts collection="this" from "add X to this" — that must resolve
     # the on-screen collection, NOT create a literal "this" collection (no create_if_missing).
     node = _organizer(_COLLECTIONS)
-    out = await _resolve_add(node, 
+    out = await _resolve_add(
+        node,
         _state(
             message="add The Matrix to this",
             target="this",  # the LLM returned "this" as the collection name
             ui_snapshot={"current_screen": "collection", "collection_id": _SCI_FI_ID},
-        )
+        ),
     )
     proposal = out["pending_proposal"]
     assert proposal is not None

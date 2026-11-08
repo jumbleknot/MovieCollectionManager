@@ -145,9 +145,7 @@ async def test_organize_preview_emits_collection_summary_tool_call() -> None:
     # dock shows the affected collection inline.
     graph = _build(plan=_remove("The Matrix"))
     paused = await graph.ainvoke({"messages": [("user", "remove The Matrix")]}, _config("org-sum"))
-    tool_calls = [
-        tc for m in paused["messages"] for tc in (getattr(m, "tool_calls", None) or [])
-    ]
+    tool_calls = [tc for m in paused["messages"] for tc in (getattr(m, "tool_calls", None) or [])]
     rcs = next(tc for tc in tool_calls if tc["name"] == "render_collection_summary")
     assert rcs["args"]["name"] == "Sci-Fi"
     assert rcs["args"]["movieCount"] == 3
@@ -163,8 +161,11 @@ _TWO_COLLECTIONS = [
 _FULL_MOVIES = [
     {"movieId": "m1", "collectionId": "c1", "title": "The Matrix", "owned": False, "tags": []},
     {
-        "movieId": "m2", "collectionId": "c1", "title": "Inception",
-        "owned": False, "tags": ["scifi"],
+        "movieId": "m2",
+        "collectionId": "c1",
+        "title": "Inception",
+        "owned": False,
+        "tags": ["scifi"],
     },
 ]
 
@@ -308,9 +309,7 @@ async def test_organize_move_title_with_year_suffix_resolves() -> None:
     }
     graph = _build(plan=plan, movies=movies, collections=cols)
     cfg = _config("org-move-year")
-    paused = await graph.ainvoke(
-        {"messages": [("user", "move Avatar (2009) to Wishlist")]}, cfg
-    )
+    paused = await graph.ainvoke({"messages": [("user", "move Avatar (2009) to Wishlist")]}, cfg)
     assert "__interrupt__" in paused  # resolved despite the (2009) suffix → move proposal built
 
 
@@ -323,8 +322,13 @@ _TWO_COLLS_DEFAULT_MC = [
 _COHERENCE_IN_WISHLIST = {
     "movie-coll": [],
     "wish-list": [
-        {"movieId": "m1", "collectionId": "wish-list", "title": "Coherence", "owned": False,
-         "tags": []}
+        {
+            "movieId": "m1",
+            "collectionId": "wish-list",
+            "title": "Coherence",
+            "owned": False,
+            "tags": [],
+        }
     ],
 }
 
@@ -334,8 +338,10 @@ async def test_organize_move_unnamed_source_uses_current_screen_not_default() ->
     # model returns collection=None). The source must be the CURRENT screen (Wish List), NOT the
     # default collection (Movie Collection = the destination) — the live bug searched the default
     # and reported "couldn't find Coherence in Movie Collection".
-    plan = {"collection": None,
-            "operations": [{"op": "move", "title": "Coherence", "to": "Movie Collection"}]}
+    plan = {
+        "collection": None,
+        "operations": [{"op": "move", "title": "Coherence", "to": "Movie Collection"}],
+    }
     graph = _build(
         plan=plan, collections=_TWO_COLLS_DEFAULT_MC, movies_by_collection=_COHERENCE_IN_WISHLIST
     )
@@ -356,18 +362,24 @@ async def test_organize_move_this_movie_resolves_from_movie_detail_screen() -> N
     # ui_snapshot.movie_id, not be matched as a literal title (the live bug: "I didn't find
     # anything to change in 'Wish List'"). A built move proposal proves it resolved Coherence.
     calls: list[Any] = []
-    plan = {"collection": None,
-            "operations": [{"op": "move", "title": "this movie", "to": "Movie Collection"}]}
+    plan = {
+        "collection": None,
+        "operations": [{"op": "move", "title": "this movie", "to": "Movie Collection"}],
+    }
     graph = _build(
-        plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
-        movies_by_collection=_COHERENCE_IN_WISHLIST, execute_calls=calls,
+        plan=plan,
+        collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=_COHERENCE_IN_WISHLIST,
+        execute_calls=calls,
     )
     cfg = _config("org-move-this-movie")
     paused = await graph.ainvoke(
         {
             "messages": [("user", "move this movie to Movie Collection")],
             "ui_snapshot": {
-                "current_screen": "movie-detail", "collection_id": "wish-list", "movie_id": "m1",
+                "current_screen": "movie-detail",
+                "collection_id": "wish-list",
+                "movie_id": "m1",
             },
         },
         cfg,
@@ -381,10 +393,20 @@ async def test_organize_move_this_movie_resolves_from_movie_detail_screen() -> N
 _WISHLIST_WITH_SENTENCE_TITLE = {
     "movie-coll": [],
     "wish-list": [
-        {"movieId": "m1", "collectionId": "wish-list", "title": "Coherence",
-         "owned": False, "tags": []},
-        {"movieId": "m2", "collectionId": "wish-list", "title": "I really want this movie",
-         "owned": False, "tags": []},
+        {
+            "movieId": "m1",
+            "collectionId": "wish-list",
+            "title": "Coherence",
+            "owned": False,
+            "tags": [],
+        },
+        {
+            "movieId": "m2",
+            "collectionId": "wish-list",
+            "title": "I really want this movie",
+            "owned": False,
+            "tags": [],
+        },
     ],
 }
 
@@ -394,10 +416,15 @@ async def test_organize_move_sentence_like_title_resolves_on_collection_screen()
     # Collection" — once the plan carries the verbatim title (the Claude plan-prompt fix), the
     # organizer resolves it via the title match and builds the move. (The live failure was the
     # MODEL dropping the op → operations=[]; this guards the organizer side of the same scenario.)
-    plan = {"collection": None, "operations": [
-        {"op": "move", "title": "I really want this movie", "to": "Movie Collection"}]}
+    plan = {
+        "collection": None,
+        "operations": [
+            {"op": "move", "title": "I really want this movie", "to": "Movie Collection"}
+        ],
+    }
     graph = _build(
-        plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
+        plan=plan,
+        collections=_TWO_COLLS_DEFAULT_MC,
         movies_by_collection=_WISHLIST_WITH_SENTENCE_TITLE,
     )
     cfg = _config("org-move-sentence-coll")
@@ -418,18 +445,26 @@ async def test_organize_move_title_containing_this_is_not_hijacked_to_on_screen_
     # (which previously did a substring match). On the Coherence (m1) detail screen, "move I really
     # want this movie to Movie Collection" must move m2 (the title match), never m1 (the screen).
     calls: list[Any] = []
-    plan = {"collection": None, "operations": [
-        {"op": "move", "title": "I really want this movie", "to": "Movie Collection"}]}
+    plan = {
+        "collection": None,
+        "operations": [
+            {"op": "move", "title": "I really want this movie", "to": "Movie Collection"}
+        ],
+    }
     graph = _build(
-        plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
-        movies_by_collection=_WISHLIST_WITH_SENTENCE_TITLE, execute_calls=calls,
+        plan=plan,
+        collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=_WISHLIST_WITH_SENTENCE_TITLE,
+        execute_calls=calls,
     )
     cfg = _config("org-move-sentence-detail")
     paused = await graph.ainvoke(
         {
             "messages": [("user", "move I really want this movie to Movie Collection")],
             "ui_snapshot": {
-                "current_screen": "movie-detail", "collection_id": "wish-list", "movie_id": "m1",
+                "current_screen": "movie-detail",
+                "collection_id": "wish-list",
+                "movie_id": "m1",
             },
         },
         cfg,
@@ -467,15 +502,26 @@ async def test_organize_move_to_current_collection_is_not_data_loss() -> None:
     # Guard: if the source resolves to the SAME collection as the move destination, it must not
     # add-then-remove (which would delete the film) — report it instead.
     movies_by_coll = {
-        "movie-coll": [{"movieId": "m1", "collectionId": "movie-coll", "title": "Coherence",
-                        "owned": False, "tags": []}],
+        "movie-coll": [
+            {
+                "movieId": "m1",
+                "collectionId": "movie-coll",
+                "title": "Coherence",
+                "owned": False,
+                "tags": [],
+            }
+        ],
         "wish-list": [],
     }
     calls: list[Any] = []
-    plan = {"collection": None,
-            "operations": [{"op": "move", "title": "Coherence", "to": "Movie Collection"}]}
+    plan = {
+        "collection": None,
+        "operations": [{"op": "move", "title": "Coherence", "to": "Movie Collection"}],
+    }
     graph = _build(
-        plan=plan, collections=_TWO_COLLS_DEFAULT_MC, movies_by_collection=movies_by_coll,
+        plan=plan,
+        collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=movies_by_coll,
         execute_calls=calls,
     )
     cfg = _config("org-move-same")
@@ -495,17 +541,35 @@ async def test_organize_move_to_current_collection_is_not_data_loss() -> None:
 _TWO_HARRY_IN_WISHLIST = {
     "movie-coll": [],
     "wish-list": [
-        {"movieId": "h1", "collectionId": "wish-list", "owned": False, "tags": [],
-         "title": "Harry Potter and the Order of the Phoenix", "year": 2007},
-        {"movieId": "h2", "collectionId": "wish-list", "owned": False, "tags": [],
-         "title": "Harry Potter and the Goblet of Fire", "year": 2005},
+        {
+            "movieId": "h1",
+            "collectionId": "wish-list",
+            "owned": False,
+            "tags": [],
+            "title": "Harry Potter and the Order of the Phoenix",
+            "year": 2007,
+        },
+        {
+            "movieId": "h2",
+            "collectionId": "wish-list",
+            "owned": False,
+            "tags": [],
+            "title": "Harry Potter and the Goblet of Fire",
+            "year": 2005,
+        },
     ],
 }
 _ONE_HARRY_IN_WISHLIST = {
     "movie-coll": [],
     "wish-list": [
-        {"movieId": "h1", "collectionId": "wish-list", "owned": False, "tags": [],
-         "title": "Harry Potter and the Order of the Phoenix", "year": 2007},
+        {
+            "movieId": "h1",
+            "collectionId": "wish-list",
+            "owned": False,
+            "tags": [],
+            "title": "Harry Potter and the Order of the Phoenix",
+            "year": 2007,
+        },
     ],
 }
 
@@ -513,10 +577,13 @@ _ONE_HARRY_IN_WISHLIST = {
 async def test_organize_partial_title_unique_match_goes_straight_to_proposal() -> None:
     # The reported case: ONE "Harry Potter…" in Wish List → "move harry potter to Movie Collection"
     # resolves the partial directly to the approval preview (user decision: no extra confirm tap).
-    plan = {"collection": None,
-            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
-    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
-                   movies_by_collection=_ONE_HARRY_IN_WISHLIST)
+    plan = {
+        "collection": None,
+        "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}],
+    }
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC, movies_by_collection=_ONE_HARRY_IN_WISHLIST
+    )
     cfg = _config("org-partial-unique")
     paused = await graph.ainvoke(
         {
@@ -532,10 +599,16 @@ async def test_organize_partial_title_unique_match_goes_straight_to_proposal() -
 async def test_organize_partial_title_multiple_disambiguates_then_moves_the_pick() -> None:
     # TWO "Harry Potter…" → buttons (no proposal); a pure-code pick → the move proposal for it.
     calls: list[Any] = []
-    plan = {"collection": None,
-            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
-    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
-                   movies_by_collection=_TWO_HARRY_IN_WISHLIST, execute_calls=calls)
+    plan = {
+        "collection": None,
+        "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}],
+    }
+    graph = _build(
+        plan=plan,
+        collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=_TWO_HARRY_IN_WISHLIST,
+        execute_calls=calls,
+    )
     cfg = _config("org-partial-disambig")
     first = await graph.ainvoke(
         {
@@ -565,10 +638,13 @@ async def test_organize_partial_title_multiple_disambiguates_then_moves_the_pick
 
 async def test_organize_disambiguation_offers_a_cancel_button() -> None:
     # The partial-match disambiguation must include a "Cancel Move" control button (013 Inc5).
-    plan = {"collection": None,
-            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
-    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
-                   movies_by_collection=_TWO_HARRY_IN_WISHLIST)
+    plan = {
+        "collection": None,
+        "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}],
+    }
+    graph = _build(
+        plan=plan, collections=_TWO_COLLS_DEFAULT_MC, movies_by_collection=_TWO_HARRY_IN_WISHLIST
+    )
     cfg = _config("org-cancel-button")
     first = await graph.ainvoke(
         {
@@ -584,10 +660,16 @@ async def test_organize_disambiguation_offers_a_cancel_button() -> None:
 
 async def test_organize_disambiguation_cancel_exits_cleanly() -> None:
     calls: list[Any] = []
-    plan = {"collection": None,
-            "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}]}
-    graph = _build(plan=plan, collections=_TWO_COLLS_DEFAULT_MC,
-                   movies_by_collection=_TWO_HARRY_IN_WISHLIST, execute_calls=calls)
+    plan = {
+        "collection": None,
+        "operations": [{"op": "move", "title": "harry potter", "to": "Movie Collection"}],
+    }
+    graph = _build(
+        plan=plan,
+        collections=_TWO_COLLS_DEFAULT_MC,
+        movies_by_collection=_TWO_HARRY_IN_WISHLIST,
+        execute_calls=calls,
+    )
     cfg = _config("org-cancel-exit")
     await graph.ainvoke(
         {
@@ -654,7 +736,7 @@ def _tool_names(result: Any) -> set[str]:
 
 
 async def test_mark_owned_unchanged_applies_directly_without_ownership_questions() -> None:
-    """"mark X as owned" on an existing movie previews an update — no follow-up questions."""
+    """ "mark X as owned" on an existing movie previews an update — no follow-up questions."""
     calls: list[Any] = []
     graph = _build(
         plan={
@@ -680,7 +762,7 @@ async def test_mark_owned_unchanged_applies_directly_without_ownership_questions
 
 
 async def test_mark_owned_unchanged_set_as_ripped_applies_directly() -> None:
-    """"set X as ripped" likewise — no rip-quality question on an existing movie."""
+    """ "set X as ripped" likewise — no rip-quality question on an existing movie."""
     calls: list[Any] = []
     graph = _build(
         plan={

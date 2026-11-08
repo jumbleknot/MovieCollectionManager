@@ -269,8 +269,14 @@ def _build_curator_node(cfg: RuntimeNodeConfig) -> Any:
         if year is not None:
             args["year"] = year
         out = await invoke_tool(
-            agent="curator", tool_name="search_title", arguments=args, server=web,
-            subject_token=None, call=cfg.call, limiter=cfg.limiter, acquire_token=_no_token,
+            agent="curator",
+            tool_name="search_title",
+            arguments=args,
+            server=web,
+            subject_token=None,
+            call=cfg.call,
+            limiter=cfg.limiter,
+            acquire_token=_no_token,
         )
         if not out.ok or not isinstance(out.data, dict):
             return {"matchConfidence": "none", "results": []}  # graceful: "couldn't find it"
@@ -278,8 +284,13 @@ def _build_curator_node(cfg: RuntimeNodeConfig) -> Any:
 
     async def details(source_id: str) -> dict[str, Any]:
         out = await invoke_tool(
-            agent="curator", tool_name="get_movie_details", arguments={"sourceId": source_id},
-            server=web, subject_token=None, call=cfg.call, limiter=cfg.limiter,
+            agent="curator",
+            tool_name="get_movie_details",
+            arguments={"sourceId": source_id},
+            server=web,
+            subject_token=None,
+            call=cfg.call,
+            limiter=cfg.limiter,
             acquire_token=_no_token,
         )
         if not out.ok or not isinstance(out.data, dict):
@@ -350,9 +361,15 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
 
         async def list_collections() -> list[dict[str, Any]]:
             out = await invoke_tool(
-                agent="organizer", tool_name="list_collections", arguments={}, server=movie,
-                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="organizer",
+                tool_name="list_collections",
+                arguments={},
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
             )
             return list(read_or_raise(out, list))
 
@@ -366,9 +383,15 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
                 if cursor:
                     args["cursor"] = cursor
                 out = await invoke_tool(
-                    agent="organizer", tool_name="list_movies", arguments=args, server=movie,
-                    subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                    acquire_token=acquire, rate_scope=user_id,
+                    agent="organizer",
+                    tool_name="list_movies",
+                    arguments=args,
+                    server=movie,
+                    subject_token=subject_token,
+                    call=cfg.call,
+                    limiter=cfg.limiter,
+                    acquire_token=acquire,
+                    rate_scope=user_id,
                 )
                 # FR-039: a page that failed must not truncate the read into a shorter list
                 # that then reads as the whole collection.
@@ -395,9 +418,15 @@ def _build_organizer_node(cfg: RuntimeNodeConfig) -> Any:
                 return _movie_metadata_cache
 
             out = await invoke_tool(
-                agent="organizer", tool_name="get_movie_metadata", arguments={}, server=movie,
-                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="organizer",
+                tool_name="get_movie_metadata",
+                arguments={},
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
             )
             if not out.ok or not isinstance(out.data, dict):
                 # Deliberately NOT cached: a transient failure must not suppress the question
@@ -442,9 +471,15 @@ def _build_navigator_node(cfg: RuntimeNodeConfig) -> Any:
 
         async def list_collections() -> list[dict[str, Any]]:
             out = await invoke_tool(
-                agent="navigator", tool_name="list_collections", arguments={}, server=movie,
-                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="navigator",
+                tool_name="list_collections",
+                arguments={},
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
             )
             return list(read_or_raise(out, list))
 
@@ -458,16 +493,22 @@ def _build_navigator_node(cfg: RuntimeNodeConfig) -> Any:
             if term:
                 args["filter"] = {"search": term}
             out = await invoke_tool(
-                agent="navigator", tool_name="list_movies", arguments=args, server=movie,
-                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="navigator",
+                tool_name="list_movies",
+                arguments=args,
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
             )
             return list(read_or_raise(out, dict).get("items", []))
 
         nonce = str(len(state.get("messages", []) or []))
-        result = await build_navigator(
-            list_collections=list_collections, list_movies=list_movies
-        )(state)
+        result = await build_navigator(list_collections=list_collections, list_movies=list_movies)(
+            state
+        )
         return _stamp_ui_action_nonce(result, nonce)
 
     return navigator
@@ -495,9 +536,15 @@ def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
 
         async def list_collections() -> list[dict[str, Any]]:
             out = await invoke_tool(
-                agent="query", tool_name="list_collections", arguments={}, server=movie,
-                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="query",
+                tool_name="list_collections",
+                arguments={},
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
             )
             return list(read_or_raise(out, list))
 
@@ -509,22 +556,32 @@ def _build_query_node(cfg: RuntimeNodeConfig) -> Any:
             if filters:
                 args["filter"] = filters
             out = await invoke_tool(
-                agent="query", tool_name="list_movies", arguments=args, server=movie,
-                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="query",
+                tool_name="list_movies",
+                arguments=args,
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
             )
             return dict(read_or_raise(out, dict))
 
-        async def count_movies(
-            collection_id: str, filters: dict[str, Any] | None = None
-        ) -> int:
+        async def count_movies(collection_id: str, filters: dict[str, Any] | None = None) -> int:
             args: dict[str, Any] = {"collectionId": collection_id}
             if filters:
                 args["filter"] = filters
             out = await invoke_tool(
-                agent="query", tool_name="count_movies", arguments=args, server=movie,
-                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="query",
+                tool_name="count_movies",
+                arguments=args,
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
             )
             payload = read_or_raise(out, dict)
             try:
@@ -571,9 +628,15 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
 
         async def list_collections() -> list[dict[str, Any]]:
             out = await invoke_tool(
-                agent="search", tool_name="list_collections", arguments={}, server=movie,
-                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="search",
+                tool_name="list_collections",
+                arguments={},
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
             )
             return list(read_or_raise(out, list))
 
@@ -584,9 +647,15 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
             if term:
                 args["filter"] = {"search": term}
             out = await invoke_tool(
-                agent="search", tool_name="list_movies", arguments=args, server=movie,
-                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="search",
+                tool_name="list_movies",
+                arguments=args,
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
             )
             return list(read_or_raise(out, dict).get("items", []))
 
@@ -600,8 +669,14 @@ def _build_search_node(cfg: RuntimeNodeConfig) -> Any:
             # reads movie-mcp above, which must never receive the user's TMDB key.
             with tmdb_key_scope(tmdb_key):
                 out = await invoke_tool(
-                    agent="search", tool_name="search_title", arguments=args, server=web,
-                    subject_token=None, call=cfg.call, limiter=cfg.limiter, acquire_token=_no_token,
+                    agent="search",
+                    tool_name="search_title",
+                    arguments=args,
+                    server=web,
+                    subject_token=None,
+                    call=cfg.call,
+                    limiter=cfg.limiter,
+                    acquire_token=_no_token,
                 )
             if not out.ok or not isinstance(out.data, dict):
                 return {"results": []}  # graceful: "couldn't find it"
@@ -678,9 +753,15 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
 
         async def list_collections() -> list[dict[str, Any]]:
             out = await invoke_tool(
-                agent="import_collection", tool_name="list_collections", arguments={},
-                server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="import_collection",
+                tool_name="list_collections",
+                arguments={},
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
                 # 040 US2 FR-015: a large import's code-orchestrated dedup reads over a FINITE set
                 # (the user's own collections/movies) must not be throttled into a silently partial
                 # list — same exemption the import writes already carry.
@@ -696,9 +777,15 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                 if cursor:
                     args["cursor"] = cursor
                 out = await invoke_tool(
-                    agent="import_collection", tool_name="list_movies", arguments=args,
-                    server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                    acquire_token=acquire, rate_scope=user_id,
+                    agent="import_collection",
+                    tool_name="list_movies",
+                    arguments=args,
+                    server=movie,
+                    subject_token=subject_token,
+                    call=cfg.call,
+                    limiter=cfg.limiter,
+                    acquire_token=acquire,
+                    rate_scope=user_id,
                     skip_rate_limit=True,  # 040 US2 FR-015 — see list_collections above
                 )
                 # FR-039: a page that failed must not truncate the read into a shorter list
@@ -794,8 +881,10 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                         existing_by_collection[cid] = await list_movies(cid)
 
             preview = build_import_preview(
-                tabs=tabs, collections=collections,
-                existing_by_collection=existing_by_collection, thread_id=thread_id,
+                tabs=tabs,
+                collections=collections,
+                existing_by_collection=existing_by_collection,
+                thread_id=thread_id,
                 resolutions=resolutions,
             )
             proposals = build_import_proposals(preview, thread_id)
@@ -809,7 +898,8 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
             first, rest = proposals[0], proposals[1:]
             return {
                 **_IMPORT_STATE_RESET,
-                "pending_proposal": first, "pending_batches": rest,
+                "pending_proposal": first,
+                "pending_batches": rest,
                 "status": "awaiting_approval",
             }
 
@@ -825,8 +915,12 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
             carrier: dict[str, Any] = {}
             if handle:
                 fetched = await fetch_parsed(
-                    agent="import_collection", parsed_handle=handle, server=spreadsheet,
-                    call=cfg.call, limiter=cfg.limiter, rate_scope=user_id,
+                    agent="import_collection",
+                    parsed_handle=handle,
+                    server=spreadsheet,
+                    call=cfg.call,
+                    limiter=cfg.limiter,
+                    rate_scope=user_id,
                 )
                 if fetched.ok and isinstance(fetched.data, dict):
                     context = fetched.data
@@ -849,7 +943,8 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
             resolutions = dict(state.get("import_resolutions") or {})
             prompt_d = state.get("import_prompt") or {}
             prompt = ImportPrompt(
-                kind=str(prompt_d.get("kind", "")), key=str(prompt_d.get("key", "")),
+                kind=str(prompt_d.get("kind", "")),
+                key=str(prompt_d.get("key", "")),
                 question=str(prompt_d.get("question", "")),
                 options=list(prompt_d.get("options") or []),
             )
@@ -877,8 +972,11 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
                 misses = int(state.get("import_unresolved_replies") or 0) + 1
                 still = collect_import_disambiguations(tabs, collections, resolutions)
                 return _ask(
-                    prompt, carrier, resolutions,
-                    remaining=len(still), unresolved_replies=misses,
+                    prompt,
+                    carrier,
+                    resolutions,
+                    remaining=len(still),
+                    unresolved_replies=misses,
                 )
             resolutions = apply_import_pick(resolutions, prompt, chosen)
             remaining = collect_import_disambiguations(tabs, collections, resolutions)
@@ -914,14 +1012,21 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
             }
 
         parsed = await parse_spreadsheet(
-            agent="import_collection", file_handle=file_handle, filename=filename,
-            server=spreadsheet, call=cfg.call, limiter=cfg.limiter, rate_scope=user_id,
+            agent="import_collection",
+            file_handle=file_handle,
+            filename=filename,
+            server=spreadsheet,
+            call=cfg.call,
+            limiter=cfg.limiter,
+            rate_scope=user_id,
         )
         if not parsed.ok or not isinstance(parsed.data, dict):
             return {
                 "messages": [
-                    AIMessage(content="I couldn't read that file — please upload a valid CSV or "
-                              "Excel spreadsheet.")
+                    AIMessage(
+                        content="I couldn't read that file — please upload a valid CSV or "
+                        "Excel spreadsheet."
+                    )
                 ]
             }
         tabs = list(parsed.data.get("tabs", []))
@@ -934,7 +1039,10 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
             stashed = await stash_parsed(
                 agent="import_collection",
                 parsed={"tabs": tabs, "collections": collections},
-                server=spreadsheet, call=cfg.call, limiter=cfg.limiter, rate_scope=user_id,
+                server=spreadsheet,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                rate_scope=user_id,
             )
             if stashed.ok and isinstance(stashed.data, dict) and stashed.data.get("parsedHandle"):
                 carrier = {"import_handle": str(stashed.data["parsedHandle"])}
@@ -998,9 +1106,15 @@ def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
 
         async def list_collections() -> list[dict[str, Any]]:
             out = await invoke_tool(
-                agent="export_collection", tool_name="list_collections", arguments={},
-                server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="export_collection",
+                tool_name="list_collections",
+                arguments={},
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
             )
             return list(read_or_raise(out, list))
 
@@ -1012,9 +1126,15 @@ def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
                 if cursor:
                     args["cursor"] = cursor
                 out = await invoke_tool(
-                    agent="export_collection", tool_name="list_movies", arguments=args,
-                    server=movie, subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                    acquire_token=acquire, rate_scope=user_id,
+                    agent="export_collection",
+                    tool_name="list_movies",
+                    arguments=args,
+                    server=movie,
+                    subject_token=subject_token,
+                    call=cfg.call,
+                    limiter=cfg.limiter,
+                    acquire_token=acquire,
+                    rate_scope=user_id,
                 )
                 # FR-039: a page that failed must not truncate the read into a shorter list
                 # that then reads as the whole collection.
@@ -1029,9 +1149,7 @@ def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
         chosen = select_export_collections(requested, collections)
         if not chosen:
             return {
-                "messages": [
-                    AIMessage(content="You don't have any collections to export yet.")
-                ]
+                "messages": [AIMessage(content="You don't have any collections to export yet.")]
             }
 
         tab_data = [
@@ -1047,8 +1165,12 @@ def _build_export_node(cfg: RuntimeNodeConfig) -> Any:
         tabs = build_export_tabs(tab_data)
 
         built = await build_workbook(
-            agent="export_collection", tabs=tabs, server=spreadsheet, call=cfg.call,
-            limiter=cfg.limiter, rate_scope=user_id,
+            agent="export_collection",
+            tabs=tabs,
+            server=spreadsheet,
+            call=cfg.call,
+            limiter=cfg.limiter,
+            rate_scope=user_id,
         )
         if not built.ok or not isinstance(built.data, dict):
             return {
@@ -1100,9 +1222,15 @@ def _build_approval_gate_node(cfg: RuntimeNodeConfig) -> Any:
             tool = _OP_TO_TOOL[operation]
             arguments = {**args, "idempotencyKey": idempotency_key}
             out = await invoke_tool(
-                agent="organizer", tool_name=tool, arguments=arguments, server=movie,
-                subject_token=subject_token, call=cfg.call, limiter=cfg.limiter,
-                acquire_token=acquire, rate_scope=user_id,
+                agent="organizer",
+                tool_name=tool,
+                arguments=arguments,
+                server=movie,
+                subject_token=subject_token,
+                call=cfg.call,
+                limiter=cfg.limiter,
+                acquire_token=acquire,
+                rate_scope=user_id,
                 # HITL-approved, code-orchestrated, bounded writes are not a runaway loop — don't
                 # let the per-agent tool-call limiter throttle a large approved import/organize
                 # (014: a 200-row import was capped at 30, failing the other 170).
@@ -1283,6 +1411,4 @@ def build_runtime_graph(
         return build_graph(classifier=classifier, checkpointer=checkpointer, circuit=circuit)
     cfg = config or RuntimeNodeConfig.from_env(env)
     nodes = build_runtime_nodes(cfg)
-    return build_graph(
-        classifier=classifier, checkpointer=checkpointer, circuit=circuit, **nodes
-    )
+    return build_graph(classifier=classifier, checkpointer=checkpointer, circuit=circuit, **nodes)

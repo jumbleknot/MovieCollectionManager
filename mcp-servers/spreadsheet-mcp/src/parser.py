@@ -89,17 +89,13 @@ def _parse_csv(data: bytes, filename: str, sample_size: int) -> dict[str, Any]:
     return {"tabs": [_build_tab(name, rows_values, sample_size)]}
 
 
-def _build_tab(
-    name: str, rows_values: list[tuple[Any, ...]], sample_size: int
-) -> dict[str, Any]:
+def _build_tab(name: str, rows_values: list[tuple[Any, ...]], sample_size: int) -> dict[str, Any]:
     if not rows_values:
         return {"name": name, "eligible": False, "columns": [], "rowCount": 0, "rows": []}
 
     # First row = headers. Keep only non-empty headers, preserving their source column index.
     indexed = [
-        (i, header)
-        for i, raw in enumerate(rows_values[0])
-        if (header := _cell_to_str(raw).strip())
+        (i, header) for i, raw in enumerate(rows_values[0]) if (header := _cell_to_str(raw).strip())
     ]
     headers = [header for _, header in indexed]
     samples: dict[str, list[str]] = {header: [] for header in headers}

@@ -25,6 +25,7 @@ from src.observability import (
 
 # ── LangFuse gating ───────────────────────────────────────────────────────────
 
+
 def test_langfuse_configured_requires_both_keys() -> None:
     assert langfuse_configured({"LANGFUSE_PUBLIC_KEY": "pk", "LANGFUSE_SECRET_KEY": "sk"}) is True
     assert langfuse_configured({"LANGFUSE_PUBLIC_KEY": "pk"}) is False
@@ -37,6 +38,7 @@ def test_build_langfuse_handler_is_none_when_unconfigured() -> None:
 
 
 # ── budgets + breach classification ───────────────────────────────────────────
+
 
 def test_load_budgets_parses_env_and_defaults_to_none() -> None:
     assert load_budgets({}) == Budgets(per_turn_cost_usd=None, turn_latency_ms=None)
@@ -62,6 +64,7 @@ def test_classify_breach_no_budget_means_no_breach() -> None:
 
 
 # ── p95 + per-turn evaluation (T067 helper) ───────────────────────────────────
+
 
 def test_percentile_nearest_rank() -> None:
     assert percentile([], 95) is None
@@ -95,6 +98,7 @@ def test_budget_metadata_only_includes_set_budgets() -> None:
 
 
 # ── OTel gating ───────────────────────────────────────────────────────────────
+
 
 def test_configure_otel_is_noop_without_endpoint() -> None:
     assert configure_otel({}) is False  # no OTEL_EXPORTER_OTLP_ENDPOINT → no-op

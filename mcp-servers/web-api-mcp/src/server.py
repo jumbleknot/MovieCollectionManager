@@ -43,7 +43,6 @@ mcp = MCPServer("web-api-mcp")
 _TRANSPORT_SECURITY = TransportSecuritySettings(enable_dns_rebinding_protection=False)
 
 
-
 # Per-request TMDB key: the user's own v3 key, supplied by the gateway as the `X-TMDB-Key` header
 # (FR-021). Bound by `TmdbKeyMiddleware` into this request-local ContextVar — never logged
 # (SC-004 scan). This is the SOLE source of the TMDB key: there is NO shared env/Vault fallback
@@ -180,11 +179,13 @@ def build_app() -> Any:
 
     _silence_credential_logging()  # must precede any TMDB call — see the docstring above
     configure_otel()  # OTel infra tracing (T030b) — no-op unless OTEL_EXPORTER_OTLP_ENDPOINT set
-    return TmdbKeyMiddleware(mcp.streamable_http_app(
-        stateless_http=True,
-        json_response=True,
-        transport_security=_TRANSPORT_SECURITY,
-    ))
+    return TmdbKeyMiddleware(
+        mcp.streamable_http_app(
+            stateless_http=True,
+            json_response=True,
+            transport_security=_TRANSPORT_SECURITY,
+        )
+    )
 
 
 def main() -> None:

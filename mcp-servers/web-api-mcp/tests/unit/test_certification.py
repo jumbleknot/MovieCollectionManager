@@ -117,7 +117,7 @@ def test_value_outside_the_vocabulary_yields_none_not_an_error() -> None:
 
 
 def test_an_unrecognised_value_does_not_shadow_a_later_valid_one() -> None:
-    """"First non-empty" is the ordering rule; validation is a separate filter (FR-003/FR-003a)."""
+    """ "First non-empty" is the ordering rule; validation is a separate filter (FR-003/FR-003a)."""
     assert extract_us_certification(_us("TV-14", "PG-13")) is None
 
 
@@ -226,9 +226,7 @@ async def test_get_movie_details_returns_rated_none_when_uncertified() -> None:
                 "original_language": "en",
                 "spoken_languages": [],
                 "release_dates": {
-                    "results": [
-                        {"iso_3166_1": "US", "release_dates": [{"certification": ""}]}
-                    ]
+                    "results": [{"iso_3166_1": "US", "release_dates": [{"certification": ""}]}]
                 },
             },
             request=request,

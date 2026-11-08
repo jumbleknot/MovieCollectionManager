@@ -34,26 +34,35 @@ from src.proposals import (
 )
 
 _CANDIDATE = EnrichedMovieCandidate(
-    source_id="tmdb:603", title="The Matrix", year=1999, genres=["Science Fiction"],
-    overview="A hacker learns the truth.", language="English",
+    source_id="tmdb:603",
+    title="The Matrix",
+    year=1999,
+    genres=["Science Fiction"],
+    overview="A hacker learns the truth.",
+    language="English",
 )
 
 
 def _existing_proposal() -> Any:
     return build_add_proposal(
-        thread_id="t1", proposal_id="p1", candidate=_CANDIDATE,
+        thread_id="t1",
+        proposal_id="p1",
+        candidate=_CANDIDATE,
         target=CollectionRef(collection_id="0123456789abcdef01234567", name="Sci-Fi"),
     )
 
 
 def _create_if_missing_proposal() -> Any:
     return build_add_proposal(
-        thread_id="t1", proposal_id="p2", candidate=_CANDIDATE,
+        thread_id="t1",
+        proposal_id="p2",
+        candidate=_CANDIDATE,
         target=CollectionRef(name="Brand New", create_if_missing=True),
     )
 
 
 # ── apply_proposal ───────────────────────────────────────────────────────────
+
 
 async def test_apply_single_add_to_existing_collection() -> None:
     calls: list[tuple[str, dict[str, Any], str]] = []
@@ -105,6 +114,7 @@ async def test_apply_duplicate_add_is_skipped_not_failed() -> None:
 
 
 # ── apply_proposal: organize batch (update / remove + drift) — US2 ────────────
+
 
 def _organize_batch() -> Any:
     return build_organize_proposal(
@@ -158,6 +168,7 @@ async def test_apply_organize_skips_drifted_item_without_aborting_batch() -> Non
 
 
 # ── apply_proposal: move = guarded add-then-remove (T070b) ────────────────────
+
 
 def _move_proposal() -> Any:
     return build_organize_proposal(
@@ -243,6 +254,7 @@ async def test_apply_move_is_complete_when_source_already_gone() -> None:
 
 # ── approval-request payload ─────────────────────────────────────────────────
 
+
 def test_build_approval_request_lists_items_and_carries_no_token() -> None:
     payload = build_approval_request(_create_if_missing_proposal())
     assert payload["type"] == "approval_request"
@@ -254,6 +266,7 @@ def test_build_approval_request_lists_items_and_carries_no_token() -> None:
 
 
 # ── candidate → mc-service payload ───────────────────────────────────────────
+
 
 def test_to_movie_payload_maps_candidate_fields_with_defaults() -> None:
     payload = to_movie_payload(_CANDIDATE)

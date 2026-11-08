@@ -171,9 +171,7 @@ async def apply_proposal(
     """
     result = ApplyResult()
     excluded = {str(t) for t in excluded_tabs}
-    collection_id = (
-        proposal.target_collection.collection_id if proposal.target_collection else None
-    )
+    collection_id = proposal.target_collection.collection_id if proposal.target_collection else None
 
     # 047 US3: add/update items are applied with BOUNDED CONCURRENCY, everything else stays
     # strictly sequential. create_collection must finish first because its new id threads into
@@ -235,8 +233,9 @@ async def apply_proposal(
             # the item's own ref, the proposal's existing collection, or the one create_collection
             # just made, and only this branch knows which.
             add_targets[position] = str(add_target)
-            deferred.append((position, item, Operation.add,
-                             {"collectionId": add_target, "movie": movie}))
+            deferred.append(
+                (position, item, Operation.add, {"collectionId": add_target, "movie": movie})
+            )
 
         elif item.operation == Operation.update:
             ref = item.movie_ref or {}
@@ -295,7 +294,6 @@ async def apply_proposal(
                 else rm_out
             )
             outcomes[position] = move_out
-
 
     # ── the bounded-concurrency pass (047 US3, FR-013) ────────────────────────────────────────
     if deferred:

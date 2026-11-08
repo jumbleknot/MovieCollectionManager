@@ -145,9 +145,7 @@ async def get_movie_details(client: httpx.AsyncClient, source_id: str) -> dict[s
     the source publishes no usable certification.
     """
     movie_id = source_id.split(":", 1)[1] if ":" in source_id else source_id
-    resp = await client.get(
-        f"/movie/{movie_id}", params={"append_to_response": "release_dates"}
-    )
+    resp = await client.get(f"/movie/{movie_id}", params={"append_to_response": "release_dates"})
     resp.raise_for_status()
     d: dict[str, Any] = resp.json()
 
