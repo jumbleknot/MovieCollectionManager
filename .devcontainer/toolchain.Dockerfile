@@ -17,7 +17,7 @@
 #
 # All toolchain fetches run at IMAGE-BUILD time — BEFORE the runtime egress firewall exists
 # (research D5) — so crates.io / PyPI / GitHub CDN rotation is NOT a per-open problem for the
-# baked set. Inherits feature 037's base (apt deps, watchman, corepack + Claude Code CLI, non-root
+# baked set. Inherits feature 037's base (apt deps, corepack + Claude Code CLI, non-root
 # `coder`, DinD-config dir) so the 037 verify scripts (host/engine isolation, SC-008) still pass.
 
 FROM node:24-bookworm@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0
@@ -43,21 +43,14 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
         jq \
     && rm -rf /var/lib/apt/lists/*
 
-# --- 037 base: watchman (Meta prebuilt; not in Debian apt) -------------------------------
-# Fetched at IMAGE-BUILD time, before the runtime egress firewall exists (research D5). Bump if
-# the pinned asset 404s.
-ARG WATCHMAN_VERSION=v2024.01.22.00
-RUN cd /tmp \
-    && curl -fsSL -o watchman.zip \
-        "https://github.com/facebook/watchman/releases/download/${WATCHMAN_VERSION}/watchman-${WATCHMAN_VERSION}-linux.zip" \
-    && unzip -q watchman.zip \
-    && cd "watchman-${WATCHMAN_VERSION}-linux" \
-    && mkdir -p /usr/local/bin /usr/local/lib /usr/local/var/run/watchman \
-    && cp bin/* /usr/local/bin/ \
-    && cp lib/* /usr/local/lib/ \
-    && chmod 755 /usr/local/bin/watchman \
-    && chmod 2777 /usr/local/var/run/watchman \
-    && cd / && rm -rf /tmp/watchman.zip "/tmp/watchman-${WATCHMAN_VERSION}-linux"
+# --- 037 base: watchman — REMOVED (spec 097, item #963) ----------------------------------
+# The baked prebuilt never ran here: v2024.01.22.00 links libcrypto.so.1.1 and bookworm ships only
+# OpenSSL 3. No upstream Linux prebuilt fits bookworm (measured 2026-11-08, every release with a
+# linux.zip): up to v2024.04.15.00 they link libcrypto.so.1.1; from v2025.03.03.00 they link
+# libcrypto.so.3 but need GLIBC_2.38 (bookworm has 2.36); nothing was published in between.
+# Nothing in the repo requires watchman: jest and Metro use their Node crawler when the binary is
+# absent, silently. A BROKEN binary on PATH is worse than none — jest calls it and dies. Do not
+# re-add a prebuilt without proving `watchman --version` in the built image.
 
 # --- 037 base: root-level Node toolchain (corepack shims + Claude Code CLI) ---------------
 # Both symlink into the root-owned /usr/local prefix → MUST be installed as root here (running
@@ -170,7 +163,7 @@ ENV CARGO_HOME=/home/${USERNAME}/.cargo \
 # --- Android SDK + emulator for dev-container mobile E2E [root, pre-user] ------------------
 # BAKED so the ~5 GB SDK/system-image download happens at IMAGE-BUILD time — BEFORE the runtime
 # egress firewall exists (research D5) — needing NO `dl.google.com` allowlist entry, exactly like
-# the Rust/uv/watchman toolchains above. Proven live 2026-07-22: a headless x86_64 emulator boots
+# the Rust/uv toolchains above. Proven live 2026-07-22: a headless x86_64 emulator boots
 # with KVM inside the nested-DinD dev container (the privileged DinD container already exposes the
 # host `/dev/kvm`), so `pnpm nx e2e:mobile` + non-agent Maestro flows run locally instead of only in
 # CI. Boot ritual + the agent-flows-still-prefer-CI rule: docs/runbooks/android-emulator.md.
