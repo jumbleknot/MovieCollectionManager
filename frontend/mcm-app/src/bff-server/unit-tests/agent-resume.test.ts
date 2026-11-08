@@ -67,6 +67,36 @@ describe('extractThreadId (thread-ownership binding on /run)', () => {
     expect(extractThreadId('{}')).toBeUndefined();
     expect(extractThreadId(JSON.stringify({ body: { threadId: 42 } }))).toBeUndefined();
   });
+
+  // Spec 097 (item #964 part 2). The single-route runtime reads a stop's thread from
+  // `params.threadId` (`handleStopAgent`), and its body may carry only `runId`. Reading `body` for a
+  // stop returned undefined, which the ownership check treats as "nothing to bind".
+  it('reads params.threadId for an agent/stop envelope — the id the runtime will stop', () => {
+    const stop = JSON.stringify({
+      method: 'agent/stop',
+      params: { agentId: 'movie_assistant', threadId: 'thread-A' },
+      body: { runId: 'run-1' },
+    });
+    expect(extractThreadId(stop)).toBe('thread-A');
+  });
+
+  it('for a stop, a decoy body.threadId cannot stand in for the thread being stopped', () => {
+    const stop = JSON.stringify({
+      method: 'agent/stop',
+      params: { agentId: 'movie_assistant', threadId: 'victim-thread' },
+      body: { threadId: 'own-thread' },
+    });
+    expect(extractThreadId(stop)).toBe('victim-thread');
+  });
+
+  it('for a run, params.threadId does not displace the body.threadId the run uses', () => {
+    const run = JSON.stringify({
+      method: 'agent/run',
+      params: { agentId: 'movie_assistant', threadId: 'own-thread' },
+      body: { threadId: 'victim-thread' },
+    });
+    expect(extractThreadId(run)).toBe('victim-thread');
+  });
 });
 
 describe('parseResumeRequest', () => {

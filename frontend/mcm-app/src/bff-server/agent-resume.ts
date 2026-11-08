@@ -66,6 +66,13 @@ export function extractApprovalDecision(bodyText: string): ApprovalDecision | nu
  * `body.threadId`, the same shape `extractApprovalDecision` reads — captured from a real resume).
  * Returns undefined for any shape mismatch (never throws). Used to bind a thread to its owner
  * (`enforceAgentThreadOwnership`) so one user cannot resume another user's checkpointed thread.
+ *
+ * It returns the thread the RUNTIME will act on, which depends on the method (spec 097, item
+ * #964). The single-route runtime reads `agent/stop`'s thread from `params.threadId`
+ * (`handleStopAgent`), not from the body; every other thread-bearing method reads `body.threadId`.
+ * Reading the body for a stop returned undefined, which the ownership check treats as "nothing to
+ * bind", so any user could stop any thread. Neither location falls back to the other: a decoy in the
+ * field the runtime ignores must never be what gets checked.
  */
 export function extractThreadId(bodyText: string): string | undefined {
   let parsed: unknown;
@@ -74,8 +81,13 @@ export function extractThreadId(bodyText: string): string | undefined {
   } catch {
     return undefined;
   }
-  const body = (parsed as { body?: Record<string, unknown> })?.body;
-  return typeof body?.threadId === 'string' ? body.threadId : undefined;
+  const envelope = parsed as {
+    method?: unknown;
+    params?: Record<string, unknown>;
+    body?: Record<string, unknown>;
+  } | null;
+  const source = envelope?.method === 'agent/stop' ? envelope?.params : envelope?.body;
+  return typeof source?.threadId === 'string' ? source.threadId : undefined;
 }
 
 function requireNonBlankString(value: unknown, field: string): string {
