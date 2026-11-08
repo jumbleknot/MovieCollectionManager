@@ -8,7 +8,10 @@ function probesWhileBuildingASchema(load: () => void): number {
   delete (globalThis as { __zod_globalConfig?: unknown }).__zod_globalConfig;
   globalThis.Function = new Proxy(RealFunction, {
     construct(target, args: string[]) {
-      probes += 1;
+      // Only zod's probe, `new Function("")`. Coverage instrumentation (istanbul) builds
+      // `new Function("return this")` in every instrumented module, which is not a probe and is
+      // not what the browser would report here (feature 087 T063).
+      if (args.length === 1 && args[0] === '') probes += 1;
       return Reflect.construct(target, args);
     },
   });
