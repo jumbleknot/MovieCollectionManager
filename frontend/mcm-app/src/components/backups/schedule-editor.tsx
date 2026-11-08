@@ -194,7 +194,12 @@ export function ScheduleEditor({
 
         {enabled && (
           <>
-            <Text fontFamily="body" fontSize={12} color={theme.onSurfaceVariant?.val} marginTop={16}>
+            <Text
+              fontFamily="body"
+              fontSize={12}
+              color={theme.onSurfaceVariant?.val}
+              marginTop={16}
+            >
               How often
             </Text>
             <View style={styles.chipRow}>
@@ -270,7 +275,8 @@ export function ScheduleEditor({
                   onChangeText={(t) => {
                     setHourText(t);
                     const parsed = Number.parseInt(t, 10);
-                    if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 23) emit({ hour: parsed });
+                    if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 23)
+                      emit({ hour: parsed });
                   }}
                   keyboardType="number-pad"
                   error={hourText !== '' && !hourValid}
@@ -285,7 +291,8 @@ export function ScheduleEditor({
                   onChangeText={(t) => {
                     setMinuteText(t);
                     const parsed = Number.parseInt(t, 10);
-                    if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 59) emit({ minute: parsed });
+                    if (Number.isInteger(parsed) && parsed >= 0 && parsed <= 59)
+                      emit({ minute: parsed });
                   }}
                   keyboardType="number-pad"
                   error={minuteText !== '' && !minuteValid}
@@ -302,8 +309,8 @@ export function ScheduleEditor({
               marginTop={12}
               testID="backup-schedule-timezone"
             >
-              Times are in {draft.timeZone}. This stays with the backup, so travelling does not
-              move it.
+              Times are in {draft.timeZone}. This stays with the backup, so travelling does not move
+              it.
             </Text>
           </>
         )}

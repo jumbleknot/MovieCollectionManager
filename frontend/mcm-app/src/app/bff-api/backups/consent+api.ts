@@ -20,11 +20,7 @@
  */
 import * as offlineToken from '@/bff-server/backup-offline-token';
 import * as jobStore from '@/bff-server/backup-job-store';
-import {
-  withBackupRoute,
-  json,
-  problem,
-} from '@/bff-server/backup-route-support';
+import { withBackupRoute, json, problem } from '@/bff-server/backup-route-support';
 import { securityHeaders } from '@/bff-server/security-headers';
 import { setBackupConsentRequest, takeBackupConsentRequest } from '@/bff-server/cache-service';
 import { logger } from '@/bff-server/logger';
@@ -68,9 +64,8 @@ export async function GET(req: Request): Promise<Response> {
 }
 
 async function startConsent(userId: string, redirectUri: string): Promise<Response> {
-  const { authorizationUrl, state, codeVerifier } = await offlineToken.buildConsentRequest(
-    redirectUri,
-  );
+  const { authorizationUrl, state, codeVerifier } =
+    await offlineToken.buildConsentRequest(redirectUri);
   // The redirect URI is stashed WITH the verifier: the exchange must present the identical
   // value the authorize request used, and recomputing it on the callback would silently differ
   // if the two legs ever arrived on different origins.
@@ -97,7 +92,11 @@ async function completeConsentCallback(
   // CSRF on the callback: a `state` that does not match the one this user started with means
   // the code did not come from their round trip. Single-use above, compared here.
   if (url.searchParams.get('state') !== pending.state) {
-    return problem('That consent request did not match', 400, 'Start again from the schedule settings.');
+    return problem(
+      'That consent request did not match',
+      400,
+      'Start again from the schedule settings.',
+    );
   }
 
   await offlineToken.completeConsent(

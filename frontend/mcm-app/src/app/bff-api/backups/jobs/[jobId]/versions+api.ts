@@ -17,7 +17,9 @@ type Params = { jobId: string };
 export async function GET(req: Request, { jobId }: Params): Promise<Response> {
   return withBackupRoute(req, 'backup_version_list', async ({ userId }) => {
     if (!(await jobStore.getJob(userId, jobId))) return notFound();
-    const job = (await (await getBackupJobsCollection()).findOne({ _id: jobId, userId })) as BackupJob;
+    const job = (await (
+      await getBackupJobsCollection()
+    ).findOne({ _id: jobId, userId })) as BackupJob;
     return json(await listBackupVersions(userId, job));
   });
 }

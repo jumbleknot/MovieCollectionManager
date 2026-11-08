@@ -8,7 +8,17 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { useTheme } from '@tamagui/core';
-import { Card, CardHeader, CardContent, CardActions, TextField, Chip, FilledButton, TextButton, Text } from '@mcm/design-system';
+import {
+  Card,
+  CardHeader,
+  CardContent,
+  CardActions,
+  TextField,
+  Chip,
+  FilledButton,
+  TextButton,
+  Text,
+} from '@mcm/design-system';
 
 import type { BackupDestinationView } from '@/types/backups';
 import type { JobDraft, JobView } from '@/hooks/use-backup-jobs';
@@ -32,20 +42,28 @@ export function JobForm({
 }: JobFormProps): React.JSX.Element {
   const theme = useTheme();
   const [label, setLabel] = useState(existing?.label ?? '');
-  const [destinationId, setDestinationId] = useState(existing?.destinationId ?? destinations[0]?.id ?? '');
+  const [destinationId, setDestinationId] = useState(
+    existing?.destinationId ?? destinations[0]?.id ?? '',
+  );
   const [selected, setSelected] = useState<string[]>(existing?.collectionIds ?? []);
   const [keepLast, setKeepLast] = useState(String(existing?.keepLast ?? 7));
 
   const keepLastNumber = Number.parseInt(keepLast, 10);
-  const keepLastValid = Number.isInteger(keepLastNumber) && keepLastNumber >= 1 && keepLastNumber <= 365;
+  const keepLastValid =
+    Number.isInteger(keepLastNumber) && keepLastNumber >= 1 && keepLastNumber <= 365;
   const canSubmit = label.trim() !== '' && destinationId !== '' && keepLastValid;
 
   const toggle = (id: string) =>
-    setSelected((current) => (current.includes(id) ? current.filter((c) => c !== id) : [...current, id]));
+    setSelected((current) =>
+      current.includes(id) ? current.filter((c) => c !== id) : [...current, id],
+    );
 
   return (
     <Card testID="backup-job-form">
-      <CardHeader title={existing ? 'Edit backup' : 'Set up a backup'} subtitle="What to back up, and where" />
+      <CardHeader
+        title={existing ? 'Edit backup' : 'Set up a backup'}
+        subtitle="What to back up, and where"
+      />
       <CardContent>
         <TextField
           label="Name"

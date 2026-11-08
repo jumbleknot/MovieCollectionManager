@@ -56,7 +56,9 @@ export function DestinationForm({
   const [basePath, setBasePath] = useState(existing?.basePath ?? 'mcm-backups');
   const [bucket, setBucket] = useState((existing as { bucket?: string })?.bucket ?? '');
   const [region, setRegion] = useState((existing as { region?: string })?.region ?? 'us-east-1');
-  const [accessKeyId, setAccessKeyId] = useState((existing as { accessKeyId?: string })?.accessKeyId ?? '');
+  const [accessKeyId, setAccessKeyId] = useState(
+    (existing as { accessKeyId?: string })?.accessKeyId ?? '',
+  );
   const [username, setUsername] = useState((existing as { username?: string })?.username ?? '');
   // Always starts empty, including on edit. See the note at the top of this file.
   const [secret, setSecret] = useState('');
@@ -184,7 +186,10 @@ export function DestinationForm({
 
         {testResult ? (
           <View style={styles.result}>
-            <Banner tone={testResult.ok ? 'success' : 'error'} testID="backup-destination-test-result">
+            <Banner
+              tone={testResult.ok ? 'success' : 'error'}
+              testID="backup-destination-test-result"
+            >
               {testResult.ok
                 ? 'Reached that destination and confirmed it can be written to.'
                 : testResult.reason}
@@ -193,7 +198,12 @@ export function DestinationForm({
         ) : null}
       </CardContent>
       <CardActions>
-        <TextButton label="Cancel" onPress={onCancel} disabled={busy} testID="backup-destination-cancel" />
+        <TextButton
+          label="Cancel"
+          onPress={onCancel}
+          disabled={busy}
+          testID="backup-destination-cancel"
+        />
         <OutlinedButton
           label="Test"
           onPress={() => onTest(draft())}
