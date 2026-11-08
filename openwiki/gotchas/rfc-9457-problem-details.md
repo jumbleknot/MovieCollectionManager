@@ -1,87 +1,12 @@
 ---
 type: Gotcha
 title: mc-service errors are RFC 9457 Problem Details, never a stack trace
-description: mc-service maps every DomainError to an application/problem+json RFC 9457 body via problem_response(), with a non-resolvable .example type URI and no panic or backtrace path, plus the error paths that bypass it — require_app_role's 403 and the auth layer's 401, which since axum-keycloak-auth 0.8.4 also covers a credential that is not a JWT — and the problem media type the BFF loses on the hop to a client.
+description: mc-service maps every DomainError to an application/problem+json RFC 9457 body via problem_response(), with a non-resolvable .example type URI and no panic or backtrace path, plus the error paths that bypass it — axum's own extractor rejections, require_app_role's 403 and the auth layer's 401, which since axum-keycloak-auth 0.8.4 also covers a credential that is not a JWT — and the problem media type the BFF loses on the hop to a client.
 resource: backend/mc-service/src/api/middleware/error_handler.rs
 tags: [mc-service, rust, axum, error-handling, api, rfc-9457, bff]
-sources:
-  - id: openwiki-source-bff475d8fa855e3592cfedc2
-    resource: repo://.specify/memory/constitution.md
-  - id: openwiki-source-e2e0cc10343e1c15759e3667
-    resource: repo://api-specs/mc-service-api.yaml
-  - id: openwiki-source-d54b05966a54dbfbb9eb63bc
-    resource: repo://backend/mc-service/Cargo.toml
-  - id: openwiki-source-b6252ff5a95766690893a6aa
-    resource: repo://backend/mc-service/src/adapters/mongodb/collection_repository.rs
-  - id: openwiki-source-b5925b87f787aa6f7bfee515
-    resource: repo://backend/mc-service/src/adapters/mongodb/movie_repository.rs
-  - id: openwiki-source-4cc090993970bb2253a628ba
-    resource: repo://backend/mc-service/src/api/middleware/auth.rs
-  - id: openwiki-source-ab390bc7debabac317c9e258
-    resource: repo://backend/mc-service/src/api/middleware/error_handler.rs
-  - id: openwiki-source-4ed96763667f13cac6dcc6ce
-    resource: repo://backend/mc-service/src/api/middleware/logging.rs
-  - id: openwiki-source-c24ab349f92ee5be03f5048a
-    resource: repo://backend/mc-service/src/application/access_control.rs
-  - id: openwiki-source-e7c775a958bbcf3eef93d65c
-    resource: repo://backend/mc-service/src/domain/errors.rs
-  - id: openwiki-source-d37d3bb410b631422ca1e9c9
-    resource: repo://backend/mc-service/tests/integration/collections/http_authz_test.rs
-  - id: openwiki-source-32ddd1180803ccc420fbab88
-    resource: repo://backend/mc-service/tests/integration/movies/movie_metadata_test.rs
-  - id: openwiki-source-ab4d7d9de411f0448db5e3ad
-    resource: repo://frontend/mcm-app/src/app/bff-api/admin/settings%2Bapi.ts
-  - id: openwiki-source-805a41325e924fb1df7abf14
-    resource: repo://frontend/mcm-app/src/app/bff-api/agent/config/index%2Bapi.ts
-  - id: openwiki-source-a5f54bb9024995402d7e1da9
-    resource: repo://frontend/mcm-app/src/app/bff-api/agent/config/test%2Bapi.ts
-  - id: openwiki-source-04ddeebeb466c7a075e05fbf
-    resource: repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts
-  - id: openwiki-source-3962f527ba083cef06c1e6a6
-    resource: repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts
-  - id: openwiki-source-9d87a8f088bd859a50175559
-    resource: repo://frontend/mcm-app/src/app/bff-api/auth/verify-email%2Bapi.ts
-  - id: openwiki-source-a344c8ab57b1d157819a0fd2
-    resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
-  - id: openwiki-source-a07d6f15a4a3776b6f310564
-    resource: repo://frontend/mcm-app/src/app/bff-api/backups/destinations/index%2Bapi.ts
-  - id: openwiki-source-d9ae920d4c3436496e3ea420
-    resource: repo://frontend/mcm-app/src/app/bff-api/backups/jobs/%5BjobId%5D/restore%2Bapi.ts
-  - id: openwiki-source-1f97e5240572ea9ecae44ac5
-    resource: repo://frontend/mcm-app/src/app/bff-api/backups/tick%2Bapi.ts
-  - id: openwiki-source-74f39153b978241c50c7addd
-    resource: repo://frontend/mcm-app/src/bff-server/account-route-support.ts
-  - id: openwiki-source-0476c5058778e33745a9b2c2
-    resource: repo://frontend/mcm-app/src/bff-server/backup-route-support.ts
-  - id: openwiki-source-2dee841e6c78f22b5fdaa6fb
-    resource: repo://frontend/mcm-app/src/bff-server/mc-api-error.ts
-  - id: openwiki-source-c786c5a1c827d520806eec6b
-    resource: repo://frontend/mcm-app/src/bff-server/security-headers.ts
-  - id: openwiki-source-442db89b066101672cb08c70
-    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/mc-api-error.test.ts
-  - id: openwiki-source-ef24b6b5e3c8860863d47d11
-    resource: repo://frontend/mcm-app/src/hooks/backup-error-message.ts
-  - id: openwiki-source-9f5cd019c7d352918b45965b
-    resource: repo://frontend/mcm-app/src/hooks/use-movies.ts
-  - id: openwiki-source-2bbbece9f7d33db6a5983a55
-    resource: repo://frontend/mcm-app/src/types/errors.ts
-  - id: openwiki-source-4c6b12521b6244abd725b6ac
-    resource: repo://frontend/mcm-app/src/utils/errors.ts
-  - id: openwiki-source-0fb6c962529d8642ba15acb9
-    resource: repo://specs/013-post-agent-enhancements/contracts/bff-movies-count.md
-  - id: openwiki-source-8d4741ebc7bb90623f915acc
-    resource: repo://specs/046-authenticated-authz-tests/contracts/authenticated-http-authorization.md
-  - id: openwiki-source-763b090afb3624a565f133dc
-    resource: repo://specs/073-scheduled-backups/contracts/bff-backups-api.yaml
-  - id: openwiki-source-be32653de3b385037084c940
-    resource: repo://specs/076-account-deletion/contracts/bff-api.md
-  - id: openwiki-source-2ffebe6972c17fbcc2a83423
-    resource: repo://specs/081-major-dependency-upgrades/research.md
-  - id: openwiki-source-a806df9808f5972f05b31a55
-    resource: repo://specs/091-keycloak-auth-084-test/spec.md
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T05:05:27.957Z
+    at: 2026-11-08T02:21:41.463Z
 ---
 
 # mc-service errors are RFC 9457 Problem Details, never a stack trace
@@ -102,7 +27,9 @@ flowchart TD
     Auth -->|"no credential, or one it cannot decode or validate"| Lib401["401 body produced by axum-keycloak-auth"]
     Auth -->|"valid JWT"| Role["require_app_role checks mc-user or mc-admin"]
     Role -->|"no app role"| Role403["403 as application/json, httpstatuses.io type URI"]
-    Role -->|"role present"| Handler["Handler runs the use case"]
+    Role -->|"role present"| Extract["axum extractors parse body and query"]
+    Extract -->|"malformed body or query params"| Reject["axum rejection body, no problem members"]
+    Extract -->|"parsed"| Handler["Handler runs the use case"]
     Handler -->|"Ok"| Success["Success JSON"]
     Handler -->|"Err carrying a DomainError"| Problem["domain_error_to_response, then problem_response"]
     Problem --> Body["application/problem+json with type, title, status, detail"]
@@ -140,6 +67,26 @@ Which of mc-service's error paths produce a `problem+json` body, and which do no
   refusal body is asserted against the **whole** body string for `panicked`, `backtrace`, `src/`,
   `.rs:`, and driver error text such as `mongodb::` / `WriteError` / `Kind::` — a leak can arrive in
   a field the DTO does not declare.
+- **Axum's own extractor rejections never reach `problem_response()`.** Handlers take their inputs as
+  `Json(dto)` and `Query(params)` (`api/collections/create.rs`, `api/movies/create.rs`,
+  `api/movies/list.rs`), so a request the extractor cannot turn into the declared types is refused
+  **before the handler body runs** — a body that is valid JSON but the wrong shape (a missing required
+  field, a wrong type) is axum's own `422`, a syntactically invalid body its `400`, a missing or wrong
+  `Content-Type` its `415`, and query parameters that fail to deserialize its `400`. Those responses
+  come from axum's rejection types rather than from `problem_response()`: the body is axum's text, and
+  no layer in this repository rewrites it, so neither the `.example` namespace nor the `type` /
+  `title` / `detail` members appear. The router installs no rejection mapper (`api/router.rs` layers
+  only `auth_layer`, `require_app_role`, the Prometheus extension and the logging middleware).
+  This matters because
+  [`api-specs/mc-service-api.yaml`](../../api-specs/mc-service-api.yaml) declares
+  `application/problem+json` for its `BadRequest`, `Unauthorized`, `Forbidden`, `NotFound` and
+  `Conflict` responses **and declares no `422` at all**: a malformed or wrongly-typed request body is a
+  *different* failure from a domain validation failure even when both answer `4xx`, the `422` has no
+  schema in the contract, and a client or contract test that assumes a problem document on every `4xx`
+  will fail to parse it. The `422` is corroborated from the other side too: `docs/runbooks/agent-layer.md`
+  records that the agent's movie payload sends `rated` as a present key precisely because
+  `CreateMovieDto` "422s an omission". No test in the suite covers this path — the `400 INVALID_INPUT`
+  assertions call the command handlers directly, not over HTTP.
 - **The error-code string is the stable machine-readable identifier, not `title` or `detail`.**
   Clients and tests match on the `type` URI's trailing segment: `COLLECTION_NOT_FOUND`,
   `MOVIE_NOT_FOUND`, `DUPLICATE_COLLECTION_NAME`, `DUPLICATE_MOVIE`, `INVALID_INPUT`,
@@ -282,11 +229,15 @@ the clearest case: every branch funnels through its local `extractError()` into
 `getUserMessage()` rather than exposing anything upstream.) The generic `getErrorMessage()` in
 `src/utils/errors.ts` is built for exactly that vocabulary: it reads a `code` member and maps it
 through `AUTH_ERROR_MESSAGES`, so a problem-shaped refusal (`title`/`detail` with no `code`) collapses
-to "An unexpected error occurred. Please try again." Two call sites compensate by reading the problem
-members directly — `extractErrorMessage()` in `src/hooks/use-movies.ts` and
-`backupErrorMessage()` in `src/hooks/backup-error-message.ts`, both preferring `detail` then
-`title` — and the latter's comment records that this general gap was left for its own item rather
-than widened inside the auth error mapper.
+to "An unexpected error occurred. Please try again." Several call sites therefore read the problem
+members directly instead of going through it — `extractErrorMessage()` in `src/hooks/use-movies.ts`
+(`detail`, then `title`, then `message`), `backupErrorMessage()` in
+`src/hooks/backup-error-message.ts` (`detail` then `title`, falling back to `getErrorMessage`), the
+upload catch in `src/hooks/use-spreadsheet-import.ts` (`detail`), `failureReason()` in
+`src/bff-server/backup-restore-writer.ts` (`title`, then `mc-service answered HTTP {status}`), and
+`test()` in `src/hooks/use-assistant-config.tsx` (`title`) — and `backupErrorMessage`'s comment
+records that the general gap was left for its own item rather than widened inside the auth error
+mapper.
 
 See [mc-service](../projects/mc-service.md) for the Clean Architecture layering that produces
 `DomainError` in the application/domain layers before this API-layer handler ever sees it, and

@@ -1,9 +1,9 @@
 ---
 type: Gotcha
 title: Expo Router server export and agent-transport traps
-description: Four related runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing import.meta.url registry, the express 5 catch-all and static-serving behaviours in server.js, the absolute-URL rewrite plus TRUSTED_PROXY-gated trust proxy that let the expo-server adapter see the public scheme behind the TLS-terminating proxy, and the CopilotKit React Native streaming-fetch path that bypasses the axios token-refresh interceptor.
+description: Four related runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing import.meta.url registry, the express 5 catch-all and static-serving behaviours in server.js, the absolute-URL rewrite plus TRUSTED_PROXY-gated trust proxy that let the expo-server adapter see the public scheme behind the TLS-terminating proxy, and the CopilotKit React Native streaming-fetch path that bypasses the axios token-refresh interceptor — plus the Jest environment override that silently broke both hosting suites.
 resource: frontend/mcm-app/server.js
-tags: [expo-router, react-native, copilotkit, express, transport, frontend]
+tags: [expo-router, react-native, copilotkit, express, transport, jest, frontend]
 sources:
   - id: openwiki-source-f8d87cfe0689163c27061841
     resource: repo://docs/runbooks/e2e-testing.md
@@ -82,7 +82,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-06T06:42:06.997Z
+    at: 2026-11-08T02:21:41.463Z
 ---
 
 # Expo Router server export and agent-transport traps
@@ -94,10 +94,11 @@ static assets. It runs *outside* the Metro bundle, so it cannot import anything 
 trap below follows from that boundary.
 
 Feature 087 moved this file off the unmaintained `@expo/server` package: `expo-server` is now a
-direct dependency of the package and one of the two prune roots the BFF image's dependency closure
-is walked from (`STATIC_ROOTS = ['express', 'expo-server']`), and `@expo/server` appears in no
-manifest, prune root or test stub. The adapter option `mode` is gone with it — the constructor now
-takes `{ build, isDevelopment? }`. Any surviving mention of `@expo/server` is history, and reading
+direct dependency of the package (`~58.0.6`, pinned to the version `expo-router` already resolves)
+and one of the two required prune roots the BFF image's dependency closure is walked from
+(`STATIC_ROOTS = ['express', 'expo-server']`), and `@expo/server` appears in no manifest, prune root
+or test stub. The adapter option `mode` is gone with it — the constructor now takes
+`{ build, isDevelopment? }`. Any surviving mention of `@expo/server` is history, and reading
 it as the current package name will send you to the wrong source.
 
 Four traps live here, discovered the hard way (a hang, a silent 404 regression, a Keycloak
@@ -107,7 +108,9 @@ missing `import.meta.url` registry, the express 5 behaviours that changed under 
 the public-scheme fix behind the TLS-terminating proxy (which needs *two* halves — a `trust proxy`
 setting and an absolute-URL rewrite), and the CopilotKit React Native streaming-fetch path that
 bypasses the app's axios token-refresh interceptor, so the agent run's 401 recovery had to be
-reimplemented at the `fetch` level.
+reimplemented at the `fetch` level. A fifth, harness-shaped one sits alongside them: both suites
+that boot this file in a child process must not carry a `@jest-environment node` override, because
+that is what made them fail under Jest 30.4 rather than anything in `server.js`.
 
 ## `import.meta.url` crashes the exported server bundle
 
@@ -176,7 +179,8 @@ reads like a stylistic choice rather than a compatibility fix.
   fallback font.
 
 - **`tests/unit/bff-server-adapter.test.ts` is the pin for all three, and one of only two suites
-  that exercise this layer at all.** It copies the real `server.js` and `web-security-headers.js`
+  below the web E2E tier that exercise this layer at all** (the web E2E run targets the dev-container
+  BFF, which *is* the real `server.js`). It copies the real `server.js` and `web-security-headers.js`
   into a temp directory next to a fixture `dist/client`, then boots it in a child process with only
   `expo-server/adapter/express` replaced by a `node -r` preload
   (`tests/unit/fixtures/expo-adapter-stub.cjs`) whose stub handler echoes what express delivered to
@@ -191,6 +195,29 @@ reads like a stylistic choice rather than a compatibility fix.
   other test would catch it either: `tests/e2e/web/font-fallback.spec.ts` aborts every font request
   on purpose and asserts the app still renders on the system fallback, so it passes whether or not
   the real fonts are servable.
+
+- **The same suite is also the pin for the header middleware**, which is the one place those three
+  response classes are proven equal: two `app.use` layers above the static mount and the catch-all
+  stamp the `X-BFF-Source` request-path marker (from the `BFF_SOURCE` env var, so E2E can prove the
+  answer came from this container and not from Metro) plus `X-Frame-Options`, `X-Content-Type-Options`
+  and `Referrer-Policy` on every response — the SSR page, a static asset, a `/bff-api` route and even
+  a `400` rejection — while the web CSP is path-scoped to non-`/bff-api` requests so the API keeps its
+  strict `default-src 'none'` handler CSP as the only CSP present, and `X-Powered-By` is disabled at
+  boot so it is never sent. The assertions run against the fixture Keycloak origin injected through
+  `EXPO_PUBLIC_KEYCLOAK_URL`, so the CSP's `connect-src` is proven to come from env rather than being
+  hard-coded.
+
+- **Neither suite may carry a `@jest-environment node` docblock, and the reason is invisible from
+  either file.** Since Jest 30.4, `resetModules()` calls `clearMocksOnScope(global)`, which reads
+  every enumerable global; Expo installs `fetch`, `structuredClone`, `URL` and friends as getters
+  that `require()` their implementation on first read, and Jest refuses that require outside a test.
+  `jest-expo`'s environment (a `jest-environment-node` subclass) patches `clearMocksOnScope` to skip
+  accessor properties, so the override was what broke them: both suites failed with `You are trying
+  to require a file outside of the scope of the test code`, `Tests: 0 total`, and an empty probe
+  failed identically — a confusing error that points at Expo rather than at the docblock. They need
+  only Node built-ins and a child process, so the preset's environment serves them; feature 087
+  removed the override and left a note in each file so it is not added back. `globalsCleanup: off`
+  does not help — that is a different mechanism.
 
 ## The public-scheme trap in the same `server.js`
 
@@ -235,9 +262,13 @@ see.*
   `new URL(req.url).origin` (the backup consent callback and the account-deletion re-authentication
   callback, feature 076) sent Keycloak an unregistered `http://` redirect_uri. Keycloak refused the
   authorization request outright with `Invalid parameter: redirect_uri` (measured in production
-  2026-10-25, item 843). CI and dev never saw it, because there the BFF serves HTTPS itself on
-  `:8443` — which is why this is pinned by a unit suite that boots the real `server.js` rather than
-  by the web E2E run. The measured record is
+  2026-10-25, item 843). The realm data is the reason it could only ever appear in production:
+  `prod-realm.json` registers the callback only in its `https://` form
+  (`https://mcm.${BASE_DOMAIN}/bff-api/backups/consent`, and the matching `/bff-api/account/delete`),
+  while the dev and CI realms additionally carry `http://localhost:8081` and `http://localhost:8082`
+  variants — so the same defect is silently harmless on every local target, and the secure target
+  (`https://localhost:8443`) is HTTPS at the edge anyway. That is why this is pinned by a unit suite
+  that boots the real `server.js` rather than by the web E2E run. The measured record is
   [spec 083 T010](../../specs/083-backup-consent-session-isolation/tasks.md#t010--the-bff-must-see-the-public-scheme-behind-the-tls-terminating-proxy-item-843-added-2026-10-25);
   the rewrite and its contract are in
   [spec 087 research R1](../../specs/087-expo-sdk-58/research.md) and
@@ -377,13 +408,14 @@ being unreachable, is deliberately neither of them.*
   re-establish, and retries **exactly once**. The retry is justified in the source comment by a
   dropped connection aborting the upstream gateway turn through the adapter's `AbortController`,
   making the cut turn idempotent-on-failure — but treat that justification as asserted rather than
-  measured: feature 087's research records that the express entry does not pass the abort `signal`
-  the plain `http` entry does, and that the new adapter's `respond` now guards `writableEnded` /
-  `destroyed`, so whether this failure still surfaces in the same shape is an open reading to take
-  from current counts rather than assume. What is not open is the bound: one retry, in code and in
-  tests. Non-agent throws propagate unchanged, and a real 4xx returns a `Response` (never throws), so
-  it is never retried. This is the one behavior on this page whose trigger is a *thrown* error rather
-  than a status code — do not "simplify" it into the 401 branch.
+  measured. Feature 087's research sharpens why: the express entry does **not** pass the abort
+  `signal` that the plain `http` entry does (measured from the installed source), so the abort the
+  adapter constructs never reaches the express response pipeline, and the new `respond` also guards
+  `writableEnded` / `destroyed` — so whether this failure still surfaces in the same shape is an open
+  reading to take from current counts rather than assume. What is not open is the bound: one retry,
+  in code and in tests. Non-agent throws propagate unchanged, and a real 4xx returns a `Response`
+  (never throws), so it is never retried. This is the one behavior on this page whose trigger is a
+  *thrown* error rather than a status code — do not "simplify" it into the 401 branch.
 
 - **Neither recovery loops.** A still-401 response after a successful refresh is returned as-is
   (one retry maximum), a failed refresh returns the original 401 with no retry, and a second

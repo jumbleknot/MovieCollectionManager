@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:65e915c5de6ba8b424e29d3154490f568e2dfb98f2fd5e31f6396cccd1f71023",
+  "pageVersion": "sha256:68b4526d66b4ba88a60b22f24388d943fe0801aa247ed4457cf2436be59567dd",
   "claims": [
     {
       "id": "claim_165a779429c54154b88d58468022d8bc",
@@ -16,7 +16,7 @@
         },
         {
           "resource": "repo://packages/design-system/package.json",
-          "version": "repo-file-v1:sha256:e06e2a8bcb877057af58a3b3a3123f14867fd0e85f13ab4350f5bb757f6b8fd3"
+          "version": "repo-file-v1:sha256:5e44f095a9426d843ddafdff5f44c751569051c0fa5ac0a81c434709d19d52bf"
         }
       ]
     },
@@ -116,7 +116,7 @@
       "evidence": [
         {
           "resource": "repo://packages/design-system/package.json",
-          "version": "repo-file-v1:sha256:e06e2a8bcb877057af58a3b3a3123f14867fd0e85f13ab4350f5bb757f6b8fd3"
+          "version": "repo-file-v1:sha256:5e44f095a9426d843ddafdff5f44c751569051c0fa5ac0a81c434709d19d52bf"
         },
         {
           "resource": "repo://packages/design-system/tamagui.config.ts",
@@ -289,7 +289,7 @@
       "statement": "The Tamagui lockstep guard also bounds any Tamagui peer range to the installed major (`>=3.0.0 <4`), requires every `@tamagui/*` entry in the lock to sit at the manifests' one version, and asserts that every Tamagui update resolves to the single `tamagui` Renovate group on patch, minor and major alike. That group rule carries `rangeStrategy: pin` and is deliberately ordered after the broad `js patch/minor` and `js majors` rules, because the last matching `groupName` wins — placed earlier, those pull part of the set back onto its own branch.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L804-L824",
+          "resource": "repo://renovate.json#L805-L825",
           "version": "repo-lines-v1:sha256:1ea744bdbdc8ce1b1bd7314534e29d9db9461d1e82d1245c040a86d56e241b00:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImZiMGVkZTQ2ZWE3MTkyYWEzNDE4ZTk2MzAyYWEyNDRkYjY0NDIyNjQ2Y2M1ZDBkYzAyNjFlNmQ1YWNiNmIyNDQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJmNTZjNDQ3YWRlNDhmNzkwNTBhODhlYTA0YzIyMjg5MzRiYjVkZjgwZWFkYzgxNmFmYWI1ZTFiOWViZjliODUifQ"
         },
         {
@@ -359,7 +359,7 @@
       "statement": "The design system's Jest resolver `jest/tamagui-cjs-resolver.js` is wired into the app's own Jest config as well (`frontend/mcm-app/package.json` → `jest.resolver` → `<rootDir>/../../packages/design-system/jest/tamagui-cjs-resolver.js`), so both suites load Tamagui 3 through the same CJS redirect; the resolver's own header names both configs as its callers. The package's `testMatch` was widened from `components/**` to `<rootDir>/**/*.test.{ts,tsx}` because a `tokens/` test had been written, committed and never executed, reporting green while testing nothing.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L87-L92",
+          "resource": "repo://frontend/mcm-app/package.json#L88-L93",
           "version": "repo-lines-v1:sha256:84fd2a88826f19c2476e1f735f2db499a4e849418e5942f47be6cf496e4ae51c:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTZiNGExMzU4NDNkMTI2OWI0MWFkYjc5YTNhZmJmNWY2ZGYwNTdhOGU5Y2Q0NTE0ZGQxYzNhMGM5NTViYzQzNSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTFiMTYwNTM4MzBjZDgxNGRkNmM1NWNjZDBhNTE0ZDM4ZDNkYzI3NWZiN2Q0N2RiY2VjYmYyMjQxZDA4MTNjNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjZhOWUwYmRkM2JhZTgxZGEwYWYxMzQ5NDgwMTZkNzk4ODU1NzVhM2VkNDA3MzIyMDNjNTg0OWQ1YjU0MDk4OCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNTc1YWUwOGM1ZWFjMDJkY2IwYWI2OGM4M2UzZWU2YmQ3YTg0OGQxODUwMjBlOGQ0Yjk0Nzc5ZThhM2E3YmJlNiJ9"
         },
         {
@@ -378,7 +378,7 @@
       "evidence": [
         {
           "resource": "repo://packages/design-system/package.json",
-          "version": "repo-file-v1:sha256:e06e2a8bcb877057af58a3b3a3123f14867fd0e85f13ab4350f5bb757f6b8fd3"
+          "version": "repo-file-v1:sha256:5e44f095a9426d843ddafdff5f44c751569051c0fa5ac0a81c434709d19d52bf"
         },
         {
           "resource": "repo://renovate.json#L500-L523",
@@ -428,19 +428,27 @@
     },
     {
       "id": "claim_09f8333a5fba48ff8301b97a61abc121",
-      "statement": "The toolchain majors this package shares with the app are held by `dependencyDashboardApproval` rather than by a version ceiling, each in its own group so one dashboard tick releases one blocker: `jest` with `@types/jest` (pinned by jest-expo's jest-29 family at SDK 57, possible at SDK 58) and `typescript` (pinned by typescript-eslint's compiler peer range), both of which name `packages/design-system/package.json` as a declaring manifest. Patch and minor updates are deliberately not matched, so they stay ungated in `js patch/minor`; the `@babel/core`/`@babel/runtime` and `@react-native-async-storage/async-storage` holds cover only the app manifest.",
+      "statement": "The only toolchain major this package still shares a hold with the app is `typescript`, pinned by typescript-eslint's compiler peer range: its major updates carry `dependencyDashboardApproval` and sit in a group of their own so one dashboard tick releases one blocker, and `packages/design-system/package.json` is one of its declaring manifests. Patch and minor updates are deliberately not matched, so they stay ungated in `js patch/minor`; the `@babel/core`/`@babel/runtime` and `@react-native-async-storage/async-storage` holds cover only the app manifest.",
       "evidence": [
         {
-          "resource": "repo://renovate.json#L905-L929",
-          "version": "repo-lines-v1:sha256:f172070f11ccd667d7ad6e331d457440d0eb385fb983980f13e54843ee7fea70:eyJzZWxlY3RlZExpbmVDb3VudCI6MjUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg5MjIzNTRlNzBjMWZjOTMyMDZhZGY5OTUyYTEyNDI4NmZkMTdjOTQ2ZGEyYWU3ZDFmYjUyM2FiNThkODY3MjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY0ZTYzMGUzNjk2ZDRkOWI3NDYxMDcwMjZmYWFhYjk2NWU0N2QxODg4NzNhNjllODcxYWY1ODU4N2U3MzA2YTMifQ"
+          "resource": "repo://packages/design-system/package.json#L41-L41",
+          "version": "repo-lines-v1:sha256:30f25f681b18c9b63be267b238171d9e8b38aedceae338581ac0d1148dc87840:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBmMjVmNjgxYjE4YzliNjNiZTI2N2IyMzgxNzFkOWU4YjM4YWVkY2VhZTMzODU4MWFjMGQxMTQ4ZGM4Nzg0MCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMzBmMjVmNjgxYjE4YzliNjNiZTI2N2IyMzgxNzFkOWU4YjM4YWVkY2VhZTMzODU4MWFjMGQxMTQ4ZGM4Nzg0MCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNTdhYjY0NDRmZjFkNmVkODkwNzhlZDU1ZDY1MDdhZjk3YzUxMjE1MWFjMWFmZDg2NjJiOGJlMWVjNDlkZmYwMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGYyMjVmYjk2YTA2NTgwZWYwMDJiMDljNGQwYmU2ODZiODY4OGZhNzY2ZmY1MTRlYWJjZTY5NGE5ZWMxY2RmMSJ9"
         },
         {
-          "resource": "repo://renovate.json#L949-L966",
-          "version": "repo-lines-v1:sha256:5f5e577020fab524e19cf0b3a67f60784c5630685271fd0dc23fb197ef58b7c3:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkOGUxZjc0NGIyZDg0NWQ4Yjg0ZTViZjdjN2NkOTBlZmE0ZWEyNTU4ZDgyNjI2YjI5ZGYyMTEwOWRjMGU4OTkifQ"
+          "resource": "repo://renovate.json#L907-L924",
+          "version": "repo-lines-v1:sha256:1389b0bf4c52e7292235ea3d1fc2e187942630fccedaad5cdcfe51c76eefa1eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkOGUxZjc0NGIyZDg0NWQ4Yjg0ZTViZjdjN2NkOTBlZmE0ZWEyNTU4ZDgyNjI2YjI5ZGYyMTEwOWRjMGU4OTkifQ"
         },
         {
-          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3525-L3600",
-          "version": "repo-lines-v1:sha256:e04b436bf199df7f60ebec41d849ef54de587e71c20c28d2dc57c1828808f1c1:eyJzZWxlY3RlZExpbmVDb3VudCI6NzYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5ZDJjNjg0ZjQ4ZmNkZmNiMjJmNDhlYzQ5ZWUyMjI0YmU5NjUxMjFhMDkyNTNlYzY4MzRkYTIwZmVmYWYxZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNWI2MGQwYmZjOWQ4NDBhNWQ2ODFjZDBlMTJiZDFmOWNlY2IxY2NiMmYxYjc0OGI0MzU0MjU5NDBmZjg0NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3MTNmNjZiYzAxYjk5MTg2ZTQwZGEzNDQ0Y2M3NDYzMzUwYTA2NDE1Y2MwZjEyNDdhZWUxOGM1ZjMyYzMyMTcifQ"
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3507-L3529",
+          "version": "repo-lines-v1:sha256:0bbd0193425fa24b0e05f468055640f2637030dfe30db73ef58bbe6d7eb4d722:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImE5ZDJjNjg0ZjQ4ZmNkZmNiMjJmNDhlYzQ5ZWUyMjI0YmU5NjUxMjFhMDkyNTNlYzY4MzRkYTIwZmVmYWYxZjYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImIwMmQyYzBkNmRjNWU3NGQ5MmZhMTRiOTFkYmVhMjY0MDkwYmViMzVmZGI5MTg4ZDliMzQxMTgxZGNlOWY0Y2UiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdhNWI2MGQwYmZjOWQ4NDBhNWQ2ODFjZDBlMTJiZDFmOWNlY2IxY2NiMmYxYjc0OGI0MzU0MjU5NDBmZjg0NjUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4NDYzMGYwYmU4N2M3ZjMxMzY2OTUyNDFjNjViNzhiYTk2MDc0MTc0ZWQxYTc5Nzk2NTUwNzYxZmFhNTNkM2UifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3560-L3575",
+          "version": "repo-lines-v1:sha256:53fb414944bde498feaaa2968706af2b99f01e10f7954045b9e5afa879151eb8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjE0YzRmZjA2NDYxZmJjOWIwZmFmODM2YjEwOGJjNWUyZmRiZmU4MTA3MGRhZmZhMDhhZjM1ODEzMGQ3YTkwM2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjZiNGNlNGI3NDI1NjEzMzE5ZmQ2MWEyYjA3YjdkYTM2MGE5NmFiNmIyYzE2OTlkMWExZmNlNmJhODJkYmMxZjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY3MTNmNjZiYzAxYjk5MTg2ZTQwZGEzNDQ0Y2M3NDYzMzUwYTA2NDE1Y2MwZjEyNDdhZWUxOGM1ZjMyYzMyMTcifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3600-L3603",
+          "version": "repo-lines-v1:sha256:bc99d00ec73a8419aa4d55062fac700852aec70349b774503d7cd6377306158b:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDAzZmJlMTYwMmRmNjM2ODU4Y2YzNzhkNmY3Njg2NzJjNTVmMjIyZTJhYzYxYWVmNTkwYmVlOTVlYjg2Nzk1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWIxZWExNWEwZjdiMWQ3NzQxYzA5MmRlODAyZDM5ZmRhNDQzNGVjZjA1Zjk0MzU4YzZmMzY5Y2E5MTE2ZTIyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWU0OTM5MjgzYjA4NmU5ZDY2MTA1MTdjMDliMzQ4NmQ4N2NlZTE5MjI3OWVjMzc5NjE4ZGUzYTMzZDg1MjIzOSJ9"
         }
       ]
     },
@@ -575,10 +583,46 @@
           "version": "repo-lines-v1:sha256:6fd90b21c56dff59de149f6772cd18aab0c715af8b3552500f1b726061ae918b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhOTY1Yjc3NjU2ZjVmMmRlZDc4NTAwNzEyOGU4NWZkM2E0ODlkNTE3NDFiMmIyN2ZjOTczOTFjOTJhMjhkNjgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI4OGZkZjYwNDE2NWRlMWM3MDc0MTU4NzJkNjM5MDNiZTNhNmJmMjUwYTI5NTQyM2VhMTJmYmM4M2IxM2JkODkiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjRiMDIyN2JiZmQ2NjY5YjM0MDQ1NzMzMmRhMDYyNjJlN2UyNmEwMzY0OWFmZjIwMGZjM2RjNmRkN2ZlNjBkNGIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE4Njg1NThmODA5ODBiN2UwNDg3MGJhOGM1NmU2YzJjY2YwMjg5YzdiY2ZjOTIyNmJlMjk3ZWE2YjFhMDI1NDkifQ"
         }
       ]
+    },
+    {
+      "id": "claim_620fd081e5584d8fa129dc30c6ec61bf",
+      "statement": "The `jest` toolchain hold was lifted at Expo SDK 58, because `jest-expo` 58 depends on the jest 30 family: `jest`, `babel-jest` and `@types/jest` majors now resolve to the broad `js majors (review individually)` group with no `dependencyDashboardApproval` gate, and `scripts/__tests__/renovate-workflow.guard.test.mjs` asserts exactly that for both `frontend/mcm-app/package.json` and `packages/design-system/package.json` — a held-jest group or an approval gate reappearing fails the suite. The remaining hold descriptions in `renovate.json` still cite the lifted jest hold as their precedent.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/package.json#L32-L36",
+          "version": "repo-lines-v1:sha256:f32d683e1629ccf363d0dfe991e22bbc35634da905e2435c85b605b44f862859:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNmNkOGUyNzcyMDI0MGVmNzJjMzMwMjQzMDI5NDI2NTBhYzhiNTVhNzcyNWVhNGYzODg1YzIzYzMyNmZkY2UzMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNGRhYWY3YTUxMWYxZmZlNWQwNjRjNGI0ZGQxMTQ5N2Q3ZDNlMmFkYTE1YmNjOGUyMWE4NzY5NjVhNmRmMjY3NCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmZjZjFkMWUyYmQ1NjRkMDM4MjAxMmVlZTgwYzk3ZmI3NDM5MTliMzE4NmJjNjkwZjlmZGZlZmQxODg2YmViYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzg5NWZhOTAwMWFjY2I3Yzk0ZTNjYzVlMmM3NDA5ZTFmMDVkMDlmN2VkNWQ2NzE4ZjEyMzZhNjFiNzA2ZTM3YyJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L907-L924",
+          "version": "repo-lines-v1:sha256:1389b0bf4c52e7292235ea3d1fc2e187942630fccedaad5cdcfe51c76eefa1eb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTgsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY5Y2E4OTFiZmY3YWMxZjdjZWFhZTQwZWYwNTEwNjZiZTllZmU0N2I0ZTQyODFlODZjMzE5YmUyYzU1ZWJjZTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMGNkYjk3MmE3YmZiN2VkMjQ2ZjlmZjY3MjM4NWU1NWY0OTY4ZmMxMTA0M2RjNWI2ODRkNTFkZmEzMWRiY2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMzZmYxYjgzYTM5NzMyNTg3NWM1ZTg2N2UxNjZkZGNlMTVhMjc2YzczMTY0ODA4MzNjNTc1YjllNmYyMzdkZGEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNkOGUxZjc0NGIyZDg0NWQ4Yjg0ZTViZjdjN2NkOTBlZmE0ZWEyNTU4ZDgyNjI2YjI5ZGYyMTEwOWRjMGU4OTkifQ"
+        },
+        {
+          "resource": "repo://scripts/__tests__/renovate-workflow.guard.test.mjs#L3588-L3598",
+          "version": "repo-lines-v1:sha256:e47fbfdff7389ccfb8541802a6f11a437b36939e4321ebfdc03a5527753a9966:eyJzZWxlY3RlZExpbmVDb3VudCI6MTEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImYyODc4MDA1ODNmMTE5NzJjODc4N2ZlYTFiYTY4NDAwMDgwOGI1YjdlOWE5YjJlOTM4NjM2ZjNlZmNiZDU4MTgiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjlhMzY1YmIxNjU1NTkxZGRmZmFlNDM3MzA4MDBlOTk0Y2RjNzE1ZTVkODdhODEwYWViZTI2NWYzOTMxNGIwODkifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_b4c2a3e468fa4573af9bc5cc424a1dc3",
+      "statement": "The React version lock has to be repo-wide because `react` is also declared in `packages/design-system/package.json`'s `devDependencies` and `react-dom` is pinned by the `react-dom: 19.3.0` entry in `pnpm-workspace.yaml`'s `overrides:` — neither of which the app-scoped rule (`matchFileNames: [\"frontend/mcm-app/package.json\"]`) can reach. A split React means two physical copies and an `invalid-hook-call` at runtime, which is why the disable rule carries no `matchFileNames` scope.",
+      "evidence": [
+        {
+          "resource": "repo://packages/design-system/package.json#L27-L42",
+          "version": "repo-lines-v1:sha256:278925a8dbc9f3ef14ec01ffba0e9688aa211d27a6adcf4b66cf968bb1714730:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlkYzRkZTdlZDM1YTIzMzY0NTM5ODY0ZGFkYjkzOGI4NzIzMzM3OTE3OWQ2MjkyYjlmZjVmNjE5YTZjMTMxNjQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRkNWNkMmZiNGYzZGY4ODQ1MTUyNTViMzk1MjNmMmY4YjU0NzJiZWVhOWY1NjZmZmNhMjA0ZGI4MDI1NjEwNDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdjZTFjNjdjNDc4NGIxYzdkOTgxZGEzYmQ1NmRhYzdhZDBjOGU2ODg2Y2EzYmJmMmI1YzNlYjI3YjE2ODk0MjkiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImMxM2Y2YmVhMTJiMzRjYjA1MTE0ZWNkNGQ2ZjBkZDY4MDExMWY4NzRjZDE2ZDU1NjNiMDViYzgzYzVjMjBhYzIifQ"
+        },
+        {
+          "resource": "repo://pnpm-workspace.yaml#L81-L84",
+          "version": "repo-lines-v1:sha256:cea9d8dfb02b4e2919541bc46e12eb3d0bd9900ab5b95291ac2f0759af1068a2:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmM0NjVhNjQ2MDJkZjZjOWFmY2Y5NTcxOWY4NDZkNWU5ODA0Y2M1YjczOWYzN2JiYTVlMDNjMWYwNDVmMDQ0NiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODJiZjY5MjBjZWM2NDI1YzI1ZjNmOTgyNzBmMjg5YjY3MTU2YWQ4MDRhNGZkYThiZjI0NjRhMjExNWQxZTZjYSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDdjYjVkNzNiYzAwOWNmNmQxYTIzMTNlNDg0NmM5NTU1OTUwOWMyMjE0Mjg1ZjYwODMzYjgwZGI3OTE3MjEwMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGNhMDRjNGQ2YWE1OTA4MDkxZjMzODAzNDIzM2U0ZTYyOTFhYzQ5NTliNmJlNzg5MjFiYjAzZTMzYjdjMmY2YiJ9"
+        },
+        {
+          "resource": "repo://renovate.json#L495-L499",
+          "version": "repo-lines-v1:sha256:b99134daaff2bd376d459742a5b03941c3a4718e631c14e77ad377e1fdb7dc43:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZjljYTg5MWJmZjdhYzFmN2NlYWFlNDBlZjA1MTA2NmJlOWVmZTQ3YjRlNDI4MWU4NmMzMTliZTJjNTVlYmNlNCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYwY2RiOTcyYTdiZmI3ZWQyNDZmOWZmNjcyMzg1ZTU1ZjQ5NjhmYzExMDQzZGM1YjY4NGQ1MWRmYTMxZGJjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzQwZTdlNWZhNWY1ZTg0OGMyZGE5ZjZhMGU0ZTdjYWZmZmM3M2RlY2M2YTk1YjYzOWI4ODRjZTBlZTlkYTRkYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOTRjZDA3ZDc0ZjdjYzRlODAwYTgyMTQ3ZGJlNmE5MGE1ZGJmYWYwYzM2MTliMWU0MGU1ZWJkOTlkMTViMjkyYyJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-07T19:02:58.048Z"
+    "at": "2026-11-08T02:21:41.463Z"
   }
 }

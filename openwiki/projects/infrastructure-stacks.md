@@ -146,7 +146,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T15:45:38.591Z
+    at: 2026-11-08T02:21:41.463Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -369,7 +369,10 @@ irrelevant. `frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts` pins bo
 the real `server.js` against a minimal fixture `dist/server` (`tests/unit/fixtures/real-adapter-build`,
 one API route returning `request.url`) and asserting the four rows of the hosting contract, so
 removing the rewrite turns the `https` rows red. Before feature 087 this trap was "pinned" by a stub
-that echoed the origin it computed itself: green throughout, while production refused the callback.
+that echoed the origin it computed itself — `tests/unit/fixtures/expo-adapter-stub.cjs`, which still
+stands in for the adapter in `bff-server-adapter.test.ts` (its subject is the express layer *in front
+of* the handler) but had that `X-Test-Origin` echo deliberately removed — so the suite stayed green
+throughout, while production refused the callback.
 CI and dev never see any of it: there the client reaches the BFF over an origin the realm already
 registers — the dev-config container on `:8082` over plain HTTP, whose `http://localhost:8082` callback
 URIs are added to the `grumpyrobot` realm by

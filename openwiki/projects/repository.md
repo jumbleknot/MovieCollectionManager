@@ -1,9 +1,9 @@
 ---
 type: Reference
 title: MovieCollectionManager repository — structure and working conventions
-description: The MCM monorepo itself — its directory layout, polyglot tech stack re-derived from the manifests rather than from the README's moving tech-stack table, the toolchain and lint conventions feature 081 moved (ESLint 10 flat config, the single exact Tamagui 3 pin, pnpm/Nx exact pins), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas — the `sbx` v0.51.0 pin and its upgrade ritual, `sbx run`'s false dockerd failure, the memory bounds, and why egress enforcement lives outside the VM.
+description: The MCM monorepo itself — its directory layout, the polyglot tech stack re-derived from the declaring manifests rather than from the README's tech-stack table (which still names Expo SDK 57 while both manifests are on SDK 58 / React Native 0.88 / React 19.3), the toolchain and lint conventions features 081 and 087 moved (Expo SDK 58 with Jest 30, ESLint 10 flat config, the single exact Tamagui 3 pin, pnpm/Nx exact pins, the Gradle 9.4.1 bake, the still-held babel / TypeScript / async-storage / JDK majors), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas — the `sbx` v0.51.0 pin and its upgrade ritual, `sbx run`'s false dockerd failure, the memory bounds, and why egress enforcement lives outside the VM.
 resource: README.md
-tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding, eslint, tamagui, dependencies]
+tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding, eslint, tamagui, dependencies, expo, react-native, jest]
 sources:
   - id: openwiki-source-c765a50891cfc213a2fc94d1
     resource: repo://.devcontainer/assert-egress-governed.sh
@@ -108,7 +108,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T19:55:04.696Z
+    at: 2026-11-08T02:21:41.463Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -121,14 +121,16 @@ flows through a spec → plan → tasks artifact set before any implementation c
 
 **Re-derive the pins from the manifests, never from a README line range.** The README's tech-stack
 table sits in a section that shifts as the document is edited, so a line-range citation of it drifts
-away from the rows it was meant to name while every fact it stated stays true. The declarations
-themselves are the authority:
+away from the rows it was meant to name while every fact it stated stays true — and the table also
+**lags a landed stage**: it still lists Expo SDK 57 / React Native 0.86 / React 19.2 after feature 087
+moved the app to SDK 58 / RN 0.88 / React 19.3 in both workspace manifests and in the constitution. The
+declarations themselves are the authority:
 
 | Area | Pin | Declared in |
 |---|---|---|
-| Universal client | Expo SDK 57, React Native 0.86, React 19.2, Tamagui 3.0.18, CopilotKit 1.79 | `frontend/mcm-app/package.json`, `packages/design-system/package.json` |
+| Universal client | Expo SDK 58 (`expo ~58.0.23`, `expo-router ~58.0.30`, `expo-server ~58.0.6`), React Native 0.88.1, React 19.3.0, Tamagui 3.0.18, CopilotKit 1.79.1, Jest 30.5.2 / `jest-expo` 58.0.14, TypeScript 6.0.3 | `frontend/mcm-app/package.json`, `packages/design-system/package.json` |
 | Backend | Rust 1.98.0 channel, Axum 0.8, MongoDB / BSON 3 | `rust-toolchain.toml`, `backend/mc-service/Cargo.toml` |
-| BFF and dev-container toolchain | Node 24 | `frontend/mcm-app/Dockerfile`, `.devcontainer/toolchain.Dockerfile` |
+| BFF and dev-container toolchain | Node 24 (`node:24.22.1-alpine3.23` in the app image, `node:24-bookworm` in the toolchain image), Gradle 9.4.1 baked, JDK 17 (openjdk-17 in the toolchain image, `java-version: '17'` in CI) | `frontend/mcm-app/Dockerfile`, `.devcontainer/toolchain.Dockerfile`, `.forgejo/workflows/app-ci.yml` |
 | Package manager and task runner | pnpm 12.13.0, Nx 23.3.0 | `package.json`, `nx.json` |
 | Agent layer | Python 3.14 runtime image, `requires-python >=3.13` | `agents/movie-assistant/Dockerfile`, `agents/movie-assistant/pyproject.toml`, `agents/movie-assistant/uv.lock` |
 
@@ -189,7 +191,7 @@ mc-service`, `pnpm nx run-many --targets=test,lint`).
 
 ---
 
-## Toolchain pins, lint, and the dependency majors feature 081 moved
+## Toolchain pins, lint, and the dependency majors features 081 and 087 moved
 
 Feature 081 brings every third-party **major** the bot proposes
 ([spec](../../specs/081-major-dependency-upgrades/spec.md)) to a decided end state — upgraded, or held
@@ -245,10 +247,51 @@ artifacts.
   [the prod control-tower runbook](../../docs/runbooks/prod-control-tower.md).
 
 Stages that are **held** rather than upgraded are held with a recorded reason and a re-check rule, never
-deferred: jest and `babel-jest` 30 (unblocked by the *next* platform SDK line, not the current one),
-`@babel/core` / `@babel/runtime` 8 and `@react-native-async-storage/async-storage` 3 (bundled by the
-SDK), and `typescript` 7 (blocked by `typescript-eslint`'s parser peer range). A held major gets its own
-Renovate group behind a dashboard approval, so ticking one is a decision rather than a batch release.
+deferred, and each hold's rule carries the re-check it was decided against. Feature 087 re-read all of
+them at the SDK 58 move (2026-11-07) and lifted exactly two: the `jest` major (with `babel-jest` and
+`@types/jest` moving together, because `jest-expo` 58 depends on the jest 30 family) and the
+`test-renderer` ceiling (React is on 19.3). What remains held, each in its own Renovate group behind a
+dashboard approval so ticking one is a decision rather than a batch release:
+
+- `@babel/core` / `@babel/runtime` 8 — pinned by the Expo SDK's transpiler preset: `babel-preset-expo`
+  58.0.24 still peers `@babel/runtime ^7.20.0` and its plugin dependencies are all `^7`.
+- `@react-native-async-storage/async-storage` 3 — a native module the SDK pins: expo 58.0.23's
+  `bundledNativeModules.json` still lists 2.2.0, and a version outside it is an Android native-binary
+  mismatch.
+- `typescript` 7 — blocked by the lint parser: `typescript-eslint`'s parser peers
+  `typescript >=4.8.4 <6.1.0`, and the native port ships no in-process compiler API for the parser to
+  load.
+- `java-jdk` 17 — an Android toolchain decision rather than a CI-action one, held by a **regex**
+  ceiling (`/^17\./`) because the dep's `semver-partial` versioning coerces a `<18` range to 18.0 and
+  would admit the wrong version; `@react-native/gradle-plugin` 0.88.1 still builds with
+  `kotlin { jvmToolchain(17) }`.
+
+### What the Expo SDK 58 move changed in the repository's wiring (feature 087)
+
+Feature 087 moved the app from SDK 57 to SDK 58 in three pull requests, the first two landing on SDK 57
+so each risk was proven and revertible alone. Only what it changed about how the repository itself is
+wired belongs here; the feature's own artifacts carry the order and the evidence.
+
+- **Web output mode.** `frontend/mcm-app/app.json` sets `web.output` to `"static"` and the
+  `expo-router` plugin to `{ "apiRoutes": true, "asyncRoutes": { "web": false } }`, so pages stay
+  prerendered at build time while the API routes — the BFF — keep running in the same Node process
+  behind `server.js`. Both options are written out rather than left to defaults: on SDK 58 the literal
+  `"output": "server"` would mean per-request rendering, and the plugin with no options turns
+  `asyncRoutes.web` **on**. A page that throws while rendering now fails `expo export` with
+  `Failed to statically export route: <name>` — the intended guard, not a flaky build.
+- **Jest 30 and the native toolchain.** `jest` / `babel-jest` / `@types/jest` moved to the 30 family
+  and `test-renderer` to 1.3.1, which is what lifted those two Renovate holds. `expo-build-properties`
+  was added with `android.enableMinifyInReleaseBuilds: false` — SDK 58 defaults release shrinking
+  **on**, and turning it on is a separate change — and the dev-container image now bakes **Gradle
+  9.4.1** (`.devcontainer/toolchain.Dockerfile` `ARG GRADLE_VERSION`), the version SDK 58's wrapper
+  asks for, so an older image has its wrapper try to download 9.4.1 and fail behind the egress
+  firewall.
+- **The constitution was amended, not bypassed.** `.specify/memory/constitution.md` is at **v2.8.0**
+  (approved 2026-11-08), which advanced the frontend stack baseline to SDK 58 / RN 0.88 / React 19.3
+  and rewrote the BFF output line; the same amendment corrected a stale `node:24.14.1-alpine3.23` to
+  the `node:24.22.1-alpine3.23` all three stages of `frontend/mcm-app/Dockerfile` actually use. The
+  constitution's own Node line above it still reads `v24.14.1`, so the BFF API line and the JavaScript
+  Runtime line disagree — read the Dockerfile for what ships.
 
 ---
 
@@ -449,7 +492,7 @@ How to develop the Expo app from inside the container:
 
 - **Web** — run `pnpm start` in-container and open the forwarded `localhost:8081` in a host browser
   (ports `8081` Metro/web/dev-BFF, `8082` containerized BFF, and `8099` Keycloak are forwarded; the
-  legacy Expo `19000/19001/19006` ports are unused by SDK 57).
+  legacy Expo `19000/19001/19006` ports are unused by SDK 58).
 - **Physical device** — point Expo Go / a dev build at the in-container Metro server over LAN; if LAN
   routing to the container isn't available, use the documented **Expo tunnel fallback**
   (`pnpm start --tunnel`).

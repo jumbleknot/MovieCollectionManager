@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:fb8436bf0f520729124ca7d6bd3aacb437dae5b3c90963038d55b54d4f02a4e0",
+  "pageVersion": "sha256:5620c247c45d8d69714a510b16bf65a074f81b02c8fac2dcbbfb609bd8592ae3",
   "claims": [
     {
       "id": "claim_3366eb4f83264ce092199a4bb1295ccb",
@@ -1027,11 +1027,11 @@
       "statement": "up-agents-prod rebuilds its four agent/MCP images (agent-gateway, movie-mcp, web-api-mcp, spreadsheet-mcp) from the checkout by default and refuses --no-build when CI=true, because on a persistent runner a leftover image made the whole agent E2E gate a false green — and this is a gate path, not only a local loop: CI's agent E2E and DAST jobs both bring the stack up through `pnpm nx up-agents-prod infrastructure-as-code`. scripts/__tests__/agent-stack.guard.test.mjs pins the build default, the local --no-build opt-out, the CI refusal, and that no CI workflow deploys the stack with --no-build.",
       "evidence": [
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L1669-L1672",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L1712-L1715",
           "version": "repo-lines-v1:sha256:2293028ca887933ed7678d48b1a47a387bd3f26cebbf0703582811123b784f79:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYWEzNGE3ZTVjYjY0NDI4OGEzNTQ5M2JjYWM0NDA5N2Q5M2U1NDZkODRkZTE3N2NkMjYwNmQ5ZDZkMmUzODBkYiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZWM2YzdmYTZlZmVhNjEyZWM0YzAzMjMwZGI4MGUwODcwOWZiNDQ0Mjk3ZWFlNDNmODhkZjBjNDI0NTgxMzllMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiYWVlNTBiMGY4Y2QwMWU3M2Y2NThiNWQyNjRlYjI0NTllODUyNWMyMmJjNTRlOWM5YzYxNTc3NmE0ODRjYjliZCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODkzODExMDhjZTVmNjU2OTJhYWYwMjZiYTZkOGExMmE1NmFhMmUwMDBhYzg2MDNkYWFhZDkxMjBhMzNhYjdiOSJ9"
         },
         {
-          "resource": "repo://.forgejo/workflows/app-ci.yml#L798-L810",
+          "resource": "repo://.forgejo/workflows/app-ci.yml#L818-L830",
           "version": "repo-lines-v1:sha256:739745ed0bf91bedae23055b64af60a1b0af37edc80a304cde118e88b08725fb:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjA1YWM3YTUzMjRkYzBkODJiNTlhMmE2MDgwMmI5YzY0MDMyYmZiNzcxYjhlMThjY2RhMmYyMzQ0Yjg5Nzk2Y2UiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg2NWEzMmE3OWE0MmFkYjQ1ZmFiMjI5MDkyNDE5NmU0YzZmNjY4ZTZhMDM3NjU4YzJhYWFjNzBiNzU3ZjRhYWQiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjQwYTkyOTRlNWFjMTY1MjBiYTk1MmVjYzMxYjYyYzFkNGRmNTNmMTVhOGYwYzMzMjNiNTg3YjcxZWQwZjEwYTIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg4Y2JmOGEyYWYyMDdiODk2OWVlYWYwNTQ0MmI2ZTQ0MzZiNGZlYTJiMjYzYzQzYjk5ODk1MDc2MjhlZWUxOTYifQ"
         },
         {
@@ -1082,11 +1082,19 @@
     },
     {
       "id": "claim_1dff437b18a54c2e86d88bf96c33767e",
-      "statement": "The public-scheme behaviour of the BFF is pinned through the real adapter rather than a stand-in: frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts boots the actual server.js twice (with TRUSTED_PROXY=true, as production runs it, and with it unset) against a minimal fixture dist/server — tests/unit/fixtures/real-adapter-build, holding one API route returning `Response.json({ url: request.url })` — and asserts the four rows of the hosting contract, so removing the absolute-URL rewrite turns the https rows red and X-Forwarded-Host cannot move the origin. Before feature 087 the same trap was \"pinned\" by a stub that echoed the origin it computed itself, which stayed green while production refused the callback.",
+      "statement": "The public-scheme behaviour of the BFF is pinned through the real adapter rather than a stand-in: frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts boots the actual server.js twice (with TRUSTED_PROXY=true, as production runs it, and with it unset) against a minimal fixture dist/server — tests/unit/fixtures/real-adapter-build, whose _expo/routes.json declares one API route served by a function returning `Response.json({ url: request.url })` — and asserts the four rows of the hosting contract on the URL the route received, so removing the absolute-URL rewrite turns the https rows red and X-Forwarded-Host cannot move the origin. Before feature 087 this trap was \"pinned\" by the stub tests/unit/fixtures/expo-adapter-stub.cjs, which echoed the origin it computed itself and so stayed green while production refused the callback; that stub still stands in for the adapter in bff-server-adapter.test.ts (whose subject is the express layer in front of the handler) but its X-Test-Origin echo was removed in the same change.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L1-L136",
-          "version": "repo-lines-v1:sha256:557d16b14261ba0e1240d0c0b8b42a9b7e9bdd20fba2c82e4584a689a4dfa17b:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM2LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L1-L138",
+          "version": "repo-lines-v1:sha256:28bdfe25f34ee77a39ac6e7f7d145d98a8764d7deea5ee06b0844e8cec286395:eyJzZWxlY3RlZExpbmVDb3VudCI6MTM4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MCwiZm9sbG93aW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1In0"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs#L1-L33",
+          "version": "repo-lines-v1:sha256:dcfd4654ac5efa4757ee8f9bc7c620dfc6eae32d71b3e870a87cd30118e932f2:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImU2NWYzY2NhOWE0NjM3YzM0NTkzYzViNGRjNTY5OGQ2MzY4YjkxY2U0M2Y2ZDI2MjczYTcwYzQzMGE2NmI3MWYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFhMWQxYTYzMzkwMjI5Yzc5ODM0N2U4M2EwNDA1NDQxYzk0MDAwMzUyODRhZDE2OGMxYmY2Y2RmMWQ3MGEzNzAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/functions/bff-api/echo-url%2Bapi.js",
+          "version": "repo-file-v1:sha256:f730a982d2864f5594d5369f212cba623d666e16100621fbaeb4f9b510f7104e"
         },
         {
           "resource": "repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/routes.json",
@@ -1095,6 +1103,10 @@
         {
           "resource": "repo://specs/087-expo-sdk-58/contracts/hosting.md#L3-L18",
           "version": "repo-lines-v1:sha256:1651a53e7d55e7e3d39566e14486854379ce7952869e5a129d09fceb6b3972d4:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImMzNDZmYTQ5YmMyMWM1ZTk3YjM0YzA3MWMwMWUwZWI3MDgzNTllMTZlZTFlMmVhMzZjYTFjYzU1MzBkNzFjMDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImFjOGNhYWEwZDNiN2FmYzcxNjQwZjdjNDZjNmU4ZjNkYzE4MzJiOTQ5YjNkNzlhZDViZDE1MWE3MDBhZThiOTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjoyLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQ5ZWUyYTRhZDVlZmViOWJjNjQ0YTU1ZjNmNzU0ZDRkZTVmYWM1ZDVjZTViOTQ0N2YxYTY0ZmZhYWEzNzgzNGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImIxZWRjN2NiMWQ3NDNhNWUyNGQ1YjZkZDA5OWE1MDJkNjU5NTA0YjViMDJkNzA1MWQ4ZGNhNDQ0NjRiNjU4OTMifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/research.md#L70-L83",
+          "version": "repo-lines-v1:sha256:ffabfc1d17e7e1dac514afd6b14bec22d63bfd9daa903a74e4196a5e0e7fc1ed:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJmZmY0OGM1ODRmMjdlNzU0NWI3M2Q2NDVjMDRlNjlkN2M2NmQyOTNiOGY5MjRlY2JlMDM3YzQ2YzhmY2QxM2IiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjY5NmVmZjBiZDQ0Yjc0NzkxODZmYTgwNzI4NDlhNmZmODRmY2U3NGQzN2Y2YTNhMjk0YWZiMDA3ZTJiMjQ3MjEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjVjMWQ5NDRlZTdhODhiZWFmMWIzNWFjMTgyNzBkZjRhODZlODhkZmY1NTcyN2I3OGQ0OWNlNDlkN2MyYzMxY2QiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjUwYmZmZTAxZDgyYWYzNmVmM2ZjMmZkNGUwZGUzODk0N2MzNmNkNGFjYzQyNjJmM2E0ZDNlM2IzOTE4NzM1YTUifQ"
         }
       ]
     },
@@ -1167,6 +1179,6 @@
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-07T15:45:38.591Z"
+    "at": "2026-11-08T02:21:41.463Z"
   }
 }

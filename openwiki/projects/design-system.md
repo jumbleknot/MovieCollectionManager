@@ -94,7 +94,7 @@ sources:
 generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T19:02:58.048Z
+    at: 2026-11-08T02:21:41.463Z
 ---
 
 # MCM Cinema design system
@@ -293,7 +293,7 @@ every workspace manifest rather than only the app:
 
 | Locked family | Patterns disabled repo-wide | Why the scope matters |
 |---|---|---|
-| React | `react`, `react-dom`, `react-test-renderer` | React also lives in the root manifest and here; a split React is two physical copies and an `invalid-hook-call` at runtime. This is the oldest of the three rules and the only one with no per-manifest assertion behind it. |
+| React | `react`, `react-dom`, `react-test-renderer` | `react` is declared in this package's `devDependencies` as well as by the app, and `react-dom` is pinned by the `pnpm-workspace.yaml` `overrides:` entry; a split React is two physical copies and an `invalid-hook-call` at runtime. This is the oldest of the three rules and the only one with no per-manifest assertion behind it. |
 | React Native | `react-native`, `/^react-native-/`, `/^@react-native//`, `/^@react-native-community//` | The `/^react-native-/` half is not redundant: it is the only thing covering `react-native-reanimated`, `react-native-worklets`, gesture-handler, screens and safe-area-context — all SDK-matrix pins, none of them matched by the app-scoped rule's `react-native` / `/^@react-native//` patterns. |
 | Expo SDK companions | `expo`, `/^expo-/`, `/^@expo//`, `/-expo$/` | `babel-preset-expo`, `jest-expo` and `eslint-config-expo` carry no `expo` prefix, so the app-scoped patterns miss all three, and `@expo/dom-webview` is declared in `pnpm-workspace.yaml`, which a `matchFileNames` rule cannot reach. |
 
@@ -305,8 +305,8 @@ same defect a third time, measured 2026-08-27 from the Dependency Dashboard (ite
 `jest-expo`, `eslint-config-expo` and `@expo/dom-webview` were all queued in `js majors` for 56 → 57
 while `expo` itself sat at `^56.0.8` and `react-native` was correctly disabled — an SDK-56 runtime
 against SDK-57 transform and test tooling, which fails as unexplained transform errors rather than as
-typecheck errors pointing at a dependency. Both this package's devDependencies (`jest-expo ~57.0.6`,
-`eslint-config-expo ~57.0.2`, `react 19.2.3`, `react-native 0.86.3`) and the app's are exactly why the
+typecheck errors pointing at a dependency. Both this package's devDependencies (`jest-expo ~58.0.14`,
+`eslint-config-expo ~58.0.4`, `react 19.3.0`, `react-native 0.88.1`) and the app's are exactly why the
 lock cannot be app-scoped. `@expo-google-fonts/*` is deliberately **not** matched — `/^@expo//`
 requires a slash after `@expo` while the font packages separate with a hyphen — so it stays updatable.
 
@@ -339,11 +339,16 @@ How the framework lock is asserted: the guard replays the repository's own `pack
 
 Operationally: a `react`, `react-native` or Expo-companion bump in this package is never a raw
 Renovate change — it goes through `expo install` / the expo upgrade skill together with the app, so
-the two manifests move as one. Separately, the **toolchain majors** this package shares with the app
-(`jest` with `@types/jest`, and `typescript`) are held behind an explicit dependency-dashboard tick
-rather than a version ceiling, each in its own group so one tick releases one blocker, while patch and
-minor updates stay ungated in `js patch/minor`; the babel and async-storage holds cover only the app
-manifest. See [the Renovate runbook](../runbooks/renovate.md) for the bot's cadence and channels.
+the two manifests move as one. Separately, the **toolchain major** this package shares with the app
+(`typescript`, pinned by typescript-eslint's compiler peer range) is held behind an explicit
+dependency-dashboard tick rather than a version ceiling, in its own group so one tick releases one
+blocker, while patch and minor updates stay ungated in `js patch/minor`; the
+`@babel/core`/`@babel/runtime` and `@react-native-async-storage/async-storage` holds cover only the
+app manifest. The `jest` hold that used to sit beside `typescript` was **lifted at SDK 58**:
+`jest-expo` 58 depends on the jest 30 family, so `jest`, `babel-jest` and `@types/jest` majors now
+ride `js majors` ungated, and `scripts/__tests__/renovate-workflow.guard.test.mjs` asserts both that
+they do and that no approval gate reappears. See
+[the Renovate runbook](../runbooks/renovate.md) for the bot's cadence and channels.
 
 ## The compliance scan (R1–R7)
 
@@ -436,10 +441,12 @@ interaction-state guards described above, the controls (`SearchBar`, `Chip`/`Chi
 contract with the app: they assert the observable result (resolved theme values, rendered style, AA
 contrast) rather than the implementation.
 
-Note what the package suite does **not** cover: the Tamagui lockstep guard, the Renovate lock guards
-and the compliance scan live elsewhere (see the sections above and the
+Note what the package suite does **not** cover: the Tamagui lockstep guard and the Renovate lock
+guards live elsewhere (see the sections above and the
 [Renovate runbook](../runbooks/renovate.md)), so a green `pnpm nx test design-system` says nothing
-about any of them. All three are `node:test` files run from the `naming` job instead.
+about either of them — both are `node:test` files run from the `naming` job instead. The app's
+compliance scan is also outside this suite, but for the opposite reason: it is a Jest test in the
+app, so it turns red under `pnpm nx test mcm-app`, not here.
 
 ## Gotchas
 

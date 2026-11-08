@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:6ae7eb8f977c8a9177b3045c3185d0c0d20071fb70bfda54a7d701e95d95c99e",
+  "pageVersion": "sha256:e95d1f9ca3d0090a56a3dcc744c0eb8d26bb14bfc0cb84950456474701f58d7a",
   "claims": [
     {
       "id": "claim_af5a62adb0954433918f6521d9725610",
       "statement": "frontend/mcm-app/server.js is the BFF's production entrypoint: a CommonJS Express adapter that requires `expo-server/adapter/express`, hands the exported dist/server bundle to `createRequestHandler({ build: DIST_SERVER })`, and serves dist/client as static assets; because it runs outside the Metro bundle it cannot require anything from src/, which is why scheduled work reaches the bundle through a loopback HTTP call instead of a function call.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/README.md#L164-L182",
+          "resource": "repo://frontend/mcm-app/README.md#L190-L208",
           "version": "repo-lines-v1:sha256:b73bb1b2bf3984e9039449dc7e48fc000fb12aa16ace4b4ed91f08456a9091be:eyJzZWxlY3RlZExpbmVDb3VudCI6MTksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijg5OTA4ZTA4OWZjZWQxMmE4NjEyM2YxYmNlZDEyYmM1MjY5NTg3ZjFmOTUxOTFlZGMyYzdjYzZiY2EzOTk0NDYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImUwNGFjYmRmNzgwOTdjMjk4NmU3NmI4OGMzNTUwNzAwMzY2ODk1MTAzN2ZjMWU4ZWFkZDNmYjVhM2Y5ODBjZDEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjlmOWJhYWI5ZWNmZjZjNGU0MzVmNjQ4ZWU2YTNmOTZkZGQ5Y2FmYWFjNmRmN2IxZDY0NTQ2NDY3NGNmYzhhZWEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjMzOTgxNGFjYjU4NDJiNmMzMDhiODVjYmNmMzQ1NzU2ZDc4MWU2YjM4YWQwY2JmYjljYWI1ZjNhZjcwNzkyMGIifQ"
         },
         {
@@ -77,7 +77,7 @@
           "version": "repo-lines-v1:sha256:5e846e22e6a9e54719080803044d3fbf420ff304515029c5a5a651cb79e62c8f:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjk3ZDgwNjM3OGRmYTI1OWY0OGI1MjkwN2E2MTcyMjM2ZDAwYjA0ZDdhNmYwMzM3OGFmZjQ4MjJkMjIwZmZmYSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNmJjMDA1YTljYzdiZTMxYTFmYTRjMjgyYzgzMGYwMzM2NDQ5YzlhYmJiMzQ1YTczODEzZjlkYzg5MGRhZWI0YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzg0NWQ0MzA5MWMwYzA1Y2IwZWY0YmVjOWQ3YWYwYzcyMzFjNzdmMTZlOTk4Y2JmNTE5ZDdlYmEyNDI1MmNjNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMDE3NjIyMzdkNWE1Y2EwMzFlYjYyZTIxYWNjYzI1OWM0YjQwNDlhNGZjNjNiZTNmMDdjYzEyMWFlMDg4MjI0MiJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L110-L136",
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L115-L141",
           "version": "repo-lines-v1:sha256:1487072cfe62a836b9c1f7d7fab9e7342e9342bb8f2d69c40f0b6bdc54158d54:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NWFmZGM4ZGY0MjliYTM5ZGI2NjI5ZTljOGNiM2ExN2Q4NmE3MWM2NmFlZTU2MzkwMzhlMThiZmE3NGM3N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYjA0Y2ZiOTNiYjI0YzgyOTcyYTIzNTczNDY1OGJiYTliOGYzYTE2ZDc2ZDUxNGYyNGNlYzg4ZDQzNWE4ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMzZhZGVjYzA2NDU3MGRmN2EyYzZjMjM3NzY4Y2FlOTYwNjRlZDdiNzA2Yzc5ODM5MzMzYTY3YmRhY2Y2YTQifQ"
         }
       ]
@@ -91,7 +91,7 @@
           "version": "repo-lines-v1:sha256:10ff292d7b43c17ad16c63a7ac28881f393c11853c03ed782271f833ab12f175:eyJzZWxlY3RlZExpbmVDb3VudCI6MzEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MzFjNzZkZGI5YWJjYzk3ZTI2NTE0ODJhYzRjN2NhOGQzMzNiMWRiNGY5ZjA3Nzk3MTVjYzE1MWZlMGFkYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ5OTY3ZWMxZWQzODM2ZjhlYjE3YWZmMTcyYjViZmVmN2RlNjA0ODVhNDM5YzZjYTExYzU5MWUxNzU1NzM5YWUiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwOTdjMjkzMDgyMGMxOGRkN2EwOGJmMTdkNTAwODIzYzAyZTcyNDcwMmViNDM1ZTgzNjRlOWFhNTdhNTk2MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjAyMWYyZTJkYTU5OWNjNDAyN2RhZmMwZDg1M2RmYjdhMmJkMjFjMWQ4ZjNkOTU1NjdmMGFiOTc4YTE5YjA4ZDUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L138-L179",
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L143-L184",
           "version": "repo-lines-v1:sha256:6e0814fa8ed4a84a161a3e74c6bc8a6a6b7e4b89da397e270d16c7cef6a5bbc5:eyJzZWxlY3RlZExpbmVDb3VudCI6NDIsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjdmZWY4YzIwZjQwNDU5MzFjMTY4MTdhYzRiYmM0MzMwYWM4N2IwMTgzYzQ4Mjg4NzhiMTFhMWE0Y2IzY2NiNWEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjgwZGU2MTU1OGViYzg4N2FkMjNkY2I4MmUzNDhmNWZlZWU0Mzk1ZGRkYmJlNjM2NWNhZGI3MzM3ZDM0NjljNjkifQ"
         }
       ]
@@ -105,22 +105,26 @@
           "version": "repo-lines-v1:sha256:8a654259a8bf7a083dbca982455763e00896698646e77f18c5a471f8df3c24dc:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk1MzFjNzZkZGI5YWJjYzk3ZTI2NTE0ODJhYzRjN2NhOGQzMzNiMWRiNGY5ZjA3Nzk3MTVjYzE1MWZlMGFkYjMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwZGY0ZGQ0NTllZGU5OTRkZDRmOWE5MjRjOGZjYjJjZmQzNDM2OWJiZGM4ZWQ0N2Q4Y2U1YjIyODgyNjFlYTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjEwOTdjMjkzMDgyMGMxOGRkN2EwOGJmMTdkNTAwODIzYzAyZTcyNDcwMmViNDM1ZTgzNjRlOWFhNTdhNTk2MzYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjIwYmNjZWU3ZGFkN2RjMTQ1NjRmMWFkMWMxNjQ1ODZhYjk3OTllMmM4NDMxMjI0ZjI2YWE5NTJmNjhiODg2OWQifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L153-L169",
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L158-L174",
           "version": "repo-lines-v1:sha256:99f8265363cd47a521be1f0f230444bda56a84f188c28ebc1ddb155799b9395e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJhYjNhY2E4YTg3NWZiYTkyNjM0ODhlOTA5MzBmYWYzZmZiYzlmY2NkZGEzM2VlYzE3NzY3MmRjZTFjNzM3MWMiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjU4YzUxZDI2YmQwNDQ4ODBkZjlkNWU1MmRlOGVmMGYyMTI3NmEzMGRkODA1MTYxMjZlYjZjMjJiNzdkOTE0NWYiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImEyNTJkYmFkNmNkMTFmZjA1MzQ0NTY3ZTM4ZjE0ODRmMGFmNmRkMmQ2MTM0ZmU3M2Q0NTMzNjhjYjliY2E4ZjYifQ"
         }
       ]
     },
     {
       "id": "claim_e872d3ca747f4a23959b4de1df13a95d",
-      "statement": "Two suites boot the real `server.js` in a child process, and together they are the only tests that exercise the express hosting layer, but since feature 087 they do NOT share a stubbed adapter: `tests/unit/bff-server-adapter.test.ts` (the pin for the catch-all, param decoding, static serving and the header middleware) copies the real `server.js` and `web-security-headers.js` into a temp directory beside a fixture `dist/client` and boots it with `node -r tests/unit/fixtures/expo-adapter-stub.cjs`, a `Module._load` hook that replaces only `expo-server/adapter/express` with a handler echoing what express delivered to it — the stub no longer echoes an origin, because its `X-Test-Origin` echo claimed to mirror the adapter and is how a green suite hid item #843 — while `tests/unit/bff-server-trust-proxy.test.ts` boots the same real `server.js` with no stub at all, against the real adapter. `express` resolves from the package's own `node_modules` via `NODE_PATH`, so the version under test is the declared one; the unit tier imports TS modules and the integration tier calls route handlers, and both bypass `server.js`.",
+      "statement": "Two suites boot the real `server.js` in a child process and are the only suites below the web E2E tier that exercise the express hosting layer at all (the web E2E run targets the dev-container BFF, which is that same real `server.js`), but since feature 087 they do NOT share a stubbed adapter: `tests/unit/bff-server-adapter.test.ts` (the pin for the catch-all, param decoding, static serving and the header middleware) copies the real `server.js` and `web-security-headers.js` into a temp directory beside a fixture `dist/client` and boots it with `node -r tests/unit/fixtures/expo-adapter-stub.cjs`, a `Module._load` hook that replaces only `expo-server/adapter/express` with a handler echoing what express delivered to it — the stub no longer echoes an origin, because its `X-Test-Origin` echo claimed to mirror the adapter and is how a green suite hid item #843 — while `tests/unit/bff-server-trust-proxy.test.ts` boots the same real `server.js` with no stub at all, against the real adapter. `express` resolves from the package's own `node_modules` via `NODE_PATH`, so the version under test is the declared one; the unit tier imports TS modules and the integration tier calls route handlers, and both bypass `server.js`.",
       "evidence": [
         {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/setup/target.ts#L1-L9",
+          "version": "repo-lines-v1:sha256:ad30239aa72a8523acff51496f6d4963f4dcf95e4d9ee87ef7d43c8108f134cb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGRhYWJiOTBlMmJiNGVkNTBiMGE5Mjg4NjJlMWFhNzhhNjMzZGQ4NTc4Y2VjMGUyMTU5NGVkMmIyOTNjM2E3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2QyNWVmMGY4OTg0Y2M3YmNhNzY1MjRmYjQ5YTljZWQ1OWI2MjBkYzYwNjdiYWQwNzJhNjU2MDVkNzliZjBiMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
           "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L1-L108",
-          "version": "repo-lines-v1:sha256:dec9246275db1b9762f8e3765ed1a367afcbaa865f6ff4a50992d5fcc2e00ecf:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJmNmY1YjQwYjE1ODQ1N2QxNzg2NGYyMTc5MDc4NmRkNWEyZWNkYjY0YjY2YTY1MWY3ODhkNGUyNWNkMzMwM2QyIiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiY2RhZGMwZTFmODNiNGRiMjIzZmM2MTYwMTVkOGM3YjYwYzJjY2QyZGI2OGJmMWI1OGE2YmM1YTJjMDExZWI4In0"
+          "version": "repo-lines-v1:sha256:af444bf2376445ed00793a776a3377375791009d63aabffef03242369da02a7e:eyJzZWxlY3RlZExpbmVDb3VudCI6MTA4LCJmaXJzdFNlbGVjdGVkTGluZUhhc2giOiJlYWYyMmNmMDczMjU5MmMyNDcxNDFjYmU2MWVmYTExMDEyNjEyZjVhMzEyMmI5YWY5YmJhZjUyZjU3MjRkMTk0IiwibGFzdFNlbGVjdGVkTGluZUhhc2giOiJlZDNiMGMwODdhODcyMGI1MGFmZjBhYmJkMTNiMjQwNWIxOTZkODU4YmI1NGUzZmMxNzgyNGYyNzE0Yjc1ZTM5IiwicHJlY2VkaW5nQ29udGV4dExpbmVDb3VudCI6MCwicHJlY2VkaW5nQ29udGV4dEhhc2giOiJlM2IwYzQ0Mjk4ZmMxYzE0OWFmYmY0Yzg5OTZmYjkyNDI3YWU0MWU0NjQ5YjkzNGNhNDk1OTkxYjc4NTJiODU1IiwiZm9sbG93aW5nQ29udGV4dExpbmVDb3VudCI6MywiZm9sbG93aW5nQ29udGV4dEhhc2giOiJiMDg3MjA0Yzk3YmRhNjNkODU5NmM2M2JhNmExYTYyNzkwYzIzZGExYWU0NTA3MWIzMjVkODljOGNiNDk4OTAyIn0"
         },
         {
           "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L1-L66",
-          "version": "repo-lines-v1:sha256:f38fae35d82dfe75a94645f269e30baa22a7d5b09ab78c91399acdce18bf30b2:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjNmYzM1YTY1OWNjNGRlNGMwYTUyMTQ4OWQxM2ZiYWEwOTczMTQ2OGVhMjE1OWI2ZmM5OTY0NjkyYjg5NjFlZmIifQ"
+          "version": "repo-lines-v1:sha256:20c3b6331fba8ef73d4b8a50ebdf25032ce93955c1963ce8a38c7f14f9b8f6b4:eyJzZWxlY3RlZExpbmVDb3VudCI6NjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjI3ZTU3ODhkNWQ5ZDczZDI0YTgxZGJjMGE1YTc0YmZhODJjOWMzYjNhZjk5ZTUyYWY3OTZlOTBiNDY4YThhM2QiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJlNDZmM2MwZGM0Yjk4MGM5OGZmN2I5YWFkZDc0ZTg5OWQ4YzIyYjkwODVmYTU2MDdhN2RkNmViZWM0NDhjMDEifQ"
         },
         {
           "resource": "repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs#L1-L33",
@@ -179,7 +183,7 @@
       "statement": "A second, distinct recovery in the same wrapper handles a THROWN transport error on the agent route only: it waits RUN_RETRY_DELAY_MS (250 ms) for a reset tunnel to re-establish and retries exactly once; non-agent throws propagate unchanged and a genuine 4xx returns a Response so it is never retried. The source justifies the single retry by asserting that a dropped connection aborts the upstream gateway turn through the adapter's AbortController, making the cut turn idempotent-on-failure — but that rationale is asserted rather than measured: feature 087's research records that the express entry does not pass the abort `signal` the plain `http` entry does, and that the new adapter's `respond` guards `writableEnded`/`destroyed`, so whether this failure still surfaces in the same shape is an open reading to take from current counts, per the E2E runbook's standing lesson on `Cannot pipe to a closed or destroyed stream`. What is pinned is the bound: one retry, in code and in the unit suite.",
       "evidence": [
         {
-          "resource": "repo://docs/runbooks/e2e-testing.md#L248-L248",
+          "resource": "repo://docs/runbooks/e2e-testing.md#L264-L264",
           "version": "repo-lines-v1:sha256:0789c77c273be1a80281b47d9f5caf23a8a7d6093e09d61097a49fcf235ec536:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDc4OWM3N2MyNzNiZTFhODAyODFiNDdkOWY1Y2FmMjNhOGE3ZDYwOTNlMDlkNjEwOTdhNDlmY2YyMzVlYzUzNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDc4OWM3N2MyNzNiZTFhODAyODFiNDdkOWY1Y2FmMjNhOGE3ZDYwOTNlMDlkNjEwOTdhNDlmY2YyMzVlYzUzNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2ViMzk1NjZhODVlN2EwM2I5NGFkNzcxMmZjYTdkYjE3YmJiM2FkZjEzYmI4ODdjNTRkY2U2NzBjNTFkMzQyYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjA1NmYxYTBkNGUzMzdjZmUxZGU1ODJjMmJhMzhiOGY2ZGZkM2UyNTc2Yjc3MjgxOGYyY2EyM2UzMWQzMzFhZiJ9"
         },
         {
@@ -277,8 +281,8 @@
           "version": "repo-lines-v1:sha256:97b7cdfc6a285bc7cacf1bfaf651a907bbc1ff8eadc3a3ac507c5577059a554c:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNDEyY2EzNDVjY2Y3NWJmOWMwODA2YmNlNjk1YmU4ZGU4MDhiNzk5ODQyNTFhN2E1NGQyMDJjZjYxMDFkZDQ1MSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMzA0NjU5OWY4ZTViNjU5NWQxYjhjODEyNjFiYzk2NjQzMmVlMzZiN2UzMjViZDQ2OTdiNjg3M2ZhMDZmMTczOSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYTAwMTUzOTBlNGM0NmFkMDY1MjVmNjk1MmI0NTEyNTBjMzRkNDYwMDFhNzQ2Yzg1YzM3YWQ5NjkyODk3NjVkOCJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L1-L21",
-          "version": "repo-lines-v1:sha256:2de8246e0263b18c7838b8e9d588b141fce6db538d99adbaa48e0d430ef437ac:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzNDA0MDA2MTE4NDAxY2U3ODkwMmIyMGI1NjE2Y2IwMzkyMDk1NTk1MWY4YmE4NTgwZGExNjc5OTgwMGI2YWQifQ"
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L1-L23",
+          "version": "repo-lines-v1:sha256:51d2062b133199f2733a244ef0b722aa3b3dcb70da1081266ba66b9012cf8f8a:eyJzZWxlY3RlZExpbmVDb3VudCI6MjMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk3MmE0MjkzODJiMmUxNDcxOGUwZTM3YjA1NzBhOGExNzAyOTkxZmNkODQ5OGNkODQwNjBhOGJmNGYwNTAxN2IiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjYzNDA0MDA2MTE4NDAxY2U3ODkwMmIyMGI1NjE2Y2IwMzkyMDk1NTk1MWY4YmE4NTgwZGExNjc5OTgwMGI2YWQifQ"
         },
         {
           "resource": "repo://specs/083-backup-consent-session-isolation/tasks.md#L158-L182",
@@ -303,7 +307,7 @@
           "version": "repo-lines-v1:sha256:29efd72a8e41b93c4ecafae83f2f4781201a08e133e27714db2dc8bdd91b5a13:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjOTQ1ZmQ0Yzk0MzE1YTI0OTE1ZTFlYTkzMDZlNzcyNDU5MzlhMmE4Njc0MjY3MmQ5Y2Y5OGM0MWU4ZTkzNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMjM0YWNiYjliNmEwZjg0NTEzY2FhZjJhYzJlYzhkOGJlYWYyZjY4NDM3MDA3NDQ0ZGFiNmQ5NTI2ODFlNjEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L96-L122",
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L98-L124",
           "version": "repo-lines-v1:sha256:254e9ce6a1f5edb62d26072933f45fd95a0c434c6453577ac7dee5e6531c3974:eyJzZWxlY3RlZExpbmVDb3VudCI6MjcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhhZWYwNjVkZjJlZDg4MDdiMGNkOTg3MDZjNzAxNjI2M2M3N2JlZTE3NWVhNWVmYWJjNGU3OGZjZDU5ZjhiOGUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJkMGYyZDNhM2FhZGEyNzU4NjQ1NzhkMGE0MzkxNTYzOGQ1NDNmZWNhMmM5NDg1OGRiOTQxMjExZTg2Y2VmMmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImU2ZjI5OGViNzc5Yjc4M2QyNWEwODAwMDRjYzVjYzBhNjBhM2M5NWFmY2RiYzczZDQ1MmRlYzMwMjU5NGQyZTUifQ"
         }
       ]
@@ -321,7 +325,7 @@
           "version": "repo-lines-v1:sha256:29efd72a8e41b93c4ecafae83f2f4781201a08e133e27714db2dc8bdd91b5a13:eyJzZWxlY3RlZExpbmVDb3VudCI6MTQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjRjOTQ1ZmQ0Yzk0MzE1YTI0OTE1ZTFlYTkzMDZlNzcyNDU5MzlhMmE4Njc0MjY3MmQ5Y2Y5OGM0MWU4ZTkzNGYiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjIyZGEwMjY5ZDRjYjc2NzhkNjRjNDBiNTQyYTljOWM3YjI2ODMzY2UyZWZiY2I4MmYzODc4MmVhNjM1YTA1YjAiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImJhMjM0YWNiYjliNmEwZjg0NTEzY2FhZjJhYzJlYzhkOGJlYWYyZjY4NDM3MDA3NDQ0ZGFiNmQ5NTI2ODFlNjEifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L113-L121",
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L115-L123",
           "version": "repo-lines-v1:sha256:3fbb4e146dd5562cf90ebe920849f94c9248f43e24fac7e922a6979cbb71beb0:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTE3ZGM3ZDUyOWU4OTA4ZTk4ZDg1OGMzYzA3MjVjNjk2NzllZTU5N2I3NjlkYmY2M2VjYTFjYTNmMGRkNzg3OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2EzZTQ2Zjk0Mjc2YjZmNmY0ZWQxZjAyYWY3OGJlZjZhMmVlMWM0MzlkZDU1ODRiOTczOTQ4MzEzMjE0ZDJiNyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjg5ZWQxNmVmZTViZmUzYmU5YTc4MGQzYzMyZGEyZjJiZmM0MThiNTY5YTZiZTA0Y2M1OGM3MmRmNzg1NDE2OSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMTBiN2E2MjVjMzZiNWVmZDgxZGFhYTNlMTQ5YzgwY2IwMWRmY2NkYzlkN2JhZDI2YjA1MWRlYzAxMDg0NzQxYSJ9"
         }
       ]
@@ -343,7 +347,7 @@
           "version": "repo-lines-v1:sha256:d78cce5eaaa4e48f86fffb0a89d3ff20a1efc257ea82a495050cc0ed41d5348b:eyJzZWxlY3RlZExpbmVDb3VudCI6NiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMzdhZTZkM2NiMzUzOTMxODAxYzliMjVmNzIwZGZhMmM3OWRkOGU3MDZlNTExZjFjM2I4MTQwZjVmY2RjN2Q3NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDQ2NDAwNjViMzA4OWM0YzMyZGVkNjE3MDUzNzFiZmMzN2JkYzY4YmU5NWIwYWM3MDAwNmY1ZjNmMTU5MzM0ZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMDRkNDRkNmI1NDNmN2I2MmFmMjkxMjJjN2NiZjg2Y2RkY2MyZDAxYTMxMzdmZjhmYWM3YmUwNTJiNjkzNzdlOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzJmZjBmNjlmZWI3NjFiOGM0MmRhMWEzYmJkODYwZWM0MDUyZWQ5MGZlM2QyNWU2YjBhYTYyMGExM2MxM2EwZCJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L124-L136",
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L126-L138",
           "version": "repo-lines-v1:sha256:04ef6606544e33aed634c0e3f209de4f0baf11efb4273c5313083c5bc5fa1981:eyJzZWxlY3RlZExpbmVDb3VudCI6MTMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJkNmZiZWJhYjM1Yjk4Yjg0ZGM0ZjEyNmU0NDU2MTcyNWZlZWU5YjY3NGUxYjQ3OGE1NzQ4YWE5NmU2NTY3ZDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -405,7 +409,7 @@
       "statement": "CopilotKit reports a refused `/run` through its `onError` subscription, never as a rejected promise, and for a non-2xx response the error's message IS the response body — so src/components/agent/assistant-run-failure.ts decodes the BFF's `code` and picks the member-facing text: the session-ending codes (AGENT_IDENTITY_REJECTED, REFRESH_FAILED, SESSION_NOT_FOUND, SESSION_EXPIRED, SESSION_IDLE_TIMEOUT, SESSION_ABSOLUTE_TIMEOUT, UNAUTHORIZED) read 'Your session has expired. Please sign in again.' and the retryable set (AGENT_IDENTITY_UNAVAILABLE, KEYCLOAK_UNAVAILABLE, SESSION_RENEWAL_PENDING) reads 'The assistant is temporarily unavailable. Please try again.', with a generic fallback that names no internals — where before 085 a failed turn showed the member nothing at all.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L167-L230",
+          "resource": "repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx#L169-L232",
           "version": "repo-lines-v1:sha256:1e1aedeff5f70097bd4afc894d6b2acebe92fc5a8d332158efa683ae21527d6f:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjFmMzAzOWJmMDY5MGZjMTY5MjIxMzhjY2I3N2NmOTRlYmIxYzYwYmNhZmFlMjJlNjRiM2E1OGM0Njc0NTk0ZjIiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjEwMDhlYWM3NTAyNTk5ODkwZDNkYWVmMjI3ODU4OGEzZTIwYTVlYWJiYTA3YTZkNTU2MjQ0YjNkYjhkOWZlZDMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijg0ZTdjZWZiNTc2NDc3ZDAwZDYwMmYwY2I2MjVmNDdhODRmNjE0MWMxNTMwZTU5N2NhNDBhZmNkYzg2MDA5ZmUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImE3ODY1Nzg5Y2I5MWY5NWZjZWVkNDQzZTBmMjU3Njc1MzUxNGExMmUxMDFiYjZhNGIwYTkwMjgyNTM4NGU5YzIifQ"
         },
         {
@@ -420,11 +424,11 @@
     },
     {
       "id": "claim_dcd93dfbfe6543ceb1e34182de1838e4",
-      "statement": "Feature 087 replaced the unmaintained `@expo/server` package with `expo-server`: `server.js` requires `expo-server/adapter/express` and creates the handler with `createRequestHandler({ build: DIST_SERVER })` (the old adapter's `mode` option no longer exists), and `expo-server` is a direct dependency of `mcm-app` pinned to the version `expo-router` already resolves, which matters because it is also one of the two prune roots the BFF image's dependency-closure walk starts from (`STATIC_ROOTS = ['express', 'expo-server']`) and a missing root fails the image build rather than the running app. Any surviving reference to `@expo/server` in a manifest, prune root or stub is history.",
+      "statement": "Feature 087 replaced the unmaintained `@expo/server` package with `expo-server`: `server.js` requires `expo-server/adapter/express` and creates the handler with `createRequestHandler({ build: DIST_SERVER })` (the old adapter's `mode` option no longer exists — the constructor takes `{ build, isDevelopment? }`), and `expo-server` is a direct dependency of `mcm-app` pinned at `~58.0.6`, the version `expo-router` itself resolves, which matters because it is also one of the two required prune roots the BFF image's dependency-closure walk starts from (`STATIC_ROOTS = ['express', 'expo-server']`) and a missing required root fails the image build rather than the running app. Any surviving reference to `@expo/server` in a manifest, prune root or stub is history.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/package.json#L41-L41",
-          "version": "repo-lines-v1:sha256:dc2a6f3e3c247882f22d1e0f3e6b8c44fca06edb5c7f8de177c7a9dab68238f8:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMyYTZmM2UzYzI0Nzg4MmYyMmQxZTBmM2U2YjhjNDRmY2EwNmVkYjVjN2Y4ZGUxNzdjN2E5ZGFiNjgyMzhmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGMyYTZmM2UzYzI0Nzg4MmYyMmQxZTBmM2U2YjhjNDRmY2EwNmVkYjVjN2Y4ZGUxNzdjN2E5ZGFiNjgyMzhmOCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzc1YzNmOGU3ZWY5MDVlYzhlNDVjYTEzYzE2Y2JjMDljMzIzNGU3N2JhZGUwYTY1M2EwNjdkOWQ4YTY5ZjlmOCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODMxMjBkN2U5MDIzMjFjZjc1MzZmNWE0ZGQyZTdkYmVhMDU3ZDQzNzUzYWVhZmRlZDFmYWVkMThiOWFlY2JjYSJ9"
+          "resource": "repo://frontend/mcm-app/package.json#L42-L42",
+          "version": "repo-lines-v1:sha256:2f6e1758ac4c148fdceb727ae78fb91636ae27cf0d16e472fde20db04872a38a:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY2ZTE3NThhYzRjMTQ4ZmRjZWI3MjdhZTc4ZmI5MTYzNmFlMjdjZjBkMTZlNDcyZmRlMjBkYjA0ODcyYTM4YSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMmY2ZTE3NThhYzRjMTQ4ZmRjZWI3MjdhZTc4ZmI5MTYzNmFlMjdjZjBkMTZlNDcyZmRlMjBkYjA0ODcyYTM4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMTdhMGZjYmM5ZmI2ZDE2ZThiZmFhNTEwOGRmMDJjN2E0MTcwN2JkZmIyMDIxZjA2NGU5MWI1MGQyMGE4ZTUyNiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiODlmNmMxM2VlNTllYzA3NjUwMWNiNTI4MTk4N2UxYmY2ZjRlMWQzZjg5MzE4NjEzNWU3MzhmN2U1Y2E3OTE2MiJ9"
         },
         {
           "resource": "repo://frontend/mcm-app/server.js#L134-L134",
@@ -443,6 +447,10 @@
           "version": "repo-lines-v1:sha256:43d9c006e8a3987b8ace4a09b937f2dcef81e4dd4cd18c1d1923de3e13df6ff6:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNTI4YWU3NzZmZDMzZTZiNWFhZDVmOTBkMmQwOWJiN2UwNDVlNjgxZmQ3YjU1OGRiZTNmMWE3ZDc0MTRjNzcyNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNTc2NTUzZWVjMThiOTc0YjJlZjNhNTM3ZDcxMDY1NDY2ZDg1MDQxMmU0M2E4NWQxNDcyZmFlYmE5YmY4NTgwZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2QxOTYyYzMyYWEwZThiNjFkYWM0MWRkNzAxNWUyN2EzYzdjMWMxMDE2ZTEyMTgxMmI5NGJmOTJmMDFlYjIzMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNmY5YTkxNTY5MzQzNDIwNWU5MTc3N2YxOGMxY2YzMzk1ZGVmYzBlMzQ3YjIzYTM2OThhZGI1YWJiZjMwMzllZiJ9"
         },
         {
+          "resource": "repo://specs/087-expo-sdk-58/research.md#L52-L59",
+          "version": "repo-lines-v1:sha256:e23db29aa8ba7a1d1c73c1d72fd014222be06ac5646434ca7f8221e9dc35bfae:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTU5MjEwZjFjODhjZTFjNGE1N2U3ZjMyZDVhMzY3MGVmZGI5NzkzMTdhNzcxZGQ5YjQ1MzUxMjk4ZTVmM2EwMiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOWFmODI5YTJjMDE4MjAzODQzM2FkNzA2YjcyMzRhNmVmN2M1NTllNjg0MWIzNzdmM2Q0ODZkYzQ2ODEyOTI2YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2NjZjA2ZTQ5MWEyYTkyYzdiNjUwN2VhMWU1MGU1ZTVmZjRiY2JlYWEyOTQ0M2Q3ZmY2OWU2ZTAyZDg3ZGYxNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNDAzZjNhNWY4MDBhNTdhMmExZDBhYTI3MTQ5NWI0NzFiOTUwMWY4Yjk5MzA0MzBkMTI4NDNhZDYxOTI5YmU1OCJ9"
+        },
+        {
           "resource": "repo://specs/087-expo-sdk-58/tasks.md#L51-L55",
           "version": "repo-lines-v1:sha256:c7ef7749a5cdea097f8eb8efdcfe738b0bf0cb7df535bb227cc8be4a243d6d2e:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYjFhYTdkZTBkYWVmNzM1YWViODJhNTgyMGIyYjMxNDFkZTI4ZGU5Mzk2MTU0Y2E5MGU0NzRlNjYzODIxYmEwNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYWJkY2YyYzIzY2VhZWFmZWYzZmNkMGU1NTlhZTkwODkwYmM1M2E3MzM0YWM1MjYzNGE0NDQzNzMwMjZjOTI2NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjI0OTUyYmNiNzIxMDdjODQ5YzcyMGYwNmQ3MDgyNGM3N2IzMGUxMmFlNTE2MWMwNWRiNTk0MTgwOWE5NjNlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMjc3ODg1ZGYwYzBjOWI5ZWIwZmY5NzdjYWExNjZkM2JkMDExOGI1NzI1NGNkYTEwMGI1NWU4MTdlNjBmODZlMSJ9"
         }
@@ -457,11 +465,11 @@
           "version": "repo-lines-v1:sha256:e4ca4281fc89edd0c23709ee8df948dd694431e02ccd286e1bba3783702deb63:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMTAyMTJlZTQ4ODVhYjdjZmFmMmZlYmU5ZjQ2MGY3YWZmNTllM2U4YzZjYzk1ZmU4NGIzOWVkNWRhMmFjZTZhMCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZjZmNWI0MGIxNTg0NTdkMTc4NjRmMjE3OTA3ODZkZDVhMmVjZGI2NGI2NmE2NTFmNzg4ZDRlMjVjZDMzMDNkMiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiN2Q4MGZiYjUwMTY0ZTQ4ZmQ1ZmM1NTZiMzczZTdlOTNlNGQwMTBhNTA1NmU2M2RhYTQzNzU5YThhNDMwNTZjMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGI3NDAyNTliYTk3N2Q4NDdmMGUwNzMwYjNkMWMyZDExOWYzNWQwZTZmNWQ2ZDkwNGJjYTQyMWMxYjZkODJkNSJ9"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L110-L129",
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L115-L134",
           "version": "repo-lines-v1:sha256:1db9470373e1e629b631198b3b743fb528db11613344fcae109b67327d6f3ec1:eyJzZWxlY3RlZExpbmVDb3VudCI6MjAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQ4NWFmZGM4ZGY0MjliYTM5ZGI2NjI5ZTljOGNiM2ExN2Q4NmE3MWM2NmFlZTU2MzkwMzhlMThiZmE3NGM3N2MiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjdmYjA0Y2ZiOTNiYjI0YzgyOTcyYTIzNTczNDY1OGJiYTliOGYzYTE2ZDc2ZDUxNGYyNGNlYzg4ZDQzNWE4ODIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImRhZDRhZDVhZTJlOTdiMjBmMzBhYzJjZWI0MDAwZDZjODk1ZjE1MzU4ZDBkY2NjNDU3MzdkN2ZkM2UzYmE0NGUifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L36-L37",
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L41-L42",
           "version": "repo-lines-v1:sha256:a6d98d452a8d13dbc2d78a35bff1c2af016fa04b148b47b3e0457cb38a215fe9:eyJzZWxlY3RlZExpbmVDb3VudCI6MiwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNDUzNmM2MDJlNDY5MDRiMWY0NjlmZDQ5ZmU4MzVlMzE4NWFiMDNlNDE2ZTI5ZDAxMWYwZjg2M2VjNGNjZDM4NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYjJkZDA3NDM5YzVmMWI0ODkzZGM0MmZlZDEzNWQ4Y2Y1ZDkwMDc3ZTRlNDU2NTZmOGEyYWEzOTE0NjA0ZTI1YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDk2Y2E0YTBhNTM4NzEyYWE2NmUwODlkZGQ0MTU1MTljOGJkYWExM2E2MmYzYTVmZTU1ODhmMTA5NWNlNGQzNSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDg1OTI1M2VhNjRmYjUwY2E1YTIwNDc5NDlmNjNjMTAxN2M0ZTdhMDM5YWVkZDAyZWYxMjA4ZTdkZTMxNTcwOSJ9"
         },
         {
@@ -479,11 +487,11 @@
       "statement": "`tests/unit/bff-server-trust-proxy.test.ts` stubs nothing on its path: it boots the real `server.js` beside `tests/unit/fixtures/real-adapter-build`, a minimal `dist/server` holding `_expo/routes.json` with empty `htmlRoutes` and `notFoundRoutes` plus one API route whose function returns `Response.json({ url: request.url })`, and asserts the URL that route actually received for the four rows of the hosting contract (trusted proxy with `X-Forwarded-Proto`, with and without a forwarded host, and no trusted proxy). Because the fixture encodes the SDK's manifest shape, an SDK change that breaks it fails the suite — the intended prompt rather than silent drift.",
       "evidence": [
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L1-L33",
-          "version": "repo-lines-v1:sha256:0241dc5ba0ce1ce3ef82a956a854ce1bd5bdcbe9454e4a3ac7dc399ccb24bcab:eyJzZWxlY3RlZExpbmVDb3VudCI6MzMsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NzAwY2IzMmU5ZGY2MGNjN2ZhYmNmYTA4NGU1YzU0OGM1NTEyOTE1ZWQ5NTgyODg0Y2FlODk1NDJiMjg0ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2ZmM2Y2QxM2MzYTM2NzdhNTYyNjgxNmQ5ZmFiMTRhYmY1YzZmMDVjMzMzMWUxMzJhZmFlMmU2MjgxYjIyM2EifQ"
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L1-L35",
+          "version": "repo-lines-v1:sha256:d5af2f0c7fb25337cffcab3b152227fe2adb9128f3a9d70d38203c263591581e:eyJzZWxlY3RlZExpbmVDb3VudCI6MzUsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6Ijk4NzAwY2IzMmU5ZGY2MGNjN2ZhYmNmYTA4NGU1YzU0OGM1NTEyOTE1ZWQ5NTgyODg0Y2FlODk1NDJiMjg0ZTciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjowLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc2ZmM2Y2QxM2MzYTM2NzdhNTYyNjgxNmQ5ZmFiMTRhYmY1YzZmMDVjMzMzMWUxMzJhZmFlMmU2MjgxYjIyM2EifQ"
         },
         {
-          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L73-L136",
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L75-L138",
           "version": "repo-lines-v1:sha256:de8224be5dbad410985899eec818a05d047ca5b039ccba25a749874a69fd58ac:eyJzZWxlY3RlZExpbmVDb3VudCI6NjQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImQ0YTNmODcyMmE4OWU5MDEwNDk3NGY0NTlmMWVkYjRiM2ZjMzczZDEwYmE3NDEwNmJhMzc4ZTI2YTIwNWQ2NDkiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6Ijk1ZjE1MjM4MjM5YWVlM2UwMzJiZmI3Yzk5N2E3MTZkZmM4ZjAzOTU5MTIyN2E5NjJiYjU3ODFjYzQ2NWM3NDMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         },
         {
@@ -517,10 +525,68 @@
           "version": "repo-lines-v1:sha256:74e8a5b4ccb0f1e84aa7da3210e465b3a76493b1785bcaac48aad31551ad2a1d:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRlOGE1YjRjY2IwZjFlODRhYTdkYTMyMTBlNDY1YjNhNzY0OTNiMTc4NWJjYWFjNDhhYWQzMTU1MWFkMmExZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzRlOGE1YjRjY2IwZjFlODRhYTdkYTMyMTBlNDY1YjNhNzY0OTNiMTc4NWJjYWFjNDhhYWQzMTU1MWFkMmExZCIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiMmQ3ZWM2MzhkNGVmMzY4MWExNDQ2Njk1ODFlYWQ5YWMwNjU5MmFhZmU3NWNhYTZjYWYyZjAwYzQxZDMyNzNlMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiNzNmNTRjZWU3YmQ1ZDkwMjA1ODk2NDRmNzdmZmNhNTY1YTM2OWY0MTY0MmVjM2M2NjhkMWI5OWE0NjQ2OWRiNyJ9"
         }
       ]
+    },
+    {
+      "id": "claim_16d4ffa131c4440abaf7af48c3c8e6e6",
+      "statement": "Both suites that boot the real `server.js` in a child process must run on the jest-expo preset environment and must not carry a `@jest-environment node` docblock: since Jest 30.4 `resetModules()` calls `clearMocksOnScope(global)`, which reads every enumerable global, and Expo installs `fetch`, `structuredClone`, `URL` and others as getters that `require()` their implementation on first read — which Jest refuses outside a test. `jest-expo`'s environment is a `jest-environment-node` subclass that patches `clearMocksOnScope` to skip accessor properties, so the override was the cause of both suites failing with `You are trying to require a file outside of the scope of the test code` and `Tests: 0 total`; feature 087 removed the override, left a note in each file so it is not added back, and recorded that `testEnvironmentOptions.globalsCleanup: off` does not help because it is a different mechanism.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L1-L8",
+          "version": "repo-lines-v1:sha256:4ab151a30073072d1ed7e32279b729a9ea039fe23f0e4794ece38bb9fbda3e66:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYjJjMTNhOGUzY2ZlNzIyNWM1ODliOGY3ZGU4YzIxYTc4OWZhNDYxMmExZjFmYTllNmUzNmRmNmZlMzJiMjc2ZCJ9"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts#L1-L5",
+          "version": "repo-lines-v1:sha256:43d1be466c2b4e492f402158c3a61ef9bb7ec8c79d5f44c0d0a53d4c9fbc4fa1:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZWFmMjJjZjA3MzI1OTJjMjQ3MTQxY2JlNjFlZmExMTAxMjYxMmY1YTMxMjJiOWFmOWJiYWY1MmY1NzI0ZDE5NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiOTcyYTQyOTM4MmIyZTE0NzE4ZTBlMzdiMDU3MGE4YTE3MDI5OTFmY2Q4NDk4Y2Q4NDA2MGE4YmY0ZjA1MDE3YiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDFkZTc3MjNiNGJiNTM2YWIyNTQ2ZGEwNGJlZmNkN2E0ZDEwNDFmMjEwZjMwZjUzNWRjMTE5NmIxMTYxY2E0NyJ9"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/research.md#L283-L298",
+          "version": "repo-lines-v1:sha256:bc11b5f109c9a66c93edc14f614644ca46962ea50765a99c7b433021000733c8:eyJzZWxlY3RlZExpbmVDb3VudCI6MTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI5ZjZlYmZjZTJhZmQyNWM4NDVlYTdiNDk3MWM0YTE1Y2EwZmQ5YjM3ZDhmYTJjN2M2NDZjNTgwMDAyYzUzNDUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAzN2ExZDk4Y2FhYzFjMDliNjUxNTAzZTk0NWIxNWUzMmMxNjA4YzBmZWE1MGIwOTVhMDZhNjVhMjQ3OWU1NTAiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjYzYzk4MjZjMDg5MWEzZDBjMDU5YzE5OTc3YmFmY2RlMTlkZmEzNjBmMTZmYTE5OWQ3NjYxMDEyNzUyNjVkYjQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjA4ODMyOWM0YWRkODc4YTFiNDcxNzBlOThkZTZkZmVjZDMyMjYzODQxZWEwMGEyYzc4NWQzYjQ2YjAxODU0MTEifQ"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/tasks.md#L180-L183",
+          "version": "repo-lines-v1:sha256:289e29f783593555e99fb3ebbab3376d8f5465dfe7331c8528b43d32cfa702b6:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNjliMDc3YmM5MDBmMTQ2MzVmNDhkYzU5MzhiODZkMThhNzVkZWE3MWM2NzdlODk4ZjZiZDc4NmEyNzY2ODU2NyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZmM2NDExMzNmNzA3YjRlM2U4Y2UwOWM1Njg0YjcyZjA4MTI5MzVhN2NmMDMxYTU3YWQwNWExZTMxYWNmNjQxZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNzZmMzQwY2I2ZmVjMWE1MjgyZjI0YTU0NzRhOTRiYWFlNGY0MDdhNGE2MmI1ODFmMDgzYmNkYWE1ZTczYTQ0ZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMWZhMmU3ZjJhM2JmYzAzNWM3YWE1MDI2OWM5MGJlZTczMTU5ODY2ODEyZDY3ZjQ0OWY2YWRhOTRhMmRiMDUzYiJ9"
+        }
+      ]
+    },
+    {
+      "id": "claim_059b59e5f5794476b17580b13d38f7a3",
+      "statement": "`tests/unit/bff-server-adapter.test.ts` is also the only pin for the header middleware, the one place the three response classes are proven equal: two `app.use` layers above the static mount and the catch-all stamp `X-BFF-Source` (read from the `BFF_SOURCE` env var, the marker E2E uses to prove the answer came from this container rather than Metro) plus `X-Frame-Options`, `X-Content-Type-Options` and `Referrer-Policy` on every response — the SSR page, a static asset, a `/bff-api` route and even a `400` rejection — while the web CSP is path-scoped away from `/bff-api` (via `isApiPath`) so the API keeps its strict `default-src 'none'` handler CSP as the only CSP present, and `X-Powered-By` is disabled at boot so it is never sent. The suite injects a fixture Keycloak origin through `EXPO_PUBLIC_KEYCLOAK_URL` and asserts the CSP `connect-src` carries it, proving that directive comes from env rather than being hard-coded.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/server.js#L31-L86",
+          "version": "repo-lines-v1:sha256:6d27b6aaf210c98be5ae01f1273f97b56b63c041cb9a1ca5f5681a6e4dabf972:eyJzZWxlY3RlZExpbmVDb3VudCI6NTYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjcxYmEwMzlkZTJmMjg5N2IwNTM0NGI0MGE3M2Q1ZjQ5Nzg0MTcyMzgzNWM1OTMzMjliMDBkODliODhlMmViNTEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjczYTczMGVlNTJjZTUwN2E0YTA5MjJlOGE0NzI5OGNhMGZkNmJiMDVmMDAzMzVlOGI2Mzg4NzA0ZGY2OGJlMWUiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImExMGUwMDMzNTM0NTgyZWVmYWVkNTBlM2JhNmQwNGJiNTMyZTdkOWFjMzcyMDQzZDAyMzQ4OWQwODc0Yjk2NGYifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts#L186-L206",
+          "version": "repo-lines-v1:sha256:859bf920327f5d4561c99f9514383e1de60140f238d5b57f278fe7ae530a83a0:eyJzZWxlY3RlZExpbmVDb3VudCI6MjEsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImJjNmVmYTc5ZTBjZjE5ZjdjOTI0ZTk4ZDZkZjhhYzg5YjM1ZmU3ZDBlOTVlYWEyNTk4ZTVmYWRkMDcwNjRiYmEiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNhM2U0NmY5NDI3NmI2ZjZmNGVkMWYwMmFmNzhiZWY2YTJlZTFjNDM5ZGQ1NTg0Yjk3Mzk0ODMxMzIxNGQyYjciLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImI3NzlkMTE4ZDZlM2NiZjQ1MDUzOTc0OGRlZTdhNDMwN2FjYmU2NDQ2Y2JhMjk3ZjI3NjBmYTVkMGJiYTFiYzIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjoxLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImY2ZjViNDBiMTU4NDU3ZDE3ODY0ZjIxNzkwNzg2ZGQ1YTJlY2RiNjRiNjZhNjUxZjc4OGQ0ZTI1Y2QzMzAzZDIifQ"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/web-security-headers.js#L99-L124",
+          "version": "repo-lines-v1:sha256:ba22fe104a92a9c6326abdea5ff706e29abb2402de016e0507977f6bf488ee6c:eyJzZWxlY3RlZExpbmVDb3VudCI6MjYsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImVhZjIyY2YwNzMyNTkyYzI0NzE0MWNiZTYxZWZhMTEwMTI2MTJmNWEzMTIyYjlhZjliYmFmNTJmNTcyNGQxOTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjQxMmNhMzQ1Y2NmNzViZjljMDgwNmJjZTY5NWJlOGRlODA4Yjc5OTg0MjUxYTdhNTRkMjAyY2Y2MTAxZGQ0NTEiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImMyMTczYjA1MDRkNjY5ODUyYmQ2YmNkOThiNzFhOGI0ZDk0NGFjYWI4YWVmZGM5M2ViZjQ4M2JhNjhiYjNiNTEiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijc5NTYwNDNiZmIzZTU3NjgwOWNhYTIyMmM5ZDA5MDI0NWUyZGZhZmUzNDcyYTRhZDBhOWQ5ZjU2NTAyNDMzODQifQ"
+        }
+      ]
+    },
+    {
+      "id": "claim_2ef998520bc34d06a4f71aeed37f3108",
+      "statement": "The realm registration is why the `http://` callback defect could only surface in production: `prod-realm.json` registers the backup-consent and account-deletion callbacks only in their `https://mcm.${BASE_DOMAIN}/…` forms, while the dev and CI realms additionally register `http://localhost:8081` and `http://localhost:8082` variants — so on every local target the same `http` origin is an accepted redirect_uri, and the only local target that is HTTPS at the edge is `https://localhost:8443`. Keycloak therefore refuses the unregistered `http://` form only against the production realm, which is why this had to be pinned by a unit suite booting the real `server.js` rather than by the web E2E run.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/tests/e2e/web/setup/target.ts#L1-L9",
+          "version": "repo-lines-v1:sha256:ad30239aa72a8523acff51496f6d4963f4dcf95e4d9ee87ef7d43c8108f134cb:eyJzZWxlY3RlZExpbmVDb3VudCI6OSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGRhYWJiOTBlMmJiNGVkNTBiMGE5Mjg4NjJlMWFhNzhhNjMzZGQ4NTc4Y2VjMGUyMTU5NGVkMmIyOTNjM2E3NSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiY2QyNWVmMGY4OTg0Y2M3YmNhNzY1MjRmYjQ5YTljZWQ1OWI2MjBkYzYwNjdiYWQwNzJhNjU2MDVkNzliZjBiMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjAsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjAsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZTNiMGM0NDI5OGZjMWMxNDlhZmJmNGM4OTk2ZmI5MjQyN2FlNDFlNDY0OWI5MzRjYTQ5NTk5MWI3ODUyYjg1NSJ9"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/dev-realm.json#L1135-L1151",
+          "version": "repo-lines-v1:sha256:7a568cfde0633fb453c3e700ae7d24527b33de378f4a89b683af78db90b6fd62:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjhiMjgzZWExZWUzMDA1YzI4MWRkNTU2MzUwNzEwOWYwNDEzYmVhNzI3NDY0NTNmZTlkYTZlZWU3OWU4MTFjNTQiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjczZjVlNTFlYjE0ZjYzOTM1YzNiOTVmZjMyY2EyMWZjYzA2ODFkMmI3YjRhYTdhMDgwNTNiYzk0ZGIyMWUwZTIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjhhYTE1NzAyYjcwY2FjMDgzYjM1YWY3YWE4ZGQ2MDFmYWFjZmQ5YTRjODYwYjRkODMyMmMyZGNlOTI3NjY1NGMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjdkNjFlM2RlMGE1Nzk0OTQyNTg5NzRjNjE1OGQ4YjFhNGM3YzFkZjQ0ZGYwOTBiN2FiMjk2MDVjM2RkYWJhMGIifQ"
+        },
+        {
+          "resource": "repo://infrastructure-as-code/docker/keycloak/prod-realm.json#L972-L979",
+          "version": "repo-lines-v1:sha256:d78e13f31cbe694d6be56449927e4b9c25f4c931fd3973be5ea650d61e9c7ccc:eyJzZWxlY3RlZExpbmVDb3VudCI6OCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiOGIyODNlYTFlZTMwMDVjMjgxZGQ1NTYzNTA3MTA5ZjA0MTNiZWE3Mjc0NjQ1M2ZlOWRhNmVlZTc5ZTgxMWM1NCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODk0MTkxMTk3OTlhNTA0NWY5Zjk5OTFjZjFmOTEwYTQ4ZmNiY2U0NTgyZGUwMTc2YzgzMmE2NGFiYzdmZjM2YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZjQ0MzI4NTRkMjU3MDU1YjIzNDE1YjQ1ZTAyNjg5MTk5YWRkZDhiNzAwMTA5NjlhNDdjZDEwNDdjYWMyYjU4YSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWUzNjllNmM3NDgzNjkyNTc3ZmVhMmQyODE5ZGNiMWVkMzhkN2U4YWIwZmRlNjhkN2QxMTZiY2NlMmFhMThhMCJ9"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-06T06:42:06.997Z"
+    "at": "2026-11-08T02:21:41.463Z"
   }
 }

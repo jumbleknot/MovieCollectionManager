@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:3c89ca9922dae7b311d7c7d96b5ac9ceda5d45105ee70f19ac034fa9c6f8c4aa",
+  "pageVersion": "sha256:48cff5011a81e996d238dfda1b9dd55e9a226ae901dc344b7c8cb79c3004233f",
   "claims": [
     {
       "id": "claim_20d1909a15b34600a5f0c4258da69cf8",
@@ -8,17 +8,17 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         }
       ]
     },
     {
       "id": "claim_8276a6149b28464086b53ffffc85dc99",
-      "statement": "The constitution currently stands at v2.7.0 (ratified 2026-03-08, last amended 2026-10-20), and the `[CURRENT]` marker at the end of the version-history block is the authoritative signal for which amendment is latest.",
+      "statement": "The constitution currently stands at v2.8.0 (ratified 2026-03-08, last amended 2026-11-07), and the `[CURRENT]` marker at the end of the version-history block is the authoritative signal for which amendment is latest.",
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         }
       ]
     },
@@ -28,7 +28,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         }
       ]
     },
@@ -38,7 +38,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         },
         {
           "resource": "repo://README.md",
@@ -56,7 +56,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         }
       ]
     },
@@ -66,7 +66,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         }
       ]
     },
@@ -76,17 +76,21 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         }
       ]
     },
     {
       "id": "claim_aeec17c12fc947a3bbd4479a2075b33e",
-      "statement": "Constitution v2.5.0 records a scoped, bounded accepted exception to the Frontend performance-budgeting rule (2-second time-to-interactive on simulated 3G) for the mcm-app web client's cold load only; it covers residual framework weight, is capped by a committed entry-chunk byte budget, and leaves the principle's JavaScript-lazy-loading clause in force.",
+      "statement": "Constitution v2.5.0 records a scoped, bounded accepted exception to the Frontend performance-budgeting rule (2-second time-to-interactive on simulated 3G) for the mcm-app web client's cold load only; it covers residual framework weight, leaves the principle's JavaScript-lazy-loading clause in force, and is bounded by a committed 2,000,000-byte budget whose own text still describes an entry-chunk maximum while the enforcing gate measures the cold-load total — a divergence none of the later amendments, including v2.8.0, has corrected.",
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
+        },
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs",
+          "version": "repo-file-v1:sha256:c988751458daf795d427bc724340e37de44b3c1a7a3f8bd505eda0518259bb7f"
         }
       ]
     },
@@ -95,7 +99,7 @@
       "statement": "The bounded web cold-load exception is enforced by `scripts/check-web-bundle-budget.mjs` through the `bundle-budget` Nx target as a committed 2,000,000-byte ceiling that feature 087 repointed from the `entry-*` chunk to the **cold-load total** — the sum of every script the worst exported page loads, read from the exported HTML — measured at 1,892,065 B on the SDK 57 baseline against the constitution's own exception clause, which still describes an entry-chunk maximum and cites 1,762,630 B. The same gate also asserts that deferred assistant-runtime packages are absent from the entry chunk and that server-only code is absent from every client chunk.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L296-L300",
+          "resource": "repo://.specify/memory/constitution.md#L297-L301",
           "version": "repo-lines-v1:sha256:c85ee81b67477442b76658350da479c56f13321645a0cb9acbe8999a33826a3d:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDExZTIwMzZjZDkzNTI1ZTY3MTI0YmQ0ZmNlOTc3MTEzOWRjNTUyZjE2N2E5YTQxYjBhMjg5ZjJjMTZiNmE4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODllNTE3YzVlYTM3MGE3ZTE5NmMxZWI4YjdhZWQ1N2QwYTdjYWIxZWE1YmZkZTk1ZGQ4NmJiNzM1MWNiZTM1NiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNlODkxZjdlMmFhYzc0NjBiOTk0NGJiNGRmYWMxYzE0NGVjM2Q5ZTRhZDhlMTg1ZmMxNzQxNzNiMDcxYjljYyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDkyZmEwYzQ4OWI1ZDg2ZjM4Yzk2YjMyNmU1NzZkMTZkMzNmOWY4OTk4NzVjMDhhMTdiMDRhYTkxYmZhZTA4MyJ9"
         },
         {
@@ -122,7 +126,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         }
       ]
     },
@@ -132,7 +136,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         },
         {
           "resource": "repo://docs/templates/feature-test-tasks-template.md",
@@ -146,7 +150,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/spec.md",
@@ -160,7 +164,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/plan.md",
@@ -178,7 +182,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         }
       ]
     },
@@ -188,7 +192,7 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/tasks.md",
@@ -198,15 +202,19 @@
     },
     {
       "id": "claim_35fed5e3737f4b45847531980f6d52a9",
-      "statement": "A version the constitution names can itself be stale, so a version-named line is not proof of what runs: the constitution's document-database image had named a tag the stacks never ran, and the correction was recorded as part of the amendment that moved the line. A version-named line must be compared against the compose files and the lockfile before being treated as deployed truth.",
+      "statement": "A version the constitution names can itself be stale, so a version-named line is not proof of what runs: the constitution's document-database image had named a tag the stacks never ran (corrected as part of the amendment that moved the line), and the BFF API line named `node:24.14.1-alpine3.23` while the image built on `24.22.1` — a correction v2.8.0 made without touching the separate Frontend stack `JavaScript Runtime` line. A version-named line must be compared against the manifest, the compose files and the lockfile before being treated as deployed truth.",
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         },
         {
           "resource": "repo://specs/081-major-dependency-upgrades/research.md",
           "version": "repo-file-v1:sha256:90c6e6b902a75773677801a5cf2121f69de9889046cd94ce9cacb6bb05472431"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/tasks.md",
+          "version": "repo-file-v1:sha256:c793ee3e3037d95d698abcba2077fcbe8e190e68fc4cba0a171841faefcde136"
         }
       ]
     },
@@ -230,11 +238,11 @@
       "evidence": [
         {
           "resource": "repo://.specify/memory/constitution.md",
-          "version": "repo-file-v1:sha256:cb2ad36ed55afc8e91806071bf27ee8fc4c47947de3d0928d0e46a7ac401055d"
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
         },
         {
           "resource": "repo://frontend/mcm-app/README.md",
-          "version": "repo-file-v1:sha256:d402904fb60feb951cdde3a6a92159bb3f666a3210e1d4ece9a29597bd78958c"
+          "version": "repo-file-v1:sha256:4c88ea01daa13226ee6eb4f42bee4564ddd3fadb64f52d48e834c6e4758ff153"
         },
         {
           "resource": "repo://frontend/mcm-app/babel.config.js",
@@ -251,7 +259,7 @@
       "statement": "The constitution's Backend Services stack names `medi-rs` as the mandated mediator library for routing commands, queries and events from the API layer to the application-layer handler, but `backend/mc-service` ships no mediator crate: `router::build()` constructs one handler per operation over the repository traits and packs them into `AppState`, so dispatch is a direct method call on that struct. The divergence is recorded in `docs/MCM-Architecture.md` as a tracked backlog item rather than resolved by an amendment, so a constitutionally named library can be absent from the running system while the version history reads as current.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L249-L249",
+          "resource": "repo://.specify/memory/constitution.md#L250-L250",
           "version": "repo-lines-v1:sha256:030e45697fa2eabe7f7d76c3ae07392d21f11b25520d5e33e97a250eef8b3ca6:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwZTQ1Njk3ZmEyZWFiZTdmN2Q3NmMzYWUwNzM5MmQyMWYxMWIyNTUyMGQ1ZTMzZTk3YTI1MGVlZjhiM2NhNiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMDMwZTQ1Njk3ZmEyZWFiZTdmN2Q3NmMzYWUwNzM5MmQyMWYxMWIyNTUyMGQ1ZTMzZTk3YTI1MGVlZjhiM2NhNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiY2JhMGViMWRiOWVhMTE4MGI0NTk0Y2M2MzBhODA5YWVjMzAzZmY5MmE5ZmRkYjcwZmFhNjAwN2UxOTAyNTAxNCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOWY2MmQ0M2JkOWE4MGNmODBkNGQ4YTljODNmOTJlOTlmZjE3OWUwZjM5Nzk0Y2JmZjgxNDY3MmE3YjlkNGM3NSJ9"
         },
         {
@@ -301,7 +309,7 @@
       "statement": "The constitution names the document-database image by *tag* (`mongodb/mongodb-community-server:9.0-ubi9`), while the compose files pin that tag to a digest that is re-resolved whenever upstream rebuilds the image: the production cutover ran `sha256:2cb58a8d…` and the current pin is `sha256:3d40c6fa…`, both the same mongod 9.0.4. A digest refresh inside the named tag is ordinary image maintenance and requires no amendment; only a change to the named tag does. A same-version rebuild can nevertheless change what the security gate sees: the `sha256:3d40c6fa…` UBI 9.8 rebuild shipped a fixed `ca-certificates` and discharged the `CVE-2026-114406` allowlist entry, so the exact digest — not the named tag — determines what runs.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L255-L255",
+          "resource": "repo://.specify/memory/constitution.md#L256-L256",
           "version": "repo-lines-v1:sha256:81254be171d2da9466cb8a28ea6462b25806888fce9501aa6cdc435455931df3:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiODEyNTRiZTE3MWQyZGE5NDY2Y2I4YTI4ZWE2NDYyYjI1ODA2ODg4ZmNlOTUwMWFhNmNkYzQzNTQ1NTkzMWRmMyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiODEyNTRiZTE3MWQyZGE5NDY2Y2I4YTI4ZWE2NDYyYjI1ODA2ODg4ZmNlOTUwMWFhNmNkYzQzNTQ1NTkzMWRmMyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiM2NjMjMwYzdmYjhiNDA5MGQ0YzFiMTM3MWVjODVlYzVkZjE4NTlmOTQ3N2YzN2ZkMGNhNGU0OTlkNjI4NWVhMiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYmRkYzE5NTI3ODE0MWNlNjQyMGRmMzdjZTJjM2RhYmYxZjNiYjViMDNkMTFlODg0NmJmN2IyYjQxMzJhNmIwNCJ9"
         },
         {
@@ -328,31 +336,19 @@
     },
     {
       "id": "claim_94a8adb46e4641aa892e39287dc6522c",
-      "statement": "Feature 087 (Expo SDK 58) requires a v2.8.0 constitution amendment under its FR-024, landed in the same pull request as the version move with human approval, that advances the framework baseline (Expo SDK 57 → 58, React Native 0.86 → 0.88, React 19.2 → 19.3) *and* rewrites the Backend-for-Frontend line: the current `app.json` web output set to server (`\"output\": \"server\"`) would, read literally on SDK 58, mean per-request rendering instead of the prerendered pages plus API routes the feature requires. The amendment is still an open task (`T048` of `specs/087-expo-sdk-58/tasks.md`), so the file still reads v2.7.0 and `frontend/mcm-app/app.json` still says `\"output\": \"server\"` — a line can break for a reason that is neither a version number nor a library.",
+      "statement": "A constitution line can break for a reason that is neither a version number nor a library: the Backend-for-Frontend line described a mechanism (`app.json` web output `\"output\": \"server\"`) whose meaning changed on Expo SDK 58 to per-request rendering rather than the prerendered pages plus API routes the app needs, so feature 087's FR-024 amended both the framework baseline and that line together — which is why an upgrade plan must sweep the whole stack section, not only the lines whose text contains a version number.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L348-L352",
-          "version": "repo-lines-v1:sha256:96c2cd0b7ed29015ace12aee7361dd247794fbf041c612e8677f9d08895c9689:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNWZiYTJiODIwNTczMjI1YWM4MzI5NzQ2YTlmM2U2NjdlMzhlNWFmYTY3NzJiZjQ2N2U0OWE1ZTBiZTllMmI4ZCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZGIzOGU3MDEwNzAwYWI5NTg5YmRjM2UzODRjNTRiYzgxODdjMGRiYzRiNDdlNzU3Y2Y1YzJkYjdjNmRmYTk4YSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNDk5ZmE5MTQyZmMwZjEzNzAxOGI3ZTYzNDJhMmFiNTA4OGVlYTJjOWMwYWE2NjRhNWIxZmI1MTU0NDhkZDFiZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGMzOGMwY2VjNjMzMjlmOTgxNTFmZDk5N2RlZjZhNjA2ZTNmOTBiMzRjMmUwNDFmMzlhM2IwMDRiM2Y5Yjc4YSJ9"
+          "resource": "repo://docs/proposals/MCM-Expo-SDK-58-Approach.md",
+          "version": "repo-file-v1:sha256:8e8d9c86c3e26c8865be78f66e10d1568edb06e0f500ce8e31ff70738582e564"
         },
         {
-          "resource": "repo://docs/proposals/MCM-Expo-SDK-58-Approach.md#L321-L330",
-          "version": "repo-lines-v1:sha256:b15a92ccecc173d280b0a827fafb75bb1adae25f850d6cd828169fbe17fa4c3f:eyJzZWxlY3RlZExpbmVDb3VudCI6MTAsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjlhMWQzMTI1ODY0MzU4NmNhY2JhNzA5ZjIyZTBjYWE0ZTc5ZDIxMjdlN2E0MzRiMjlhZWYxYjNmOWFmMzZkZmUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjNlM2MwZmMxMDQ2YTNhNmFlZGJjZmJjMWJiZGJiNzI0NmJhYWZhZWFmYzkyYjNiM2MyYTZiNGVjNzI1NmI5OWYiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJjMWI3Y2E3ZTQ0MmQ3YWE5YTcyNmE2MzVlNjhhODY3ZTRkNjUzOTY1MWQ0Y2YxYWIwMTZjMmRiMjljZmRmNmMiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6Ijg0ODBmMzg0ZjMwZTczYjJiM2VlYzQwNDY1MzExODZkNjI5NWU1Zjk3MmUzMTU2OTYzODc2NGQ2NmQyZThlYzMifQ"
+          "resource": "repo://specs/087-expo-sdk-58/plan.md",
+          "version": "repo-file-v1:sha256:302c23ad33380b6ae39b77a34e86b306c10e9756f9c03ea7585cfdd2202b6515"
         },
         {
-          "resource": "repo://frontend/mcm-app/app.json#L23-L27",
-          "version": "repo-lines-v1:sha256:338c0aa6680474f0c50a64f5d83c8b7d99e7630b3aef71221b7dfd405aa1e6e7:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiZDlkMTQ4NzhlMjRiOTE2NmNiMjRiODM1ZGYzMTM2YjBlNDQ4MTJlYmYwZmZhODhmMjYzYTM3YWE2NjM0MTI4ZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiMWYwY2RiOTcyYTdiZmI3ZWQyNDZmOWZmNjcyMzg1ZTU1ZjQ5NjhmYzExMDQzZGM1YjY4NGQ1MWRmYTMxZGJjYiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZGNmNGI4YmVjODQ1MDI1OGI0YzI3MWI1MDUwZDA2OGI2ZDVmOTZkNzA3NGNiNjVhYWVjODAwYTM1OTZmZjYyYiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZDE4YWI3Yzk2ZTg3NzhhMTFhMzE3NDg3YjY5OGQ1ZjdjN2E4OGY5Yjk5YzI0NTI5OTFhYWE0MzQzMTMyMTE2ZiJ9"
-        },
-        {
-          "resource": "repo://specs/087-expo-sdk-58/plan.md#L16-L16",
-          "version": "repo-lines-v1:sha256:3bfd181c4f9bc71775e33580600bab058db9251845ae7e8bf3ba0f33ebe5d759:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JmZDE4MWM0ZjliYzcxNzc1ZTMzNTgwNjAwYmFiMDU4ZGI5MjUxODQ1YWU3ZThiZjNiYTBmMzNlYmU1ZDc1OSIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiM2JmZDE4MWM0ZjliYzcxNzc1ZTMzNTgwNjAwYmFiMDU4ZGI5MjUxODQ1YWU3ZThiZjNiYTBmMzNlYmU1ZDc1OSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOWM2OTA5ZjVmZWI4NDA5Y2RkZjY1ZTI4MzZkMDNlOGNhNmU1NjNmZTVkMTg1ZDE3NmI4NmMyNmJkMmNkMmViMyIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZmI2ZGE0Y2UzYmI0YWNmNjdmNzk3YjE4ODEyYjRjM2QxMTEzYTc5YmU3YThkNDU0ODZhNjIzZDRiZGY0Zjc2OCJ9"
-        },
-        {
-          "resource": "repo://specs/087-expo-sdk-58/spec.md#L230-L233",
-          "version": "repo-lines-v1:sha256:c9b86b66cf8cf3e2cafa9b8ce68fec8f432f2bd4ff1f9d32994e2d3667f63212:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzFmODBhYTkzNTc1NjQ5NjE3OTQzZGUwNjFmNGIwZDQyY2ZkMDE3ZTkxMzQ0N2Q2MTQ1NjMzM2I0NzVhOWJmNyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiZTc0ZDdkYmE0YzA3NDk2YzIwNTViN2YxZTA4MzJmYmM1NTI1OWRjNDRhOTdkNTQyYjk0OWIzMmE3ZDU4NzU1ZSIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiOGFkNDg4Y2E5YTA3YjNlMDYzYTYwNTc4ZDA3N2E3MWEyMmRlNGI1ODYxZmFkODJjZjE5NzVlZGMxNTQyNWJlYSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiYzVlNDhkZTY0Nzc0YjViZjYzN2NkZWEzZTlmMTdjODM3ZGExZGNjMzhmY2RmMWU4NGYzYzBiODU4NjMxMWE0NyJ9"
-        },
-        {
-          "resource": "repo://specs/087-expo-sdk-58/tasks.md#L192-L192",
-          "version": "repo-lines-v1:sha256:a5e360a901c2db140d91e59cf975864d29a25461b236f8478a4c9d511f300eaf:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVlMzYwYTkwMWMyZGIxNDBkOTFlNTljZjk3NTg2NGQyOWEyNTQ2MWIyMzZmODQ3OGE0YzlkNTExZjMwMGVhZiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYTVlMzYwYTkwMWMyZGIxNDBkOTFlNTljZjk3NTg2NGQyOWEyNTQ2MWIyMzZmODQ3OGE0YzlkNTExZjMwMGVhZiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZmNmM2QzMzliZjY4YTE1MGI2ZWJiOTVkMTM4MTExZjNlMDgwNzNiMzFkYWNhMWVhOTFmNDZiMjkxNzFmMjg4NCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiZWU2ZDFhM2NmYzdlOWQ3M2ZiN2Y1MTQxNjg3NDJkNjgyZmRiYjJkOGQ1ZmU2Y2JjMzU5MzA3NTBiODVkODQxYiJ9"
+          "resource": "repo://specs/087-expo-sdk-58/spec.md",
+          "version": "repo-file-v1:sha256:45ea7e276fdc89ec1b4676fb975739ed4a20dd47cbaf8ee42f8602b170d31af5"
         }
       ]
     },
@@ -379,7 +375,7 @@
       "statement": "The constitution's monorepo directory tree carries approved deviations as well as rules: it lists `openwiki/` as the generated, OKF-formatted agent-facing knowledge wiki, deliberately kept outside the human-owned `docs/` so that the ownership rule stays enforceable — everything under `openwiki/` may be regenerated by a tool, everything under `docs/` is human-owned, and nesting the wiki inside `docs/` would put generator-rewritable files beside the operator runbooks.",
       "evidence": [
         {
-          "resource": "repo://.specify/memory/constitution.md#L525-L529",
+          "resource": "repo://.specify/memory/constitution.md#L526-L530",
           "version": "repo-lines-v1:sha256:f5d1cd5bb9f2960cfa040c76106905c55e69d96ba3863f24c2914b93305c09db:eyJzZWxlY3RlZExpbmVDb3VudCI6NSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiYTE1NjIxZWQ4ODk2Y2I5YjNlOWJkODQ0OTQwMjZlYjk3ZGFmMjhmNWExYzA5Y2M1Yzc0ZTdjNWM2MWM4MGQ2YiIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiN2Q0ZDExOTkxZjkzMTdlNDM0OGUxZDhmMjdkMzcyZmU1NDI3NTkzZWI3ZTA3ZjdmNjQ3OWM2ZjI5YzdiZmQ4YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZWYzMDgxYTM1NDk4YjljZWZkYmI4ZTQxMTIzZGRhNGQ4NDZkMzE5YzBiMGQ4NTAyYTFkOTAxNWFmNmY1ZjViMCIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMGIzODc2MTYyNTYxMDE1M2ExNzE4NzFjZTkyYWY4OTcwZWIyMDQwOTFjOTBlODVmYjhhOGQ3MDg1ZDlmYzUyZiJ9"
         }
       ]
@@ -453,10 +449,92 @@
           "version": "repo-lines-v1:sha256:1d7b76701c187ba8dc2256aaa33c79efac17bd6de1f5ab32f9694eeca39b9c7c:eyJzZWxlY3RlZExpbmVDb3VudCI6NCwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzUxNDc0OTc3Mjc2ZTlhYzUxYmVlOTE1MTFhMDcxYzNiNmExZmNjN2U4ZWNiMDQyNmY5MDBkZGY3YTRlMGVmOCIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiYzM4YTVjYjcxMWI3OTg2OTdiMDAxZGM3YzVlNDM2ODdhZTI0MjQ3ODg5MWFmZDU2Mzk3M2U5MmJlMzVkMDMxNiIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiNjg1OGIyZmY5ODBkZDI1YzBiOTNiODU1YTBiMjU0MGZiMmU2MjU4N2E4NzM5ZTVjZTQ2NDJjNGNiZmM2MjlmMSIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiOGQzM2M1ODdkYzNhYjBmNjJhOTlmYzA0ZTAyZGM5ZTgzMzFlMjBlYTM0NjgzMmZiNDhiOGZkMWVjOWMxZjMyMCJ9"
         }
       ]
+    },
+    {
+      "id": "claim_7befe7c0a87247c7ac4cd700491abfeb",
+      "statement": "Constitution v2.8.0 (2026-11-07) is a MINOR, stack-guidance-only amendment that advances the framework baseline to Expo SDK 58 with React Native 0.88 and React 19.3, moves the BFF web output from `\"output\": \"server\"` to `\"output\": \"static\"` with `apiRoutes: true` on the `expo-router` plugin so pages stay prerendered at build time while API routes keep running in the same Node process, and corrects the BFF API container's stale `node:24.14.1-alpine3.23` line to `node:24.22.1-alpine3.23`. It redefines no principle, was approved by the operator on 2026-11-08, and landed in the same pull request as the SDK move it authorises (FR-024, task T048).",
+      "evidence": [
+        {
+          "resource": "repo://.specify/memory/constitution.md",
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/spec.md",
+          "version": "repo-file-v1:sha256:45ea7e276fdc89ec1b4676fb975739ed4a20dd47cbaf8ee42f8602b170d31af5"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/tasks.md",
+          "version": "repo-file-v1:sha256:c793ee3e3037d95d698abcba2077fcbe8e190e68fc4cba0a171841faefcde136"
+        }
+      ]
+    },
+    {
+      "id": "claim_c2278846cd0d42c6a95f8a897030c9d3",
+      "statement": "`frontend/mcm-app/app.json` sets the Expo web output to `\"static\"` and configures the `expo-router` plugin with `apiRoutes: true` and `asyncRoutes: { \"web\": false }`; `asyncRoutes.web` is written out explicitly because SDK 58's plugin with no options turns it on, and a page that throws during rendering fails `expo export` rather than shipping a broken page.",
+      "evidence": [
+        {
+          "resource": "repo://frontend/mcm-app/README.md",
+          "version": "repo-file-v1:sha256:4c88ea01daa13226ee6eb4f42bee4564ddd3fadb64f52d48e834c6e4758ff153"
+        },
+        {
+          "resource": "repo://frontend/mcm-app/app.json",
+          "version": "repo-file-v1:sha256:85db1e84063e5dd8d0c17615ba1bd21d78e2ac47d7ace5c89b46db4627bc5eff"
+        }
+      ]
+    },
+    {
+      "id": "claim_927c4b4c2758487d890e2dedf2fceb6b",
+      "statement": "The bundle gate's cold-load measurement on the SDK 58 export was 1,926,163 B of the 2,000,000 B budget (96.3%, 73,837 B spare) on the worst of 17 exported pages — +34,342 B (+1.8%) over the SDK 57 baseline of 1,892,065 B — with the budget itself unchanged, so the exception's remaining headroom is under one ordinary feature.",
+      "evidence": [
+        {
+          "resource": "repo://scripts/check-web-bundle-budget.mjs",
+          "version": "repo-file-v1:sha256:c988751458daf795d427bc724340e37de44b3c1a7a3f8bd505eda0518259bb7f"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/tasks.md",
+          "version": "repo-file-v1:sha256:c793ee3e3037d95d698abcba2077fcbe8e190e68fc4cba0a171841faefcde136"
+        }
+      ]
+    },
+    {
+      "id": "claim_93abd28c593f4183ab31e5607ceb2ca9",
+      "statement": "The repository's enforced Node requirement is not any version the constitution names but the `engines.node` floor in the root manifest (`>=22.13`, set from pnpm 11's own engines and deliberately not lowered when pnpm 12 declared only `>=18`), which `scripts/check-toolchain-consistency.mjs` checks every workflow `node-version:` and Dockerfile `FROM node:<v>` pin against — so the constitution's Frontend stack `JavaScript Runtime` line still reading `Node.js Latest LTS (v24.14.1)` is neither the floor nor what CI or the BFF image runs.",
+      "evidence": [
+        {
+          "resource": "repo://.forgejo/workflows/app-ci.yml",
+          "version": "repo-file-v1:sha256:b773bad35064cfa333d442096bccd440b70cccef738a3af2434810ca74dbda35"
+        },
+        {
+          "resource": "repo://.specify/memory/constitution.md",
+          "version": "repo-file-v1:sha256:e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f"
+        },
+        {
+          "resource": "repo://package.json",
+          "version": "repo-file-v1:sha256:6a8e82d9119901ea16446862db508f3a59896ef4906c5d834682e84bc5171576"
+        },
+        {
+          "resource": "repo://scripts/check-toolchain-consistency.mjs",
+          "version": "repo-file-v1:sha256:850666528af2c70f9f518cc4ee3ccc71b8a59daa5d5751d72f15b63dfdc372ed"
+        }
+      ]
+    },
+    {
+      "id": "claim_512a9a7e61d24914bfaa9ae522f3f47c",
+      "statement": "Feature 087's plan uses the same Constitution Check gate as every other feature and shows the harder case: both the framework-baseline row and the BFF output-mode row are marked AMENDMENT REQUIRED under the single v2.8.0 amendment — the second because its literal text would mean per-request rendering on SDK 58 — with a second, post-design pass appended under the same heading rather than a fresh one.",
+      "evidence": [
+        {
+          "resource": "repo://.specify/templates/plan-template.md",
+          "version": "repo-file-v1:sha256:cc7f7979cf8d8836ec26492785affd80791d3422a2b745062ec695be8c985ef7"
+        },
+        {
+          "resource": "repo://specs/087-expo-sdk-58/plan.md",
+          "version": "repo-file-v1:sha256:302c23ad33380b6ae39b77a34e86b306c10e9756f9c03ea7585cfdd2202b6515"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-07T19:02:58.048Z"
+    "at": "2026-11-08T02:21:41.463Z"
   }
 }

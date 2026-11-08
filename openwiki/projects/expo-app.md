@@ -1,12 +1,14 @@
 ---
 type: Service
 title: Expo/React Native universal app
-description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 57), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the settings destination and its area registry, the client network layer that never holds a token, the Expo hosting layer this process serves (the expo-server express adapter, the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the cold-load web bundle budget with its four-assertion gate, the Jest worker/memory bounds that keep a test run from OOM-killing the sandbox's service stacks, the React Native Testing Library 14 migration that made the render/event API async, and the other client-facing build and test traps.
+description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 58 with React Native 0.88 and React 19.3), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the SDK 58 static web output whose pages are prerendered at build time while the 38 API routes keep running in the same Node process, the settings destination and its area registry, the client network layer that never holds a token, the expo-server express hosting layer this process serves (the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the BFF image's pruned runtime closure with the bare-specifier build gate that keeps it honest, the five feature-087 failure modes that each look healthy but now have their own gate (a second copy of the styling library, a split bundle over budget, an unlisted inline script, a browser CSP violation, a release APK that does not launch), the cold-load web bundle budget's four assertions, the Jest worker/memory bounds and the Jest 30 / RNTL 14 client test traps, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 sources:
   - id: openwiki-source-a157c487923d65153283de40
     resource: repo://.devcontainer/sandbox/devcontainer.json
+  - id: openwiki-source-810a3627633783500597ffc6
+    resource: repo://.forgejo/workflows/app-ci.yml
   - id: openwiki-source-fd77a504cc309a02ead6fecf
     resource: repo://.forgejo/workflows/guardrails.yml
   - id: openwiki-source-bff475d8fa855e3592cfedc2
@@ -15,6 +17,8 @@ sources:
     resource: repo://frontend/mcm-app/app.json
   - id: openwiki-source-82e76cb56a030095b60d27cd
     resource: repo://frontend/mcm-app/babel.config.js
+  - id: openwiki-source-6af9a79d18f77a9b86839849
+    resource: repo://frontend/mcm-app/Dockerfile
   - id: openwiki-source-8b39d08f4b5008470c9dd1c6
     resource: repo://frontend/mcm-app/eslint.config.js
   - id: openwiki-source-23ebb6a3dfd75d37b2feaef1
@@ -163,6 +167,8 @@ sources:
     resource: repo://pnpm-workspace.yaml
   - id: openwiki-source-cc2828785988d51226a4241e
     resource: repo://renovate.json
+  - id: openwiki-source-856fe57cb2b44e0e87aa00fa
+    resource: repo://scripts/__tests__/android-launch-smoke.test.mjs
   - id: openwiki-source-f6c12ce9ca055174ab7f392c
     resource: repo://scripts/__tests__/bff-healthcheck-pages.guard.test.mjs
   - id: openwiki-source-96730ea8c345aed64b62a187
@@ -173,47 +179,74 @@ sources:
     resource: repo://scripts/__tests__/single-zod-engine.guard.test.mjs
   - id: openwiki-source-e1b32ed173a0f6b508f94a03
     resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
+  - id: openwiki-source-7a41c9f0b28d43e5a1c6f204
+    resource: repo://scripts/__tests__/android-release-shrinking.guard.test.mjs
+  - id: openwiki-source-3d5c81b7e9a04f26c8b1d0e7
+    resource: repo://scripts/__tests__/prod-apk-gradle-heap.guard.test.mjs
+  - id: openwiki-source-3672bd476fb3e523ec6e9ad6
+    resource: repo://scripts/android-launch-smoke.sh
   - id: openwiki-source-a3e2c14b6305b3709de7fcd4
     resource: repo://scripts/check-no-server-imports.mjs
   - id: openwiki-source-3a1de6aca3cad41ffa6cd873
     resource: repo://scripts/check-web-bundle-budget.mjs
   - id: openwiki-source-4afc03401961c543ccdef7be
     resource: repo://scripts/prune-bff-runtime-modules.mjs
+  - id: openwiki-source-11ba1741c25b3030e34f4dd8
+    resource: repo://scripts/publish-android-launch.mjs
   - id: openwiki-source-2ffebe6972c17fbcc2a83423
     resource: repo://specs/081-major-dependency-upgrades/research.md
+  - id: openwiki-source-f189c162dcfb48c90c5f23be
+    resource: repo://specs/087-expo-sdk-58/contracts/android.md
   - id: openwiki-source-16870c3ee3399a868ae59956
     resource: repo://specs/087-expo-sdk-58/contracts/web-gates.md
   - id: openwiki-source-cbc86a7a3a87453e949a2389
     resource: repo://specs/087-expo-sdk-58/spec.md
+  - id: openwiki-source-2e58b7a04c9d41f3b6a0d517
+    resource: repo://specs/087-expo-sdk-58/research.md
   - id: openwiki-source-93b6202dca9e48a643d50488
     resource: repo://specs/087-expo-sdk-58/tasks.md
   - id: openwiki-source-5c651a2e85869320925d0597
     resource: repo://specs/089-single-zod-jitless/spec.md
   - id: openwiki-source-b1bbf22fc6d5be70b62d6d45
     resource: repo://specs/089-single-zod-jitless/tasks.md
-generated: { by: "openwiki/0.7.1", at: "2026-11-06T10:07:39.873Z" }
+generated: { by: "openwiki/0.7.1", at: "2026-11-07T23:36:11.840Z" }
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-07T19:02:58.048Z
+    at: 2026-11-08T02:21:41.463Z
 ---
 
 # Expo/React Native universal app
 
 `frontend/mcm-app` is a single Expo Router codebase targeting web
-and Android from one source tree. `package.json` pins the SDK 57 line — `expo ~57.0.30`,
-`expo-router ~57.0.28`, `react-native 0.86.3`, `react 19.2.3`, `babel-preset-expo ~57.0.16` — and
-those versions move only through `expo install`/the Expo upgrade path, never a raw Renovate bump.
-`app.json` sets Metro's web output to `"server"`, not a static
-export, because the same process also hosts the [BFF](./bff.md) via file-based `+api.ts` routes.
-That hosting already runs on `expo-server`'s express adapter through the hand-written CommonJS
-`server.js`: the adapter swap is in place on SDK 57, ahead of any version move, and it made
-`expo-server` a direct dependency and a prune root, so the unmaintained `@expo/server` package is
-named by no manifest, prune root or test stub. The *output mode* is a separate, later step of the
-same piece of work — prerendered pages with the API routes still in the same process, and Android
-code shrinking and web async routes deliberately off for that first release — so `app.json` still
-reads `"output": "server"` and per-request rendering is what ships. Client-side code lives in
-`src/screens/`, `src/components/`, `src/hooks/`, `src/config/`, `src/utils/`, `src/types/`; routes
-(both UI screens and API handlers) live under
+and Android from one source tree. `package.json` pins the SDK 58 line — `expo ~58.0.23`,
+`expo-router ~58.0.30`, `expo-server ~58.0.6`, `react-native 0.88.1`, `react 19.3.0`,
+`babel-preset-expo ~58.0.24` — and those versions move only through `expo install`/the Expo upgrade
+path, never a raw Renovate bump; feature 087 made the move, and the
+[constitution](../process/constitution.md)'s v2.8.0 amendment (2026-11-07) records the new baseline
+(SDK 58 with React Native 0.88 and React 19.3 as the supporting runtime).
+
+**`app.json` sets `web.output` to `"static"`, and that value is load-bearing rather than
+cosmetic.** Pages are rendered to HTML at **build** time, while the 38 API routes — the BFF — still
+run in the same Node process behind the hand-written CommonJS `server.js`, so `dist/server` holds
+both the page HTML and the route functions. On SDK 58 the literal `"output": "server"` means
+*per-request* rendering, a different runtime from the one this app is built and tested on. The
+`expo-router` plugin entry is written out explicitly as
+`{ "apiRoutes": true, "asyncRoutes": { "web": false } }`, because SDK 58's plugin with no options
+resolves `asyncRoutes.web` to **`true`** — script splitting stays off until item #938 decides
+otherwise. And a page that throws while rendering fails `expo export` with
+`Failed to statically export route: <name>`; that is the intended guard, not a flaky build. The
+export's own manifest states the split: `{"html": 16, "notFound": 1, "api": 38}` — 15 non-sitemap
+`htmlRoutes` plus expo-router's own `Sitemap.js` as the 16th, `+not-found.tsx` as the single
+`notFoundRoutes`, and 38 `+api.ts` handlers. The how-to and the full rationale are in the README's
+web-output-mode section
+([`frontend/mcm-app/README.md`](../../frontend/mcm-app/README.md)); this page records why the
+arrangement reads as it does.
+
+Hosting runs on `expo-server`'s express adapter, which feature 087 landed **on SDK 57 first** so the
+risk was proven and reversible before any version move: that swap made `expo-server` a direct
+dependency and a prune root, so the unmaintained `@expo/server` package is named by no manifest,
+prune root or test stub. Client-side code lives in `src/screens/`, `src/components/`, `src/hooks/`,
+`src/config/`, `src/utils/`, `src/types/`; routes (both UI screens and API handlers) live under
 `src/app/`. Routes stay thin by convention — a route file reports its own screen label (see below)
 and renders a screen component, never the other way round. Both this app and the design system are
 linted by **ESLint 10 through flat config** (`eslint.config.js` in each project, replacing the
@@ -417,6 +450,83 @@ sequenceDiagram
 ```
 The standing-backup-consent grant is a client-initiated, identity-provider-mediated round trip: the client only ever requests a URL and later polls status, never records the grant itself.
 
+## Failures that look healthy, and what catches each
+
+The SDK 58 spike produced failures that every existing check reported as fine, so feature 087 gave
+each one its own keyless gate — and, deliberately, landed those gates **on SDK 57 first**, so they
+were proven against the app as it was rather than first exercised by the upgrade. That sequencing is
+now history: the app is on SDK 58 and the same gates run against it. Every one of these gates carries
+a selftest that proves it can fail as well as pass.
+
+| Failure | Gate | Its message names |
+|---|---|---|
+| Two copies of the styling library, which is a blank page | `scripts/__tests__/tamagui-version-lockstep.guard.test.mjs`, counting distinct `snapshots:` keys in the lock | Both keys, and `pnpm dedupe` |
+| A split bundle that fits chunk by chunk but not as a whole | `pnpm nx bundle-budget mcm-app`, measuring every script the worst page loads | The page, bytes, overage and each script |
+| An inline script the CSP will block | The same gate, reading `INLINE_SCRIPT_HASHES` from `web-security-headers.js`, which the CSP is also built from | The page and the `'sha256-…'` value. That value is not permission to add it |
+| A page the browser refuses or crashes on | `tests/e2e/web/page-security-policy-walk.spec.ts`, in the `lifecycle` project | Each violation's directive, blocked URI and source |
+| A release APK that does not launch | `scripts/android-launch-smoke.sh` in `app-e2e`, reported as the commit status `app-ci / android-launch` | Which of launch, login screen and device log failed |
+
+Four of those five are described where their mechanism lives: the two-copies/one-instance half of the
+Tamagui guard and the blank-page failure it prevents are in the Tamagui gotcha below and on the
+[design system page](./design-system.md); the cold-load total, the inline-script allowlist and the
+`--require-maps` invocation are in the `check-web-bundle-budget.mjs` gotcha; and the browser walk's
+injected violation binding, its four page-start paths and its zero-violation requirement are in the
+security-header gotcha.
+
+**The fifth one is new here, because it is the only gate whose result is published as a commit
+status.** `scripts/android-launch-smoke.sh` runs inside `app-e2e`'s agent emulator step as the first
+line after `adb install` and immediately before the agent flows, and it reports three separate facts
+rather than one pass/fail: whether `adb shell am start -W` on the app's release activity reported
+`Status: ok`, whether the `login-screen` resource id appeared in a `uiautomator dump` within a bounded
+wait, and how many fatal log lines belong to **this app's** process — matched on `FATAL EXCEPTION`,
+`ClassNotFoundException` and `NoSuchMethodException`, with attribution by PID taken from the log
+itself (a crashed process has no PID left to ask for). That attribution is what keeps a Chrome crash
+on the same device from reading as this app failing to launch, and the classifier carries a
+`--selftest` that needs no device, run cheaply in guardrails by
+`scripts/__tests__/android-launch-smoke.test.mjs`, because a grep that matches nothing looks
+identical to a clean launch. Without the check the first sign of a release APK that builds but
+crashes would be every Maestro flow failing at once with a message about a missing element, which
+reads as a broken flow rather than a broken binary.
+
+The result reaches a readable channel through a file, not a step output: the emulator action's
+`script:` block cannot export step outputs and this forge exposes no job log or artifact API, so the
+check writes `$HOME/android-launch-$GITHUB_RUN_ID.json` on failure as well as on success — the run id
+in the filename means a persistent runner cannot serve a stale result. A separate `always()` step then
+runs `scripts/publish-android-launch.mjs` and posts the commit status **`app-ci / android-launch`**,
+carrying the emulator step's own gate so a PR that skips the emulator publishes nothing. An absent
+result file under an open gate means the emulator never reached the check and is published as
+`launch=not-run` — a different fact from "the checks failed", and the reason the file is written on
+both outcomes; a `cancelled` job publishes nothing at all. Only known values ever reach the
+description, never a log excerpt. The status is deliberately **not** a required context: the check's
+own exit code is what blocks, so the publisher exits 0 whenever its arguments are valid and a
+bookkeeping POST can never mask the real result. The AVD, the flow order and the per-step ceilings
+belong to the [Android emulator runbook](../runbooks/android-emulator.md).
+
+## What ships in the BFF image (and what fails the build)
+
+The image carries the exported web bundle plus **only the dependency closure `node server.js` can
+reach** — `express`, `expo-server`, `openai` and what those pull in. Everything else
+`pnpm deploy --prod` materializes is a dependency of the *web bundle*, which Metro has already
+compiled into `dist/`, so it is deleted at image-build time by
+`scripts/prune-bff-runtime-modules.mjs`. The closure is walked from a small hand-held root set rather
+than described by a delete-list, because a hand-maintained list rots the moment a dependency moves
+and its failure mode is a route that 500s lazily in production instead of a build that fails; an
+absent *required* root throws rather than silently pruning everything. Deleting also requires
+`--apply` — the script's default is a dry run, an inversion that makes a near-miss flag spelling fail
+safe on a script whose failure mode is an irreversible recursive delete inside an image build.
+
+That script also runs as a **gate** in the builder stage (`--check-bundle dist/server`). Expo Router's
+server output can name a package with a bare string rather than an import — `@copilotkit/runtime`
+reaches its provider adapters through `createRequire(globalThis.__ExpoImportMetaRegistry.url)` — and
+a closure walk cannot see a string. So the build re-derives every such specifier from the freshly
+exported bundle and **fails** if one appears that the script does not account for. If a dependency
+bump turns the build red with *"the exported server bundle reaches for … bare specifier(s)"*, that is
+this gate: decide whether the specifier resolves from `/app/runtime` (add it to `DYNAMIC_ROOTS`) or
+already does not (record it as `unresolvable` in `KNOWN_DYNAMIC_SPECIFIERS`). Do not delete the check
+— its whole purpose is to stop a pruned package from becoming a 500 on one route in production. The
+measured image figures, the traced evidence the closure rests on and the two decision lists belong to
+[BFF](./bff.md); what this page records is the app-side build contract that produces them.
+
 ## Gotchas
 
 - **`import.meta.url` crashes the exported server bundle in production only.** Metro rewrites
@@ -481,17 +591,21 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   and `import/no-named-as-default-member`, each of which was absent from the legacy preset; they are
   parity, not new exemptions, and turning them on means fixing what they report (33 findings in
   mcm-app, 0 in design-system), which is its own change. Third, **`@eslint/compat`'s
-  `fixupConfigRules` wraps the preset because `eslint-config-expo` 57.0.2 bundles `eslint-plugin-react`
-  7.37.5 and `eslint-plugin-import` 2.32.0, whose newest releases peer `eslint <=9` and still call
-  context methods ESLint 10 removed** — without it every file fails at load with
+  `fixupConfigRules` wraps the preset because `eslint-config-expo` bundles `eslint-plugin-react`
+  7.37.5 and `eslint-plugin-import` 2.32.0 — in 57.0.2 and still in 58.0.4, the newest — whose newest
+  releases peer `eslint <=9` and still call context methods ESLint 10 removed** — without it every
+  file fails at load with
   `react/display-name: contextOrFilename.getFilename is not a function`. `@eslint/compat` restores
   those methods on the rule context and changes no rule or severity; drop it once both plugins, as
   `eslint-config-expo` ships them, declare eslint 10 in their peers. The linted file set is
   deliberately unchanged: flat config cannot narrow extensions from the CLI (and lints `*.js`/`*.mjs`/
   `*.cjs` by default), so `*.{js,jsx,mjs,cjs}` are globally ignored in both configs, matching what
-  `--ext .ts,.tsx` selected. Both projects declare `eslint ^10.12.0`, `eslint-config-expo ~57.0.2` and
-  `@eslint/compat ^2.1.1`; the measured result is mcm-app 0 errors / 43 warnings and design-system
-  0/0, the same 43 warnings at the same `file:line:rule` as before the migration. Renovate still owns
+  `--ext .ts,.tsx` selected. Both projects declare `eslint ^10.12.0`, `eslint-config-expo ~58.0.4`
+  (moved with the SDK) and `@eslint/compat ^2.1.1`; the measured result after the SDK 58 move is
+  mcm-app 0 errors / 53 warnings and design-system 0/0 — 43 of those warnings are the same
+  `file:line:rule` as before the migration, and the 4 extra are `no-require-imports` in
+  `zod-jitless.test.ts` plus one `import/first`, both from unrelated changes rather than from SDK 58.
+  Renovate still owns
   this surface: `eslint-config-expo` is version-locked to the Expo SDK family (upgrades go through
   `expo install` with `expo`/`react-native`, never a raw bump), and TypeScript 7 stays held
   because `@typescript-eslint/parser` still peers `typescript ">=4.8.4 <6.1.0"` — see the
@@ -556,10 +670,12 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `2_000_000` bytes and, since feature 087, it caps the **cold-load total** — the sum of every
   `/_expo/` script the worst exported page loads, read from the exported HTML — rather than the
   `entry-*` chunk alone, because a split bundle can fit chunk by chunk and still be too big to
-  load. On the SDK 57 baseline that total measured 1,892,065 B of the 2,000,000 B ceiling (94.6%,
-  107,935 B spare) on the worst of 17 exported pages, so the headroom is roughly one ordinary
-  feature — and the [constitution](../process/constitution.md)'s exception clause still reads as an
-  entry-chunk maximum, with its byte figures historical. The other three assertions: the deferred
+  load. On the SDK 58 export that total measured 1,926,163 B of the 2,000,000 B ceiling (96.3%,
+  73,837 B spare) on the worst of 17 exported pages — `(app)/collections/[collectionId].html`, one
+  script — which is +34,342 B (+1.8%) on the SDK 57 baseline of 1,892,065 B (94.6%, 107,935 B
+  spare). The budget itself was left unchanged, so the headroom is now well under one ordinary
+  feature, and the [constitution](../process/constitution.md)'s exception clause still reads as an
+  entry-chunk maximum with its byte figures historical. The other three assertions: the deferred
   assistant packages must be absent from the *entry* chunk; server-only code must be absent from
   *every* client chunk (not just the entry one — a gate reading only the entry chunk would report
   clean while `src/bff-server/**` shipped inside a deferred chunk); and every inline `<script>` in
@@ -687,8 +803,22 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   writes a network security config permitting cleartext for `localhost`, `127.0.0.1` and the
   emulator host alias `10.0.2.2` **only**, then points `android:networkSecurityConfig` at it. Every
   other host stays cleartext-blocked, so the production HTTPS build is unaffected — prod talks to
-  its real HTTPS host, which is not in this allowlist. See the [Android emulator
-  runbook](../runbooks/android-emulator.md) for the APK build path this sits in.
+  its real HTTPS host, which is not in this allowlist. One thing about that plugin changed with
+  SDK 58: it now requires `expo/config-plugins` rather than `@expo/config-plugins`, because the app
+  does not depend on the latter and on SDK 58 nothing puts it within reach, so `expo config` — and
+  with it prebuild and `expo-doctor` — failed with `Cannot find module '@expo/config-plugins'`.
+  See the [Android emulator runbook](../runbooks/android-emulator.md) for the APK build path this
+  sits in.
+- **Release code shrinking is off, and that is an explicit opt-out with a guard, not a default.**
+  SDK 58's Android template turns `enableMinifyInReleaseBuilds` **on**, so an absent setting would
+  ship a shrunk binary nobody has tested — and R8 strips classes reached only by reflection, which
+  surfaces as a crash on a device rather than as a build error. `app.json` therefore carries
+  `["expo-build-properties", { "android": { "enableMinifyInReleaseBuilds": false } }]`, and
+  `scripts/__tests__/android-release-shrinking.guard.test.mjs` reads `app.json` itself and fails on
+  an absent entry, on `true`, and on the plugin listed without options — each failure proven against
+  a synthetic input — pointing at item #937 as the change that will turn it on deliberately. The
+  same release configuration pins the Gradle heap and fails fast on exhaustion on **both** CI build
+  paths (`prod-apk` and `app-e2e`), which `prod-apk-gradle-heap.guard.test.mjs` asserts.
 - **Web E2E must run against a prebuilt BFF container, and a stale image lies to you.** Web E2E
   always runs against the containerized BFF rather than the Metro dev server, so the suite exercises
   the production-mode `expo export` output the image ships. That container serves a prebuilt bundle —
@@ -728,21 +858,45 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `--memory=10g --memory-swap=10g` on the sandbox container so an exhaustion inside it is resolved
   inside it. `scripts/__tests__/dev-memory-bounds.guard.test.mjs` discovers every Jest config from
   git and fails by name if one lacks the cap — including one added later.
-- **RN 0.86's renderer is Babel-transformed unless Jest is told not to, and the transform, not the
-  load, is what cost time.** React Native 0.86's `RendererImplementation` imports `ReactFabric` at
-  module scope where 0.85 `require`d it lazily inside `getFabricRenderer()`, so the first render that
-  touches `Animated` pulls in the ~725 KB `ReactFabric-dev.js` — a file that is already-compiled
-  CommonJS and needs no transform. `frontend/mcm-app/package.json`'s jest `transformIgnorePatterns`
+- **The React Native renderer is Babel-transformed unless Jest is told not to, and the transform,
+  not the load, is what cost time.** React Native 0.86's `RendererImplementation` began importing
+  `ReactFabric` at module scope where 0.85 `require`d it lazily inside `getFabricRenderer()` — and
+  0.88.1's still does — so the first render that touches `Animated` pulls in the ~725 KB
+  `ReactFabric-dev.js`, a file that is already-compiled CommonJS and needs no transform.
+  `frontend/mcm-app/package.json`'s jest `transformIgnorePatterns`
   therefore carries `/node_modules/react-native/Libraries/Renderer/implementations/`. Measured cold
   with `--no-cache --maxWorkers=1` on one test: 1104–1260 ms transformed vs 591–630 ms excluded, back
   at the SDK-56 figure. The per-test 15 s timeout that briefly stood in for this is gone; delete the
   pattern and a loaded CI runner can exceed Jest's default 5 s bound on the first
   `Animated`-touching render per worker.
+- **The two `server.js` suites must not carry `@jest-environment node`, and the reason is a Jest 30
+  behaviour rather than a preference.** Since Jest 30.4, `Runtime.resetModules()` calls
+  `moduleMocker.clearMocksOnScope(global)`, which reads every enumerable global; Expo installs
+  `fetch`, `structuredClone`, `URL` and others as getters that `require()` their implementation on
+  first read, and Jest refuses that require outside a test. `jest-expo`'s own environment — itself a
+  `jest-environment-node` subclass — patches `clearMocksOnScope` to skip accessor properties, so the
+  override was the only reason these two suites failed under Jest 30 with
+  ``ReferenceError: You are trying to `require` a file outside of the scope of the test code``. Both
+  suites need only Node built-ins and a child process, so they run on the preset's environment with
+  the override dropped and a note in each file saying why; an empty test under `@jest-environment
+  node` fails identically, and `testEnvironmentOptions.globalsCleanup: off` does not help because
+  that is a different mechanism.
 - **Password-manager autofill is deliberately suppressed almost everywhere.** Use
   `NoAutoFillInput` (`src/components/no-autofill-input.tsx`, used across the collection/movie
   forms, search bar, and assistant config) instead of plain `TextInput` for form fields, except the
   registration page (`register-form.tsx`), which uses a plain `TextInput` on purpose because
-  autofill is wanted there.
+  autofill is wanted there. Two details of the component are load-bearing rather than incidental.
+  Its `autoComplete` default is chosen per field — `off` normally, but `new-password` when
+  `secureTextEntry` is set, because the browser's built-in password manager ignores `off` on a
+  password-type input and would otherwise still fill and offer to save the assistant's API keys —
+  and a caller can still override `autoComplete` explicitly, which wins. And the `webName` escape
+  hatch (which defeats Chrome's personal-name autofill heuristic by giving the input a `name` React
+  Native Web does not forward) is applied **imperatively** through `setNativeProps` in a layout
+  effect, guarded by a run-time check: React Native 0.88's `TextInputInstance` no longer declares
+  `setNativeProps`, because new-architecture host instances have none, while react-native-web's still
+  does and is the only thing that can set that DOM attribute. Assuming the method instead of
+  checking it was one of the six type errors the SDK 58 move produced
+  (`no-autofill-input.tsx:86`).
 - **React Native Testing Library 14 made the whole render/event API async — an un-awaited `render`
   fails as `getByTestId is not a function`, not as a warning.** Feature 081 US5c took
   `@testing-library/react-native` from 13.3.3 to `^14.1.0`, whose `render`, `renderHook`, `rerender`,
@@ -761,14 +915,20 @@ The standing-backup-consent grant is a client-initiated, identity-provider-media
   `fireEvent.press` on a button the first press disabled stops at the button instead of reaching the
   handler. The "second press ignored" assertions still hold — now because the press never arrives,
   which is what their titles actually claim.
-- **`test-renderer` is held below 1.3 for as long as the app is on React 19.2.** RNTL 14 renders
-  through `test-renderer`, and 1.3.x depends on `react-reconciler` 0.34, which peers `react ^19.3.0`;
-  Expo SDK 57 pins React 19.2.3, so `frontend/mcm-app/package.json` declares `test-renderer ~1.2.0`
-  and Renovate caps it at `/^1\.[0-2]\./`. The hold sits in a group of its own, and that is
-  load-bearing rather than tidiness: a held member gates every member batched alongside it, so leaving
-  it in the routine `js patch/minor` group would block unrelated npm bumps behind a version that
-  cannot install. Lift it when an Expo SDK move brings React 19.3. See the
-  [Renovate runbook](../runbooks/renovate.md) for the hold conventions this follows.
+- **The `test-renderer` hold is gone, and that is the shape of a version-lock move rather than a
+  separate task.** RNTL 14 renders through `test-renderer`, whose 1.3.x line depends on
+  `react-reconciler` 0.34 and therefore peers `react ^19.3.0`; while the app was on React 19.2.3
+  (SDK 57) that made `test-renderer` uninstallable at 1.3, so `package.json` declared `~1.2.0` and
+  Renovate capped it at `/^1\.[0-2]\./` in a group of its own — the separate group being
+  load-bearing, because a held member gates every member batched alongside it. Feature 087 brought
+  React 19.3.0, so both manifests now declare `test-renderer ~1.3.1` and the cap rule was deleted,
+  together with the held `jest` major rule (jest-expo 58 depends on jest 30). The general convention
+  the hold followed is in the [Renovate runbook](../runbooks/renovate.md): each hold carries a
+  re-check rule and is lifted in the change that removes its cause, never silently re-created. The
+  holds that survived the SDK 58 move are the ones whose cause did not move — Babel 8 (still peering
+  `@babel/runtime ^7.20.0`), TypeScript 7 (`@typescript-eslint/parser` still peers
+  `typescript ">=4.8.4 <6.1.0"`), JDK 17, and `@react-native-async-storage/async-storage` 3 (the SDK's
+  `bundledNativeModules.json` still lists 2.2.0).
 - **Every `data-testid`-based web E2E selector depends on React Native Web's `testID` →
   `data-testid` rewrite matching Playwright's configured `testIdAttribute`.** See [Playwright
   testID mapping](../gotchas/playwright-testid-mapping.md) for the mechanism and why a mismatch
