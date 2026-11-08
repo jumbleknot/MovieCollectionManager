@@ -43,4 +43,43 @@ module.exports = defineConfig([
       'import/no-named-as-default-member': 'off',
     },
   },
+  // NON-APP CODE (spec 097, item #962). `lint` runs `eslint .` since 097, so tests, scripts and the
+  // root config files are linted with the app. Each rule changed here is changed for a reason that
+  // holds for these paths and NOT for `src/`; nothing is turned off because it was inconvenient.
+  {
+    files: ['tests/**', 'scripts/**', '*.config.ts'],
+    rules: {
+      // OFF: the rule exists because Metro inlines only STATIC `process.env.EXPO_PUBLIC_*` reads into
+      // the app bundle, so a dynamic read there is `undefined` at runtime. This code never enters the
+      // bundle: it runs under Node (jest, Playwright, tsx scripts), where `process.env[name]` is
+      // simply correct. 10 findings, every one a test/config helper reading its own env by name.
+      'expo/no-dynamic-env-var': 'off',
+      // ERROR, up from the preset's warn: unused code had piled up here unseen until spec 096 removed
+      // 15 symbols, four of them a skip-escalation guard imported and never called. `_`-prefixed
+      // names are the conventional "deliberately unused" marker (mock factory and fixture params).
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+      ],
+    },
+  },
+  {
+    files: ['tests/e2e/**'],
+    rules: {
+      // OFF: Playwright, not React. A fixture's second parameter is conventionally named `use`, which
+      // the rule takes for React 19's `use()` hook, and nothing under tests/e2e renders a component, so
+      // the rule has no true positive to find here. Confirmed on worker-session.ts (`storageState:
+      // ({ workerStorageState }, use) => use(...)`). Component tests live in tests/app and keep it.
+      'react-hooks/rules-of-hooks': 'off',
+    },
+  },
+  {
+    files: ['tests/load/**'],
+    settings: {
+      // k6 scripts import k6's built-in modules, which the k6 runtime supplies and Node cannot
+      // resolve. Declared as core modules rather than turning `import/no-unresolved` off, so a
+      // genuinely misspelled relative import in a load script is still an error.
+      'import/core-modules': ['k6', 'k6/http', 'k6/metrics'],
+    },
+  },
 ]);
