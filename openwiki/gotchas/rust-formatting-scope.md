@@ -1,9 +1,9 @@
 ---
 type: Gotcha
 title: cargo fmt formats the WHOLE crate — a per-file argument does not scope it
-description: Why `cargo fmt -- <file>` reformats every file in the crate rather than the one named, why that is a manufactured diff and not a harmless tidy-up in a repository with pre-existing drift, and the single-file alternative.
+description: Why `cargo fmt -- <file>` reformats every file in the crate rather than the one named, the single-file alternative, and why — since spec 095 made `cargo fmt --check` part of the lint gate — it now only bites on a branch cut before that.
 tags: [rust, cargo, rustfmt, mc-service, tooling, formatting]
-timestamp: 2026-08-09T00:00:00+00:00
+timestamp: 2026-11-08T00:00:00+00:00
 ---
 
 # cargo fmt formats the WHOLE crate — a per-file argument does not scope it
@@ -26,24 +26,23 @@ reformatted. The named path adds a target; it does not restrict one.
 rustfmt backend/mc-service/tests/http_authz_test.rs
 ```
 
-## Why this is worse here than it sounds
+## Why it matters less than it did — and when it still bites
 
-On a clean crate a whole-crate format is a harmless tidy-up. In `backend/mc-service` it is not, and
-the reason is context that has to travel with the rule or the rule reads as pedantry:
+Until 2026-11-08 `cargo fmt --check` drifted in several untouched mc-service files on clean `main`,
+and nothing enforced the constitution's "`cargo fmt` enforced in CI/CD". A whole-crate format
+therefore rewrote files nobody in the change had looked at, and the convention became "format only
+what you touch". That cost one feature its task precondition (feature 046, 2026-08-02: the per-file
+invocation reformatted 4 drift files under `src/` and broke a required-empty `src/` diff).
 
-- **`cargo fmt --check` already drifts in 7 untouched files** on clean `main`. A whole-crate format
-  therefore rewrites 7 files nobody in your change has looked at.
-- **The lint gate is the Nx target — `pnpm nx lint mc-service` — not `cargo clippy --all-targets`.**
-  `--all-targets` reports **9 pre-existing failures** on clean `main`, so it is not a signal about
-  your change. Judge a change by whether it adds diagnostics *naming its own files*.
-- So the convention is **format only what you touch**. A whole-crate format produces a diff that
-  someone must then prove is unrelated to the change, in a review where the interesting part is
-  three files.
+**Spec 095 removed the drift and made the check a gate.** `pnpm nx lint mc-service` now runs
+`cargo fmt -p mc-service --check` before clippy, so `main` is format-clean by construction and a
+whole-crate `cargo fmt` on a fresh branch changes only what you changed. Format freely.
 
-**Measured, 2026-08-02, during feature 046.** The per-file invocation above reformatted the whole
-crate, including 4 of those drift files under `src/`. That silently broke a task precondition
-requiring an empty `src/` diff. Recovery was `git checkout --` against every file the feature did not
-own, leaving only the two it did, then re-confirming `src/` was empty.
+It still bites on a branch cut **before** spec 095 merged, or when rebasing one across it: there,
+a whole-crate format rewrites the drift the old base still carries. Merge `main` first.
+
+The lint gate is the Nx target, `pnpm nx lint mc-service` (fmt check, then
+`clippy --all-targets -D warnings`), and it is clean on `main` — judge a change by it.
 
 ## Recovery
 

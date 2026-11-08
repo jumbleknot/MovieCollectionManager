@@ -10,7 +10,7 @@
     },
     "lint": {
       "executor": "@nxlv/python:run-commands",
-      "options": { "command": "uv run ruff check . && uv run mypy src", "cwd": "mcp-servers/web-api-mcp" }
+      "options": { "command": "uv run ruff format --check . && uv run ruff check . && uv run mypy src", "cwd": "mcp-servers/web-api-mcp" }
     },
     "test": {
       "executor": "@nxlv/python:run-commands",

@@ -1,0 +1,7 @@
+# Formatting-only commits, skipped by `git blame` when configured with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# Spec 095 — the constitution's formatters applied once, then enforced by the lint targets.
+b2c13d972c3bf2f7c5524fd6c10e10aae7fdcf47
+570c147615bcb4ce393f7597af8397ad4a5cfbaf
+1195ad3cf32cd5339e8de45f1e38bb9b079f5bf7
+dcba048244fe29d1a0f982a484c830dbe2f76a05

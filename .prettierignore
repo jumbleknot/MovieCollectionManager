@@ -1,0 +1,23 @@
+# Prettier is the constitution's TS/JS formatter (spec 095). It is checked by the `lint` targets of
+# mcm-app and design-system, which run, from the project directory:
+#
+#   prettier --check --ignore-path ../../.prettierignore '**/*.{ts,tsx,js,mjs}'
+#
+# Use that invocation (with --write) to format. Do NOT run a bare `prettier --write .` from the repo
+# root: Prettier also reads the root .gitignore, and matches it CASE-INSENSITIVELY where git does
+# not. The Visual Studio rule `Backup*/` there therefore hides every `backups/` directory from
+# Prettier while git still tracks it — 14 mcm-app files were silently skipped that way. Passing
+# --ignore-path replaces .gitignore with this file, so the check sees them.
+#
+# This file excludes the projects' generated and vendored output.
+node_modules
+dist
+build
+coverage
+.expo
+android
+ios
+web-build
+playwright-report
+test-results
+*.snap
