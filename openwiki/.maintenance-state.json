@@ -11,7 +11,8 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/MCM-Architecture.md"
+      "reason": "source changed: docs/MCM-Architecture.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/architecture/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/architecture/system-overview.md. The openwiki/architecture/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/architecture/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     },
     {
       "area": "projects",
@@ -22,7 +23,8 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/MCM-Architecture.md"
+      "reason": "source changed: docs/MCM-Architecture.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/mc-service.md; openwiki/projects/mcp-servers.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     },
     {
       "area": "runbooks",
@@ -32,13 +34,14 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/devcontainer.md"
+      "reason": "source changed: docs/runbooks/devcontainer.md",
+      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
     }
   ],
   "proposal": null,
   "lastRunBudget": {
     "pagesWritten": 0,
-    "elapsedSeconds": 3106,
+    "elapsedSeconds": 2083,
     "stoppedAtBudget": false
   },
   "escalations": {
@@ -46,44 +49,44 @@
       "effort": "low",
       "reason": "deadline",
       "since": "2026-11-08T14:50:39.679Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "projects/mc-service.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-11-08T14:50:39.679Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "projects/mcp-servers.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-11-08T14:50:39.679Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     },
     "runbooks/devcontainer.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-11-08T14:50:39.679Z",
-      "failuresAtLow": 0
+      "failuresAtLow": 1
     }
   },
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 479,
-    "failedCalls": 0,
+    "calls": 700,
+    "failedCalls": 105,
     "uncounted": 0,
-    "uncached": 4360155,
-    "cached": 45980584,
+    "uncached": 3195098,
+    "cached": 46437018,
     "cacheWrite": 0,
-    "output": 881412,
-    "reasoning": 510757,
-    "ms": 3684323,
-    "estCostUsd": 2.6416,
+    "output": 861485,
+    "reasoning": 620276,
+    "ms": 4214839,
+    "estCostUsd": 2.2709,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
-    "reasoningEffort": null,
+    "reasoningEffort": "low",
     "priceTable": "2026-10-07"
   },
   "lastRunInvocations": [
@@ -94,9 +97,9 @@
         "projects/mcp-servers.md",
         "runbooks/devcontainer.md"
       ],
-      "effort": null,
-      "deadlineStop": true,
-      "estCostUsd": 2.6416,
+      "effort": "low",
+      "deadlineStop": false,
+      "estCostUsd": 2.2709,
       "rateLimited": null
     }
   ],
