@@ -30,6 +30,10 @@ import {
 } from './helpers/backup-targets';
 
 const bff = createBffClient();
+
+// Fails here, naming the missing input, when MCM_REQUIRE_BACKUP_TARGETS=1 and the targets are
+// down, instead of as N connection errors below. Jest runs no hook when every test is skipped.
+beforeAll(() => assertBackupTargetsPresent());
 const PROBE = '/bff-api/backups/destinations/test';
 
 const S3_ENDPOINT =

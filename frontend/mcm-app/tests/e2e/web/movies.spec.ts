@@ -750,18 +750,6 @@ test.describe('Movie delete (T151)', () => {
     await navigateToCollection(page);
   });
 
-  async function navigateToFirstMovie(page: Page): Promise<string | undefined> {
-    // Wait for at least one movie row to be present
-    await page.waitForSelector('[data-testid="movie-list-item-row"]', { timeout: 10000 });
-    const row = page.getByTestId('movie-list-item-row').first();
-    // Get the title before clicking
-    const titleEl = row.getByTestId('movie-list-item-title');
-    const title = await titleEl.textContent().catch(() => undefined);
-    await row.click();
-    await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 10000 });
-    return title ?? undefined;
-  }
-
   test('cancel delete — dialog closes and movie detail is still shown', async ({ page }) => {
     // Create a dedicated movie so this test is independent of pre-existing data.
     await clickAddMovie(page);

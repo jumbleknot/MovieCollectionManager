@@ -5,7 +5,7 @@
  * audit, 400 invalid body.
  */
 
-import { AuthError, AuthErrorCode, UnauthorizedError } from '@/types/errors';
+import { AuthErrorCode, UnauthorizedError } from '@/types/errors';
 import { ClientRole } from '@/types/auth';
 import type { UserProfile } from '@/types/auth';
 

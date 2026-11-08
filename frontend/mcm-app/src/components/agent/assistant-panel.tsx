@@ -28,7 +28,7 @@
 // Must stay first: it has to run before anything in this chunk builds a zod schema (feature 089).
 import '@/utils/zod-jitless';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { Button, ChatBubble } from '@mcm/design-system';
 import { useAgent, useRenderToolCall, type ToolCall } from '@copilotkit/react-native';

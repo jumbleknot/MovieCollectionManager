@@ -28,13 +28,13 @@ import {
 import { loginSession } from './helpers/bff-session';
 import { getBackupDestinationsCollection, closeMongo } from '@/bff-server/mongo-client';
 
-import {
-  describeBackupTargets,
-  itBackupTargets,
-  assertBackupTargetsPresent,
-} from './helpers/backup-targets';
+import { describeBackupTargets, assertBackupTargetsPresent } from './helpers/backup-targets';
 
 const bff = createBffClient();
+
+// Fails here, naming the missing input, when MCM_REQUIRE_BACKUP_TARGETS=1 and the targets are
+// down, instead of as N connection errors below. Jest runs no hook when every test is skipped.
+beforeAll(() => assertBackupTargetsPresent());
 const BASE = '/bff-api/backups/destinations';
 
 let userA: TestUser;

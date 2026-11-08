@@ -20,11 +20,7 @@ import {
 
 import { createBffClient } from './helpers/bff-test-server';
 
-import {
-  describeBackupTargets,
-  itBackupTargets,
-  assertBackupTargetsPresent,
-} from './helpers/backup-targets';
+import { describeBackupTargets, assertBackupTargetsPresent } from './helpers/backup-targets';
 import {
   createTestUser,
   deleteTestUser,
@@ -35,6 +31,10 @@ import {
 import { loginSession } from './helpers/bff-session';
 
 const bff = createBffClient();
+
+// Fails here, naming the missing input, when MCM_REQUIRE_BACKUP_TARGETS=1 and the targets are
+// down, instead of as N connection errors below. Jest runs no hook when every test is skipped.
+beforeAll(() => assertBackupTargetsPresent());
 const JOBS = '/bff-api/backups/jobs';
 
 // The BFF container reaches the test RustFS by compose service name, not on loopback.
@@ -49,7 +49,6 @@ let userB: TestUser;
 let tokenA: string;
 let tokenB: string;
 let destinationA: string;
-let destinationB: string;
 let collectionA: string;
 let jobA: string;
 
@@ -80,7 +79,6 @@ beforeAll(async () => {
   tokenB = (await loginSession(userB.username, userB.password)).cookie;
 
   destinationA = (await seedDestination(userA.userId)).id;
-  destinationB = (await seedDestination(userB.userId)).id;
 
   const created = await bff.post(
     '/bff-api/collections',
