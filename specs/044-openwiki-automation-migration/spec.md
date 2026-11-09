@@ -229,8 +229,8 @@ re-running resumes rather than restarts.
 
 #### Automated maintenance
 
-- **FR-009**: Bundle maintenance MUST execute automatically on merges to the main branch, triggered once the branch has been quiet for approximately **15 minutes**, so that a burst of merges collapses into a single run. There is no periodic sweep.
-- **FR-009b**: A **maximum deferral** MUST cap the debounce wait and force a run even if the quiet period never arrives. Without it, a sustained run of merges starves maintenance indefinitely — the busiest days, when the bundle drifts fastest, would be the ones that never trigger a run.
+- **FR-009** *(superseded 2026-11-09 by feature 078 FR-024: one daily fire, no debounce)*: Bundle maintenance MUST execute automatically on merges to the main branch, triggered once the branch has been quiet for approximately **15 minutes**, so that a burst of merges collapses into a single run. There is no periodic sweep.
+- **FR-009b** *(superseded 2026-11-09 by feature 078 FR-024: a daily fire cannot starve)*: A **maximum deferral** MUST cap the debounce wait and force a run even if the quiet period never arrives. Without it, a sustained run of merges starves maintenance indefinitely — the busiest days, when the bundle drifts fastest, would be the ones that never trigger a run.
 - **FR-009c**: Manual dispatch MUST bypass the debounce entirely.
 - **FR-009a**: A maintenance run's own proposal, once merged, MUST NOT trigger a further maintenance run. Changes confined to the bundle MUST NOT re-trigger maintenance, so the mechanism cannot feed itself.
 - **FR-010**: An automated maintenance run MUST determine what needs updating from what has changed in the repository since the last recorded maintenance run — not from per-concept staleness markers.

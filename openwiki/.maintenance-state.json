@@ -109,5 +109,25 @@
       "since": "2026-10-12",
       "reason": "operator: never spend on it; its resource is the directory specs/, so any spec commit re-flags it (V12) and a regeneration buys nothing durable"
     }
+  },
+  "cooldowns": {
+    "runbooks/renovate.md": {
+      "days": 7,
+      "item": 977,
+      "since": "2026-11-09",
+      "reason": "078 US7 (research R21): its source changes on nearly every PR in its area; regenerated 16 times in the month to 2026-11-08"
+    },
+    "runbooks/server-setup.md": {
+      "days": 7,
+      "item": 977,
+      "since": "2026-11-09",
+      "reason": "078 US7 (research R21): its source changes on nearly every PR in its area; regenerated 22 times in the month to 2026-11-08"
+    },
+    "runbooks/wiki-maintenance.md": {
+      "days": 7,
+      "item": 977,
+      "since": "2026-11-09",
+      "reason": "078 US7 (research R21): its source changes on nearly every PR in its area; regenerated 23 times in the month to 2026-11-08, and every fix to the wiki edits its source"
+    }
   }
 }

@@ -1,4 +1,4 @@
-# Feature 044 (US2) — OpenWiki knowledge-bundle maintenance, run once `main` has gone quiet.
+# Feature 044 (US2) — OpenWiki knowledge-bundle maintenance, run once a day over what merged (078 US7).
 #
 # Freshness without a human remembering: after merges to `main` settle, plan the documentation work
 # that landed, generate it in bounded slices, verify each slice by what actually appeared in the
@@ -6,17 +6,16 @@
 #
 # ── Four properties in this file are load-bearing and easy to break by accident ──────────────────
 #
-# 1. THE DEBOUNCE IS THE SCHEDULE, NOT A SLEEP (item #613, 078 research R19). Until 2026-11 a push
-#    started a run that slept 15 minutes inside the job — a quarter of its 60-minute window, leaving
-#    ~37 for generation. Now a fire every 30 minutes runs scripts/wiki-quiet.mjs FIRST, before any
-#    install: it generates only when main's newest uncovered commit is ≥ 15 min old, and otherwise
-#    ends in about a minute so the next fire can look again. A `push` trigger would be pointless — a
-#    push is by definition not quiet. cancel-in-progress is FALSE for the same reason it used to be
-#    true: cancelling was the old debounce, and under a schedule it would kill a generation mid-run.
+# 1. THE BATCHING IS THE SCHEDULE, NOT A SLEEP (item #613; 078 FR-024, amendment 2026-11-09). The
+#    job fires once a day and runs scripts/wiki-quiet.mjs FIRST, before any install: it generates
+#    when any commit past the marker is not the job's own, and otherwise ends in about a minute. Until
+#    2026-11-09 it fired every 30 minutes behind a 15-minute debounce, which paid for the same page on
+#    every merge burst (research R21: 265 page attempts for 39 pages in a month). A `push` trigger
+#    would defeat the batching. cancel-in-progress stays FALSE: a fire must never kill a generation.
 #
-# 2. THE MAXIMUM DEFERRAL IS GIT-DERIVED. wiki-quiet.mjs runs anyway once the OLDEST uncovered commit
-#    is 6 h old, so a merge stream that never goes quiet still triggers a run (SC-008b) rather than
-#    starving maintenance exactly when drift is fastest. Nothing is held in run state between fires.
+# 2. NOTHING IS HELD BETWEEN FIRES. The decision is git-derived from the run record's marker, so a
+#    missed fire costs a day of lag, never lost work. The 6-hour maximum deferral is retired: a daily
+#    fire cannot starve.
 #
 # 3. THIS RUN MUST NOT TRIGGER ITSELF (FR-009a). It pushes a `[skip ci]` marker commit to `main`, and
 #    its own proposal is bundle-only; wiki-quiet.mjs does not count either as activity. SC-005a
@@ -41,11 +40,12 @@
 name: wiki-maintain
 
 on:
-  # Every 30 minutes (R19): each fire is a queued job on the one shared runner, so 15 would double them
-  # for half the lag. Nearly every fire ends after the checkout and one git query.
+  # ONCE A DAY, 05:00 UTC (078 FR-024, amendment 2026-11-09): the fire is the batching, so a page
+  # changed by ten merges is paid for once (research R21: −45% of page attempts on the month before).
+  # Two hours after Renovate's 03:00 nightly fire on the same runner. A day with no merge pays nothing.
   schedule:
-    - cron: '*/30 * * * *'
-  # An operator run bypasses the quiet period entirely (FR-009c).
+    - cron: '0 5 * * *'
+  # An operator run does not wait for the daily fire (FR-009c).
   workflow_dispatch:
     inputs:
       max-slices:
@@ -100,8 +100,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # Full history: the run record's marker is a commit, and the maximum deferral is the age of
-          # the oldest commit past it. A shallow clone cannot answer either question.
+          # Full history: the run record's marker is a commit, and the trigger lists the commits past
+          # it. A shallow clone cannot answer that.
           fetch-depth: 0
           token: ${{ secrets.CD_PUSH_TOKEN }}
 
@@ -125,11 +125,11 @@ jobs:
           echo "running from origin/main at $(git rev-parse --short HEAD) (event commit ${GITHUB_SHA:0:8})"
           CI_LOG_STEP
 
-      # ── properties 1, 2 and 3: has main gone quiet? ───────────────────────────────
-      # BEFORE any install: node built-ins only, so a "not yet" costs this checkout and one node process.
-      # It ignores the job's own commits ([skip ci] markers, bundle-only proposals), runs at the 6-hour
-      # maximum deferral, and exits 1 on a git failure rather than reading it as "nothing to do".
-      - name: Has main gone quiet? (decides before any install)
+      # ── properties 1, 2 and 3: is anything uncovered? ─────────────────────────────
+      # BEFORE any install: node built-ins only, so a "no run" costs this checkout and one node process.
+      # It ignores the job's own commits ([skip ci] markers, bundle-only proposals) and exits 1 on a git
+      # failure rather than reading it as "nothing to do". (The step id stays `quiet`: later steps key on it.)
+      - name: Is anything uncovered? (decides before any install)
         id: quiet
         run: |
           bash scripts/ci-log-step.sh maintain-has-main-gone-quiet bash -e /dev/stdin <<'CI_LOG_STEP'
@@ -237,9 +237,10 @@ jobs:
           MCM_WIKI_PAGE_CONCURRENCY: ${{ vars.MCM_WIKI_PAGE_CONCURRENCY || '4' }}
           # Item #525 trial (operator 2026-10-05): a per-dispatch reasoning effort, so a trial run never
           # changes what a scheduled run sends. A scheduled run has no inputs, so it falls through to the
-          # repository variable, which is unset — the model default. wiki-provider.mjs rejects any value
+          # repository variable, and when that is unset to `low` (078 FR-028, amendment 2026-11-09: about
+          # half of a month's spend was failed runs at the model default). wiki-provider.mjs rejects any value
           # Fireworks does not document, and the preflight sends it, so a bad value fails before paid work.
-          MCM_WIKI_REASONING_EFFORT: ${{ github.event.inputs.reasoning-effort || vars.MCM_WIKI_REASONING_EFFORT }}
+          MCM_WIKI_REASONING_EFFORT: ${{ github.event.inputs.reasoning-effort || vars.MCM_WIKI_REASONING_EFFORT || 'low' }}
           # The write credential, kept distinct from the model credential (FR-025).
           FORGE_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
           FORGE_API_BASE: ${{ github.server_url }}/api/v1
@@ -315,7 +316,7 @@ jobs:
             exit 0
           fi
 
-          # THIS JOB SLEEPS FOR THE DEBOUNCE, so `main` routinely moves under it — another merge, or
+          # `main` routinely moves under a run that generates for up to an hour — another merge, or
           # the previous run's own marker commit. The first attempt to push then fails
           # non-fast-forward, and a marker that cannot land means the NEXT run re-covers a range this
           # one already examined: paid work repeated, silently.

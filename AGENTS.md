@@ -61,8 +61,8 @@ repository:
 
 - **The wiki IS refreshed automatically now (feature 044), but not the way that block says.** It is
   driven by merges, on a self-hosted **Forgejo** instance under `.forgejo/workflows/wiki-maintain.yml`,
-  not GitHub Actions. A check every 30 minutes generates only once `main` has uncovered merges and has
-  been quiet for about fifteen minutes (item #613). It is not a periodic sweep: with nothing merged,
+  not GitHub Actions. A check once a day (05:00 UTC) generates when `main` has uncovered merges, so each
+  changed page is paid for at most once a day (feature 078 US7). It is not a periodic sweep: with nothing merged,
   nothing is paid for.
   Each run plans bounded slices, verifies every slice by the pages that actually landed in the
   working tree, and opens **one** always-current pull request for review. It is **never** auto-merged.

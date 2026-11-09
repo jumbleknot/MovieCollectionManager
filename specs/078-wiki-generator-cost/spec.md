@@ -9,6 +9,12 @@
 - US6 (escalate to `reasoning_effort: low` after a deadline failure) is added;
 - FR-015 is updated, and FR-017 to FR-023, SC-008 and SC-009 are added.
 
+**Amended 2026-11-09** (operator), after reading 4½ weeks of run records (research R21):
+- US7 (spend per day, not per merge) is added: a daily trigger, a per-page refresh cooldown, and `low` effort by
+  default in CI;
+- FR-020 is updated, FR-024 to FR-029 and SC-010 to SC-012 are added;
+- feature 044's FR-009 (15-minute debounce) and FR-009b (6-hour maximum deferral) are **superseded** by FR-024.
+
 **Input**: User description: "Phase 2 of the LLM cost work (docs/proposals/MCM-LLM-Cost-Analysis-1.md §3 Phase 2, §5.3). Move the OpenWiki generator in the CI wiki job to DeepSeek V4.1 Flash hosted by Fireworks AI (operator choice over DeepSeek's own API), cut the per-invocation planning cost, and size the job's time budget from the measured cost-vs-speed trade-off — increasing it if needed."
 
 ## Context — what was measured before this spec (2026-09-27)
@@ -225,6 +231,30 @@ other pages at the default. A stub that exits 0 without writing (a worker exit) 
 
 ---
 
+### User Story 7 - Wiki maintenance is paid for once a day, not once per merge (Priority: P1) *(amendment 2026-11-09)*
+
+The run records from 2026-10-09 to 2026-11-08 estimate **$168** of generator spend, rising to **$50** in the week of
+2 November. 265 pages were regenerated, but only 39 distinct pages; the same page is paid for again on every merge
+that touches its source. `runbooks/wiki-maintenance.md` was regenerated 23 times, `runbooks/server-setup.md` 22,
+`runbooks/renovate.md` 16. About half of the spend was in runs that ended `failed`, mostly invocations at the
+model's default reasoning effort; `low` attempts of the same pages usually landed (item #733). Research R21.
+
+**Why this priority**: it is the largest recurring line on the model bill, and the operator asked for it.
+
+**Independent Test**: offline. Trigger fixtures (a real commit of any age runs; only the job's own commits does
+not); a planner fixture whose cooled page has a changed source; a guard on the workflow's cron and effort default.
+
+**Acceptance Scenarios**:
+
+1. **Given** real commits merged at any time of day, **When** the daily fire runs, **Then** one run covers all of
+   them, however recent the newest is.
+2. **Given** only the job's own commits since the marker, **When** the daily fire runs, **Then** nothing is paid for.
+3. **Given** a page in `cooldowns` that landed 2 days ago and a merge that changes its source, **When** the run
+   plans, **Then** that page is not planned and the plan says why; **and Given** the same page 7 days after it
+   landed, **Then** drift plans it.
+4. **Given** a scheduled run with no configured effort, **When** it invokes the generator, **Then** it sends
+   `low`; **and Given** a page with a deadline tag, **Then** it still runs first and alone.
+
 ### Edge Cases
 
 - The Fireworks model id is withdrawn or renamed → the pre-flight invocability check fails the job before any
@@ -305,13 +335,34 @@ other pages at the default. A stub that exits 0 without writing (a worker exit) 
   tags".
 - **FR-019** (US6): A run MUST execute tagged pages in invocations containing only tagged pages, at effort `low`,
   before the untagged work. It MUST NOT change the effort of any untagged invocation.
-- **FR-020** (US6): An explicitly configured effort MUST take precedence over tags for the whole run. A provider
-  without reasoning effort MUST ignore tags. In both cases the tags MUST be kept.
+- **FR-020** (US6, amended 2026-11-09): An explicitly configured effort MUST take precedence over tags for the whole
+  run. A provider without reasoning effort MUST ignore tags. In both cases the tags MUST be kept. **Exception:** when
+  the explicit effort is `low` itself, tagged pages MUST still run first and in their own invocations (FR-019), since
+  the isolation, not only the effort, is what let them land (item #733, run 5194).
 - **FR-021** (US6): A tag MUST be removed when its page lands. A failure at `low` MUST keep the tag and increment
   its count. Each such failure MUST be reported in the run log and the failure digest.
 - **FR-022** (US6): The effort each invocation actually used MUST appear in its usage line and in the run record.
 - **FR-023** (US6): Escalation MUST NOT park, drop or reorder any page beyond what FR-019 requires. Parking stays an
   operator action.
+
+- **FR-024** (US7): Scheduled maintenance MUST fire **once a day**, at a fixed UTC time that does not collide
+  with Renovate's 03:00 fire. A fire MUST generate when at least one commit past the marker is not the job's own
+  (FR-009a's definition, unchanged), whatever its age, and MUST NOT pay for anything otherwise. This supersedes
+  044 FR-009 (15-minute debounce) and FR-009b (6-hour maximum deferral): a daily fire cannot starve. Manual
+  dispatch still runs at once (044 FR-009c).
+- **FR-025** (US7): The run record MAY carry `cooldowns`: page key → `{ days, item, since, reason }`, a reviewed
+  decision like `parked`. A listed page whose stamp is less than `days` old MUST NOT be planned by a source change
+  or by drift. Carried-forward backlog work for it MUST still be planned (a failed page has an old stamp anyway).
+  A source change skipped this way MUST NOT be lost: once the cooldown expires the page is stale by the V12 rule
+  and drift plans it.
+- **FR-026** (US7): Every plan MUST list the pages held by a cooldown, with the date each becomes plannable, so a
+  reviewer can see what was not refreshed and why. A cooldown on a page that no longer exists MUST be reported.
+- **FR-027** (US7): A malformed `cooldowns` entry (key not `<area>/<page>.md`, `days` not an integer 1–30, `item`
+  not an integer) MUST fail the record load before any paid work.
+- **FR-028** (US7): The CI job's reasoning effort MUST default to `low` when neither the dispatch input nor the
+  repository variable sets one. Local runs keep the model default. The default MUST be pinned by a guard test.
+- **FR-029** (US7): The record seeded by this amendment MUST put the three most-regenerated pages under a 7-day
+  cooldown: `runbooks/wiki-maintenance.md`, `runbooks/server-setup.md`, `runbooks/renovate.md`.
 
 ### Key Entities
 
@@ -347,6 +398,12 @@ other pages at the default. A stub that exits 0 without writing (a worker exit) 
 - **SC-009** (US6): No failure other than a deadline stop ever produces a tag. This is proven by a trigger-table
   test that covers every failure type R14 observed (worker exit, 429, openwiki state error, policy and conformance
   violation, start-deadline carry-forward).
+
+- **SC-010** (US7): Over the 4 weeks after the merge, estimated generator spend averages at most **$18.50 a
+  week**, half the 2026-10-09 to 2026-11-08 baseline of ~$37, at comparable merge volume.
+- **SC-011** (US7): Over the same 4 weeks, no page has more than one landed refresh a day, and no cooled page
+  has more than one a week.
+- **SC-012** (US7): The share of planned pages that land is no lower than the baseline window's.
 
 ## Assumptions
 

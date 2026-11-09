@@ -2,7 +2,8 @@
 //
 // The debounce used to be a `sleep 900` inside the merge-triggered job, which spent 15 of its 60
 // minutes waiting and left generation ~37. Now a scheduled check decides from git, before any
-// install, whether main has been quiet for DEBOUNCE_SECONDS — and either generates at once or ends.
+// install, whether anything real is uncovered — and either generates at once or ends. Since 078 US7
+// (2026-11-09) the fire is daily and there is no debounce: any real commit runs.
 //
 // The decision is pure (commit fixtures, no git); the git read and the CLI are checked against a
 // temporary repository, because "a git failure reads as nothing to do" is the one way this design
@@ -16,9 +17,9 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
-import {
-  maintenanceTrigger, isOwnCommit, uncoveredCommits, DEBOUNCE_SECONDS, MAX_DEFERRAL_SECONDS,
-} from '../wiki-quiet.mjs';
+import * as QUIET from '../wiki-quiet.mjs';
+
+const { maintenanceTrigger, isOwnCommit, uncoveredCommits } = QUIET;
 
 const SCRIPT = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'wiki-quiet.mjs');
 const NOW = 1_800_000_000;
@@ -41,31 +42,25 @@ test("trigger: only the job's own commits is no run — they never started a pus
   assert.equal(d.run, false, d.reason);
 });
 
-test('trigger: a real commit under the quiet period is not yet', () => {
-  const d = maintenanceTrigger({ commits: [commit(DEBOUNCE_SECONDS - 1), commit(2 * 3600)], nowSeconds: NOW });
-  assert.equal(d.run, false, d.reason);
-  assert.match(d.reason, /not quiet|not yet/i);
+test('trigger: a real commit of ANY age runs — the daily fire is the batching, there is no debounce (078 FR-024)', () => {
+  for (const age of [1, 60, 15 * 60, 6 * 3600, 3 * 86400]) {
+    const d = maintenanceTrigger({ commits: [commit(age)], nowSeconds: NOW });
+    assert.equal(d.run, true, `a ${age}-s-old commit: ${d.reason}`);
+  }
 });
 
-test('trigger: the newest real commit at the quiet period runs — at, not only past', () => {
-  const d = maintenanceTrigger({ commits: [commit(DEBOUNCE_SECONDS), commit(3600)], nowSeconds: NOW });
-  assert.equal(d.run, true, d.reason);
-});
-
-test("trigger: the job's own fresh commit does not hold back a quiet main", () => {
+test("trigger: the job's own fresh commit beside a real one still runs", () => {
   const d = maintenanceTrigger({
-    commits: [commit(30, { message: 'chore: marker [skip ci]' }), commit(DEBOUNCE_SECONDS + 60)],
+    commits: [commit(30, { message: 'chore: marker [skip ci]' }), commit(5)],
     nowSeconds: NOW,
   });
   assert.equal(d.run, true, d.reason);
+  assert.match(d.reason, /1 real/);
 });
 
-test('trigger: a main that never goes quiet still runs at the maximum deferral (SC-008b)', () => {
-  const d = maintenanceTrigger({ commits: [commit(10), commit(MAX_DEFERRAL_SECONDS)], nowSeconds: NOW });
-  assert.equal(d.run, true, d.reason);
-  assert.match(d.reason, /deferral/);
-  assert.equal(maintenanceTrigger({ commits: [commit(10), commit(MAX_DEFERRAL_SECONDS - 1)], nowSeconds: NOW }).run, false);
-  assert.ok(MAX_DEFERRAL_SECONDS > DEBOUNCE_SECONDS, 'the ceiling must be longer than the quiet period it overrides');
+test('trigger: the retired debounce and deferral constants are gone, so nothing can quietly reinstate them (078 FR-024)', () => {
+  assert.ok(!('DEBOUNCE_SECONDS' in QUIET), 'DEBOUNCE_SECONDS is still exported');
+  assert.ok(!('MAX_DEFERRAL_SECONDS' in QUIET), 'MAX_DEFERRAL_SECONDS is still exported');
 });
 
 test('trigger: a dispatch runs whatever main is doing (FR-009c)', () => {

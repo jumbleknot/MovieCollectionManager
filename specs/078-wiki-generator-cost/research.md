@@ -548,3 +548,38 @@ the deadline stop and carry-forward as the backstop, because no size rule can bo
   generating run.
 - *Drain the backlog on a quiet `main`:* a backlog that keeps failing would re-run every 30 minutes at
   about $1–3 a run. The operator kept carried pages waiting for the next merge, or for a dispatch.
+
+## R21: what a month of runs cost, and where it went (amendment 2026-11-09)
+
+**Method.** Every run commits `openwiki/.maintenance-state.json`, and since 078 that record carries
+`lastRunUsage.estCostUsd` (SC-005: within 1% of the bill) and `lastRunInvocations[].pages`. I read every version of
+the record on `main` from 2026-10-09 to 2026-11-08 and counted each distinct `lastRunUsage` once, because a run
+that pays nothing leaves the previous run's usage in place.
+
+| ISO week | Paid runs | Est. spend | Of which in runs ending `failed` |
+|---|---|---|---|
+| 41 | 16 | $28.24 | $22.37 |
+| 42 | 26 | $29.12 | $12.66 |
+| 43 | 19 | $33.92 | $5.45 |
+| 44 | 18 | $26.16 | $13.72 |
+| 45 | 27 | $50.36 | $27.96 |
+
+Total **$167.80** over 106 paid runs, ~$37 a week. 265 page attempts covered only 39 distinct pages.
+
+**What batching would have saved**, counting each page at most once per period (an upper bound: it ignores
+retries a batched run would still need):
+
+| Cadence | Page attempts | Change |
+|---|---|---|
+| as run (per quiet merge burst) | 265 | — |
+| at most once a day per page | 147 | −45% |
+| at most once a week per page | 91 | −66% |
+
+**The repeat offenders** (attempts / distinct days / distinct weeks): `runbooks/wiki-maintenance.md` 23/8/5,
+`runbooks/server-setup.md` 22/11/5, `runbooks/renovate.md` 16/11/5. Their sources change on nearly every PR in
+their area; `wiki-maintenance.md`'s source changes with every fix to the wiki itself.
+
+**Decision (operator, 2026-11-09).** A daily fire for everything (weekly would leave a 4-page invocation unable
+to drain a week's changes in one run, and the backlog only drains when a run fires); a 7-day cooldown on the three
+pages above, with drift as the catch-up path; `low` effort by default in CI, keeping US6's isolation of tagged
+pages.

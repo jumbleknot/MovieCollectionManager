@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Feature 078 research R19 / item #613 — has `main` gone quiet? Decides whether a scheduled
+// Feature 078 research R19 / item #613, amended by US7 (2026-11-09) — is anything uncovered? Decides whether the daily
 // wiki-maintain fire generates now or ends.
 //
 // WHY THIS IS OUTSIDE THE JOB. The debounce used to be a `sleep 900` inside the merge-triggered job:
@@ -11,9 +11,11 @@
 //   * the job's own commits never count — `[skip ci]` (the record marker, CD's digest promotes) and
 //     `openwiki/`-only changes (a merged proposal). Neither ever started a push run (FR-009a, SC-005a);
 //   * none left                          → no run;
-//   * the OLDEST is ≥ MAX_DEFERRAL       → run: a main that never goes quiet must not starve (SC-008b);
-//   * the NEWEST is ≥ DEBOUNCE           → run: main is quiet;
-//   * otherwise                          → not yet; the next fire looks again.
+//   * any left, of any age               → run.
+// The schedule fires ONCE A DAY (078 FR-024, amendment 2026-11-09, research R21), and that is the
+// batching: a page changed by ten merges is paid for once. The 15-minute debounce and the 6-hour
+// maximum deferral this replaced existed to batch a fire every 30 minutes; a daily fire cannot starve,
+// and a debounce would only push a merge that landed just before it to the next day.
 // A dispatch runs regardless (FR-009c).
 //
 // A GIT FAILURE IS LOUD. An unknown `coveredCommit` (a history rewrite) or a missing run record exits 1.
@@ -28,8 +30,6 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ArgvError, dieOnArgvError, partitionArgsWithValues, wantsHelp } from './lib/argv-contract.mjs';
 
-export const DEBOUNCE_SECONDS = 15 * 60;
-export const MAX_DEFERRAL_SECONDS = 6 * 60 * 60;
 /** Same path as wiki-maintain.mjs's STATE_FILE; not imported, because that module needs `yaml`. */
 export const STATE_FILE = 'openwiki/.maintenance-state.json';
 
@@ -43,34 +43,16 @@ export function isOwnCommit({ message = '', files = [] }) {
   return files.length > 0 && files.every((f) => f.startsWith('openwiki/'));
 }
 
-/**
- * Generate now, or end and let the next scheduled fire look again?
- * At-or-above each threshold it RUNS: a strict `>` would let an age pinned exactly at it defer forever.
- */
-export function maintenanceTrigger({
-  commits,
-  nowSeconds,
-  dispatched = false,
-  debounceSeconds = DEBOUNCE_SECONDS,
-  maxDeferralSeconds = MAX_DEFERRAL_SECONDS,
-}) {
-  if (dispatched) return { run: true, reason: 'manually dispatched — the quiet period is bypassed (FR-009c)' };
+/** Generate now, or end and let the next daily fire look again? */
+export function maintenanceTrigger({ commits, dispatched = false }) {
+  if (dispatched) return { run: true, reason: 'manually dispatched — runs whatever is uncovered (FR-009c)' };
   const real = commits.filter((c) => !isOwnCommit(c));
   if (real.length === 0) {
     const own = commits.length ? ` (${commits.length} of the job's own commit(s) ignored)` : '';
     return { run: false, reason: `nothing uncovered${own} — no run` };
   }
-  const ages = real.map((c) => nowSeconds - c.time);
-  const oldest = Math.max(...ages);
-  const newest = Math.min(...ages);
-  const min = (s) => Math.round(s / 60);
-  if (oldest >= maxDeferralSeconds) {
-    return { run: true, reason: `the oldest uncovered commit is ${min(oldest)} min old, at or past the ${min(maxDeferralSeconds)}-min maximum deferral — running now` };
-  }
-  if (newest >= debounceSeconds) {
-    return { run: true, reason: `main is quiet: the newest of ${real.length} uncovered commit(s) is ${min(newest)} min old (≥ ${min(debounceSeconds)}) — running now` };
-  }
-  return { run: false, reason: `not yet — main is not quiet: the newest uncovered commit is ${min(newest)} min old (< ${min(debounceSeconds)}); the next scheduled fire looks again` };
+  const own = commits.length - real.length;
+  return { run: true, reason: `${real.length} real uncovered commit(s)${own ? ` (${own} of the job's own ignored)` : ''} — running now` };
 }
 
 function git(root, args) {
@@ -121,7 +103,7 @@ function main(argv) {
       return 1;
     }
   }
-  const d = maintenanceTrigger({ commits, nowSeconds: Math.floor(Date.now() / 1000), dispatched });
+  const d = maintenanceTrigger({ commits, dispatched });
   console.log(`run=${d.run}`);
   console.error(`[wiki-quiet] ${d.reason}`);
   return 0;

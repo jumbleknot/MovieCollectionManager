@@ -268,3 +268,23 @@ docs/proposals/MCM-LLM-Cost-Analysis-1.md      # EDIT FR-013 §5
 |---|---|---|
 | A launcher instead of the shell-string command | R4: the target's env overwrites the job's; the provider must be resolved in-process | A shell `${VAR:-default}` in the command string would work for the provider but not for credential mapping, preflight or the preload, and re-opens the quoting trap the current command documents |
 | A fetch preload in the generator process | R6: `openwiki@0.5.2` cannot send `service_tier` or report usage | Patching `node_modules` is invisible and lost on install; waiting for upstream blocks the feature |
+
+### D10. Spend per day, not per merge (US7; FR-024–FR-029, amendment 2026-11-09)
+
+- **Trigger** — `scripts/wiki-quiet.mjs`: `maintenanceTrigger` drops `DEBOUNCE_SECONDS` and
+  `MAX_DEFERRAL_SECONDS`; any real uncovered commit runs. `isOwnCommit`, the loud git failure and `--dispatched`
+  are unchanged. `.forgejo/workflows/wiki-maintain.yml`: cron `0 5 * * *` (05:00 UTC, two hours after Renovate's
+  nightly fire). The 60-minute scheduled window and the 120-minute dispatch window are unchanged.
+- **Cooldown** — `scripts/wiki-maintain.mjs`: `assertRecordShape` validates `cooldowns` (FR-027);
+  `EMPTY_RECORD` and the three-way record merge treat it like `parked` (per page). A pure `cooledPages({ concepts,
+  cooldowns, now })` returns the keys whose stamp (`conceptStamp`, the V12 stamp) is younger than `days`, plus the
+  date each frees up and any orphans. `planSlices` gets `cooled` and skips those keys for source changes only
+  (backlog entries still plan); `selectDrift` skips them. The plan output carries `cooldowns: { held, orphans }`
+  and `--plan` prints them (FR-026).
+- **Effort** — the workflow's `MCM_WIKI_REASONING_EFFORT` falls back to `'low'` (FR-028).
+  `invocationEffort` returns `low` for an escalated invocation when the explicit effort is `low`, so the split
+  still runs (FR-020 as amended).
+- **Seed** — the committed record gains the three FR-029 entries, `item` pointing at the follow-up item that
+  scores SC-010–SC-012.
+- **Docs** — `docs/runbooks/wiki-maintenance.md` §4 ("What CI does") and "The budget" describe the daily fire,
+  cooldowns and the effort default.
