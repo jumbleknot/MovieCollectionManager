@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useSessionTimeout } from '@/hooks/use-session-timeout';
 import { AssistantConfigProvider, useAssistantConfig } from '@/hooks/use-assistant-config';
 import { AssistantDock } from '@/components/agent/assistant-dock';
+import { OpenPanelProvider } from '@/hooks/use-open-panel';
 
 const DEV_IDLE_OVERRIDE_MS = parseInt(
   process.env['EXPO_PUBLIC_DEV_IDLE_TIMEOUT_OVERRIDE_MS'] ?? '',
@@ -76,24 +77,28 @@ export default function AppLayout(): React.JSX.Element {
           form refreshes the gate in-session, no reload/re-login (FR-031). It sits inside
           AuthGuard so the config fetch is authenticated and re-mounts fresh per session. */}
       <AssistantConfigProvider>
-        {/* edges={['top']} so the nav bar background fills behind the status bar */}
-        <SafeAreaView
-          style={[styles.safeArea, { backgroundColor: theme.surface2?.val }]}
-          edges={['top']}
-        >
-          <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
-            <SessionTimeoutHandler />
-            <NavigationBar />
-            {/* Wrap Stack in a flex:1 View so screens fill the remaining height on web.
+        {/* 098 FR-015: one overlay open at a time. Wraps BOTH the Stack (the collection screen's
+            view options) and AuthedAssistant (the dock), so opening either closes the other. */}
+        <OpenPanelProvider>
+          {/* edges={['top']} so the nav bar background fills behind the status bar */}
+          <SafeAreaView
+            style={[styles.safeArea, { backgroundColor: theme.surface2?.val }]}
+            edges={['top']}
+          >
+            <View style={[styles.container, { backgroundColor: theme.background?.val }]}>
+              <SessionTimeoutHandler />
+              <NavigationBar />
+              {/* Wrap Stack in a flex:1 View so screens fill the remaining height on web.
                 React Native Web's absolutely-positioned screen containers require an
                 explicit height on their parent; without it the Stack collapses to 0 px
                 and all screen content is clipped (overflow:hidden). */}
-            <View style={styles.stack}>
-              <Stack screenOptions={{ headerShown: false }} />
+              <View style={styles.stack}>
+                <Stack screenOptions={{ headerShown: false }} />
+              </View>
+              <AuthedAssistant />
             </View>
-            <AuthedAssistant />
-          </View>
-        </SafeAreaView>
+          </SafeAreaView>
+        </OpenPanelProvider>
       </AssistantConfigProvider>
     </AuthGuard>
   );

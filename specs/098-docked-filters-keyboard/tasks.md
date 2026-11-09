@@ -38,7 +38,7 @@ was never RED is not a TDD test.
   **Expected RED**: an `assertVisible` failure on `assistant-dock-send` or `assistant-dock-input`, and a
   screenshot showing the keyboard over the panel. Record the result in the Evidence table.
   **If it passes on `main`**: R1's root cause is wrong. Stop and re-plan US2 before writing code.
-- [ ] T002 Install real dependencies in the worktree (`CI=true pnpm install --frozen-lockfile`, about
+- [X] T002 Install real dependencies in the worktree (`CI=true pnpm install --frozen-lockfile`, about
   4 minutes), so `pnpm nx` targets run instead of failing with `ERR_PNPM_UNSAFE_MODULES_DIR`.
   **Done when**: `pnpm nx test mcm-app --skip-nx-cache -- APP/src/components/agent/assistant-dock.test.tsx`
   runs green.
@@ -47,24 +47,24 @@ was never RED is not a TDD test.
 
 ## Phase 2: Foundational (blocks US1 and US3)
 
-- [ ] T003 [P] Write `APP/src/utils/active-filters.test.ts` for `countActiveFilters(filters: MovieListFilters):
+- [X] T003 [P] Write `APP/src/utils/active-filters.test.ts` for `countActiveFilters(filters: MovieListFilters):
   number`. Cases: `{}` → 0; `{ genre: 'Drama' }` → 1; `{ owned: false }` → 1 (false is an active filter);
   `{ genre: '' , rated: undefined }` → 0; all nine keys set → 9.
   **Verify RED**: `UNIT APP/src/utils/active-filters.test.ts`. **Expected RED**: the suite fails with
   `Cannot find module '@/utils/active-filters'`.
-- [ ] T004 Implement `APP/src/utils/active-filters.ts`, using the same predicate as `hasActiveFilters` in
+- [X] T004 Implement `APP/src/utils/active-filters.ts`, using the same predicate as `hasActiveFilters` in
   `APP/src/components/movie-filter-panel.tsx`. Then change the filter panel to use
   `countActiveFilters(...) > 0`, so the two cannot drift (data-model ActiveFilterCount).
   **Verify GREEN**: the T003 command reports 0 failures. **Also run**
   `UNIT APP/src/components/unit-tests/movie-filter-panel.test.tsx` and confirm it is still green.
-- [ ] T005 [P] Write `APP/src/hooks/use-open-panel.test.tsx` for `OpenPanelProvider`/`useOpenPanel()` →
+- [X] T005 [P] Write `APP/src/hooks/use-open-panel.test.tsx` for `OpenPanelProvider`/`useOpenPanel()` →
   `{ openPanel, open(name), close(name), toggle(name) }` (data-model OpenPanel transitions). Cases: the
   initial state is null; `open('view-options')` then `open('assistant')` gives `'assistant'`;
   `close('assistant')` while `'view-options'` is open is a no-op; `toggle` flips; using the hook with no
   provider throws a clear error. Also add a guard test asserting the module's import list contains no
   `@copilotkit/`, `@ag-ui/` or `use-assistant` (feature 077, research R2).
   **Verify RED**: `UNIT APP/src/hooks/use-open-panel.test.tsx`. **Expected RED**: the module is not found.
-- [ ] T006 Implement `APP/src/hooks/use-open-panel.tsx`, and mount `<OpenPanelProvider>` in
+- [X] T006 Implement `APP/src/hooks/use-open-panel.tsx`, and mount `<OpenPanelProvider>` in
   `APP/src/app/(app)/_layout.tsx` so it wraps both the stack and `<AuthedAssistant />`.
   **Verify GREEN**: the T005 command reports 0 failures. **Also run** `UNIT APP/src/app` and confirm
   the layout tests are still green.
@@ -312,4 +312,8 @@ T002 ─┬─ T003→T004 ─┐                            │
 
 | Task | Result | Where |
 |---|---|---|
-| | | |
+| T001 | **NOT RUN — environment cannot host the emulator.** Proof (2026-11-09, Docker Sandbox microVM): `ls /dev/kvm` → `No such file or directory`; `grep -c -E 'vmx\|svm' /proc/cpuinfo` → `0`; `emulator -accel-check` → `KVM requires a CPU that supports vmx or svm`; `scripts/devcontainer-android.sh boot` → `/dev/kvm is NOT PRESENT … feature 060, gate R2 … documented SCOPED EXCEPTION`. Step 1 done: `assistant-keyboard.yaml` written, with a behavioural send check because Maestro `assertVisible` cannot see IME occlusion. Step 2 (the RED) still owed: CI `kvm` runner or the Docker Desktop dev container. | `APP/tests/e2e/mobile/assistant-keyboard.yaml` |
+| T002 | `CI=true pnpm install --frozen-lockfile` exit 0 (7m 26s); `node_modules` is a real dir; Jest **30.5.2**. `assistant-dock.test.tsx`: 1 suite, **9 passed, 0 skipped** | worktree |
+| T003 RED | 1 suite failed to run: `Could not locate module @/utils/active-filters`. Test lives in `src/utils/unit-tests/` (repo convention); the "all keys" case asserts 10 (the type has 10 keys incl. `childrens`), not 9 | `src/utils/unit-tests/active-filters.test.ts` |
+| T005 RED | 1 suite failed to run: `Could not locate module @/hooks/use-open-panel` | `src/hooks/use-open-panel.test.tsx` |
+| T004/T006 GREEN | active-filters + use-open-panel + movie-filter-panel: **3 suites, 29 passed, 0 skipped**. (First GREEN attempt failed in the TEST: RNTL 14.1 `renderHook` is async; fixed by awaiting it.) `UNIT APP/src/app` matches **no** test files (only `+api.ts` routes), so the layout has no unit coverage to re-run | Jest |
