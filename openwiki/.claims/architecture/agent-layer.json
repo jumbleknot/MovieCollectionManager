@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "pageVersion": "sha256:d0ecc8f2173b3e3ee2a39a7625b1aa65bed8012323273f508c95bea1835b4795",
+  "pageVersion": "sha256:54bb49b9bd5a9461acacb2b8bd69b4701b5717e14af1fa3231c2b243ade0dd68",
   "claims": [
     {
       "id": "claim_55a137e8983d44999848085f7192d594",
@@ -8,7 +8,7 @@
       "evidence": [
         {
           "resource": "repo://agents/movie-assistant/src/tools/identity.py",
-          "version": "repo-file-v1:sha256:7a496a6e9530102623bc940881bc4f95ff185b66ce86ff643ee18100fb3b3207"
+          "version": "repo-file-v1:sha256:fd5cb5d49919046f2f2b987b81f6e4436efbb1b8ab8c5e895d09d2642f352d39"
         },
         {
           "resource": "repo://agents/movie-assistant/src/tools/token_exchange.py",
@@ -16,11 +16,11 @@
         },
         {
           "resource": "repo://docs/MCM-Architecture.md",
-          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
+          "version": "repo-file-v1:sha256:915b72d554f775b291b29e2bd32e43efdcde70faf1fc0ad5ff82793077580269"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts",
-          "version": "repo-file-v1:sha256:6c6ec58c4d880d7590749fab07cf096feb9c6207aaebf6a67df657a77a25c97a"
+          "version": "repo-file-v1:sha256:b5ce73c11460a6989e932e8f840465a924f58068c0e4780670b4799e09dab4e9"
         }
       ]
     },
@@ -44,11 +44,11 @@
       "evidence": [
         {
           "resource": "repo://docs/MCM-Architecture.md",
-          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
+          "version": "repo-file-v1:sha256:915b72d554f775b291b29e2bd32e43efdcde70faf1fc0ad5ff82793077580269"
         },
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts",
-          "version": "repo-file-v1:sha256:c4ad3c9e75f12f97cca1bca0f6307f4573523672222911e11d0a98b1a047ee9e"
+          "version": "repo-file-v1:sha256:41c19a89848ea82524650372b78a243c8c4567e457dd88b3874dc5bd879bb6ec"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-gateway-client.ts",
@@ -104,11 +104,11 @@
       "evidence": [
         {
           "resource": "repo://docs/MCM-Architecture.md",
-          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
+          "version": "repo-file-v1:sha256:915b72d554f775b291b29e2bd32e43efdcde70faf1fc0ad5ff82793077580269"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts",
-          "version": "repo-file-v1:sha256:6c6ec58c4d880d7590749fab07cf096feb9c6207aaebf6a67df657a77a25c97a"
+          "version": "repo-file-v1:sha256:b5ce73c11460a6989e932e8f840465a924f58068c0e4780670b4799e09dab4e9"
         },
         {
           "resource": "repo://specs/085-bff-auth-fail-closed/contracts/bff-auth.md",
@@ -122,21 +122,21 @@
       "evidence": [
         {
           "resource": "repo://docs/MCM-Architecture.md",
-          "version": "repo-file-v1:sha256:52dcb544df3a4c97c85cd727c8ad56026bda38756230723a3e9cfe92230e60ad"
+          "version": "repo-file-v1:sha256:915b72d554f775b291b29e2bd32e43efdcde70faf1fc0ad5ff82793077580269"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/session-tokens.ts",
-          "version": "repo-file-v1:sha256:a62a4c136bbb801673b421d631ab4eca34c27877a2aa26fb699d060d6c491f5b"
+          "version": "repo-file-v1:sha256:a73b9c01d7087287591599bca07bf8e9403baf511f910d24fc3fc0d6af37ec62"
         }
       ]
     },
     {
       "id": "claim_00e98c8adcc64c2cbccc131c92fbc767",
-      "statement": "The gateway's per-call downscoped token is obtained by an OPA authorization check followed by the re-exchange and an in-memory (user, audience) cache; the cache expires entries 15 seconds ahead of the reported lifetime because expires_in is measured at mint time while mc-service validates the JWT's real exp, a skew added after a long bulk apply hit clustered 401s at each TTL boundary.",
+      "statement": "The gateway's per-call downscoped token is obtained by an OPA authorization check followed by the RFC 8693 re-exchange and an in-memory cache keyed by (user_id, audience, sha256(subject token)); the cache expires entries 15 seconds ahead of the reported lifetime because expires_in is measured at mint time while mc-service validates the JWT's real exp, a skew added after a long bulk apply hit clustered 401s at each TTL boundary, and entries are dropped on read once stale plus pruned on every put.",
       "evidence": [
         {
-          "resource": "repo://agents/movie-assistant/src/tools/identity.py",
-          "version": "repo-file-v1:sha256:7a496a6e9530102623bc940881bc4f95ff185b66ce86ff643ee18100fb3b3207"
+          "resource": "repo://agents/movie-assistant/src/tools/identity.py#L25-L113",
+          "version": "repo-lines-v1:sha256:7144a066d3e4903f45b2b7f31406885306486abc2f1d786017696b23a5f142da:eyJzZWxlY3RlZExpbmVDb3VudCI6ODksImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjgyYzQyNmY2YWNlMGY1MmViZWJkNzkyODNlMjE2YWMxOTlhZjY2NGYwODUyYzY0N2Q2NmQ5ZDM4NjE0MTFkMTUiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjBmZjIxMDhmZWY1ZjhkMGRlYTI2ZWUyMzA1OTRkNTRkYzIwYjk0ZjA3N2ViZTA5YjViNzgwNTNiY2NjMjczMGIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImQzMDFlN2M2MmM2MGMyNDRjMzBkMGQyZDZlYzFkNzQyZmRhNWVjZTQ3NWM3ZDI2ZWFhMWVmNmFmMzM1OWQyMmQiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjowLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImUzYjBjNDQyOThmYzFjMTQ5YWZiZjRjODk5NmZiOTI0MjdhZTQxZTQ2NDliOTM0Y2E0OTU5OTFiNzg1MmI4NTUifQ"
         }
       ]
     },
@@ -160,7 +160,7 @@
       "evidence": [
         {
           "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py",
-          "version": "repo-file-v1:sha256:5b21e9dfe55e1e40067e8c4ecde77ba11cc0222607cd79a7ad71b06040ba5065"
+          "version": "repo-file-v1:sha256:9fc06e702ce3cde0b74449584d2a345cdf79801a9e7799eb610ee361062e9399"
         }
       ]
     },
@@ -208,7 +208,7 @@
       "evidence": [
         {
           "resource": "repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts",
-          "version": "repo-file-v1:sha256:bf1a9224301c8a2e9854e03bc20cb9c2a6e607e8ec126698e23ad0e7faba28c6"
+          "version": "repo-file-v1:sha256:163f2b2c1b80b53ca052165fe2a78c942c450a18cecf13ebaf631ea320dc3684"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-rate-limiter.ts",
@@ -222,7 +222,7 @@
       "evidence": [
         {
           "resource": "repo://agents/movie-assistant/src/tools/mcp_tools.py",
-          "version": "repo-file-v1:sha256:5b21e9dfe55e1e40067e8c4ecde77ba11cc0222607cd79a7ad71b06040ba5065"
+          "version": "repo-file-v1:sha256:9fc06e702ce3cde0b74449584d2a345cdf79801a9e7799eb610ee361062e9399"
         },
         {
           "resource": "repo://frontend/mcm-app/src/bff-server/agent-gateway-client.ts",
@@ -236,11 +236,11 @@
       "evidence": [
         {
           "resource": "repo://agents/movie-assistant/src/graph.py",
-          "version": "repo-file-v1:sha256:cd48b27fd8f38bcebffe2d1e4e9ead1802cc272333cc73040df24042d55841f7"
+          "version": "repo-file-v1:sha256:d82ed252f795be1acaaef98f272cfef4ff868ac7a9f0f90deb6093d5654ec61b"
         },
         {
           "resource": "repo://agents/movie-assistant/src/nodes/search.py",
-          "version": "repo-file-v1:sha256:1374093c99aed28ffb109b968de7653129277c649440e010c70b7f9180864f4a"
+          "version": "repo-file-v1:sha256:e3ed2fd643b7e5afebe35387715843b8b1d49502336d9282bc96efe4c53018c7"
         }
       ]
     },
@@ -250,7 +250,7 @@
       "evidence": [
         {
           "resource": "repo://agents/movie-assistant/src/graph.py",
-          "version": "repo-file-v1:sha256:cd48b27fd8f38bcebffe2d1e4e9ead1802cc272333cc73040df24042d55841f7"
+          "version": "repo-file-v1:sha256:d82ed252f795be1acaaef98f272cfef4ff868ac7a9f0f90deb6093d5654ec61b"
         },
         {
           "resource": "repo://agents/movie-assistant/src/nodes/curator.py",
@@ -268,7 +268,7 @@
         },
         {
           "resource": "repo://agents/movie-assistant/src/graph.py",
-          "version": "repo-file-v1:sha256:cd48b27fd8f38bcebffe2d1e4e9ead1802cc272333cc73040df24042d55841f7"
+          "version": "repo-file-v1:sha256:d82ed252f795be1acaaef98f272cfef4ff868ac7a9f0f90deb6093d5654ec61b"
         }
       ]
     },
@@ -278,7 +278,7 @@
       "evidence": [
         {
           "resource": "repo://agents/movie-assistant/src/runtime_nodes.py",
-          "version": "repo-file-v1:sha256:ec799e01786ab6af3a77a396c8e4720a2788f6d97d1af8ea269d80fde013e0e5"
+          "version": "repo-file-v1:sha256:e4b227c6e450f4932a3589945a177b6d3e8c046a46cf0a2a33241cabe45a9084"
         },
         {
           "resource": "repo://mcp-servers/spreadsheet-mcp/src/store.py",
@@ -292,11 +292,11 @@
       "evidence": [
         {
           "resource": "repo://agents/movie-assistant/src/proposals.py",
-          "version": "repo-file-v1:sha256:c70cda43ab36c69fd9914f605b6287d7848a038ff9ebbfa13e416d26c2d68fd6"
+          "version": "repo-file-v1:sha256:744cbdab411b90fc7d1a4f98df3350f1f0b20fe07c098152018a32bf8aad1cc5"
         },
         {
           "resource": "repo://mcp-servers/web-api-mcp/src/tools.py",
-          "version": "repo-file-v1:sha256:ed551b5b20870b452f8ed722aa4b7f37afda3501480f5c44c25598af6858b6e2"
+          "version": "repo-file-v1:sha256:4bbb4e0caf1ee27e2582c432af326cbfa492cca6cdc3ad0149fd447359c6f710"
         }
       ]
     },
@@ -306,7 +306,7 @@
       "evidence": [
         {
           "resource": "repo://agents/movie-assistant/src/tools/generative_ui_tools.py",
-          "version": "repo-file-v1:sha256:5d5e9fa262483607ad1d440e22a4f9db3c9a844f259d49e02d0afbbe0f161665"
+          "version": "repo-file-v1:sha256:721f8a3236481ff73379caec7184dbcca8694898c534a624b16217c43574e996"
         },
         {
           "resource": "repo://docs/runbooks/agent-layer.md",
@@ -330,21 +330,39 @@
       "evidence": [
         {
           "resource": "repo://agents/movie-assistant/src/runtime_nodes.py",
-          "version": "repo-file-v1:sha256:ec799e01786ab6af3a77a396c8e4720a2788f6d97d1af8ea269d80fde013e0e5"
+          "version": "repo-file-v1:sha256:e4b227c6e450f4932a3589945a177b6d3e8c046a46cf0a2a33241cabe45a9084"
         },
         {
           "resource": "repo://agents/movie-assistant/tests/integration/conftest.py",
-          "version": "repo-file-v1:sha256:3ba1a2bff7a0169e89b20d869019dd8c244394f2e8d520646d17b14fc92f4fbb"
+          "version": "repo-file-v1:sha256:a27f6ed310b4fd6aea7a6e863d18cdda4a43a456b287efd4db463b095a8dab8d"
         },
         {
           "resource": "repo://docs/runbooks/agent-layer.md",
           "version": "repo-file-v1:sha256:c91a4e5f1e5bcb84d75605438ccc7536510f369f952002c3635ba553817a036b"
         }
       ]
+    },
+    {
+      "id": "claim_3ed271c8010342c29eea68e2105672dd",
+      "statement": "Keying the downscoped-token cache by a SHA-256 digest of the subject token rather than by user_id alone is a security requirement, not an optimization: user_id is the subject token's `sub` decoded without a signature check and a cache hit returns before OPA and the Keycloak re-exchange, so a user-only key would serve a victim's cached token to any JWT carrying the victim's `sub`; the digest means only the token that minted an entry can read it and the subject token itself is never retained.",
+      "evidence": [
+        {
+          "resource": "repo://agents/movie-assistant/src/tools/identity.py#L42-L85",
+          "version": "repo-lines-v1:sha256:9026f1832abb2c872de5e4258b74be3506d7a33810de2199ab7244ad1a4c1b93:eyJzZWxlY3RlZExpbmVDb3VudCI6NDQsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6ImI2NDQ0ZTI0ODNjMWM1ODE1OGNmZDJlNTU3MGNhZjNjYjY1ZGMwMDE1OGE5ZTYzYmVkZmEwY2VjOGE5NmNiMjAiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjJiNzEzNWM0MTUxYjIyNmM3YzJiODQyZjBjOWEwMmQ0YzgyMzQyMDVlODA3MmEwZWQ0YjAyOTM3OGYyZGRkYjMiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6ImJlN2M1OGYyNjgzZTUwMjE1NmNlMDBhMWJlYzY1MzZkNDM4ZmFiNGFiODExODgyYmFiYzdkODYyNTMyMWY1YmIiLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6ImNkNWExZmQ4YjYwNDJjMGEzZWI1NWY0NGUzOGRlZTljMGI2ODU0YmVjYTJlZWZkZDYwODQwZDRlYTcyMWJjZTQifQ"
+        },
+        {
+          "resource": "repo://docs/MCM-Architecture.md#L153-L153",
+          "version": "repo-lines-v1:sha256:770cbd78b156baf1287bec02eb3b469c2414bcb822d47322cbf4c0199a58925c:eyJzZWxlY3RlZExpbmVDb3VudCI6MSwiZmlyc3RTZWxlY3RlZExpbmVIYXNoIjoiNzcwY2JkNzhiMTU2YmFmMTI4N2JlYzAyZWIzYjQ2OWMyNDE0YmNiODIyZDQ3MzIyY2JmNGMwMTk5YTU4OTI1YyIsImxhc3RTZWxlY3RlZExpbmVIYXNoIjoiNzcwY2JkNzhiMTU2YmFmMTI4N2JlYzAyZWIzYjQ2OWMyNDE0YmNiODIyZDQ3MzIyY2JmNGMwMTk5YTU4OTI1YyIsInByZWNlZGluZ0NvbnRleHRMaW5lQ291bnQiOjMsInByZWNlZGluZ0NvbnRleHRIYXNoIjoiZDI5MDM1ZmY5NTI4OTk0OTZkOGMyZDVmOGNlYjJiZjBjOTdlOGM4MzUxMWQ0YjY1NWE2OGJmOTllNjczZDUyZiIsImZvbGxvd2luZ0NvbnRleHRMaW5lQ291bnQiOjMsImZvbGxvd2luZ0NvbnRleHRIYXNoIjoiMzNlZDcwY2E5NmJlNjhjOGJiZDUyYjBmZjBiZDYzYzI0NTYwZWJkNzhkM2Q5ZGM2ODY2ZjJiYTQ3OTJhNzIwOCJ9"
+        },
+        {
+          "resource": "repo://specs/094-downscoped-token-cache-key/spec.md#L8-L24",
+          "version": "repo-lines-v1:sha256:8c13a8f811633bba6867594f8fd07c6785ef4172a892ccda96789d4a0edd6861:eyJzZWxlY3RlZExpbmVDb3VudCI6MTcsImZpcnN0U2VsZWN0ZWRMaW5lSGFzaCI6IjAwOWFhZjdmYjgxN2JiMWQxMjI4MTBlY2YwNmVkNTUxMGQ5NmM4MWY5MDUzMzIyYjdmYzYxYTA5OGI2OTQzY2QiLCJsYXN0U2VsZWN0ZWRMaW5lSGFzaCI6IjU0YmU2M2Q3OTY3MDViYWVkZGEyZGVlMGMyYjM4YjRkNjAwNDY0MTQ4NzYzODNlZjRmZjRkYjAzNmUwYmY2NmIiLCJwcmVjZWRpbmdDb250ZXh0TGluZUNvdW50IjozLCJwcmVjZWRpbmdDb250ZXh0SGFzaCI6IjBlZTc5NTc0ZmRkZTIyMTNiYzBjZjM2NGQwYjZiNWNlMDI5YTQyNDk4NmVmYzJmM2FiNjVkZmFkZTg2Njc1YjciLCJmb2xsb3dpbmdDb250ZXh0TGluZUNvdW50IjozLCJmb2xsb3dpbmdDb250ZXh0SGFzaCI6IjY4MTk1NjAzMmY2MDNiNjc2MjhjMjZiODZmYzUwZTZlNTcyZGJjNGU1MzE5NWZkN2JmYmQwMWJkNDgwZjgyN2MifQ"
+        }
+      ]
     }
   ],
   "verification": {
     "by": "openwiki/0.7.1",
-    "at": "2026-11-03T00:30:54.344Z"
+    "at": "2026-11-09T05:00:50.179Z"
   }
 }
