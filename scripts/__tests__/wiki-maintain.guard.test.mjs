@@ -44,7 +44,8 @@ const RENOVATE_COOLDOWN_MINUTES = 3 * 24 * 60;
 // Until item #613 the debounce was `concurrency` + `cancel-in-progress` + a `sleep 900` INSIDE a
 // merge-triggered job, which spent 15 of its 60 minutes waiting. Operator option A (2026-11-01): wait
 // for main to go quiet OUTSIDE the job. A scheduled check decides from git (scripts/wiki-quiet.mjs,
-// whose decision is tested in wiki-quiet.test.mjs) and either generates at once or ends.
+// whose decision is tested in wiki-quiet.test.mjs) and either generates at once or ends. Since 078
+// US7 (2026-11-09) the schedule is once a day and there is no debounce: the daily fire IS the batching.
 
 /** The step that runs the quiet decision. */
 const decideIndex = () => steps().findIndex((s) => /wiki-quiet\.mjs/.test(s.run ?? ''));
@@ -52,9 +53,19 @@ const decideIndex = () => steps().findIndex((s) => /wiki-quiet\.mjs/.test(s.run 
 test('the run is scheduled and dispatchable, never push-triggered — a push is by definition not quiet', () => {
   assert.ok(!('push' in wf.on), 'a push-triggered check could only ever answer "not yet"');
   const crons = [].concat(wf.on.schedule ?? []).map((c) => c.cron);
-  assert.equal(crons.length, 1, 'one schedule: the fire that comes back to look again');
-  // Every 30 min (R19): a fire is a queued job on the one shared runner, so 15 would double them.
-  assert.equal(crons[0], '*/30 * * * *');
+  assert.equal(crons.length, 1, 'one schedule');
+  // 078 FR-024 (amendment 2026-11-09, research R21): ONE fire a day is the batching — a page changed by
+  // ten merges is paid for once. Not at 03:00, which is Renovate's nightly fire on the same runner.
+  const m = /^(\d{1,2}) (\d{1,2}) \* \* \*$/.exec(crons[0]);
+  assert.ok(m, `expected a once-a-day cron "M H * * *", got '${crons[0]}'`);
+  assert.notEqual(Number(m[2]), 3, "03:00 UTC is Renovate's nightly fire on the one shared runner");
+});
+
+test('CI reasoning effort defaults to low; a dispatch input or repository variable still wins (078 FR-028)', () => {
+  const step = steps().find((s) => s.env && 'MCM_WIKI_REASONING_EFFORT' in s.env);
+  assert.ok(step, 'no step sets MCM_WIKI_REASONING_EFFORT');
+  assert.match(step.env.MCM_WIKI_REASONING_EFFORT,
+    /^\$\{\{\s*github\.event\.inputs\.reasoning-effort\s*\|\|\s*vars\.MCM_WIKI_REASONING_EFFORT\s*\|\|\s*'low'\s*\}\}$/);
 });
 
 test('workflow_dispatch exists so an operator can bypass the debounce', () => {

@@ -55,6 +55,9 @@ export function escalationPolicy(env = process.env) {
 
 /** The effort to override for one invocation; null leaves the environment as it is. */
 export function invocationEffort({ explicit, supportsLow }, escalated) {
+  // FR-020 as amended (US7): CI defaults to an explicit `low`. That must not cancel the split — run
+  // 5194 landed a page that had failed at low while sharing workers, because it ran first and ALONE.
+  if (explicit === ESCALATED_EFFORT) return escalated && supportsLow ? ESCALATED_EFFORT : null;
   if (explicit) return null;
   return escalated && supportsLow ? ESCALATED_EFFORT : null;
 }

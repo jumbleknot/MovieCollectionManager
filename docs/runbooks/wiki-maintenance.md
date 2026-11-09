@@ -345,8 +345,8 @@ better than page count (0.37). The same page varies up to 4.3× from run to run:
 took 689, 1912 and 2958 s. No size rule can guarantee a fit, so the deadline stop and carry-forward remain
 the backstop. The slice cap is held at or below the invocation cap, because the planner always admits a
 run's first slice whatever its size. The cost is that a large backlog drains over more runs. Carried pages
-wait for the next real merge, because the quiet check counts commits, not the backlog. Dispatch a run to
-drain them sooner.
+wait for the next daily fire that has a real merge to cover, because the trigger counts commits, not the
+backlog. Dispatch a run to drain them sooner.
 
 **The job deadline (item #613).** The workflow's first step records `WIKI_JOB_DEADLINE` from a window chosen **per
 event**: `workflow_dispatch` gets `DISPATCH_MINUTES=120` (the whole job), `schedule` gets `SCHEDULE_MINUTES=60` — so the runs
@@ -565,22 +565,49 @@ parking meant advancing `coveredCommit` past the page's source change and droppi
 recorded nothing, and the next change to the source silently undid it. `writeRunRecord` refuses an entry without
 an `item`, a `since` date and a `reason`. Check the result offline with `node scripts/wiki-maintain.mjs --plan`.
 
+### Refresh cooldowns: pages that would otherwise be paid for daily (feature 078 US7)
+
+Some pages' sources change on nearly every PR in their area, so even a daily run regenerates them most days.
+The record's `cooldowns` holds such a page for `days` after it last landed. It maps `"<area>/<page>.md"` to
+`{ days, item, since, reason }`, a reviewed decision like `parked`:
+
+- **What it holds:** a source change, and drift, while the page's stamp is younger than `days`. **Not** the
+  backlog: a failed or budget-deferred page still plans, and its stamp is old anyway.
+- **Nothing is lost.** When the cooldown expires, the skipped change makes the page stale by the V12 rule,
+  and drift plans it (two drifted pages a run, oldest first). A page with no readable stamp is never held.
+- **Visible:** `--plan` prints `cooldown: N held`, each page's plannable-from date, and any entry whose page
+  is gone (`cooldown, page gone`: remove the entry).
+- **Bounded:** `days` is an integer from 1 to 30, and `item` is required. A longer hold is parking; park the
+  page instead.
+
+Seeded 2026-11-09 with 7 days on `runbooks/wiki-maintenance.md`, `runbooks/server-setup.md` and
+`runbooks/renovate.md`, the three most-regenerated pages (research R21). Item #977 scores the result after
+four weeks.
+
+**Reasoning effort in CI defaults to `low`** (078 FR-028). The dispatch input, then the
+`MCM_WIKI_REASONING_EFFORT` repository variable, override it. About half of the month's spend was in failed
+runs, mostly at the model's default effort, while `low` attempts of the same pages usually landed. Pages with
+a deadline tag still run first and alone (FR-020 as amended), because the isolation is what let them land.
+Local runs keep the model default.
+
 ## 4. What CI does, and why it waits
 
-**Scheduled every 30 minutes, generating only once `main` has been quiet for 15 minutes** (item #613,
-operator option A, 2026-11-01; feature 078 research R19). Each fire runs `scripts/wiki-quiet.mjs`
-**before any install**. It reads the run record's `coveredCommit`, lists `main`'s first-parent commits
-past it, and decides:
+**Scheduled once a day, at 05:00 UTC, generating whenever anything merged since the last run** (feature 078
+US7, amendment 2026-11-09, research R21). Each fire runs `scripts/wiki-quiet.mjs` **before any install**.
+It reads the run record's `coveredCommit`, lists `main`'s first-parent commits past it, and decides:
 
 | Uncovered commits (the job's own ignored) | Result |
 |---|---|
-| none | ends: `nothing uncovered` |
-| the newest is under 15 minutes old | ends: `not yet — main is not quiet`; the next fire looks again |
-| the newest is 15 minutes old or more | generates now |
-| the oldest is 6 hours old or more, however busy `main` is | generates now (the maximum deferral) |
+| none | ends: `nothing uncovered`, at the cost of one checkout and one node process |
+| one or more, of any age | generates now |
 
-A "not yet" costs one checkout and one node process, about a minute of the shared runner. After the
-last merge, a run starts 15 to 45 minutes later.
+**Why daily.** The daily fire is the batching: a page whose source ten merges touched is paid for once.
+Until 2026-11-09 the job fired every 30 minutes and generated once `main` had been quiet for 15 minutes,
+with a 6-hour maximum deferral (item #613). That cost about $37 a week, and 265 page regenerations in a month
+covered only 39 distinct pages. Counting each page at most once a day would have cut that to 147. The
+debounce and the deferral are retired: a daily fire cannot starve, and a debounce would only push a merge
+that landed just before 05:00 to the next day. 05:00 is two hours after Renovate's nightly fire on the same
+runner. The wiki now lags `main` by up to a day; dispatch a run when you need it sooner.
 
 **The check reads the tip of `main`, never the commit the fire was for.** A scheduled fire checks out the
 commit the schedule was registered at, and that commit stays put while `main` moves on. Every fire on
@@ -597,7 +624,7 @@ quiet check, on every fire. A guard test pins that order.
 Before item #613 this was a push trigger with `cancel-in-progress` and a `sleep 900` inside the job.
 That spent 15 of the run's 60 minutes waiting, which left about 37 for generation.
 
-`workflow_dispatch` bypasses the wait entirely.
+`workflow_dispatch` runs at once, without waiting for the daily fire.
 
 The run **does not trigger itself**: commits carrying `[skip ci]` (the record marker, and CD's digest
 promotes) and bundle-only commits (its own proposal landing) are not counted as activity.

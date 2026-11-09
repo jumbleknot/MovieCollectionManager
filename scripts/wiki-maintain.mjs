@@ -51,6 +51,7 @@ import { normalizeLinks } from './openwiki-links.mjs';
 import { carryClaimsHash, claimsDurabilityFindings, CLAIMS_DIR, PAGE_MANIFEST } from './openwiki-claims.mjs';
 import { auditClaims, formatAudit, loadOpenwikiResolver } from './wiki-claims-audit.mjs';
 import { sourceCommitAfterStamp } from './openwiki-drift.mjs';
+import { conceptStamp } from './openwiki-stamp.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
 import { summarizeUsage, sumUsage, NOT_CAPTURED, pageTrails, formatPageTrail } from './wiki-usage.mjs';
 import { stepLogDir } from './ci-failure-digest.mjs';
@@ -136,6 +137,10 @@ const EMPTY_RECORD = Object.freeze({
 
 const statePath = (root) => join(root, STATE_FILE);
 
+/** 078 US7 FR-027: a cooldown longer than this is parking under another name — park the page instead. */
+export const MAX_COOLDOWN_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 /**
  * Read the run record. An ABSENT file is legitimately "never covered" and reads as the empty record;
  * a PRESENT but malformed one is a hard error. Silently defaulting on corruption would either
@@ -178,6 +183,19 @@ export function writeRunRecord(root = REPO_ROOT, record = {}) {
 }
 
 function assertRecordShape(record) {
+  // 078 US7 FR-027: a cooldown is a reviewed decision like parking — page key → { days, item, since, reason }.
+  if (record.cooldowns !== undefined) {
+    if (record.cooldowns === null || typeof record.cooldowns !== 'object' || Array.isArray(record.cooldowns)) {
+      throw new Error(`${STATE_FILE}: cooldowns must be an object of "<area>/<page>" → { days, item, since, reason }`);
+    }
+    for (const [key, entry] of Object.entries(record.cooldowns)) {
+      if (!/^[^/]+\/[^/]+\.md$/u.test(key) || entry === null || typeof entry !== 'object'
+        || !Number.isInteger(entry.days) || entry.days < 1 || entry.days > MAX_COOLDOWN_DAYS
+        || !Number.isInteger(entry.item) || typeof entry.since !== 'string' || typeof entry.reason !== 'string') {
+        throw new Error(`${STATE_FILE}: cooldowns["${key}"] must be { days: <1–${MAX_COOLDOWN_DAYS}>, item: <backlog item number>, since: <date>, reason: <text> }`);
+      }
+    }
+  }
   // 082 FR-005: parking is a recorded decision — page key → { item, since, reason }.
   if (record.parked !== undefined) {
     if (record.parked === null || typeof record.parked !== 'object' || Array.isArray(record.parked)) {
@@ -225,7 +243,7 @@ function assertRecordShape(record) {
  * three-way merge against `base`, the record this run STARTED from:
  *
  *   - a field only one side changed takes that side's value;
- *   - `escalations` and `parked` merge per page, and the backlog per page, so a tag or a queued page
+ *   - `escalations`, `parked` and `cooldowns` merge per page, and the backlog per page, so a tag or a queued page
  *     either side added survives and one either side cleared stays cleared;
  *   - two DIFFERENT proposal pointers cannot both be right (FR-016: one open proposal, ever), so that is
  *     a conflict, refused rather than guessed. A null pointer yields to a set one: the side that cleared
@@ -258,7 +276,7 @@ export function mergeRunRecords({ base = {}, ours = {}, theirs = {}, isAncestor 
     }
     return out;
   };
-  for (const k of ['escalations', 'parked']) {
+  for (const k of ['escalations', 'parked', 'cooldowns']) {
     if (bothChanged(k)) record[k] = perKey(b[k], o[k], t[k]);
   }
 
@@ -515,6 +533,9 @@ export function planSlices({
   maxPagesPerSlice = MAX_PAGES_PER_SLICE,
   maxNewPagesPerSlice = MAX_NEW_PAGES_PER_SLICE,
   parked = {},
+  // 078 US7 FR-025: `area/page` keys inside a refresh cooldown. Held from SOURCE CHANGES only — the
+  // backlog (a failed or budget-deferred page) still plans, and drift catches the change up later.
+  cooled = new Set(),
 } = {}) {
   const { concepts, areas } = readBundle(bundleRoot);
 
@@ -582,7 +603,7 @@ export function planSlices({
 
     const covering = concepts.filter((c) => covers(c, source));
     if (covering.length > 0) {
-      for (const c of covering) want(c.area, c.page, `source changed: ${source}`);
+      for (const c of covering) if (!cooled.has(`${c.area}/${c.page}`)) want(c.area, c.page, `source changed: ${source}`);
     } else {
       uncovered.push(source);
       want(areaFor(source), conceptNameFor(source), `new source, not yet covered: ${source}`);
@@ -793,6 +814,8 @@ export function computePlan({
   const sinceResolved = changedPaths.sinceResolved !== false;
 
   const allDocPaths = git(['ls-files'], root).split('\n').filter(Boolean).filter(isDocPath);
+  const cooldowns = cooledPages({ bundleRoot: bundleRoot ?? join(root, DEFAULT_BUNDLE), cooldowns: runRecord.cooldowns ?? {}, nowMs: Date.parse(now()) });
+  const cooled = new Set(cooldowns.held.map((h) => h.page));
   const slices = planSlices({
     bundleRoot: bundleRoot ?? join(root, DEFAULT_BUNDLE),
     changedPaths,
@@ -800,6 +823,7 @@ export function computePlan({
     policy,
     allDocPaths,
     parked: runRecord.parked ?? {},
+    cooled,
   });
 
   // What one run can attempt, given the page budget. The rest is `deferred` and carried forward — a
@@ -823,6 +847,7 @@ export function computePlan({
     parked: runRecord.parked ?? {},
     budgetLeft: Math.max(0, pageBudget - pages),
     covered: coveredOnProposal,
+    cooled,
   });
   onProposal.push(...drift.onProposal);
   attempt.push(...drift.slices);
@@ -844,7 +869,32 @@ export function computePlan({
     dropped: slices.dropped ?? [],
     onProposal: [...new Set(onProposal)].sort(),
     drift: { planned: drift.planned, deferred: drift.deferred, parked: drift.parked, parkedOrphans: drift.parkedOrphans, unplannable: drift.unplannable },
+    cooldowns,
   };
+}
+
+/**
+ * 078 US7 FR-025/FR-026: which cooldown entries hold their page right now. A page is held while its
+ * stamp (the V12 stamp, `conceptStamp`) is younger than `days`. A page with no readable stamp is NOT
+ * held — a cooldown must never be the reason a page that cannot be judged is never refreshed.
+ * Returns `{ held: [{ page, days, item, plannableFrom }], orphans: [key] }`, both sorted.
+ */
+export function cooledPages({ bundleRoot, cooldowns = {}, nowMs = Date.now() } = {}) {
+  const held = [];
+  const orphans = [];
+  for (const [key, { days, item }] of Object.entries(cooldowns ?? {}).sort(([a], [b]) => a.localeCompare(b))) {
+    const file = join(bundleRoot, key);
+    if (!existsSync(file)) {
+      orphans.push(key);
+      continue;
+    }
+    const stamp = conceptStamp(frontMatter(file));
+    const stampMs = stamp === null ? NaN : Date.parse(stamp.value);
+    if (Number.isNaN(stampMs)) continue;
+    const freeMs = stampMs + days * DAY_MS;
+    if (nowMs < freeMs) held.push({ page: key, days, item, plannableFrom: new Date(freeMs).toISOString() });
+  }
+  return { held, orphans };
 }
 
 /** 082 FR-003: drifted pages planned per run, at most. With PAGE_BUDGET 4 it leaves 2 for other work. */
@@ -863,7 +913,7 @@ export const DRIFT_PAGES_PER_RUN = 2;
  * page under a DIRECTORY resource is unplannable: any commit under that directory re-flags it, so
  * regenerating it would buy nothing durable.
  */
-export function selectDrift({ root = REPO_ROOT, bundleRoot = null, queued = new Set(), parked = {}, budgetLeft = PAGE_BUDGET, limit = DRIFT_PAGES_PER_RUN, covered = () => false } = {}) {
+export function selectDrift({ root = REPO_ROOT, bundleRoot = null, queued = new Set(), parked = {}, budgetLeft = PAGE_BUDGET, limit = DRIFT_PAGES_PER_RUN, covered = () => false, cooled = new Set() } = {}) {
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
   const { concepts } = readBundle(bundleDir);
   const existing = new Set(concepts.map((c) => c.path));
@@ -875,7 +925,8 @@ export function selectDrift({ root = REPO_ROOT, bundleRoot = null, queued = new 
   const unplannable = [];
   const onProposal = [];
   for (const c of concepts) {
-    if (queued.has(c.path) || Object.hasOwn(parked, c.path)) continue;
+    // 078 US7: a cooled page is not drift yet; once its cooldown expires this is what catches it up.
+    if (queued.has(c.path) || Object.hasOwn(parked, c.path) || cooled.has(c.path)) continue;
     const judged = sourceCommitAfterStamp({ root, fields: frontMatter(join(bundleDir, c.area, c.page)) });
     if (!judged?.stale) continue;
     if (covered(c.path)) {
@@ -2551,6 +2602,12 @@ export function reportPlan(plan, { json }) {
     for (const p of d.parked) console.log(`  parked       ${p.page} (item #${p.item}, since ${p.since}): ${p.reason}`);
     for (const p of d.parkedOrphans ?? []) console.log(`  parked, page gone  ${p}  (remove the entry)`);
     for (const p of d.unplannable) console.log(`  unplannable  ${p}  (directory resource: any commit under it re-flags the page)`);
+  }
+  // 078 US7 FR-026: what a cooldown held this run, and when each page is plannable again.
+  if (plan.cooldowns && (plan.cooldowns.held.length > 0 || plan.cooldowns.orphans.length > 0)) {
+    console.log(`[wiki-maintain] cooldown: ${plan.cooldowns.held.length} held`);
+    for (const h of plan.cooldowns.held) console.log(`  held         ${h.page} (${h.days}-day cooldown, item #${h.item}) plannable from ${h.plannableFrom.slice(0, 10)}`);
+    for (const o of plan.cooldowns.orphans) console.log(`  cooldown, page gone  ${o}  (remove the entry)`);
   }
   // #748: work skipped because the open proposal already holds the page fresh — reported, never silent.
   for (const p of plan.onProposal ?? []) console.log(`  on the open proposal  ${p}  (fresh there; not planned again)`);

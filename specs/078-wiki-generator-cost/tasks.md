@@ -29,6 +29,8 @@ operator ("~8 pages per run, timeout 60"), T029–T031 implemented with the deri
 default in the workflow; added: the wiki job verifies the installed generator and fails on a skip. T032 (upstream
 request) and T034 (score ≥ 10 real runs, SC-005 reconciliation) remain.
 
+**2026-11-09:** amendment US7 adds Phase 9 (T059–T067).
+
 **2026-10-12:** T050 is done (research R17), and with it US6. Feature 078's task list is complete. What remains
 open is tracked outside it: #682, #733 and #906.
 
@@ -1073,6 +1075,37 @@ T055 evidence so far:
 
 RED: 2 tests failed. GREEN: 207 across the three wiki test files. 3 mutations were all killed: the slice
 cap back to 8, the invocation cap back to 8, and packing that ignores the cap.
+
+## Phase 9 — US7: spend per day, not per merge (amendment 2026-11-09; plan D10)
+
+Baseline first: `node --test scripts/__tests__/wiki-*.test.mjs` — record the count.
+
+### T059 — Test: the trigger runs on any real uncovered commit, whatever its age (RED)
+`wiki-quiet.test.mjs`: replace the quiet-period and maximum-deferral cases with "a real commit 1 s old runs" and
+"own commits only does not". The guard asserts one cron, daily, not at 03:00 (FR-024).
+
+### T060 — Implement the daily trigger (GREEN)
+`wiki-quiet.mjs` drops the debounce and deferral; the workflow cron becomes `0 5 * * *`; comments (properties 1
+and 2) rewritten.
+
+### T061 — Test: `cooldowns` validation, planning and reporting (RED)
+`wiki-maintain.test.mjs`: malformed entries throw (FR-027); a cooled page with a changed source is not planned
+but its backlog entry is (FR-025); an expired cooldown lets drift plan it; the plan lists held pages with their
+free-from date and orphans (FR-026); the record merge keeps a cooldown added on either side.
+
+### T062 — Implement cooldowns (GREEN)
+
+### T063 — Test: CI effort defaults to `low`, and explicit `low` still isolates tagged pages (RED)
+Guard: the workflow's `MCM_WIKI_REASONING_EFFORT` expression ends `|| 'low'` (FR-028). `wiki-escalation.test.mjs`:
+`invocationEffort({ explicit: 'low', supportsLow: true }, true)` is `low`, and stays `null` for `high` (FR-020).
+
+### T064 — Implement the effort default (GREEN)
+
+### T065 — Seed the three cooldowns (FR-029, item #977) and update `docs/runbooks/wiki-maintenance.md`
+
+### T066 — Gates: the wiki test files, `okf-lint`, `okf-governance`, `lint`/format of the changed files; open the PR
+
+### T067 — Post-merge: score SC-010–SC-012 after 4 weeks (item #977)
 
 ## Dependencies
 

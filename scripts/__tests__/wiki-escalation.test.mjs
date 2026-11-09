@@ -118,6 +118,12 @@ test('invocationEffort: low only for escalated work, never over an explicit effo
   assert.equal(invocationEffort({ explicit: null, supportsLow: false }, true), null);
 });
 
+test('invocationEffort: an explicit low still isolates escalated work — CI defaults to low (FR-020 amended, FR-028)', () => {
+  assert.equal(invocationEffort({ explicit: 'low', supportsLow: true }, true), 'low', 'tagged pages must still run first and alone');
+  assert.equal(invocationEffort({ explicit: 'low', supportsLow: true }, false), null, 'untagged work keeps the environment');
+  assert.equal(invocationEffort({ explicit: 'none', supportsLow: true }, true), null);
+});
+
 test('page-level: only the pages that did not land in a failed part are tagged or counted; a landed page in it is cleared (FR-017, review I1)', () => {
   const part = sl('runbooks', ['a.md', 'b.md']);
   const next = nextEscalations({
