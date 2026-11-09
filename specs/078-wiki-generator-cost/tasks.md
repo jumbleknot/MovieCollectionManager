@@ -1080,6 +1080,16 @@ cap back to 8, the invocation cap back to 8, and packing that ignores the cap.
 
 Baseline first: `node --test scripts/__tests__/wiki-*.test.mjs` — record the count.
 
+**DONE 2026-11-09 (T059–T065; T066 up to opening the PR).** Baseline 294 passed, 0 skipped.
+- RED: T059 3 failures + 1 guard; T061 6 failures (the backlog case and the expired case passed by construction:
+  nothing held them before); T063 1 guard + 1 escalation.
+- GREEN: the wiki test files 303/303, 0 skipped; the whole `scripts/__tests__` suite 2035/2035, 0 skipped;
+  `check-openwiki-okf` and `check-openwiki-governance` pass.
+- Mutations, all killed: drift ignoring `cooled` (2 failures); source changes ignoring `cooled` (1);
+  explicit `low` cancelling the split (1).
+- `--plan` on the real record: `cooldown: 3 held`, `wiki-maintenance.md` plannable from 2026-11-11, the
+  other two from 2026-11-14.
+
 ### T059 — Test: the trigger runs on any real uncovered commit, whatever its age (RED)
 `wiki-quiet.test.mjs`: replace the quiet-period and maximum-deferral cases with "a real commit 1 s old runs" and
 "own commits only does not". The guard asserts one cron, daily, not at 03:00 (FR-024).
