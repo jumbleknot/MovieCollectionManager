@@ -91,6 +91,9 @@ down over the list.
   - `activeFilterCount=2` renders `view-options-active-count` with the text `2` and the label
     `View options, 2 filters active`, while 0 renders no badge (US1-AC5, FR-008, FR-016).
   - Calling `open('assistant')` on the context closes the panel (FR-015).
+  - Focus (FR-016): on open, focus is set on the panel's first heading (`AccessibilityInfo.setAccessibilityFocus`
+    on native, `focus()` on the web ref, both spied). On every close path (close button, toggle, Back,
+    Escape), focus returns to `view-options-toggle`.
   **Verify RED**: `UNIT APP/src/components/unit-tests/view-options-dock.test.tsx`. **Expected RED**: the
   module is not found.
 - [ ] T008 [US1] Implement `APP/src/components/view-options-dock.tsx` per research R3–R5:
@@ -111,14 +114,7 @@ down over the list.
   - After closing, the badge shows the active-filter count, and "Clear" removes it (US1-AC6).
   **Verify RED**: `UNIT APP/src/screens/collections/collection-screen.test.tsx`. **Expected RED**: the new
   assertions fail with the controls found inline and `view-options-toggle` not found.
-- [ ] T010 [US1] Edit `APP/src/screens/collections/collection-screen.tsx`:
-  - Replace the inline `ColumnSelector`, `MovieSortControl` and `MovieFilterPanel` with
-    `<ViewOptionsDock activeFilterCount={countActiveFilters(filters)}>` wrapping those three, unchanged.
-  - Wrap the count row and `listContainer` in one `flex: 1` container that the panel overlays.
-  - Update the file header comment.
-  **Verify GREEN**: the T009 command reports 0 failures. **Also run**
-  `UNIT APP/src/screens APP/src/components` and confirm it is still green.
-- [ ] T011 [P] [US1] Write `APP/tests/e2e/web/collection-view-options.spec.ts` against the E2E Browse fixture
+- [ ] T010 [US1] Write `APP/tests/e2e/web/collection-view-options.spec.ts` against the E2E Browse fixture
   (resolve the id the way `movies.spec.ts` does). Tests:
   - At viewport 360×640, `view-options-toggle` is visible, `movie-filter-panel` is not in the DOM, and
     at least 3 `movie-list-item-row` elements are inside the viewport (SC-001, US1-AC1).
@@ -127,15 +123,30 @@ down over the list.
     count and `view-options-active-count` reads `1`. That is three presses in total (SC-003, US1-AC3/4/5).
   - Escape closes the panel, and the URL is unchanged (FR-007).
   - At 1280×800 the same bar is shown with no inline controls (FR-010).
-  **Verify RED**: `WEB APP/tests/e2e/web/collection-view-options.spec.ts`. **Expected RED**: every test
-  fails, waiting on `[data-testid="view-options-toggle"]`. Run it against a build **without** T010, or
-  stash it first.
+  - Scroll position (FR-005a): scroll the list until a known row is first in view, open and close the panel,
+    and assert the same row is still first in view.
+  - Focus (FR-016): after Escape, `document.activeElement` is `view-options-toggle`.
+  - **Also add to `APP/tests/e2e/web/a11y.spec.ts`** (constitution: WCAG 2.2 AA) one axe scan of the
+    collection screen **with the panel open**, in both dark and light themes, using that file's existing
+    per-theme loop. Expect zero violations, `color-contrast` included.
+  **Verify RED**: `WEB APP/tests/e2e/web/collection-view-options.spec.ts APP/tests/e2e/web/a11y.spec.ts`. **Expected RED**: every test
+  fails, waiting on `[data-testid="view-options-toggle"]`, and so does the new a11y scan; the existing
+  a11y tests stay green. This runs before T011 changes the screen, so it is naturally RED.
+- [ ] T011 [US1] Edit `APP/src/screens/collections/collection-screen.tsx`:
+  - Replace the inline `ColumnSelector`, `MovieSortControl` and `MovieFilterPanel` with
+    `<ViewOptionsDock activeFilterCount={countActiveFilters(filters)}>` wrapping those three, unchanged.
+  - Wrap the count row and `listContainer` in one `flex: 1` container that the panel overlays.
+  - Update the file header comment.
+  **Verify GREEN**: the T009 command reports 0 failures, and `WEB APP/tests/e2e/web/collection-view-options.spec.ts`
+  plus `APP/tests/e2e/web/a11y.spec.ts` (T010) report 0 failed and 0 skipped. **Also run** `UNIT APP/src/screens APP/src/components` and confirm it
+  is still green.
 - [ ] T012 [US1] Add a `openViewOptions(page)` helper to `APP/tests/e2e/web/movies.spec.ts`. It clicks
   `view-options-toggle` and waits for `view-options-panel`, but only if the panel is not already open.
   Call it before each of the 26 column, sort and filter interactions, and assert nothing else differently
   (FR-017). Also check `APP/tests/e2e/web/a11y.spec.ts` and `responsive.spec.ts`, which visit the
-  collection screen, and adjust them only if they reference the moved controls.
-  **Verify RED**: before this edit, with T010 in place, `WEB APP/tests/e2e/web/movies.spec.ts` fails in
+  collection screen, and adjust them only if they reference the moved controls. The panel-open axe scan
+  was already added in T010.
+  **Verify RED**: before this edit, with T011 in place, `WEB APP/tests/e2e/web/movies.spec.ts` fails in
   the browse, column-persistence and exact-count describes. **Verify GREEN**: after the edit,
   `WEB APP/tests/e2e/web/movies.spec.ts APP/tests/e2e/web/collection-view-options.spec.ts
   APP/tests/e2e/web/a11y.spec.ts APP/tests/e2e/web/responsive.spec.ts` reports 0 failed and 0 skipped.
@@ -144,7 +155,7 @@ down over the list.
   `movie-search-filter.yaml`, and an explicit close where a later step needs the list. This proves that
   taps inside the absolutely positioned panel reach the chips on Android (plan Risks). If they do not,
   switch the panel to in-flow overlap in `view-options-dock.tsx` and record why in research.md R3.
-  **Verify RED**: `MOBILE APP/tests/e2e/mobile/movie-sort.yaml` fails on `sort-field-*` not found (T010 in
+  **Verify RED**: `MOBILE APP/tests/e2e/mobile/movie-sort.yaml` fails on `sort-field-*` not found (T011 in
   place, flow not yet edited). **Verify GREEN**: all four flows pass.
 
 **Checkpoint**: US1 works alone and is shippable as the MVP.
@@ -174,11 +185,14 @@ keyboard.
   - With the inset back at 0, `bottom: 16` and height 420 (FR-014, US2-AC3).
   - Open and closed come from `useOpenPanel('assistant')`, and opening the assistant closes the
     view options (FR-015).
+  - FR-016 for the assistant toggle: `assistant-dock-toggle` has `accessibilityState.expanded` matching
+    open/closed, and its style has `minHeight >= 44`. Today it has neither.
   **Verify RED**: `UNIT APP/src/components/agent/assistant-dock.test.tsx`. **Expected RED**: the
   bottom/height assertions fail at a fixed `bottom: 16` and height 420.
 - [ ] T017 [US2] Edit the following files:
   - `APP/src/components/agent/assistant-dock.tsx`: replace the local `open` with `useOpenPanel`, keeping
-    `Panel`, `failed` and `loading` local, and add the inset to `bottom`.
+    `Panel`, `failed` and `loading` local, and add the inset to `bottom`. Give the toggle
+    `accessibilityState={{ expanded: open }}` and `minHeight: 44`.
   - `APP/src/components/agent/assistant-panel.tsx`: compute the capped height from
     `useWindowDimensions`, `useSafeAreaInsets` and the inset, and re-run `scrollToLatest` when the inset
     changes (FR-012, US2-AC2).
@@ -209,9 +223,10 @@ the other, and both toggles and "+ Add movie" can be clicked.
   - Opening `view-options-toggle` while `assistant-dock-panel` is visible hides the assistant panel,
     and the reverse also holds (US3-AC2, FR-015).
   The skip must be **loud**: with `E2E_REQUIRE_AGENT_STACK=1` a missing dock fails instead of skipping.
-  **Verify RED**: before T006/T017 are wired, the mutual-exclusion test fails with both panels visible.
-  If they are already merged, prove RED by temporarily reverting the `useOpenPanel` call in
-  `assistant-dock.tsx`. **Verify GREEN**: `WEB APP/tests/e2e/web/collection-view-options.spec.ts` reports
+  **Verify RED** (the test runs after T017, so RED comes from temporarily reverting the change): replace
+  the `useOpenPanel` call in `assistant-dock.tsx` with a local `useState`. Run the two tests. **Expected RED**:
+  both mutual-exclusion directions fail with both panels visible, while the overlap test may still pass.
+  Restore the file and confirm `git diff --stat` shows no change to it. **Verify GREEN**: `WEB APP/tests/e2e/web/collection-view-options.spec.ts` reports
   0 failed and 0 skipped with `E2E_REQUIRE_AGENT_STACK=1`.
 
 ---
@@ -219,7 +234,7 @@ the other, and both toggles and "+ Add movie" can be clicked.
 ## Phase 6: Polish and cross-cutting
 
 - [ ] T020 [P] Measure SC-001's baseline on `main`, then on the branch: the number of visible rows at
-  360×640, read from the T011 test's evidence or a one-off Playwright run. Record both numbers in the
+  360×640, read from the T010 test's evidence or a one-off Playwright run. Record both numbers in the
   Evidence table.
 - [ ] T021 Run the tiers the diff touches, one at a time with `--skip-nx-cache`:
   `pnpm nx lint mcm-app`, `pnpm nx typecheck mcm-app`, `pnpm nx test mcm-app` (watch the **skip count**),
@@ -259,7 +274,7 @@ T002 ─┬─ T003→T004 ─┐                            │
 
 - T003 and T005 are different new files.
 - T007 (US1) and T014 (US2) can be written in parallel once Phase 2 is done.
-- T011 can be written while T008–T010 are being implemented, but its RED must be run before T010 lands.
+- T010 (web spec) can be written in parallel with T007–T009, and its RED must be run before T011 lands.
 - T020, T023 and T024 can run in parallel in Polish.
 - Keep at most one background agent: the sandbox has 15 GB of RAM, shared between sessions.
 
@@ -282,9 +297,9 @@ T002 ─┬─ T003→T004 ─┐                            │
 
 ## Completion checklist
 
-- [ ] **SC-001**: at least 3 rows visible at 360×640 on load (T011, baseline from T020)
-- [ ] **SC-002**: a single compact bar replaces the three inline controls (T009, T011)
-- [ ] **SC-003**: filter and return in 3 presses or fewer (T011)
+- [ ] **SC-001**: at least 3 rows visible at 360×640 on load (T010, baseline from T020)
+- [ ] **SC-002**: a single compact bar replaces the three inline controls (T009, T010)
+- [ ] **SC-003**: filter and return in 3 presses or fewer (T010)
 - [ ] **SC-004**: Android input stays visible with the keyboard up (T001 RED → T018 GREEN)
 - [ ] **SC-005**: existing web and mobile flows pass with only "open first" changes (T012, T013, T022)
 - [ ] Platform parity table has no ❌ gaps
