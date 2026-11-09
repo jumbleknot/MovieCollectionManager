@@ -136,6 +136,24 @@ test.describe('a11y — contrast (SC-009)', () => {
       expect(v, JSON.stringify(v, null, 2)).toEqual([]);
     });
 
+    // 098 US1: the column, sort and filter controls are docked, so the scan above no longer sees
+    // them. Scan the bar and the open panel with the full WCAG 2.x A/AA rule set (contrast included).
+    test(`collection view options (open) have no a11y violations (${theme})`, async ({ page }) => {
+      await forceTheme(page, theme);
+      await gotoCollection(page);
+      await page.getByTestId('view-options-toggle').click();
+      await page.getByTestId('view-options-panel').waitFor({ state: 'visible', timeout: 10000 });
+      const results = await new AxeBuilder({ page })
+        .include('[data-testid="view-options-toggle"]')
+        .include('[data-testid="view-options-panel"]')
+        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
+        .analyze();
+      const v = results.violations.flatMap((x) =>
+        x.nodes.map((n) => ({ rule: x.id, target: n.target.join(' '), summary: n.failureSummary })),
+      );
+      expect(v, JSON.stringify(v, null, 2)).toEqual([]);
+    });
+
     test(`movie detail has no contrast violations (${theme})`, async ({ page }) => {
       await forceTheme(page, theme);
       await gotoMovieDetail(page);

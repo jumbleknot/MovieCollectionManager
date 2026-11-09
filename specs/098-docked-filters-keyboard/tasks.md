@@ -81,7 +81,7 @@ down over the list.
 **Independent test**: at 360×640, at least 3 list rows are visible on load, and open → choose a filter
 → close gives a filtered list with a badge reading 1 (SC-001, SC-003).
 
-- [ ] T007 [P] [US1] Write `APP/src/components/unit-tests/view-options-dock.test.tsx` for `ViewOptionsDock`
+- [X] T007 [P] [US1] Write `APP/src/components/unit-tests/view-options-dock.test.tsx` for `ViewOptionsDock`
   (props: `activeFilterCount`, `children`; it reads `useOpenPanel`), against the
   [UI contract](./contracts/ui-contract.md). Cases:
   - `view-options-toggle` is rendered, and `view-options-panel` is absent at first (US1-AC1, FR-004).
@@ -96,7 +96,7 @@ down over the list.
     Escape), focus returns to `view-options-toggle`.
   **Verify RED**: `UNIT APP/src/components/unit-tests/view-options-dock.test.tsx`. **Expected RED**: the
   module is not found.
-- [ ] T008 [US1] Implement `APP/src/components/view-options-dock.tsx` per research R3–R5:
+- [X] T008 [US1] Implement `APP/src/components/view-options-dock.tsx` per research R3–R5:
   - The bar sits in normal layout flow. It is at least 44 pt tall and built from DS `Button`/`IconButton`
     and `Badge`, with tokens only.
   - The panel is `position: absolute; top: 0; left: 0; right: 0` with a DS surface and elevation, and
@@ -317,3 +317,7 @@ T002 ─┬─ T003→T004 ─┐                            │
 | T003 RED | 1 suite failed to run: `Could not locate module @/utils/active-filters`. Test lives in `src/utils/unit-tests/` (repo convention); the "all keys" case asserts 10 (the type has 10 keys incl. `childrens`), not 9 | `src/utils/unit-tests/active-filters.test.ts` |
 | T005 RED | 1 suite failed to run: `Could not locate module @/hooks/use-open-panel` | `src/hooks/use-open-panel.test.tsx` |
 | T004/T006 GREEN | active-filters + use-open-panel + movie-filter-panel: **3 suites, 29 passed, 0 skipped**. (First GREEN attempt failed in the TEST: RNTL 14.1 `renderHook` is async; fixed by awaiting it.) `UNIT APP/src/app` matches **no** test files (only `+api.ts` routes), so the layout has no unit coverage to re-run | Jest |
+| T007 RED | 2 suites failed to run, `Could not locate module @/utils/move-focus` (mocked by the dock test, so it is hit before `@/components/view-options-dock` — both unwritten). Also adds `src/utils/unit-tests/move-focus.test.ts` (the web/native focus call the dock test mocks out) | `src/components/unit-tests/view-options-dock.test.tsx` |
+| T008 GREEN | view-options-dock + move-focus: **2 suites, 17 passed, 0 skipped**. Implemented as two exports, `ViewOptionsDock` (bar, in flow) + `ViewOptionsPanel` (overlay, mounted by the screen in the list container), because the overlay sits in a later layout container than the bar. Harness fixes on the way, none in product code: (a) a failing matcher on a raw React ref pretty-printed the fiber graph and OOM'd the Jest worker after 188 s → targets compared as labels; (b) `jest.spyOn(RN,'findNodeHandle')` does not reach the import binding → native focus uses `AccessibilityInfo.sendAccessibilityEvent(host,'focus')`; (c) Jest 30 `restoreAllMocks` does not clear calls → `clearAllMocks` per test | Jest |
+| T009 RED | `collection-screen.test.tsx`: **8 failed, 6 passed**. 7 × `Unable to find an element with testID: view-options-toggle` (or `-active-count`), 1 × bar-order index −1 | Jest |
+| T010 RED (partial) | Run against Metro on this worktree, pre-T011. **1 genuine RED**: `a11y … collection view options (open) … (dark)` → `locator.click: Test timeout … waiting for getByTestId('view-options-toggle')`. The other 15 failures are **instrument, not RED**: Metro (6 GB heap) hung, then was SIGKILLed by the kernel OOM killer (exit 137) mid-run → `apiRequestContext.get: Test timeout` / `ERR_ABORTED`. Two earlier attempts ran zero tests (V8 heap OOM at 2 GB; then `login: session creation failed — AGENT_CONFIG_ENC_KEY is not …`, because the main checkout's `.env.local` lacks the BFF-only keys that `gen-dev-env.mjs` writes only to `.env.docker`). **Still owed**: a clean T010 RED. | `scratchpad/t010-red.log` |
