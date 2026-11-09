@@ -20,13 +20,23 @@ space and opens a panel over the screen when pressed. On a phone, when the user 
 message field, the on-screen keyboard rises over the bottom of the panel and hides the field and the
 text being typed.
 
+## Clarifications
+
+### Session 2026-11-09
+
+- Q: Should the sort control move into the docked view-options control? → A: Yes — columns, sort and filters all dock; search, count and "+ Add movie" stay inline.
+- Q: Docked at every width, or only on phones? → A: Docked at every width, web and native.
+- Q: Where does the docked toggle sit? → A: As a compact bar of its own between the search row and the count row.
+- Q: How does the panel appear when opened? → A: It drops down from the bar as an overlay over the list; the list does not move.
+- Q: Which platforms must the keyboard fix cover? → A: The native app (Android verified by an automated flow, and iOS); mobile web only if reproduced during implementation.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - See the movie list without the view controls in the way (Priority: P1)
 
 A user opens a collection on their phone. The column selector, sort control and filters are collapsed
-into one compact, docked "View options" control, so the movie list starts directly below the search bar
-and count line. When they want to change what they see, they open the control, pick columns, a sort and
+into one compact, docked "View options" bar between the search bar and the count line, so the movie
+list starts directly below the count line. When they want to change what they see, they open the control, pick columns, a sort and
 filters, and close it again to see the updated list on the full screen.
 
 **Why this priority**: This is the space problem the user reported, on the screen they use most. It is
@@ -39,10 +49,11 @@ close it: the list shows only matching movies and the controls are gone again.
 **Acceptance Scenarios**:
 
 1. **Given** a user opens a collection, **When** the screen loads, **Then** the column selector, sort
-   control and filter panel are not shown, a single docked view-options control is shown instead, and
-   the list begins directly below the search bar and the count/"+ Add movie" row.
+   control and filter panel are not shown, a single compact docked view-options bar is shown between the
+   search bar and the count/"+ Add movie" row, and the list begins directly below the count row.
 2. **Given** the control is docked, **When** the user presses it, **Then** the column, sort and filter
-   choices open over the screen with every choice available today still available.
+   choices drop down from the bar as an overlay over the list (the list does not move), with every
+   choice available today still available.
 3. **Given** the control is open, **When** the user selects a filter, toggles a column or changes the
    sort, **Then** the list, the count line and the active-choice state update immediately, exactly as
    they do today, without the control closing.
@@ -88,9 +99,9 @@ without first dismissing the keyboard.
 
 ### User Story 3 - Docked controls and the assistant do not collide (Priority: P2)
 
-On the collection screen both docked controls are present. They never overlap each other, the "+ Add
-movie" action or list rows a user needs to reach, and opening one does not leave the other open
-underneath it.
+On the collection screen both docked controls are present: the view-options bar below the search bar and
+the assistant toggle in the bottom-left corner. Their open panels never cover each other, and opening one
+does not leave the other open underneath it.
 
 **Why this priority**: A quality bar for Story 1 rather than new capability; without it Story 1 can
 introduce new obstructions.
@@ -102,8 +113,7 @@ vice versa).
 **Acceptance Scenarios**:
 
 1. **Given** the collection screen, **When** both controls are docked, **Then** neither control overlaps
-   the other or the "+ Add movie" action, and the last row of the list can be scrolled into a position
-   where it is not covered.
+   the other or the "+ Add movie" action.
 2. **Given** the assistant is open, **When** the user opens the view options, **Then** the assistant
    docks, and the reverse also holds.
 
@@ -134,13 +144,17 @@ vice versa).
 
 - **FR-001**: The collection screen MUST present the column selector, sort control and filter panel
   inside a single docked view-options control instead of inline above the movie list.
-- **FR-002**: While docked, the view-options control MUST add no vertical space to the screen's
-  content: the movie list MUST begin directly below the search bar and the count/"+ Add movie" row.
+- **FR-002**: While docked, the view-options control MUST appear as a single compact bar, no taller
+  than one standard control row, placed between the search bar and the count/"+ Add movie" row; the
+  movie list MUST begin directly below the count row.
 - **FR-003**: The search bar, collection name, count line and "+ Add movie" action MUST remain visible
   and behave as today; they are not moved into the control.
 - **FR-004**: The control MUST be docked by default every time the collection screen is opened.
 - **FR-005**: Opening the control MUST present every column, sort and filter choice available today,
   with the same single-select filter behaviour, the same "Clear" action and the same option sources.
+- **FR-005a**: Opening the control MUST present its choices as a panel dropping down from the bar and
+  overlaying the list; the list MUST NOT move or re-scroll when the panel opens or closes. The panel
+  MUST stay within the visible area and scroll internally when its content is taller than the space.
 - **FR-006**: Choices made in the open control MUST apply immediately to the list and count line and
   MUST NOT close the control.
 - **FR-007**: The user MUST be able to re-dock the control by an explicit close action, by pressing the
@@ -149,13 +163,16 @@ vice versa).
 - **FR-008**: While any filter is applied, the docked control MUST display the number of active filters.
 - **FR-009**: Docking and undocking MUST NOT change, reset or re-persist the user's column, sort or
   filter choices.
-- **FR-010**: The control MUST behave the same on web, Android and iOS, at phone, tablet and desktop
-  widths.
+- **FR-010**: The control MUST be docked, and behave the same, on web, Android and iOS at phone, tablet
+  and desktop widths; there is no width at which the controls revert to the inline layout.
 
 **Keyboard-safe assistant (mobile)**
 
 - **FR-011**: When the on-screen keyboard is shown while the assistant panel is open, the message
   field, the text being typed and the send button MUST remain fully visible above the keyboard.
+- **FR-011a**: FR-011–FR-014 apply to the native app on Android and iOS; Android MUST be verified by an
+  automated mobile flow. Mobile web is in scope only if the defect is reproduced there during
+  implementation.
 - **FR-012**: While the keyboard is shown, the most recent conversation content MUST remain visible,
   including after a message is sent and while a reply is arriving.
 - **FR-013**: When the keyboard is shown, the panel MUST stay within the visible area, shrinking if
@@ -164,8 +181,9 @@ vice versa).
 
 **Shared**
 
-- **FR-015**: The docked view-options control and the assistant dock MUST NOT overlap each other or the
-  "+ Add movie" action, and at most one of them MUST be open at a time.
+- **FR-015**: The docked view-options bar and the assistant dock MUST NOT overlap each other or the
+  "+ Add movie" action, and at most one of their panels MUST be open at a time: opening one docks the
+  other.
 - **FR-016**: Both controls MUST meet the project's accessibility rules: labelled, state announced
   (open/closed and active-filter count), visible focus, focus moved into the control on open and back to
   its toggle on close, and touch targets of at least 44×44 points.
@@ -179,8 +197,8 @@ vice versa).
 - **SC-001**: On a 360×640 phone screen, at least the first 3 movie rows are visible on opening a
   collection without scrolling, with filter options loaded (today the controls fill most of the first
   screen; the baseline is measured before implementation).
-- **SC-002**: The vertical space taken by view controls above the list while docked is zero; only the
-  existing search bar and count row remain.
+- **SC-002**: While docked, the view controls above the list take no more than one compact row (the
+  docked bar), replacing today's column selector, sort control and filter panel.
 - **SC-003**: A user can apply a filter and return to the full list in 3 presses or fewer (open, choose,
   close).
 - **SC-004**: On an Android phone, the message field and typed text stay visible for 100% of keyboard
@@ -190,18 +208,10 @@ vice versa).
 
 ## Assumptions
 
-- **The sort control moves into the dock too.** The user named column selectors and filters; sort sits
-  between them today and causes the same space problem, so it is grouped with them. The search bar
-  stays outside because it is the primary way to find a movie.
-- **Docked on all widths, not only mobile.** One behaviour everywhere is simpler to learn and test; on
-  desktop the gain is smaller but the cost is a single press.
-- **The open control overlays the screen** (like the assistant panel) rather than pushing the list
-  down; the list is visible again as soon as it closes.
-- **Placement is a design decision for the plan**, constrained by FR-002 and FR-015: the assistant
-  toggle occupies the bottom-left and "+ Add movie" sits right-aligned in the count row.
-- **Story 2 targets the native app (Android first, iOS where supported).** Mobile web browsers resize
-  their own viewport for the keyboard; if a mobile-web reproduction is found it is handled under this
-  story, otherwise it is out of scope.
+- **Sort, breakpoints, placement, open style and keyboard platforms** were settled in Clarifications
+  (Session 2026-11-09). The search bar stays outside the dock because it is the primary way to find a
+  movie. Mobile web browsers resize their own viewport for the keyboard, which is why it is excluded
+  unless reproduced.
 - **No backend change.** Filter options, counts and persisted view preferences keep their current
   sources; this is a frontend-only feature.
 - Existing persistence of columns, sort and filters is reused as-is.
