@@ -6,7 +6,7 @@ resource: docs/runbooks/agent-layer.md
 tags: [architecture, agents, langgraph, ag-ui, token-exchange]
 verified:
   - by: openwiki/0.7.1
-    at: 2026-11-03T00:30:54.344Z
+    at: 2026-11-09T05:00:50.179Z
 sources:
   - id: openwiki-source-bdd810ca95fc763a63b0c693
     resource: repo://agents/movie-assistant/src/agui_identity.py
@@ -206,12 +206,18 @@ A **refused mint fails closed** rather than letting the turn run without identit
   agent-origin binding signal. Sending no `audience` also sidesteps Keycloak's "Requested audience
   not available" precondition. The exchanged token's TTL is bounded to ≤60 s by the client's
   `access.token.lifespan`, capped again defensively in code.
-- **A burst of tool calls reuses one token — but never past its safe life.** The downscoped token is
-  cached in process memory, keyed by `(user, audience)`, with a **15 s expiry skew**: the cache
-  expires the entry ahead of the reported lifetime because the reported `expires_in` is measured at
-  mint time while `mc-service` validates the JWT's real `exp`. Without that margin a long bulk apply
-  (a large import) hit a cluster of `401`s at each TTL boundary and rows reported "could not be
-  imported".
+- **A burst of tool calls reuses one token — but never past its safe life, and never across
+  subjects.** The downscoped token is cached in process memory, keyed by
+  `(user_id, audience, sha256(subject token))`, with a **15 s expiry skew**: the cache expires the
+  entry ahead of the reported lifetime because the reported `expires_in` is measured at mint time
+  while `mc-service` validates the JWT's real `exp`. Without that margin a long bulk apply (a large
+  import) hit a cluster of `401`s at each TTL boundary and rows reported "could not be imported".
+  The digest is load-bearing, not a convenience: `user_id` is the subject token's `sub` decoded
+  *without* a signature check, and a cache hit returns **before** OPA and the Keycloak re-exchange,
+  so a `user`-only key would hand a victim's cached token to any JWT naming that user's `sub`
+  (spec 094). Keying on the digest means only the token that minted an entry can read it, and the
+  subject token itself is never held. Entries are also dropped on read once stale and pruned on
+  every `put`, since per-token keys outnumber per-user ones.
 - **The token rides out-of-band, never as a tool argument.** It is injected as the MCP request's
   `Authorization: Bearer` by a dynamic auth object reading a request-local ContextVar set
   synchronously just before the call — never an LLM-visible tool argument, and never a baked-in
