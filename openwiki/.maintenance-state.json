@@ -4,6 +4,16 @@
   "lastOutcome": "failed",
   "backlog": [
     {
+      "area": "runbooks",
+      "pages": [
+        "devcontainer.md"
+      ],
+      "kind": "refresh",
+      "subjects": {},
+      "areaExists": true,
+      "reason": "source changed: docs/runbooks/devcontainer.md"
+    },
+    {
       "area": "architecture",
       "pages": [
         "system-overview.md"
@@ -11,8 +21,7 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/MCM-Architecture.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/architecture/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/architecture/system-overview.md. The openwiki/architecture/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/architecture/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "reason": "source changed: docs/MCM-Architecture.md"
     },
     {
       "area": "projects",
@@ -23,45 +32,50 @@
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/MCM-Architecture.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/projects/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/projects/mc-service.md; openwiki/projects/mcp-servers.md. The openwiki/projects/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/projects/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "reason": "source changed: docs/MCM-Architecture.md; source changed: README.md"
     },
     {
-      "area": "runbooks",
+      "area": "projects",
       "pages": [
-        "devcontainer.md"
+        "repository.md"
       ],
       "kind": "refresh",
       "subjects": {},
       "areaExists": true,
-      "reason": "source changed: docs/runbooks/devcontainer.md",
-      "runMessage": "Work on exactly one area of the knowledge bundle this run: openwiki/runbooks/. Write or refresh these pages, each followed by its subject in brackets where given: openwiki/runbooks/devcontainer.md. The openwiki/runbooks/ directory already exists; leave the pages in it that are not listed above exactly as they are. Also update openwiki/runbooks/index.md so that every page in that directory is listed there, including the ones above — the conformance gate rejects an unlisted page. Do not write anywhere else: no other directory of openwiki/, and nothing outside openwiki/. Follow openwiki/INSTRUCTIONS.md: a distilled summary plus the load-bearing gotchas, citing the authoritative source in a resource field where one exists, and no resource field on a page that is authoritative in its own right. Where this run relocates existing prose, move it VERBATIM: no abridgement, no rewording, no reordering."
+      "reason": "source changed: docs/MCM-Architecture.md; source changed: README.md"
     }
   ],
-  "proposal": null,
+  "proposal": {
+    "branch": "openwiki-maintenance",
+    "number": 979,
+    "headCommit": "59528b288c43c51d3d76b25fd01743386659836e",
+    "markerBefore": "e1b65c6a691c33a92cad03dd8f2b06049ec83710",
+    "slices": [],
+    "updatedAt": "2026-11-09T05:52:29.533Z"
+  },
   "lastRunBudget": {
-    "pagesWritten": 0,
-    "elapsedSeconds": 2083,
-    "stoppedAtBudget": false
+    "pagesWritten": 1,
+    "elapsedSeconds": 3105,
+    "stoppedAtBudget": true
   },
   "escalations": {
     "architecture/system-overview.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-11-08T14:50:39.679Z",
-      "failuresAtLow": 1
+      "failuresAtLow": 2
     },
     "projects/mc-service.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-11-08T14:50:39.679Z",
-      "failuresAtLow": 1
+      "failuresAtLow": 2
     },
     "projects/mcp-servers.md": {
       "effort": "low",
       "reason": "deadline",
       "since": "2026-11-08T14:50:39.679Z",
-      "failuresAtLow": 1
+      "failuresAtLow": 2
     },
     "runbooks/devcontainer.md": {
       "effort": "low",
@@ -73,16 +87,16 @@
   "lastRunUsage": {
     "invocations": 1,
     "invocationsNotCaptured": 0,
-    "calls": 700,
-    "failedCalls": 105,
+    "calls": 302,
+    "failedCalls": 0,
     "uncounted": 0,
-    "uncached": 3195098,
-    "cached": 46437018,
+    "uncached": 2669713,
+    "cached": 26715516,
     "cacheWrite": 0,
-    "output": 861485,
-    "reasoning": 620276,
-    "ms": 4214839,
-    "estCostUsd": 2.2709,
+    "output": 397312,
+    "reasoning": 263812,
+    "ms": 3280897,
+    "estCostUsd": 1.438,
     "provider": "fireworks",
     "model": "accounts/fireworks/models/deepseek-v4p1-flash",
     "tier": null,
@@ -94,12 +108,11 @@
       "pages": [
         "architecture/system-overview.md",
         "projects/mc-service.md",
-        "projects/mcp-servers.md",
-        "runbooks/devcontainer.md"
+        "projects/mcp-servers.md"
       ],
       "effort": "low",
-      "deadlineStop": false,
-      "estCostUsd": 2.2709,
+      "deadlineStop": true,
+      "estCostUsd": 1.438,
       "rateLimited": null
     }
   ],
