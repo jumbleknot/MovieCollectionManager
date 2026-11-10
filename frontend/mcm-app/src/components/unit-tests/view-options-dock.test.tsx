@@ -7,7 +7,7 @@
  * while open. Open/closed state comes from the shared OpenPanel context, so opening the assistant
  * re-docks the view options (FR-015).
  */
-import React, { useEffect as mockUseEffect } from 'react';
+import React, { useEffect, useEffect as mockUseEffect } from 'react';
 import { BackHandler, Platform, Text } from 'react-native';
 import { render, fireEvent, act } from '@/test-support/render';
 
@@ -41,7 +41,11 @@ afterEach(() => jest.restoreAllMocks());
 // Exposes the context so a test can open the assistant, as the assistant dock would.
 const ctxRef: { current: ReturnType<typeof useOpenPanel> | null } = { current: null };
 function CtxProbe(): null {
-  ctxRef.current = useOpenPanel();
+  const ctx = useOpenPanel();
+  // Written in an effect, not during render (react-hooks/immutability).
+  useEffect(() => {
+    ctxRef.current = ctx;
+  });
   return null;
 }
 

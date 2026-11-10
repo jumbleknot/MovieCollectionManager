@@ -99,22 +99,18 @@ interface ViewOptionsPanelProps {
 }
 
 export function ViewOptionsPanel({ children }: ViewOptionsPanelProps): React.JSX.Element | null {
-  const { openPanel, close } = useOpenPanel();
+  const { openPanel } = useOpenPanel();
   if (openPanel !== PANEL) return null;
-  return <OpenViewOptionsPanel onClose={() => close(PANEL)}>{children}</OpenViewOptionsPanel>;
+  return <OpenViewOptionsPanel>{children}</OpenViewOptionsPanel>;
 }
 
-function OpenViewOptionsPanel({
-  children,
-  onClose,
-}: {
-  children: React.ReactNode;
-  onClose: () => void;
-}): React.JSX.Element {
+function OpenViewOptionsPanel({ children }: { children: React.ReactNode }): React.JSX.Element {
   const theme = useTheme();
   const headingRef = useRef<React.ComponentRef<typeof Text>>(null);
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  // `close` is a stable callback from the provider, so this is stable too and the listeners below
+  // register once per open.
+  const { close } = useOpenPanel();
+  const onClose = useCallback(() => close(PANEL), [close]);
 
   // Focus into the panel on open (FR-016).
   useEffect(() => {
@@ -127,17 +123,17 @@ function OpenViewOptionsPanel({
       const doc = (globalThis as { document?: Document }).document;
       if (!doc) return undefined;
       const onKey = (e: KeyboardEvent): void => {
-        if (e.key === 'Escape') onCloseRef.current();
+        if (e.key === 'Escape') onClose();
       };
       doc.addEventListener('keydown', onKey);
       return () => doc.removeEventListener('keydown', onKey);
     }
     const sub = BackHandler.addEventListener('hardwareBackPress', () => {
-      onCloseRef.current();
+      onClose();
       return true; // handled — the router must not pop the collection screen
     });
     return () => sub.remove();
-  }, []);
+  }, [onClose]);
 
   const level = elevation[3];
   // RN-Web makes a heading programmatically focusable (but not tabbable) with tabIndex -1.
