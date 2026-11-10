@@ -14,6 +14,10 @@ silently runs everything (CLAUDE.md). Watch the **skip count** too, not only fai
 **One PR**: the whole feature lands as a single PR, because V17 and the cut-over must merge together.
 Between T005 and T026 the real tree fails V17 by design. Only the PR head has to be green.
 
+**Done-when rule for T005–T025**: wherever a task checks `node scripts/check-openwiki-okf.mjs` on the
+real tree, "passes" means **no finding other than V17**. Never weaken or skip V17 to get a 0 before
+T026.
+
 ## Format: `- [ ] [ID] [P?] [Story] Description`
 
 ---
@@ -55,7 +59,7 @@ Between T005 and T026 the real tree fails V17 by design. Only the PR head has to
 **Goal**: rule V17 in the required `okf` gate. **Independent test**: quickstart §1 and §2.
 
 - [ ] T004 [US1] Add self-test scenarios to `scripts/check-openwiki-okf.mjs` (`--selftest`), per `contracts/okf-v17.md`. Covers US1-AC1..AC4.
-  - Scenarios: `v17-fresh` passes, `v17-stale` fails naming the page, `v17-missing` fails, `v17-malformed` fails, `v17-crlf` passes, `v17-canonical-ignored` passes, `v17-sources-field` fails.
+  - Scenarios: `v17-fresh` passes, `v17-stale` fails naming the page, `v17-missing` fails, `v17-malformed` fails, `v17-crlf` passes, `v17-canonical-ignored` passes, `v17-sources-field` fails, `v17-resource-missing` fails with the re-point/retire message.
   - **Verify RED**: `node scripts/check-openwiki-okf.mjs --selftest`
   - **Expected RED**: exit 1; the scenarios that expect `rule: 'V17'` fail as "expected V17, got none".
 - [ ] T005 [US1] Implement V17 in `scripts/check-openwiki-okf.mjs`. It calls `staleDerivedPages` and uses the exact messages from `contracts/okf-v17.md`, including the `wiki-refresh` hint.
@@ -70,7 +74,10 @@ Between T005 and T026 the real tree fails V17 by design. Only the PR head has to
 
 - [ ] T006 [P] [US2] Write `scripts/__tests__/wiki-refresh.test.mjs` per `contracts/wiki-refresh-cli.md`, using a fixture repo made with `git init` in `mkdtemp`. Covers US2-AC1..AC3.
   - **`--stale`**: output equals `staleDerivedPages`; exit 1 when stale, 0 when clean. `--stale --json` has the documented shape.
-  - **`--diff <page>`**: shows only the change since the commit whose bytes match the recorded hash. It falls back to the whole file, with a notice, when no commit matches.
+  - **`--diff <page>`**:
+    - shows only the change since the commit whose bytes match the recorded hash;
+    - **with no fingerprint**, diffs from the newest `resource` commit at or before the page's stamp, and labels that base;
+    - falls back to the whole file, with a notice, only when neither base exists.
   - **`--record <page>`**:
     - the front-matter diff is exactly `resource-sha256` and `timestamp`;
     - `sources`/`verified` are removed;
@@ -97,7 +104,9 @@ Between T005 and T026 the real tree fails V17 by design. Only the PR head has to
   - **Done when**: the file exists and the CLI flags it names match the contract.
 - [ ] T009 [US2] Update the instructions. Covers FR-011 and US2-AC4.
   - **`CLAUDE.md`**: add **one** gate line under "Gates that run before you act". It says that changing a file that is an `openwiki/` page's `resource` means refreshing that page in the same PR, and links to the skill and to runbook §refresh.
+  - **`CLAUDE.md:28`**, in "Where a new learning goes": change "write the learning into the **cited source**, not the concept" to "write it into the cited source **and refresh the concept in the same PR**", keeping the link. This is index text, not prose, so it stays one line.
   - **`AGENTS.md`**: rewrite the "Knowledge wiki (OKF)" notes. Remove "Do not hand-edit pages under `openwiki/` that carry a `resource`" and describe the refresh duty and the manual rebuild.
+  - **`AGENTS.md:39`**: this line sits inside the openwiki-generated `OPENWIKI:START` block, which says "Do not hand-edit generated OpenWiki pages". **Do not edit inside the block**, because a rebuild rewrites it. Add an entry to AGENTS.md's existing "corrections to the generated block above" list stating that the no-hand-edit line does not apply here, and why (ADR-0004).
   - **Done when**: `node scripts/check-openwiki-governance.mjs` exits 0. CLAUDE.md is index-only and the gate rejects prose beyond one line.
 
 ---
@@ -139,7 +148,7 @@ Between T005 and T026 the real tree fails V17 by design. Only the PR head has to
 - [ ] T015 [US3] Make `process/spec-driven-development.md` and `architecture/data-model.md` canonical (research R3).
   - Remove `resource`, `sources` and `verified` from both.
   - Add both under `authoritative:` in `openwiki/protected.yaml`, each with at least one fingerprinted passage, following the existing entries' form.
-  - **Done when**: both gates exit 0 on these two pages; V17 ignores them.
+  - **Done when**: `node scripts/check-openwiki-governance.mjs` exits 0. `node scripts/check-openwiki-okf.mjs` reports **no** finding on either page; the only findings left on the real tree are V17 `no fingerprint` lines, expected until T026.
 - [ ] T016 [US3] Retire Claims bookkeeping.
   - `git rm -r openwiki/.claims openwiki/.page-manifest.json openwiki/.last-update.json`.
   - Add those three paths and `openwiki/.maintenance-state.json` to `.gitignore`.
@@ -156,7 +165,7 @@ Between T005 and T026 the real tree fails V17 by design. Only the PR head has to
     5. the writer-policy change;
     6. revisit conditions.
   - **ADR-0003**: set its status to "Superseded in part by ADR-0004 (Claims on derived pages)" and add a link.
-  - **Done when**: both gates exit 0. `docs/decisions/**` is `event-driven: decision-reached`, so this is the event.
+  - **Done when**: `node scripts/check-openwiki-governance.mjs` exits 0, and `node scripts/check-openwiki-okf.mjs` reports nothing beyond the expected V17 `no fingerprint` lines (until T026). `docs/decisions/**` is `event-driven: decision-reached`, so this is the event.
 
 ---
 

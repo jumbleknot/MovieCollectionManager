@@ -214,8 +214,10 @@ required check passes.
 - **FR-005**: The check MUST be offline, free (no model calls), and need no credential.
 - **FR-006**: A summary's declared source MUST be a single file. A directory source MUST fail the
   governance check.
-- **FR-007**: No summary's source may be a file rewritten by an automated writer: CD's deploy-digest
-  files, or files Renovate manages. The governance check MUST fail if one is declared.
+- **FR-007**: No summary's source may be a file rewritten by an automated writer. That means CD's
+  deploy-digest files, plus every file on the repository's maintained list of Renovate-managed files:
+  the default manager set plus `renovate.json`'s custom managers. The governance check MUST fail if
+  one is declared. The list is the authority; it is not required to mirror Renovate's internals.
 
 **Refresh**
 - **FR-008**: A refresh tool MUST:

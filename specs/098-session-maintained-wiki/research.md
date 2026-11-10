@@ -56,8 +56,12 @@ Measured on `origin/main` at 211aa928 (2026-11-10) unless stated otherwise.
      - compose files (`**/*compose*.y?(a)ml`)
      - `.forgejo/workflows/**`
      - `renovate.json`
+     - toolchain pins Renovate updates by default: `**/.nvmrc`, `**/.node-version`, `**/.tool-versions`, `**/rust-toolchain.toml`, `**/.python-version`, `**/requirements*.txt`
   2. **Every `managerFilePatterns` regex in `renovate.json`'s `customManagers`.** These are read at
      check time, so a new custom manager is covered without editing the check.
+- **Authority**: this list is the definition of "Renovate-managed" for G14, kept beside the check with a
+  comment naming Renovate's default `fileMatch` set as its source. Widening it is a one-line edit. It
+  is not a promise to mirror Renovate exactly; FR-007 says so.
 - **Measured**: none of the 50 file resources matches today. The near misses are
   `infrastructure-as-code/komodo/stacks.toml` and `infrastructure-as-code/project.json`; neither
   is managed by Renovate.
