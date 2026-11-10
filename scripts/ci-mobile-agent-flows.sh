@@ -65,6 +65,10 @@ done
 flows=(
   assistant-config-gating
   assistant-config-enable-anthropic
+  # 098 US2: the dock + panel stay above the on-screen keyboard (edge-to-edge Android does not resize
+  # for the IME). Needs the dock enabled, so it follows enable. It waits only on the user's OWN message
+  # (client-rendered), never on a model choice, so it adds no model nondeterminism to this list.
+  assistant-keyboard
   agent-search
   agent-card-navigate
   agent-disambiguation

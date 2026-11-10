@@ -175,6 +175,17 @@ test('no flow is run by BOTH the agent half and the full suite', () => {
   assert.deepEqual(twice, [], `run twice: ${twice.join(', ')}`);
 });
 
+// 098 T018. `assistant-keyboard` is an `assistant-` flow, so the full suite skips it by design
+// (isAgentFlow); without a place in the curated agent list NO CI mode ran it, and the feature's
+// central Android claim (the dock stays above the keyboard) went unchecked on a green PR.
+test('the keyboard-inset flow runs in the agent half, while the assistant is enabled', () => {
+  const f = agentScriptFlows();
+  const k = f.indexOf('assistant-keyboard');
+  assert.ok(k >= 0, 'assistant-keyboard is run by no CI mode — add it to ci-mobile-agent-flows.sh');
+  assert.ok(k > f.indexOf('assistant-config-enable-anthropic'), 'assistant-keyboard runs before the dock is enabled');
+  assert.ok(k < f.indexOf('assistant-config-disable'), 'assistant-keyboard runs after the dock is disabled');
+});
+
 test('the local runner takes its flow list from the shared selector, not its own', () => {
   assert.match(LOCAL_RUNNER, /from '\.\.\/\.\.\/\.\.\/scripts\/mobile-flows\.mjs'/);
   assert.match(LOCAL_RUNNER, /localSuiteFlows\(/);
