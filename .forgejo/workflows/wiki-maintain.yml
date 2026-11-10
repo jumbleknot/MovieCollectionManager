@@ -1,66 +1,58 @@
-# Feature 044 (US2) — OpenWiki knowledge-bundle maintenance. MANUAL DISPATCH ONLY since 2026-11-10 (schedule paused).
+# OpenWiki MANUAL REBUILD of operator-named pages — features 044, 078, 098. Dispatch only.
 #
-# Freshness without a human remembering: after merges to `main` settle, plan the documentation work
-# that landed, generate it in bounded slices, verify each slice by what actually appeared in the
-# working tree, and open ONE always-current proposal for review. Never auto-merged (FR-013).
+# Routine freshness is not this workflow's job. Since feature 098 (ADR-0004) the coding session that
+# changes a page's source refreshes the page in the same PR, and the required `okf` check (V17) blocks
+# a stale one. This workflow is the operator's tool for regenerating specific derived pages with the
+# generator — say, after a large rewrite of a source — and nothing else: it rebuilds exactly the pages
+# named in its `pages` input, verifies each by what actually appeared in the working tree, and opens
+# or updates ONE proposal for review. Never auto-merged (FR-013).
 #
-# ── Four properties in this file are load-bearing and easy to break by accident ──────────────────
+# ── Three properties in this file are load-bearing and easy to break by accident ─────────────────
 #
-# 1. THE BATCHING IS THE SCHEDULE, NOT A SLEEP (item #613; 078 FR-024, amendment 2026-11-09). The
-#    job fires once a day and runs scripts/wiki-quiet.mjs FIRST, before any install: it generates
-#    when any commit past the marker is not the job's own, and otherwise ends in about a minute. Until
-#    2026-11-09 it fired every 30 minutes behind a 15-minute debounce, which paid for the same page on
-#    every merge burst (research R21: 265 page attempts for 39 pages in a month). A `push` trigger
-#    would defeat the batching. cancel-in-progress stays FALSE: a fire must never kill a generation.
+# 1. NO UNATTENDED SPEND. No schedule and no push trigger: until 2026-11-10 a daily fire ran a quiet
+#    check against a committed run record and paid ~$1.50/day for ~1 landed page (run 5104). The quiet
+#    check, the run record, its marker commit, the backlog and the cooldowns are all retired; the guard
+#    test fails if any comes back.
 #
-# 2. NOTHING IS HELD BETWEEN FIRES. The decision is git-derived from the run record's marker, so a
-#    missed fire costs a day of lag, never lost work. The 6-hour maximum deferral is retired: a daily
-#    fire cannot starve.
+# 2. THE PAGES ARE THE SCOPE. `pages` is required and validated twice: by a character class here,
+#    before any install, and by wiki-maintain.mjs, which refuses a canonical, unknown or missing-source
+#    page with exit 2 before any credential is read. cancel-in-progress stays FALSE: a second dispatch
+#    queues behind a rebuild rather than killing it half-way.
 #
-# 3. THIS RUN MUST NOT TRIGGER ITSELF (FR-009a). It pushes a `[skip ci]` marker commit to `main`, and
-#    its own proposal is bundle-only; wiki-quiet.mjs does not count either as activity. SC-005a
-#    requires a merged proposal to produce no further run.
-#
-# 4. IT IS NEVER A REQUIRED CONTEXT (FR-019). This job is paid and occasionally slow; it must never
+# 3. IT IS NEVER A REQUIRED CONTEXT (FR-019). This job is paid and occasionally slow; it must never
 #    gate an unrelated merge. Do not add it to branch protection.
 #
 # ── Credentials ─────────────────────────────────────────────────────────────────────────────────
-# Two, both ALREADY in the Actions store and already consumed by existing jobs — this feature adds
-# ZERO entries (FR-023):
-#   * ANTHROPIC_API_KEY — the model credential, used by the generation step only.
-#   * CD_PUSH_TOKEN     — the write-scoped repository credential (the cd-deploy digest-promote
-#                         precedent), used to push the proposal branch and the marker commit.
+# Both ALREADY in the Actions store — this workflow adds ZERO entries (FR-023):
+#   * the model credential (ANTHROPIC_API_WIKI_MAINTAIN / FIREWORKS_API_WIKI_MAINTAIN), used by the
+#     rebuild step only;
+#   * CD_PUSH_TOKEN — the write-scoped repository credential, used to push the proposal branch.
 # They stay distinct (FR-025) and neither ever appears on a command line (FR-024). Residual, recorded
-# in the plan's Constitution Check: CD_PUSH_TOKEN can push directly to protected `main`, which opening
-# a proposal does not need. FR-023a permits a narrower substitute provided it REDUCES privilege.
+# in 044's Constitution Check: CD_PUSH_TOKEN can push directly to protected `main`, which opening a
+# proposal does not need. FR-023a permits a narrower substitute provided it REDUCES privilege.
 #
-# Exit codes from `--execute` (contract C1): 0 done · 1 a slice failed verification · 2 bad usage or a
-# missing credential · **3 stopped at the run budget with work outstanding, which is NOT a failure**.
-# Reporting a budget stop as broken is the same mistake as reporting runner starvation as a red build.
+# Exit codes from `--pages` (scripts/wiki-maintain.mjs): 0 every named page landed · 1 a named page
+# did not land, or the proposal could not be published · 2 a refused page list, bad usage, a missing
+# credential or a failed preflight — all before any paid call.
 name: wiki-maintain
 
 on:
-  # NO SCHEDULE since 2026-11-10. The daily fire (078 US7) was paused after run 5104: openwiki forced
-  # 30 stale-Claims pages into every run and starved the requested ones (~$1.50/day for ~1 landed
-  # page). Summaries move to coding sessions (docs/proposals/PRD-SessionMaintainedWiki.md); this
-  # workflow is a manual rebuild only. The guard test fails if a schedule reappears.
+  # NO SCHEDULE since 2026-11-10 (property 1). The daily fire (078 US7) was paused after run 5104:
+  # openwiki forced 30 stale-Claims pages into every run and starved the requested ones (~$1.50/day
+  # for ~1 landed page). Summaries are refreshed by coding sessions (ADR-0004); this workflow is a
+  # manual rebuild only. The guard test fails if a schedule reappears.
   workflow_dispatch:
     inputs:
-      max-slices:
-        description: Cap the number of slices this invocation attempts
-        required: false
-        default: ''
-      since:
-        description: Override the run-record marker (a git ref) — diagnostics and one-off sweeps
-        required: false
-        default: ''
+      pages:
+        description: "Comma-separated derived pages to rebuild, as area/page.md (e.g. runbooks/backlog.md,projects/bff.md). Canonical pages are refused."
+        required: true
       reasoning-effort:
         description: "Fireworks reasoning_effort for THIS run only (none, low, high, max); empty = the model default. Validated before any paid work."
         required: false
         default: ''
 
-# Runs never overlap. NOT cancel-in-progress (property 1): a fire that arrives during a generation
-# queues behind it, then finds the record covered and ends — it must never kill the run in progress.
+# Runs never overlap. NOT cancel-in-progress (property 2): a dispatch that arrives during a rebuild
+# queues behind it — it must never kill the run in progress.
 concurrency:
   group: wiki-maintain-${{ github.ref }}
   cancel-in-progress: false
@@ -68,19 +60,17 @@ concurrency:
 jobs:
   maintain:
     runs-on: ubuntu-latest
-    # Derived, not remembered (078 research R9; wiki-maintain.guard.test.mjs recomputes it): setup and
-    # the quiet check (no wait inside the job since item #613), then the generator's 4-min start deadline plus one
-    # worst-case invocation (65 min since item #613 re-derived it from measured runs), then publishing.
-    # 60 was the operator-approved hold on the one shared runner. RAISED TO 120 on 2026-10-02 (operator
-    # decision, items #525/#613): at the measured 70-80 tok/s one uncovered page can need 60-75 min.
-    # 120 is the HARD CEILING and only a dispatched run may use it — the deadline step below still holds
-    # a scheduled run to 60, so raising this cannot lengthen the runs the schedule starts.
+    # Derived, not remembered (078 research R9; wiki-maintain.guard.test.mjs recomputes it): setup,
+    # then one worst-case invocation (65 min since item #613 re-derived it from measured runs), then
+    # publishing. RAISED TO 120 on 2026-10-02 (operator decision, items #525/#613): at the measured
+    # 70-80 tok/s one page can need 60-75 min. 120 is the HARD CEILING; the deadline step below gives a
+    # dispatched run all of it (the 60-minute branch is for any other event, of which there are none).
     timeout-minutes: 120
     steps:
       # FIRST, before the checkout and setup that count against the same timeout (item #613).
-      # wiki-maintain runs the generator under this deadline (minus a reserve for verify, publish and
-      # the record commit), so a hung model request ends as a failed slice WITH a committed run
-      # record — instead of the platform killing the job with nothing recorded (runs 4385/4386).
+      # wiki-maintain runs the generator under this deadline (minus a reserve for verify and publish),
+      # so a hung model request ends as a page that did not land, reported — instead of the platform
+      # killing the job with nothing reported (runs 4385/4386).
       # The window is PER EVENT: a dispatched run may use the whole job (DISPATCH_MINUTES must equal
       # timeout-minutes); a scheduled run keeps the 60-minute shared-runner hold. The guard test
       # wiki-maintain.guard.test.mjs asserts both.
@@ -98,51 +88,39 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          # Full history: the run record's marker is a commit, and the trigger lists the commits past
-          # it. A shallow clone cannot answer that.
+          # Full history: the proposal branch is rebased onto main and checked with `git cherry`
+          # before it is pushed, which needs the commits it shares with main.
           fetch-depth: 0
           token: ${{ secrets.CD_PUSH_TOKEN }}
 
-      # #748: run from the CURRENT tip, not the event commit. A run the forge queued rather than cancelled
-      # (two merges in the same second, measured 2026-10-13) starts after an earlier run has committed
-      # its record; planning from the event commit's older record repaid four pages (~$1.35) that could
-      # not be published. `start` is the record's base for the three-way merge in the record-commit step.
-      #
-      # BEFORE the quiet check, and on every fire (item #613). A scheduled fire checks out the commit the
-      # schedule was registered at, which stays put while main moves: read there, the run record is
-      # stale, and the check said run=true on every fire (runs 6576-6583), each one installing, finding
-      # nothing, and pushing a marker commit. Git only, so a "not yet" still installs nothing.
+      # Rebuild from the CURRENT tip of main, whatever ref the dispatch named: the proposal is rebased
+      # onto main, and generating from an older tree would propose pages main has already moved past.
       - name: Move to the current tip of main
-        id: tip
         run: |
           bash scripts/ci-log-step.sh maintain-move-to-current-tip bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
           git fetch --quiet origin main
           git checkout -q -B main origin/main
-          echo "start=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "running from origin/main at $(git rev-parse --short HEAD) (event commit ${GITHUB_SHA:0:8})"
           CI_LOG_STEP
 
-      # ── properties 1, 2 and 3: is anything uncovered? ─────────────────────────────
-      # BEFORE any install: node built-ins only, so a "no run" costs this checkout and one node process.
-      # It ignores the job's own commits ([skip ci] markers, bundle-only proposals) and exits 1 on a git
-      # failure rather than reading it as "nothing to do". (The step id stays `quiet`: later steps key on it.)
-      - name: Is anything uncovered? (decides before any install)
-        id: quiet
+      # Property 2, the first half: the pages input is held to a character class BEFORE any install, so
+      # a malformed dispatch costs a checkout. Arrives as an environment variable, never interpolated.
+      - name: Validate the pages input
+        env:
+          INPUT_PAGES: ${{ github.event.inputs.pages }}
         run: |
-          bash scripts/ci-log-step.sh maintain-has-main-gone-quiet bash -e /dev/stdin <<'CI_LOG_STEP'
+          bash scripts/ci-log-step.sh maintain-validate-pages bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
-          DISPATCH=""
-          [ "${{ github.event_name }}" = "workflow_dispatch" ] && DISPATCH="--dispatched"
-          node scripts/wiki-quiet.mjs $DISPATCH >> "$GITHUB_OUTPUT"
+          case "${INPUT_PAGES:-}" in
+            ''|*[!A-Za-z0-9./_,-]*) echo "::error::pages must be a comma-separated list of area/page.md"; exit 2;; esac
+          echo "pages: $INPUT_PAGES"
           CI_LOG_STEP
 
       - name: Enable pnpm (corepack, version from package.json packageManager)
-        if: steps.quiet.outputs.run == 'true'
         run: bash scripts/ci-log-step.sh maintain-enable-pnpm corepack enable
 
       - name: Install JS dependencies
-        if: steps.quiet.outputs.run == 'true'
         # The orchestrator imports `yaml`, a root dependency. Without this the run dies on
         # ERR_MODULE_NOT_FOUND before planning anything — 043's okf job failed its first CI run on
         # exactly this.
@@ -170,7 +148,6 @@ jobs:
       # plain `text` fence, the run still exits 0, and every gate still passes. Kept at the version the
       # dev container's .devcontainer/toolchain.Dockerfile installs; the guard test fails a mismatch.
       - name: Install the OpenWiki generator from its committed lockfile
-        if: steps.quiet.outputs.run == 'true'
         run: |
           bash scripts/ci-log-step.sh maintain-install-openwiki-generator bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
@@ -184,7 +161,6 @@ jobs:
       # SKIP fails the step: a skipped check reads as a pass, and a mismatched AGENTS.md block would fail
       # every slice of the run that follows (078 research R12).
       - name: Verify the installed generator matches what this repository expects
-        if: steps.quiet.outputs.run == 'true'
         run: |
           bash scripts/ci-log-step.sh maintain-verify-installed-generator bash -e /dev/stdin <<'CI_LOG_STEP'
           set -euo pipefail
@@ -199,20 +175,20 @@ jobs:
           grep -qE '^# skipped 0$' /tmp/generator-guard.tap || { echo "::error::a generator check SKIPPED — a skip is not a pass here"; grep -B2 '# SKIP' /tmp/generator-guard.tap; exit 1; }
           CI_LOG_STEP
 
-      # Free, offline, and always safe: this is what makes a paid run reviewable before it happens.
-      - name: Plan (offline, no credential, no model)
-        if: steps.quiet.outputs.run == 'true'
-        run: bash scripts/ci-log-step.sh wiki-maintain-plan node scripts/wiki-maintain.mjs --plan
+      # Free, offline, and always safe: the run messages the generator will be given, and the second
+      # half of property 2 — a canonical, unknown or missing-source page is refused here (exit 2).
+      - name: Preview the rebuild (offline, no credential, no model)
+        env:
+          INPUT_PAGES: ${{ github.event.inputs.pages }}
+        run: bash scripts/ci-log-step.sh wiki-maintain-preview node scripts/wiki-maintain.mjs --pages "$INPUT_PAGES" --dry-run
 
-      - name: Configure git identity for the proposal and marker commits
-        if: steps.quiet.outputs.run == 'true'
+      - name: Configure git identity for the proposal commit
         run: |
           bash scripts/ci-log-step.sh maintain-configure-git-identity git config user.name 'openwiki-maintenance'
           bash scripts/ci-log-step.sh maintain-configure-git-identity git config user.email 'openwiki-maintenance@users.noreply.local'
 
-      - name: Maintain the bundle and propose the result
+      - name: Rebuild the named pages and propose the result
         id: run
-        if: steps.quiet.outputs.run == 'true'
         env:
           # The model credential. Used ONLY by generation, and never passed as an argument (FR-024).
           # Per-surface secret (048 US4): wiki-maintenance spend must be separable from CI spend in
@@ -233,11 +209,11 @@ jobs:
           MCM_WIKI_PROVIDER: ${{ vars.MCM_WIKI_PROVIDER || 'fireworks' }}
           MCM_WIKI_SERVICE_TIER: ${{ vars.MCM_WIKI_SERVICE_TIER }}
           MCM_WIKI_PAGE_CONCURRENCY: ${{ vars.MCM_WIKI_PAGE_CONCURRENCY || '4' }}
-          # Item #525 trial (operator 2026-10-05): a per-dispatch reasoning effort, so a trial run never
-          # changes what a scheduled run sends. A scheduled run has no inputs, so it falls through to the
-          # repository variable, and when that is unset to `low` (078 FR-028, amendment 2026-11-09: about
-          # half of a month's spend was failed runs at the model default). wiki-provider.mjs rejects any value
-          # Fireworks does not document, and the preflight sends it, so a bad value fails before paid work.
+          # Item #525 trial (operator 2026-10-05): a per-dispatch reasoning effort. Unset, it falls through
+          # to the repository variable, and when that is unset to `low` (078 FR-028, amendment 2026-11-09:
+          # about half of a month's spend was failed runs at the model default). wiki-provider.mjs rejects
+          # any value Fireworks does not document, and the preflight sends it, so a bad value fails before
+          # paid work. The generator reads it from this environment for every invocation.
           MCM_WIKI_REASONING_EFFORT: ${{ github.event.inputs.reasoning-effort || vars.MCM_WIKI_REASONING_EFFORT || 'low' }}
           # The write credential, kept distinct from the model credential (FR-025).
           FORGE_TOKEN: ${{ secrets.CD_PUSH_TOKEN }}
@@ -250,120 +226,41 @@ jobs:
           # `${{ … }}` is substituted into the shell source before the shell ever runs, so an input
           # containing `;` or `$(…)` executes as code — flagged by semgrep's run-shell-injection rule on
           # the first CI run of this workflow, and correctly so.
-          INPUT_MAX_SLICES: ${{ github.event.inputs.max-slices }}
-          INPUT_SINCE: ${{ github.event.inputs.since }}
+          INPUT_PAGES: ${{ github.event.inputs.pages }}
         # Wrapped so the generator's own account of what it did reaches the feature-042 digest.
         # Without this the failing step reports "_not reported_" and a run that wrote nothing leaves
         # no evidence of WHY — which is exactly the gap that made the 50% failure rate unexplainable.
         #
-        # The WHOLE block is inside the wrapper (item #177 variant 4). Only the generator call used to
-        # be, so the two dispatch-input validation failures below (`exit 2`) failed the step from
-        # OUTSIDE it — no capture, no `_failed-step` marker, and a digest that named nothing for the
-        # one failure an operator can actually cause by hand.
+        # The WHOLE block is inside the wrapper (item #177 variant 4), so a validation failure below is
+        # captured and named by the digest too.
         #
-        # `bash /dev/stdin`, NOT `bash -e /dev/stdin`: this block reads the generator's exit code and
-        # dispatches on it (0 and 3 are both success — FR-017). Under `-e` the shell would abort at
-        # the generator's non-zero exit before `CODE=$?` ever ran, turning a budget stop into a
-        # failure and losing the outputs the later steps read.
+        # `bash /dev/stdin`, NOT `bash -e /dev/stdin`: this block reads the rebuild's exit code and
+        # reports it. Under `-e` the shell would abort at a non-zero exit before `CODE=$?` ever ran.
         run: |
           bash scripts/ci-log-step.sh wiki-maintain-execute bash /dev/stdin <<'CI_LOG_STEP'
           set -uo pipefail
-          # Validated as well as quoted: an operator-supplied value should be rejected for being
-          # malformed, not merely rendered harmless.
-          ARGS=()
-          if [ -n "${INPUT_MAX_SLICES:-}" ]; then
-            case "$INPUT_MAX_SLICES" in ''|*[!0-9]*) echo "::error::max-slices must be a positive integer"; exit 2;; esac
-            ARGS+=(--max-slices "$INPUT_MAX_SLICES")
-          fi
-          if [ -n "${INPUT_SINCE:-}" ]; then
-            case "$INPUT_SINCE" in *[!A-Za-z0-9./_~^-]*) echo "::error::since must be a git ref"; exit 2;; esac
-            ARGS+=(--since "$INPUT_SINCE")
-          fi
+          # Validated as well as quoted (property 2): rejected for being malformed, not merely rendered
+          # harmless.
+          case "${INPUT_PAGES:-}" in
+            ''|*[!A-Za-z0-9./_,-]*) echo "::error::pages must be a comma-separated list of area/page.md"; exit 2;; esac
 
-          node scripts/wiki-maintain.mjs --execute --propose ${ARGS[@]+"${ARGS[@]}"}
+          node scripts/wiki-maintain.mjs --pages "$INPUT_PAGES" --propose
           CODE=$?
           echo "exit-code=$CODE" >> "$GITHUB_OUTPUT"
-
-          # FR-017: the three outcomes are distinguishable, and a budget stop is NOT a failure.
           case "$CODE" in
-            0) echo "outcome=completed-or-nothing-to-do" >> "$GITHUB_OUTPUT" ;;
-            3) echo "outcome=stopped-at-budget" >> "$GITHUB_OUTPUT"
-               echo '::notice::Stopped at the run budget with work outstanding (exit 3). Not a failure — the remainder is in the backlog and the next run picks it up.' ;;
-            1) echo "outcome=failed" >> "$GITHUB_OUTPUT" ;;
-            2) echo "outcome=failed" >> "$GITHUB_OUTPUT" ;;
+            0) echo "outcome=all-landed" >> "$GITHUB_OUTPUT" ;;
+            1) echo "outcome=not-all-landed" >> "$GITHUB_OUTPUT"
+               echo '::warning::Not every named page landed — the log lists them under "not landed:". Re-dispatch them, or refresh them in a session (wiki-refresh skill).' ;;
+            *) echo "outcome=refused-or-failed-before-generation" >> "$GITHUB_OUTPUT" ;;
           esac
-          # 0 and 3 both mean "nothing is broken".
-          [ "$CODE" = "0" ] || [ "$CODE" = "3" ]
-          CI_LOG_STEP
-
-      # The run record must be COMMITTED: runners are ephemeral, and the marker has to advance even on
-      # a run that created no proposal (FR-012). `[skip ci]` keeps it from triggering this job again
-      # (FR-009a) — the same mechanism cd-deploy's digest-promote commit uses.
-      - name: Commit the run record
-        if: always() && steps.quiet.outputs.run == 'true'
-        env:
-          # The commit the run started from (the `tip` step), as the record merge's base. Passed as an
-          # environment variable, never interpolated into the script.
-          START: ${{ steps.tip.outputs.start }}
-        run: |
-          bash scripts/ci-log-step.sh maintain-commit-run-record bash -e /dev/stdin <<'CI_LOG_STEP'
-          set -uo pipefail
-          git checkout main || git checkout -B main
-          if git diff --quiet -- openwiki/.maintenance-state.json; then
-            echo "the run record did not change — nothing to commit"
-            exit 0
-          fi
-
-          # `main` routinely moves under a run that generates for up to an hour — another merge, or
-          # the previous run's own marker commit. The first attempt to push then fails
-          # non-fast-forward, and a marker that cannot land means the NEXT run re-covers a range this
-          # one already examined: paid work repeated, silently.
-          #
-          # So: rebuild the commit on top of the current remote tip and retry. NOT by replaying this
-          # run's whole record: a run does not own the record outright once runs overlap (#748). Run
-          # 5229's replay erased an open proposal's pointer and two deadline tags another run had
-          # committed. The tip's record is MERGED three-way against the record this run started from
-          # (the `tip` step's commit); a genuine conflict — two different proposal pointers — fails
-          # the step with nothing committed, rather than guessing.
-          WORK="$(mktemp -d)"
-          cp openwiki/.maintenance-state.json "$WORK/ours.json"
-          START="${START:-}"
-          if [ -z "$START" ] || ! git show "$START:openwiki/.maintenance-state.json" > "$WORK/base.json" 2>/dev/null; then
-            # No known start (the tip step did not run): treat the tip as the base — this run's record wins, as before.
-            rm -f "$WORK/base.json"
-          fi
-          for attempt in 1 2 3; do
-            git fetch --quiet origin main || true
-            git reset --quiet --hard origin/main
-            cp openwiki/.maintenance-state.json "$WORK/theirs.json"
-            [ -f "$WORK/base.json" ] || cp "$WORK/theirs.json" "$WORK/base.json"
-            if ! node scripts/wiki-maintain.mjs --merge-record --base "$WORK/base.json" --ours "$WORK/ours.json" --theirs "$WORK/theirs.json" > "$WORK/merged.json"; then
-              echo "::error::the run record conflicts with main's newer record — nothing committed (#748); see the conflict above"
-              exit 1
-            fi
-            cp "$WORK/merged.json" openwiki/.maintenance-state.json
-            git add openwiki/.maintenance-state.json
-            if git diff --cached --quiet; then
-              echo "the record already matches origin/main — nothing to commit"
-              exit 0
-            fi
-            git commit -q -m "chore(openwiki): advance the maintenance marker [skip ci]"
-            if git push origin main; then
-              echo "marker committed and pushed (attempt $attempt)"
-              exit 0
-            fi
-            echo "push rejected — main moved during the run; rebuilding on the new tip ($attempt/3)"
-          done
-          echo "::error::could not push the run record after 3 attempts — the next run will re-cover this range"
-          exit 1
+          [ "$CODE" = "0" ]
           CI_LOG_STEP
 
       - name: Report the outcome
-        if: always() && steps.quiet.outputs.run == 'true'
+        if: always()
         run: |
           bash scripts/ci-log-step.sh maintain-report-outcome echo "outcome=${{ steps.run.outputs.outcome }} (exit ${{ steps.run.outputs.exit-code }})"
-          bash scripts/ci-log-step.sh maintain-report-outcome echo "A 'nothing-to-do' outcome means the marker advanced at no cost. It is NOT a failure, and"
-          bash scripts/ci-log-step.sh maintain-report-outcome echo "a credential or generator failure is never reported as nothing-to-do."
+          bash scripts/ci-log-step.sh maintain-report-outcome echo "all-landed: every named page is on the proposal. not-all-landed: see the not-landed lines in the rebuild step."
 
       # Feature 042 — every job must publish an agent-readable failure digest, or
       # check-ci-digest-coverage.mjs (run by the `naming` job) fails the build.

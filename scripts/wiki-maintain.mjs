@@ -1,42 +1,39 @@
 #!/usr/bin/env node
-// OpenWiki maintenance orchestrator — feature 044.
+// OpenWiki manual rebuild of operator-named pages — features 044, 078, 098.
 //
 // Usage:
-//   node scripts/wiki-maintain.mjs --plan [--since <ref>] [--json]
-//   node scripts/wiki-maintain.mjs --execute [--max-slices <n>] [--dry-run]
-//   node scripts/wiki-maintain.mjs --claims-audit [--json]
+//   node scripts/wiki-maintain.mjs --pages <area/page.md,…> [--propose] [--dry-run] [--json]
+//   node scripts/wiki-maintain.mjs --normalize-links [--dry-run] [--json]
 //   node scripts/wiki-maintain.mjs --selftest
 //
-// Exit codes: 0 planned / all attempted slices verified / nothing to do · 1 a slice failed
-// verification · 2 bad usage, unreadable state, or a missing credential on --execute · 3 stopped at
-// the budget ceiling with work outstanding — NOT a failure.
+// Exit codes: 0 every named page landed (or a dry run / selftest passed) · 1 a named page did not
+// land, or the proposal could not be published · 2 bad usage, a refused page list, a missing
+// credential or a failed preflight — always BEFORE any paid call.
 //
-// Contract: specs/044-openwiki-automation-migration/contracts/cli-contracts.md (C1, C6)
-// Entities: specs/044-openwiki-automation-migration/data-model.md (E1–E3)
+// Contract: specs/098-session-maintained-wiki/ (US4, research R7); the kept execution chain is
+// specs/044-openwiki-automation-migration/contracts/cli-contracts.md (C1) and feature 078.
+//
+// ── What this is now (feature 098, ADR-0004) ─────────────────────────────────────────────────────
+// Summaries are refreshed by the CODING SESSION that changes their source, in the same PR, and the
+// required `okf` check (V17) blocks a stale one. The generator stays only as a MANUAL rebuild of the
+// pages an operator names. Everything that existed to run it unattended is gone: range planning from
+// a committed run record and its marker, the backlog, low-effort escalation, cooldowns, drift
+// re-planning, the quiet-trigger and the Claims audit. A rebuild keeps no state between runs.
 //
 // ── The one thing to understand before changing this file ───────────────────────────────────────
 // The generator has NO programmatic scoping surface (research R2): `openwiki code --update <message>`
 // is the entire interface — no --pages, no --scope, no --max-pages. A slice is therefore an
 // INSTRUCTION TO A MODEL, not a constraint on a process, and nothing stops the generator ignoring it.
 // Consequently:
-//   * Success is judged by pages that landed in the WORKING TREE, plus bundle conformance, plus
-//     every written path being permitted by openwiki/policy.yaml.
+//   * Success is judged by pages that landed in the WORKING TREE, plus bundle conformance and
+//     governance, plus every written path being permitted by openwiki/policy.yaml.
 //   * The generator's exit status is NEVER consulted. Feature 043 measured the failure this exists to
 //     end: 12 minutes of paid work, one index.md written, exit 0, reported as success.
-//   * The generator reports no token or cost data either (research R1), which is why the budget is
-//     pages + wall-clock and why neither is a monetary bound.
+//   * A landed page leaves with its source fingerprint recorded (`resource-sha256`, V17), exactly as a
+//     session's `wiki-refresh.mjs --record` would leave it.
 //
-// ── The budget, declared (FR-011a, FR-011c, FR-011d) ────────────────────────────────────────────
-// Feature 044 declared 16 pages and 20 minutes per run; feature 078 (research R9) replaced that with
-// one invocation (8 pages, 4 since item #613) and a 4-minute STARTING budget — see the constants below (C6). Neither budget
-// interrupts work under way; in CI the job deadline (#613) does, by stopping the generator.
-//
-// The wall-clock budget bounds runner occupancy (FR-011c): there is one CI runner, app-e2e is ~35
-// minutes on it, and a paid documentation job must not squat on that queue.
-//
-// **NEITHER BUDGET IS A MONETARY BOUND** (FR-011d). OpenWiki emits no token or cost figure, this
-// repository has no cost measurements, and no requirement in this feature asserts a spend ceiling.
-// Do not describe these as cost controls, and do not add a monetary one back.
+// **NOTHING HERE IS A MONETARY BOUND** (044 FR-011d). The job deadline bounds runner occupancy; the
+// run reports its estimated spend; neither caps it.
 
 import { appendFileSync, readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync, mkdtempSync, cpSync, rmSync } from 'node:fs';
 import { join, dirname, resolve, basename, relative, sep } from 'node:path';
@@ -44,27 +41,18 @@ import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { isDeepStrictEqual } from 'node:util';
-import { parse as parseYaml } from 'yaml';
-import { isCoverageTarget, loadPolicy, mayWrite } from './openwiki-policy.mjs';
+import { loadPolicy, mayWrite } from './openwiki-policy.mjs';
 import { normalizeLinks } from './openwiki-links.mjs';
-import { carryClaimsHash, claimsDurabilityFindings, CLAIMS_DIR, PAGE_MANIFEST } from './openwiki-claims.mjs';
-import { auditClaims, formatAudit, loadOpenwikiResolver } from './wiki-claims-audit.mjs';
-import { sourceCommitAfterStamp } from './openwiki-drift.mjs';
-import { conceptStamp } from './openwiki-stamp.mjs';
+import { readDerivedPage, recordSourceFingerprint, staleReason } from './openwiki-fingerprint.mjs';
+import { ArgvError, dieOnArgvError, partitionArgsWithValues, wantsHelp } from './lib/argv-contract.mjs';
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
 import { summarizeUsage, sumUsage, NOT_CAPTURED, pageTrails, formatPageTrail } from './wiki-usage.mjs';
 import { stepLogDir } from './ci-failure-digest.mjs';
-import { isDeadlineStop, splitByEscalation, escalationPolicy, invocationEffort, nextEscalations, stillFailing } from './wiki-escalation.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 // Re-exported so a consumer needs one import, and so the run and the gate provably share one reader.
 export { loadPolicy, resolvePolicy, mayWrite, isCoverageTarget } from './openwiki-policy.mjs';
-
-// The run record lives beside the bundle it describes, and is COMMITTED: runners are ephemeral, and
-// FR-012 requires the marker to advance even on a run that creates no proposal.
-export const STATE_FILE = 'openwiki/.maintenance-state.json';
 
 /**
  * Every environment variable this script will accept an Anthropic credential from, in precedence
@@ -118,234 +106,19 @@ export function defaultPreflight({ root = REPO_ROOT } = {}) {
   return { ok: r.status === 0, detail };
 }
 
-// Exactly the three outcomes FR-017 requires distinguishing. A credential, capacity or generator
-// failure must never be classified as `nothing-to-do` — that would make the cheap path look reachable
-// while the work silently never happened.
-export const RUN_OUTCOMES = Object.freeze(['nothing-to-do', 'completed', 'failed']);
-
-const EMPTY_RECORD = Object.freeze({
-  coveredCommit: null,
-  coveredAt: null,
-  lastOutcome: null,
-  backlog: [],
-  proposal: null,
-  lastRunBudget: null,
-  // 078 US6: pages a job deadline stopped, to retry at low effort — keyed `area/page`, beside the
-  // backlog and never inside it, so the backlog's committed shape is unchanged (FR-018).
-  escalations: {},
-});
-
-const statePath = (root) => join(root, STATE_FILE);
-
-/** 078 US7 FR-027: a cooldown longer than this is parking under another name — park the page instead. */
-export const MAX_COOLDOWN_DAYS = 30;
-const DAY_MS = 24 * 60 * 60 * 1000;
-
-/**
- * Read the run record. An ABSENT file is legitimately "never covered" and reads as the empty record;
- * a PRESENT but malformed one is a hard error. Silently defaulting on corruption would either
- * re-cover history already covered (paid work repeated) or certify history that was never examined.
- */
-export function readRunRecord(root = REPO_ROOT) {
-  const p = statePath(root);
-  if (!existsSync(p)) return { ...EMPTY_RECORD };
-
-  let raw;
-  try {
-    raw = readFileSync(p, 'utf8');
-  } catch (err) {
-    throw new Error(`cannot read ${STATE_FILE}: ${err.message}`);
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (err) {
-    throw new Error(`${STATE_FILE} does not parse: ${err.message}`);
-  }
-  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error(`${STATE_FILE} must contain a JSON object, got ${Array.isArray(parsed) ? 'an array' : typeof parsed}`);
-  }
-
-  const record = { ...EMPTY_RECORD, ...parsed };
-  assertRecordShape(record);
-  return record;
-}
-
-/** Write the run record, validating first — an invalid record must never reach disk. */
-export function writeRunRecord(root = REPO_ROOT, record = {}) {
-  const merged = { ...EMPTY_RECORD, ...record };
-  assertRecordShape(merged);
-  const p = statePath(root);
-  mkdirSync(dirname(p), { recursive: true });
-  writeFileSync(p, `${JSON.stringify(merged, null, 2)}\n`);
-  return merged;
-}
-
-function assertRecordShape(record) {
-  // 078 US7 FR-027: a cooldown is a reviewed decision like parking — page key → { days, item, since, reason }.
-  if (record.cooldowns !== undefined) {
-    if (record.cooldowns === null || typeof record.cooldowns !== 'object' || Array.isArray(record.cooldowns)) {
-      throw new Error(`${STATE_FILE}: cooldowns must be an object of "<area>/<page>" → { days, item, since, reason }`);
-    }
-    for (const [key, entry] of Object.entries(record.cooldowns)) {
-      if (!/^[^/]+\/[^/]+\.md$/u.test(key) || entry === null || typeof entry !== 'object'
-        || !Number.isInteger(entry.days) || entry.days < 1 || entry.days > MAX_COOLDOWN_DAYS
-        || !Number.isInteger(entry.item) || typeof entry.since !== 'string' || typeof entry.reason !== 'string') {
-        throw new Error(`${STATE_FILE}: cooldowns["${key}"] must be { days: <1–${MAX_COOLDOWN_DAYS}>, item: <backlog item number>, since: <date>, reason: <text> }`);
-      }
-    }
-  }
-  // 082 FR-005: parking is a recorded decision — page key → { item, since, reason }.
-  if (record.parked !== undefined) {
-    if (record.parked === null || typeof record.parked !== 'object' || Array.isArray(record.parked)) {
-      throw new Error(`${STATE_FILE}: parked must be an object of "<area>/<page>" → { item, since, reason }`);
-    }
-    for (const [key, entry] of Object.entries(record.parked)) {
-      if (!/^[^/]+\/[^/]+\.md$/u.test(key) || entry === null || typeof entry !== 'object'
-        || !Number.isInteger(entry.item) || typeof entry.since !== 'string' || typeof entry.reason !== 'string') {
-        throw new Error(`${STATE_FILE}: parked["${key}"] must be { item: <backlog item number>, since: <date>, reason: <text> }`);
-      }
-    }
-  }
-  if (record.lastOutcome !== null && !RUN_OUTCOMES.includes(record.lastOutcome)) {
-    throw new Error(`${STATE_FILE}: lastOutcome must be one of ${RUN_OUTCOMES.join(' | ')} (or null), got ${JSON.stringify(record.lastOutcome)}`);
-  }
-  if (record.coveredCommit !== null && typeof record.coveredCommit !== 'string') {
-    throw new Error(`${STATE_FILE}: coveredCommit must be a commit string or null`);
-  }
-  if (!Array.isArray(record.backlog)) {
-    throw new Error(`${STATE_FILE}: backlog must be an array of slices`);
-  }
-  if (record.proposal !== null && (typeof record.proposal !== 'object' || Array.isArray(record.proposal))) {
-    throw new Error(`${STATE_FILE}: proposal must be an object or null`);
-  }
-  if (record.lastRunInvocations !== undefined && !Array.isArray(record.lastRunInvocations)) {
-    throw new Error(`${STATE_FILE}: lastRunInvocations must be an array (078 FR-022)`);
-  }
-  const esc = record.escalations;
-  if (esc === null || typeof esc !== 'object' || Array.isArray(esc)) {
-    throw new Error(`${STATE_FILE}: escalations must be an object keyed by area/page (078 US6)`);
-  }
-  for (const [key, t] of Object.entries(esc)) {
-    if (!t || typeof t.effort !== 'string' || !Number.isInteger(t.failuresAtLow) || t.failuresAtLow < 0) {
-      throw new Error(`${STATE_FILE}: escalations[${JSON.stringify(key)}] needs a string effort and a non-negative integer failuresAtLow`);
-    }
-  }
-}
-
-/**
- * The record to commit when `main`'s record moved while this run was working (#748).
- *
- * The record commit used to REPLAY this run's whole file onto the remote tip, on the premise that a run
- * owns the record outright. Two overlapping runs break that: run 5229 replayed a record that predated
- * the previous run's and erased an open proposal's pointer and two deadline tags. So the commit is a
- * three-way merge against `base`, the record this run STARTED from:
- *
- *   - a field only one side changed takes that side's value;
- *   - `escalations`, `parked` and `cooldowns` merge per page, and the backlog per page, so a tag or a queued page
- *     either side added survives and one either side cleared stays cleared;
- *   - two DIFFERENT proposal pointers cannot both be right (FR-016: one open proposal, ever), so that is
- *     a conflict, refused rather than guessed. A null pointer yields to a set one: the side that cleared
- *     it reconciled an older proposal, and the other side's is newer.
- *   - the marker never moves backwards (`isAncestor`); anything else both sides changed (the last-run
- *     fields) is this run's own account.
- *
- * Returns `{ record, conflicts }`. An unchanged `theirs` returns `ours` exactly, the old behaviour.
- */
-export function mergeRunRecords({ base = {}, ours = {}, theirs = {}, isAncestor = () => false } = {}) {
-  const b = { ...EMPTY_RECORD, ...base };
-  const o = { ...EMPTY_RECORD, ...ours };
-  const t = { ...EMPTY_RECORD, ...theirs };
-  const same = (x, y) => isDeepStrictEqual(x ?? null, y ?? null);
-  if (same(t, b)) return { record: o, conflicts: [] };
-
-  const conflicts = [];
-  const record = {};
-  for (const k of new Set([...Object.keys(o), ...Object.keys(t)])) {
-    const v = same(o[k], b[k]) ? t[k] : o[k];
-    if (v !== undefined) record[k] = v;
-  }
-  const bothChanged = (k) => !same(o[k], b[k]) && !same(t[k], b[k]);
-
-  const perKey = (bm = {}, om = {}, tm = {}) => {
-    const out = {};
-    for (const k of new Set([...Object.keys(bm ?? {}), ...Object.keys(om ?? {}), ...Object.keys(tm ?? {})])) {
-      const v = same(om?.[k], bm?.[k]) ? tm?.[k] : same(tm?.[k], bm?.[k]) ? om?.[k] : (tm?.[k] ?? om?.[k]);
-      if (v !== undefined) out[k] = v;
-    }
-    return out;
-  };
-  for (const k of ['escalations', 'parked', 'cooldowns']) {
-    if (bothChanged(k)) record[k] = perKey(b[k], o[k], t[k]);
-  }
-
-  if (bothChanged('backlog')) {
-    const keysOf = (list) => new Set((list ?? []).flatMap((s) => (s.pages ?? []).map((p) => `${s.area}/${p}`)));
-    const [inB, inO, inT] = [keysOf(b.backlog), keysOf(o.backlog), keysOf(t.backlog)];
-    // A page either side removed was done by that side; a page either side added is new work.
-    const keep = (key) => (inO.has(key) && inT.has(key)) || (!inB.has(key) && (inO.has(key) || inT.has(key)));
-    const seen = new Set();
-    record.backlog = [...o.backlog, ...t.backlog].flatMap((s) => {
-      const pages = (s.pages ?? []).filter((p) => keep(`${s.area}/${p}`) && !seen.has(`${s.area}/${p}`));
-      for (const p of pages) seen.add(`${s.area}/${p}`);
-      return pages.length === 0 ? [] : [{ ...s, pages }];
-    });
-  }
-
-  // The marker never moves backwards: when the newer record covered further, its marker stands, and
-  // the range between is covered by that run or sits in the merged backlog.
-  if (bothChanged('coveredCommit') && o.coveredCommit && t.coveredCommit && isAncestor(o.coveredCommit, t.coveredCommit)) {
-    record.coveredCommit = t.coveredCommit;
-    record.coveredAt = t.coveredAt;
-  }
-
-  if (bothChanged('proposal')) {
-    if (o.proposal === null) record.proposal = t.proposal;
-    // The newer record cleared the very proposal this run extended (it merged or closed): this run's
-    // pointer is to a dead proposal, so it must not come back.
-    else if (t.proposal === null) record.proposal = o.proposal.number === b.proposal?.number ? null : o.proposal;
-    else if (o.proposal.number !== t.proposal.number) {
-      conflicts.push(`proposal: this run recorded #${o.proposal.number} but main's record now points at #${t.proposal.number} — only one maintenance proposal can be open (FR-016), so a human must say which`);
-    } else {
-      const slices = [...(t.proposal.slices ?? [])];
-      for (const s of o.proposal.slices ?? []) if (!slices.some((x) => same(x, s))) slices.push(s);
-      record.proposal = { ...o.proposal, markerBefore: t.proposal.markerBefore ?? o.proposal.markerBefore ?? null, slices };
-    }
-  }
-
-  assertRecordShape({ ...EMPTY_RECORD, ...record });
-  return { record, conflicts };
-}
-
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// E1/E2 — the planner
+// E1 — slices and invocations
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 
 /**
  * The largest slice feature 043 delivered reliably — and it delivered it twice (FR-002). Advisory as
- * far as the generator is concerned (research R2); binding on what the planner will ask for.
+ * far as the generator is concerned (research R2); binding on how many named pages one slice carries.
  *
  * 8 → 4 on 2026-11-03 (item #613), with MAX_PAGES_PER_INVOCATION: a slice may never exceed the
  * invocation cap, because the planner always admits a run's first slice whatever its size — an 8-page
  * slice would still be an 8-page invocation. FR-002's 8 is a ceiling, not a target.
  */
 export const MAX_PAGES_PER_SLICE = 4;
-
-/**
- * The cap for pages that DO NOT EXIST YET, which is much lower — and this was measured, expensively.
- *
- * A slice of 8 brand-new pages was asked for three times and produced NOTHING each time: the
- * generator researches every page first and writes at the end, so with 8 new pages it exhausted its
- * own budget mid-research and exited 0 having written nothing (the last run got as far as printing
- * "Now I have enough evidence for all 8 pages", then stopped). A single new page, asked for on its
- * own, was written in about six minutes.
- *
- * Feature 043's "8 pages delivered reliably, twice" was REFRESHING existing pages, which needs no
- * per-page source investigation. Refreshes still go up to 8; creation does not. FR-002's cap of 8 is
- * a ceiling, not a target, so bounding new-page work below it needs no spec change.
- */
-export const MAX_NEW_PAGES_PER_SLICE = 3;
 
 /**
  * Pages per GENERATOR INVOCATION, across areas (feature 078, US2).
@@ -360,7 +133,7 @@ export const MAX_NEW_PAGES_PER_SLICE = 3;
  * an invocation of 5–8 pages was stopped at the job deadline 69% of the time (1–2 pages: 37%; 3–4:
  * 46%), and none of 5+ pages ever ended on its own. Sizing by SOURCE lines was measured and rejected:
  * it predicts an invocation's length no better than page count (r 0.39 vs 0.37, n 35), because the
- * same page varies up to 4.3× run to run. The cost is a backlog drained in more, smaller runs.
+ * same page varies up to 4.3× run to run. The cost is more, smaller invocations.
  */
 export const MAX_PAGES_PER_INVOCATION = 4;
 
@@ -368,9 +141,9 @@ export const MAX_PAGES_PER_INVOCATION = 4;
  * Group consecutive same-kind slices of DIFFERENT areas into invocations of at most
  * `maxPagesPerInvocation` pages.
  *
- * The SLICE stays the unit of planning, backlog and carry-forward — so the committed backlog keeps its
- * shape and a failure narrows to the areas that failed. A group of one IS that slice (identity), so a
- * one-area run is exactly what it always was: same message, same verification, same report.
+ * The SLICE stays the unit of verification, so a failure narrows to the areas that failed. A group of
+ * one IS that slice (identity), so a one-area run is exactly what it always was: same message, same
+ * verification, same report.
  */
 export function packSlices(slices, { maxPagesPerInvocation = MAX_PAGES_PER_INVOCATION } = {}) {
   const groups = [];
@@ -385,7 +158,7 @@ export function packSlices(slices, { maxPagesPerInvocation = MAX_PAGES_PER_INVOC
   for (const slice of slices) {
     const n = slice.pages.length;
     const sameKind = current.length === 0 || current[0].kind === slice.kind;
-    // Two slices of one area exist only because the planner split an area over the slice cap —
+    // Two slices of one area exist only because pagesToSlices split an area over the slice cap —
     // re-merging them would undo that decision.
     const newArea = !current.some((c) => c.area === slice.area);
     if (!sameKind || !newArea || (current.length > 0 && pages + n > maxPagesPerInvocation)) flush();
@@ -410,248 +183,79 @@ function invocationOf(parts) {
 /** The slices an invocation stands for — itself, for a one-area slice. */
 export const partsOf = (work) => work.parts ?? [work];
 
+
 /**
- * What a run's proposal carries: every verified invocation, plus the LANDED pages of an invocation
- * that failed only on other pages (verifySlice's `landedParts`, narrowed per page since #720). Run
- * 4399 proposed only `r.ok` results, so a group that failed on one part lost the rest — not proposed,
- * and no longer queued; run 5010 lost two area-mates of a failed page the same way.
+ * The `area/page` keys a run's results LANDED: every page of a verified invocation, plus the landed
+ * pages of an invocation that failed only on other pages (verifySlice's `landedParts`, narrowed per
+ * page since #720). Run 4399 kept only `r.ok` results, so a group that failed on one part lost the
+ * rest; run 5010 lost two area-mates of a failed page the same way.
  */
-export function proposableSlices(result) {
-  // PARTS, never the packed group (#748): what this returns is stored — in the proposal's `slices`, and
-  // back in the backlog when publishing fails — and a group there is one slice named
-  // "invariants + projects + runbooks", which the planner renders as a NEW area to create.
-  return (result.results ?? []).flatMap((r) => (r.ok ? partsOf(r.slice) : (r.landedParts ?? [])));
+export function landedPages(result) {
+  return (result.results ?? [])
+    .flatMap((r) => (r.ok ? partsOf(r.slice) : (r.landedParts ?? [])))
+    .flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`));
 }
 
 export const DEFAULT_BUNDLE = 'openwiki';
 
 const RESERVED_BUNDLE_FILES = new Set(['index.md', 'INSTRUCTIONS.md', 'log.md', 'quickstart.md']);
 
-/**
- * Where a NEW concept for a changed source belongs. Ordered; first match wins.
- *
- * Only consulted when no existing concept cites the changed path — otherwise the bundle's own
- * `resource` fields decide, which is the mapping that cannot drift.
- */
-const AREA_RULES = [
-  { test: (p) => p.startsWith('docs/runbooks/'), area: 'runbooks' },
-  { test: (p) => p.startsWith('docs/decisions/'), area: 'decisions' },
-  { test: (p) => p === 'docs/MCM-Architecture.md', area: 'architecture' },
-  { test: (p) => p.startsWith('docs/templates/'), area: 'process' },
-  { test: (p) => /^specs\/[^/]+\/HANDOFF\.md$/.test(p), area: 'process' },
-  { test: (p) => basename(p) === 'README.md' || p === 'packages/DESIGN-SYSTEM.md', area: 'projects' },
-  { test: (p) => p === 'CLAUDE.md' || p === 'AGENTS.md', area: 'invariants' },
-];
+// ════════════════════════════════════════════════════════════════════════════════════════════════
+// 098 US4 — the pages an operator names
+// ════════════════════════════════════════════════════════════════════════════════════════════════
 
-const kebab = (s) => s.replace(/([a-z0-9])([A-Z])/g, '$1-$2').replace(/[_\s]+/g, '-').replace(/-+/g, '-').toLowerCase();
-
-/** The concept filename a changed source would get if nothing covers it yet. */
-export function conceptNameFor(sourcePath) {
-  const name = basename(sourcePath);
-  if (name === 'README.md') {
-    const parent = basename(dirname(sourcePath));
-    return `${kebab(parent === '.' ? 'repository' : parent)}.md`;
-  }
-  if (name === 'HANDOFF.md') return `${kebab(basename(dirname(sourcePath)))}-handoff.md`;
-  return `${kebab(name.replace(/\.md$/i, ''))}.md`;
-}
-
-function areaFor(sourcePath) {
-  for (const rule of AREA_RULES) if (rule.test(sourcePath)) return rule.area;
-  return 'reference';
-}
-
-/** Front matter, read directly. Deliberately not reusing the OKF gate: this needs no validation. */
-function frontMatter(file) {
-  return frontMatterOf(readFileSync(file, 'utf8'));
-}
-
-function frontMatterOf(text) {
-  if (!/^---\r?\n/.test(text)) return {};
-  const end = text.indexOf('\n---', 4);
-  if (end === -1) return {};
-  try {
-    const parsed = parseYaml(text.slice(text.indexOf('\n') + 1, end));
-    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
-  } catch {
-    return {};
+/** A page list the rebuild refuses. Always raised BEFORE any credential check, preflight or spend. */
+export class PagesError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'PagesError';
   }
 }
+
+// One area directory and one page, nothing else: no `..`, no nesting, no absolute path. The workflow
+// holds its `pages` input to a character class too; this is the check that names the bad entry.
+const PAGE_KEY = /^[a-z0-9][a-z0-9-]*\/[a-z0-9][a-z0-9._-]*\.md$/i;
 
 /**
- * Concepts in the bundle, with the source each one cites.
+ * Turn `--pages runbooks/a.md,runbooks/b.md,projects/c.md` into slices, one per area in the order the
+ * areas first appear (chunked at MAX_PAGES_PER_SLICE), each with its rendered run message.
  *
- * Only pages inside an area directory are slice-able: a slice names exactly one area (E1), so a
- * bundle-root page has no area to name.
+ * Refused (PagesError): an empty list, a malformed entry, a reserved file, a page that does not exist,
+ * a CANONICAL page (no `resource` — hand-maintained, so the generator has nothing to rebuild it FROM),
+ * and a derived page whose source no longer exists. `sourceRoot` is where a `resource` resolves: the
+ * repository holding the OKF gate, which is also where V17 reads it.
  */
-export function readBundle(bundleRoot) {
-  const concepts = [];
-  const areas = new Set();
-  if (!existsSync(bundleRoot)) return { concepts, areas };
+export function pagesToSlices({ root = REPO_ROOT, bundleRoot = null, pages, sourceRoot = REPO_ROOT } = {}) {
+  const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
+  const list = [...new Set((Array.isArray(pages) ? pages : String(pages ?? '').split(','))
+    .map((p) => String(p).trim()).filter((p) => p !== ''))];
+  if (list.length === 0) throw new PagesError('no page named — pass --pages <area/page.md>[,<area/page.md>…]');
 
-  for (const entry of readdirSync(bundleRoot, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
-    if (!entry.isDirectory()) continue;
-    const area = entry.name;
-    if (area.startsWith('.')) continue;
-    areas.add(area);
-    for (const f of readdirSync(join(bundleRoot, area), { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name))) {
-      if (!f.isFile() || !f.name.endsWith('.md') || RESERVED_BUNDLE_FILES.has(f.name)) continue;
-      const fm = frontMatter(join(bundleRoot, area, f.name));
-      concepts.push({
-        area,
-        page: f.name,
-        path: `${area}/${f.name}`,
-        resource: typeof fm.resource === 'string' && fm.resource.trim() !== '' ? fm.resource.trim() : null,
-      });
+  const byArea = new Map();
+  for (const key of list) {
+    if (!PAGE_KEY.test(key)) throw new PagesError(`${key}: not an area/page.md path under ${DEFAULT_BUNDLE}/`);
+    const [area, page] = key.split('/');
+    if (RESERVED_BUNDLE_FILES.has(page)) throw new PagesError(`${key}: a reserved bundle file, not a concept page`);
+    const abs = join(bundleDir, area, page);
+    if (!existsSync(abs)) throw new PagesError(`${key}: no such page in ${DEFAULT_BUNDLE}/ — a rebuild refreshes existing derived pages only`);
+    const derived = readDerivedPage(abs, { root: sourceRoot });
+    if (derived === null) {
+      throw new PagesError(`${key}: canonical (no \`resource\`) — it is hand-maintained, and the generator has no source to rebuild it from`);
     }
+    if (!existsSync(derived.resourceAbs)) {
+      throw new PagesError(`${key}: its resource ${derived.resource} does not exist — re-point it (wiki-refresh skill) before rebuilding`);
+    }
+    if (!byArea.has(area)) byArea.set(area, []);
+    byArea.get(area).push(page);
   }
-  return { concepts, areas };
-}
-
-/** Does concept `c` summarize `changedPath`? Its `resource` is either the file or a tree above it. */
-function covers(concept, changedPath) {
-  if (concept.resource === null) return false;
-  const r = concept.resource.replace(/\/+$/, '');
-  if (r === changedPath) return true;
-  return changedPath.startsWith(`${r}/`);
-}
-
-/**
- * Decompose outstanding work into bounded slices.
- *
- * Inputs are the change set since the last recorded run and the carried-forward backlog — never
- * per-concept staleness markers. Feature 043's drift warning fans a single edit to a widely-cited
- * file out across every concept citing it and never clears, which is why FR-036 keeps it report-only
- * and why the trigger here is "what changed since we last looked".
- */
-export function planSlices({
-  bundleRoot = join(REPO_ROOT, DEFAULT_BUNDLE),
-  changedPaths = [],
-  backlog = [],
-  policy = null,
-  allDocPaths = [],
-  maxPagesPerSlice = MAX_PAGES_PER_SLICE,
-  maxNewPagesPerSlice = MAX_NEW_PAGES_PER_SLICE,
-  parked = {},
-  // 078 US7 FR-025: `area/page` keys inside a refresh cooldown. Held from SOURCE CHANGES only — the
-  // backlog (a failed or budget-deferred page) still plans, and drift catches the change up later.
-  cooled = new Set(),
-} = {}) {
-  const { concepts, areas } = readBundle(bundleRoot);
-
-  // Concept paths that could ONLY have come from a source the policy does not cover.
-  //
-  // The backlog is COMMITTED and long-lived, so it outlives the policy that produced it. Declaring
-  // CLAUDE.md `coverage: false` stopped the planner proposing `invariants/claude.md` from the change
-  // set — but the slice already sitting in the backlog was re-planned unchanged on the next run, and
-  // it will be re-planned forever: a slice for a page nothing will ever legitimately write can never
-  // succeed. Measured on `main`, twice.
-  //
-  // So carried-forward work is re-validated too. A page is dropped only when NO covered source maps
-  // to it, so a name collision between a covered and an uncovered source cannot silently discard
-  // real work.
-  const uncoveredTargets = new Set();
-  const coveredTargets = new Set();
-  if (policy !== null) {
-    for (const p of allDocPaths) {
-      const target = `${areaFor(p)}/${conceptNameFor(p)}`;
-      (isCoverageTarget(policy, p) ? coveredTargets : uncoveredTargets).add(target);
-    }
-  }
-  const plannable = (area, page) => {
-    const target = `${area}/${page}`;
-    return !uncoveredTargets.has(target) || coveredTargets.has(target);
-  };
-  const dropped = [];
-
-  // area → Map(page → reason). A Map keeps insertion order deterministic and dedupes by page.
-  const wanted = new Map();
-  const subjectFor = new Map();
-  const want = (area, page, reason, subject = null) => {
-    // 082 FR-005: a parked page is planned by NOTHING — not a new source change, not the backlog —
-    // until a reviewed change removes its `parked` entry. Parking used to be "advance the marker past
-    // its source change", which the next source change silently undid.
-    if (Object.hasOwn(parked, `${area}/${page}`)) return;
-    if (!plannable(area, page)) {
-      dropped.push(`${area}/${page}`);
-      return;
-    }
-    if (!wanted.has(area)) wanted.set(area, new Map());
-    const pages = wanted.get(area);
-    if (!pages.has(page)) pages.set(page, reason);
-    if (subject && !subjectFor.has(page)) subjectFor.set(page, subject);
-  };
-
-  // Carried-forward work first: a backlog that keeps losing to fresh changes never drains.
-  for (const slice of backlog) {
-    if (!slice || typeof slice.area !== 'string' || !Array.isArray(slice.pages)) continue;
-    // A packed invocation stored whole (#748: run 5229's record held `area: "invariants + projects +
-    // runbooks"`, pages as `area/page`). Its pages name their own areas, so it splits back exactly.
-    const joined = slice.area.includes(' + ');
-    for (const page of slice.pages) {
-      const [area, name] = joined && page.includes('/') ? [page.slice(0, page.indexOf('/')), page.slice(page.indexOf('/') + 1)] : [slice.area, page];
-      want(area, name, slice.reason ?? 'carried forward', slice.subjects?.[page] ?? null);
-    }
-  }
-
-  const sources = policy === null ? [...changedPaths] : changedPaths.filter((p) => isCoverageTarget(policy, p));
-  const uncovered = [];
-  for (const source of sources) {
-    // A change inside the bundle is not a source change — and treating it as one would make every
-    // maintenance run trigger the next (FR-009a).
-    if (source.startsWith(`${DEFAULT_BUNDLE}/`)) continue;
-
-    const covering = concepts.filter((c) => covers(c, source));
-    if (covering.length > 0) {
-      for (const c of covering) if (!cooled.has(`${c.area}/${c.page}`)) want(c.area, c.page, `source changed: ${source}`);
-    } else {
-      uncovered.push(source);
-      want(areaFor(source), conceptNameFor(source), `new source, not yet covered: ${source}`);
-    }
-  }
-
-  // Existing areas before new ones: extending a directory that is already conformant is the lower-risk
-  // work, and a run that stops at its budget should have spent it on that.
-  const ordered = [...wanted.keys()].sort((a, b) => {
-    const ea = areas.has(a) ? 0 : 1;
-    const eb = areas.has(b) ? 0 : 1;
-    return ea - eb || a.localeCompare(b);
-  });
-
-  const existingPages = new Set(concepts.map((c) => c.path));
 
   const slices = [];
-  for (const area of ordered) {
-    const reasons = wanted.get(area);
-    const all = [...reasons.keys()];
-
-    // Creation and refresh are different kinds of work with different reliable sizes, so they are
-    // never mixed into one slice: a refresh that shared a slice with three new pages would inherit
-    // the new pages' failure mode for no reason.
-    const refreshes = all.filter((p) => existingPages.has(`${area}/${p}`));
-    const creations = all.filter((p) => !existingPages.has(`${area}/${p}`));
-
-    for (const [group, cap, kind] of [[refreshes, maxPagesPerSlice, 'refresh'], [creations, maxNewPagesPerSlice, 'create']]) {
-      for (let i = 0; i < group.length; i += cap) {
-        const chunk = group.slice(i, i + cap);
-        slices.push({
-          area,
-          pages: chunk,
-          kind,
-          subjects: Object.fromEntries(chunk.filter((p) => subjectFor.has(p)).map((p) => [p, subjectFor.get(p)])),
-          // Derived from the tree, NEVER from the caller: a stale backlog entry claiming an area
-          // exists would have the run extend a directory that is not there.
-          areaExists: areas.has(area),
-          reason: [...new Set(chunk.map((p) => reasons.get(p)))].join('; '),
-        });
-      }
+  for (const [area, names] of byArea) {
+    for (let i = 0; i < names.length; i += MAX_PAGES_PER_SLICE) {
+      const slice = { area, pages: names.slice(i, i + MAX_PAGES_PER_SLICE), kind: 'refresh', areaExists: true, subjects: {}, reason: 'named for a manual rebuild' };
+      slices.push({ ...slice, runMessage: renderRunMessage(slice) });
     }
   }
-
-  slices.uncovered = uncovered;
-  // Reported, never silent: work vanishing from a plan without explanation is indistinguishable from
-  // work being forgotten.
-  slices.dropped = [...new Set(dropped)];
   return slices;
 }
 
@@ -743,330 +347,10 @@ function renderMultiAreaMessage(parts) {
   return message.replace(SHELL_UNSAFE, ' ').replace(/ {2,}/g, ' ');
 }
 
-// ── the plan (E2) ───────────────────────────────────────────────────────────────
-
-const git = (args, cwd) => {
-  const r = spawnSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  if (r.status !== 0) throw new Error(`git ${args.join(' ')} failed: ${(r.stderr ?? '').trim()}`);
-  return r.stdout.trim();
-};
-
-/** Documentation-shaped paths only — the policy classifies them, but reading the whole tree is waste. */
-const isDocPath = (p) => /\.(md|markdown)$/i.test(p);
-
-/** Does this ref name a commit that exists in THIS checkout? */
-function commitResolves(root, ref) {
-  return spawnSync('git', ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], { cwd: root, encoding: 'utf8' }).status === 0;
-}
-
-/**
- * Paths changed since `sinceCommit`. A null marker means "never covered", which is a full sweep
- * rather than an empty one — a first run must be able to see the whole tree.
- *
- * An UNRESOLVABLE marker is also a full sweep, not a crash. CI checks out shallow by default
- * (`fetch-depth: 1`), so the committed marker — and anything like `HEAD~1` — simply is not in the
- * clone, and `git diff <marker>..HEAD` dies with "unknown revision". Falling back to the full tree is
- * both safe and correct: the budget bounds what one run attempts, and the alternative is a run that
- * fails for a reason having nothing to do with the documentation. Reported, never silent.
- */
-export function changedSince(root, sinceCommit) {
-  const sweep = () => git(['ls-files'], root).split('\n').filter(Boolean).filter(isDocPath);
-  if (!sinceCommit) return sweep();
-  if (!commitResolves(root, sinceCommit)) {
-    console.error(`[wiki-maintain] marker \`${sinceCommit}\` is not in this checkout (a shallow clone, or rewritten history) — falling back to a full sweep, bounded by the run budget.`);
-    const all = sweep();
-    all.sinceResolved = false;
-    return all;
-  }
-  const out = git(['diff', '--name-only', `${sinceCommit}..HEAD`], root);
-  return out.split('\n').filter(Boolean).filter(isDocPath);
-}
-
-export function computePlan({
-  root = REPO_ROOT,
-  bundleRoot = null,
-  since = null,
-  record = null,
-  policy = null,
-  pageBudget = PAGE_BUDGET,
-  now = () => new Date().toISOString(),
-  // The open proposal's branch (#748). Its pages are not on main yet, so main's stamps call them
-  // drifted; a DRIFTED page the proposal already holds fresh is covered, and planning it pays twice.
-  proposalRef = null,
-} = {}) {
-  const runRecord = record ?? readRunRecord(root);
-  const sinceCommit = since ?? runRecord.coveredCommit;
-  const baseCommit = git(['rev-parse', 'HEAD'], root);
-  // DRIFT only. Freshness on the proposal is judged by commit DATES, and a merged branch keeps its
-  // commit's own earlier date, so a change merged after the proposal was generated can look older
-  // than the proposal's stamp. Work a change or a failure queued is never dropped on that evidence;
-  // drift is re-derived from main's stamps every run, so skipping it loses nothing if the proposal
-  // closes. Run 5268 carried exactly this: a drift slice, put back after the run stopped.
-  const coveredOnProposal = freshOnRef(root, proposalRef);
-  const onProposal = [];
-  const backlog = (runRecord.backlog ?? []).flatMap((s) => {
-    if (s?.drift !== true || !Array.isArray(s.pages)) return [s];
-    const keep = s.pages.filter((p) => !coveredOnProposal(`${s.area}/${p}`));
-    onProposal.push(...s.pages.filter((p) => !keep.includes(p)).map((p) => `${s.area}/${p}`));
-    return keep.length === 0 ? [] : [{ ...s, pages: keep }];
-  });
-  const changedPaths = changedSince(root, sinceCommit);
-  const sinceResolved = changedPaths.sinceResolved !== false;
-
-  const allDocPaths = git(['ls-files'], root).split('\n').filter(Boolean).filter(isDocPath);
-  const cooldowns = cooledPages({ bundleRoot: bundleRoot ?? join(root, DEFAULT_BUNDLE), cooldowns: runRecord.cooldowns ?? {}, nowMs: Date.parse(now()) });
-  const cooled = new Set(cooldowns.held.map((h) => h.page));
-  const slices = planSlices({
-    bundleRoot: bundleRoot ?? join(root, DEFAULT_BUNDLE),
-    changedPaths,
-    backlog,
-    policy,
-    allDocPaths,
-    parked: runRecord.parked ?? {},
-    cooled,
-  });
-
-  // What one run can attempt, given the page budget. The rest is `deferred` and carried forward — a
-  // plan that pretended a 40-page sweep fits in one run would be lying to its reviewer.
-  const attempt = [];
-  const deferred = [];
-  let pages = 0;
-  for (const slice of slices) {
-    if (attempt.length > 0 && pages + slice.pages.length > pageBudget) deferred.push(slice);
-    else {
-      attempt.push(slice);
-      pages += slice.pages.length;
-    }
-  }
-
-  // 082: concepts that fell behind the marker, from the budget left over (FR-001, FR-003, FR-008).
-  const drift = selectDrift({
-    root,
-    bundleRoot: bundleRoot ?? join(root, DEFAULT_BUNDLE),
-    queued: new Set([...attempt, ...deferred].flatMap((s) => s.pages.map((p) => `${s.area}/${p}`))),
-    parked: runRecord.parked ?? {},
-    budgetLeft: Math.max(0, pageBudget - pages),
-    covered: coveredOnProposal,
-    cooled,
-  });
-  onProposal.push(...drift.onProposal);
-  attempt.push(...drift.slices);
-  pages += drift.planned.length;
-
-  const withMessages = attempt.map((s) => ({ ...s, runMessage: renderRunMessage(s) }));
-
-  return {
-    generatedAt: now(),
-    baseCommit,
-    sinceCommit: sinceCommit ?? null,
-    sinceResolved,
-    missingEventDocuments: detectMissingEventDocuments({ root, sinceCommit, changedPaths, policy }),
-    changedPaths: policy === null ? changedPaths : changedPaths.filter((p) => isCoverageTarget(policy, p)),
-    slices: withMessages,
-    deferred: deferred.map((s) => ({ ...s, runMessage: renderRunMessage(s) })),
-    plannedPages: pages,
-    uncovered: slices.uncovered ?? [],
-    dropped: slices.dropped ?? [],
-    onProposal: [...new Set(onProposal)].sort(),
-    drift: { planned: drift.planned, deferred: drift.deferred, parked: drift.parked, parkedOrphans: drift.parkedOrphans, unplannable: drift.unplannable },
-    cooldowns,
-  };
-}
-
-/**
- * 078 US7 FR-025/FR-026: which cooldown entries hold their page right now. A page is held while its
- * stamp (the V12 stamp, `conceptStamp`) is younger than `days`. A page with no readable stamp is NOT
- * held — a cooldown must never be the reason a page that cannot be judged is never refreshed.
- * Returns `{ held: [{ page, days, item, plannableFrom }], orphans: [key] }`, both sorted.
- */
-export function cooledPages({ bundleRoot, cooldowns = {}, nowMs = Date.now() } = {}) {
-  const held = [];
-  const orphans = [];
-  for (const [key, { days, item }] of Object.entries(cooldowns ?? {}).sort(([a], [b]) => a.localeCompare(b))) {
-    const file = join(bundleRoot, key);
-    if (!existsSync(file)) {
-      orphans.push(key);
-      continue;
-    }
-    const stamp = conceptStamp(frontMatter(file));
-    const stampMs = stamp === null ? NaN : Date.parse(stamp.value);
-    if (Number.isNaN(stampMs)) continue;
-    const freeMs = stampMs + days * DAY_MS;
-    if (nowMs < freeMs) held.push({ page: key, days, item, plannableFrom: new Date(freeMs).toISOString() });
-  }
-  return { held, orphans };
-}
-
-/** 082 FR-003: drifted pages planned per run, at most. With PAGE_BUDGET 4 it leaves 2 for other work. */
-export const DRIFT_PAGES_PER_RUN = 2;
-
-/**
- * Concepts whose cited source was committed after their stamp — the V12 comparison, from
- * ./openwiki-drift.mjs — and that nothing else will plan: not queued (this run's slices, deferred or
- * backlog work) and not parked (item #526, feature 082). Without this, a page that fell behind the
- * marker was never planned again: its source had already changed, and would not change again merely
- * because the page was out of date.
- *
- * Bounded twice: at most `limit` pages, and never more than the budget left over, so drift cannot
- * starve change-driven work. Oldest stamp first, then path. What does not fit is REPORTED, never
- * written to the backlog — it is found again next run, so a backlog of it would only grow. A drifted
- * page under a DIRECTORY resource is unplannable: any commit under that directory re-flags it, so
- * regenerating it would buy nothing durable.
- */
-export function selectDrift({ root = REPO_ROOT, bundleRoot = null, queued = new Set(), parked = {}, budgetLeft = PAGE_BUDGET, limit = DRIFT_PAGES_PER_RUN, covered = () => false, cooled = new Set() } = {}) {
-  const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
-  const { concepts } = readBundle(bundleDir);
-  const existing = new Set(concepts.map((c) => c.path));
-  const parkedList = Object.entries(parked).filter(([key]) => existing.has(key))
-    .map(([page, { item, since, reason }]) => ({ page, item, since, reason }));
-  const parkedOrphans = Object.keys(parked).filter((key) => !existing.has(key));
-
-  const candidates = [];
-  const unplannable = [];
-  const onProposal = [];
-  for (const c of concepts) {
-    // 078 US7: a cooled page is not drift yet; once its cooldown expires this is what catches it up.
-    if (queued.has(c.path) || Object.hasOwn(parked, c.path) || cooled.has(c.path)) continue;
-    const judged = sourceCommitAfterStamp({ root, fields: frontMatter(join(bundleDir, c.area, c.page)) });
-    if (!judged?.stale) continue;
-    if (covered(c.path)) {
-      onProposal.push(c.path);
-      continue;
-    }
-    if (judged.directory) unplannable.push(c.path);
-    else candidates.push({ ...c, source: judged.source, stampMs: judged.stampMs });
-  }
-  candidates.sort((a, b) => a.stampMs - b.stampMs || a.path.localeCompare(b.path));
-  const take = Math.min(limit, budgetLeft);
-  const chosen = candidates.slice(0, take);
-
-  const byArea = new Map();
-  for (const c of chosen) {
-    if (!byArea.has(c.area)) byArea.set(c.area, []);
-    byArea.get(c.area).push(c);
-  }
-  const slices = [...byArea].map(([area, list]) => ({
-    area,
-    pages: list.map((c) => c.page),
-    // A refresh of an existing page, so it packs into the same invocation as other refreshes.
-    kind: 'refresh',
-    drift: true,
-    subjects: {},
-    areaExists: true,
-    reason: list.map((c) => `drift: ${c.source} changed after the page's stamp`).join('; '),
-  }));
-  return {
-    slices,
-    planned: chosen.map((c) => c.path),
-    deferred: candidates.slice(take).map((c) => c.path),
-    parked: parkedList,
-    parkedOrphans,
-    unplannable,
-    onProposal,
-  };
-}
-
-/**
- * `area/page` → is that page FRESH on `ref` (its stamp there no older than its cited source's last
- * commit)? Only a page that can be judged there counts: no ref, no page on it, no stamp or no
- * checkable source is "not covered", so this can only ever remove work a proposal already holds.
- */
-function freshOnRef(root, ref) {
-  if (!ref || !commitResolves(root, ref)) return () => false;
-  const cache = new Map();
-  return (key) => {
-    if (!cache.has(key)) {
-      const r = spawnSync('git', ['show', `${ref}:${DEFAULT_BUNDLE}/${key}`], { cwd: root, encoding: 'utf8' });
-      const judged = r.status === 0 ? sourceCommitAfterStamp({ root, fields: frontMatterOf(r.stdout) }) : null;
-      cache.set(key, Boolean(judged && !judged.unstampable && judged.stale === false));
-    }
-    return cache.get(key);
-  };
-}
-
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-// FR-009 — when a run should actually happen: see scripts/wiki-quiet.mjs
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-//
-// The debounce and the maximum deferral used to live here, as a CLI mode feeding a `sleep 900`
-// inside the merge-triggered job. Since item #613 (078 research R19) a scheduled check decides
-// OUTSIDE the paid work, before any install, so it lives in a module with no dependencies.
-
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-// FR-026f — an event-driven path whose event happened, but whose document does not exist
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-//
-// An `event-driven` path is NOT satisfied by being left alone. A decision reached produces a NEW
-// decision record; if the decision landed and no record did, the missing record IS the finding.
-//
-// This repository records decisions in exactly two places, so those are the two the detector reads:
-// a `## Clarifications` entry in a feature's spec, and a Complexity Tracking row in its plan.
-//
-// Reported, never silent — and never blocking. Blocking a documentation run on a judgement call about
-// whether something deserved an ADR would make the run a nuisance, and a nuisance gets switched off.
-
-const CLARIFICATION_ENTRY = /^\s*-\s*(?:\*\*)?Q(?:\*\*)?\s*[:.]/im;
-
+/** A file's committed bytes at `rev`, or null when it is not there. */
 function fileAt(root, rev, path) {
   const r = spawnSync('git', ['show', `${rev}:${path}`], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   return r.status === 0 ? r.stdout : null;
-}
-
-/** The lines of `## <heading>`'s section, or [] when the section is absent. */
-function section(text, heading) {
-  if (text === null) return [];
-  const lines = text.split('\n');
-  const start = lines.findIndex((l) => new RegExp(`^#{1,4}\\s+${heading}\\b`, 'i').test(l));
-  if (start === -1) return [];
-  const rest = lines.slice(start + 1);
-  const end = rest.findIndex((l) => /^#{1,2}\s+/.test(l));
-  return end === -1 ? rest : rest.slice(0, end);
-}
-
-const countClarifications = (text) => section(text, 'Clarifications').filter((l) => CLARIFICATION_ENTRY.test(l)).length;
-
-const countComplexityRows = (text) => section(text, 'Complexity Tracking')
-  .filter((l) => /^\s*\|/.test(l) && !/^\s*\|\s*-+/.test(l))
-  // Drop the header row and any all-dash separator; what remains is a claimed deviation.
-  .filter((l) => !/\|\s*Violation\s*\|/i.test(l))
-  .length;
-
-/**
- * Compare the two revisions rather than parsing a diff. Hunk headers do not reliably carry the
- * enclosing markdown section, so "was this line added under ## Clarifications?" is not answerable from
- * a diff without guessing — whereas counting the section at both ends is exact.
- */
-export function detectMissingEventDocuments({ root = REPO_ROOT, sinceCommit = null, changedPaths = null, policy = null } = {}) {
-  if (!sinceCommit) return [];
-
-  const changed = changedPaths ?? changedSince(root, sinceCommit);
-  const decisionRecordTouched = changed.some((p) => p.startsWith('docs/decisions/'));
-
-  const findings = [];
-  const specs = changed.filter((p) => /^specs\/[^/]+\/spec\.md$/.test(p));
-  const plans = changed.filter((p) => /^specs\/[^/]+\/plan\.md$/.test(p));
-
-  for (const [paths, count, what] of [
-    [specs, countClarifications, 'a clarification was recorded'],
-    [plans, countComplexityRows, 'a Complexity Tracking deviation was recorded'],
-  ]) {
-    for (const path of paths) {
-      const before = count(fileAt(root, sinceCommit, path));
-      const after = count(readFileSync(join(root, path), 'utf8'));
-      if (after > before && !decisionRecordTouched) {
-        findings.push({
-          path: 'docs/decisions/**',
-          policy: 'event-driven',
-          source: path,
-          reason: `${what} in ${path} (${before} → ${after}) but no decision record was added or amended`,
-          suggestion: 'consider adding a decision record, or note why this decision does not warrant one',
-          blocking: false,
-        });
-      }
-    }
-  }
-
-  return findings;
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -1082,7 +366,7 @@ export function detectMissingEventDocuments({ root = REPO_ROOT, sinceCommit = nu
 // and the proposal is gated by the repository's normal guardrails like any hand-authored change.
 
 export const PROPOSAL_BRANCH = 'openwiki-maintenance';
-export const PROPOSAL_TITLE = 'docs(openwiki): scheduled knowledge-bundle maintenance';
+export const PROPOSAL_TITLE = 'docs(openwiki): manual rebuild of named pages';
 
 const gitRunner = (root) => (...args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
 
@@ -1111,35 +395,19 @@ export function prepareProposalBranch({
   branch = PROPOSAL_BRANCH,
   remote = null,
   // Continue the REMOTE proposal branch when there is no local one. The caller sets this only while a
-  // proposal is open: a closed-unmerged proposal's work has gone back to the backlog, and reviving its
-  // commits would re-propose content a reviewer rejected.
+  // proposal is open: reviving a closed-unmerged proposal's commits would re-propose content a reviewer
+  // rejected.
   adoptRemote = false,
   git = null,
 } = {}) {
   const g = git ?? gitRunner(root);
-  // The RUN RECORD is exempt: it is bookkeeping that never travels on this branch, so it is expected
-  // to be modified at exactly this moment — the run has just read or updated it. Everything else being
-  // dirty means generation already happened, which is the ordering mistake this check exists to catch.
-  const dirty = g('status', '--porcelain').stdout.split('\n')
-    .map((l) => l.slice(3).trim())
-    .filter((f) => f !== '' && f !== STATE_FILE);
+  // Everything clean: anything dirty here means generation already happened, which is the ordering
+  // mistake this check exists to catch.
+  const dirty = g('status', '--porcelain').stdout.split('\n').map((l) => l.slice(3).trim()).filter((f) => f !== '');
   if (dirty.length > 0) {
     throw new Error(`the working tree is dirty (${dirty.slice(0, 3).join(', ')}) — prepare the proposal branch before generating, not after`);
   }
-  // ...but a modified record blocks both moves below: git refuses to rebase with unstaged changes, and
-  // to check out a branch cut from an older `main`, whose record differs. Reconcile writes the record
-  // whenever it ADOPTS a proposal, so every adopting run with a remote branch died here (#748). So its
-  // bytes are set aside and written back whatever happens. Not a stash: a pop can conflict, leaving
-  // markers in the record and hiding the error that mattered. The record is this run's, wholesale.
-  // Tracked and modified only: an untracked record blocks neither move.
-  const recordPath = statePath(root);
-  const saved = g('diff', '--quiet', 'HEAD', '--', STATE_FILE).status === 1 ? readFileSync(recordPath) : null;
-  if (saved !== null) gitOrThrow(g, ['checkout', '--', STATE_FILE], 'setting the run record aside');
-  try {
-    return switchToProposalBranch({ g, baseBranch, branch, remote, adoptRemote });
-  } finally {
-    if (saved !== null) writeFileSync(recordPath, saved);
-  }
+  return switchToProposalBranch({ g, baseBranch, branch, remote, adoptRemote });
 }
 
 function switchToProposalBranch({ g, baseBranch, branch, remote, adoptRemote }) {
@@ -1184,15 +452,9 @@ function switchToProposalBranch({ g, baseBranch, branch, remote, adoptRemote }) 
  * repository as a side effect.
  */
 /**
- * The open proposal for `branch`, according to the FORGE — not according to the run record.
- *
- * FR-016 requires at most one open proposal ever, and the run record is only a cache of that fact. A
- * cache that can be lost: the record is committed by a step that can fail (the marker push races
- * `main`, which it did), so a run can create a proposal and then lose the pointer to it. The next run
- * then tries to open a SECOND one — measured, and it survived only because the forge answered 409.
- *
- * Asking the forge makes the invariant hold regardless of what the record says, and makes a run that
- * lost its record self-healing rather than permanently stuck.
+ * The open proposal for `branch`, according to the FORGE — the only record of it since feature 098
+ * retired the run record (which had lost its pointer more than once anyway, and only the forge's 409
+ * stopped a SECOND proposal). FR-016: at most one open proposal, ever.
  */
 export function findOpenProposal(forge, branch) {
   if (typeof forge.listPulls !== 'function') return null;
@@ -1202,7 +464,6 @@ export function findOpenProposal(forge, branch) {
 
 export function publishProposal({
   root = REPO_ROOT,
-  record = null,
   forge,
   baseBranch = 'main',
   branch = PROPOSAL_BRANCH,
@@ -1212,29 +473,15 @@ export function publishProposal({
   remote = null,
   git = null,
   returnTo = null,
-  // The marker before the run that produced this work. Callers that publish AFTER executeSlices pass
-  // it explicitly: by then the record's coveredCommit is the run's own baseCommit (item #619).
-  markerBefore = undefined,
   now = () => new Date().toISOString(),
 } = {}) {
   const g = git ?? gitRunner(root);
-  const runRecord = record ?? readRunRecord(root);
-  const markerAtStart = markerBefore === undefined ? (runRecord.coveredCommit ?? null) : markerBefore;
+  const existing = findOpenProposal(forge, branch);
+  const reuse = Boolean(existing && existing.state !== 'closed');
 
-  // The record first (cheap), then the forge (authoritative). Either can tell us a proposal is open;
-  // only the forge can tell us so after the record was lost.
-  let existing = runRecord.proposal?.number ? forge.getPull(runRecord.proposal.number) : null;
-  if (!existing || existing.state !== 'open') existing = findOpenProposal(forge, branch);
-  const reuse = Boolean(existing && existing.state === 'open');
-
-  gitOrThrow(g, ['add', '-A'], 'staging the maintenance changes');
-  // The RUN RECORD never travels on the proposal branch. It advances on the base branch through its
-  // own `[skip ci]` commit, so committing it here as well guarantees a conflict on the next rebase —
-  // measured exactly that. The proposal carries bundle CONTENT; the marker is base-branch bookkeeping.
-  g('reset', '--quiet', '--', STATE_FILE);
-
+  gitOrThrow(g, ['add', '-A'], 'staging the rebuilt pages');
   const staged = g('diff', '--cached', '--quiet').status !== 0;
-  if (staged) gitOrThrow(g, ['commit', '-m', `${title}\n\n${body}`.trim()], 'committing the maintenance changes');
+  if (staged) gitOrThrow(g, ['commit', '-m', `${title}\n\n${body}`.trim()], 'committing the rebuilt pages');
   const headCommit = gitOrThrow(g, ['rev-parse', 'HEAD'], 'reading the branch head');
 
   if (remote && reuse) {
@@ -1266,69 +513,12 @@ export function publishProposal({
 
   if (returnTo) gitOrThrow(g, ['checkout', returnTo], `returning to ${returnTo}`);
 
-  return {
-    branch,
-    number: pull.number,
-    headCommit,
-    // Remembered so a closed-unmerged proposal can roll the marker back to where it stood BEFORE the
-    // work was proposed. Without it there is nothing to roll back to, and the gap is invisible.
-    markerBefore: runRecord.proposal?.markerBefore ?? markerAtStart,
-    slices: [...(runRecord.proposal?.slices ?? []), ...slices],
-    updatedAt: now(),
-  };
-}
-
-/**
- * A run whose pages were written but never reached the proposal did NOT deal with its range, so the
- * record must not say it did: executeSlices has already advanced the marker by this point, and
- * leaving it there certifies work that exists only on a runner that is about to be thrown away.
- * Roll the marker back to where the run found it and return the run's slices to the backlog — the
- * same edge a closed-unmerged proposal takes (FR-016b). The usage stays: that money was spent.
- */
-export function holdMarkerOnPublishFailure({ root = REPO_ROOT, before, slices = [] } = {}) {
-  const current = readRunRecord(root);
-  return writeRunRecord(root, {
-    ...current,
-    coveredCommit: before.coveredCommit ?? null,
-    coveredAt: before.coveredAt ?? null,
-    lastOutcome: 'failed',
-    backlog: [...(current.backlog ?? []), ...slices],
-  });
-}
-
-/**
- * Reconcile the recorded proposal with what the forge says happened to it.
- *
- *   merged           → the work landed; clear the pointer and hold the marker.
- *   closed unmerged  → the work did NOT land; return its slices to the backlog and ROLL THE MARKER
- *                      BACK (FR-016b). Without this edge, abandoning a proposal leaves the marker
- *                      certifying work that never happened — a permanent, invisible gap.
- *   open             → nothing to do.
- */
-export function reconcileProposal({ root = REPO_ROOT, record = null, forge, persist = true } = {}) {
-  const runRecord = record ?? readRunRecord(root);
-  if (!runRecord.proposal?.number) return { record: runRecord, action: 'none', persisted: false };
-
-  const pull = forge.getPull(runRecord.proposal.number);
-  if (!pull || pull.state === 'open') return { record: runRecord, action: 'still-open', persisted: false };
-
-  const merged = Boolean(pull.merged);
-  const next = {
-    ...runRecord,
-    proposal: null,
-    backlog: merged
-      ? runRecord.backlog
-      : [...(runRecord.backlog ?? []), ...(runRecord.proposal.slices ?? [])],
-    coveredCommit: merged ? runRecord.coveredCommit : (runRecord.proposal.markerBefore ?? null),
-  };
-
-  const persisted = persist ? writeRunRecord(root, next) : next;
-  return { record: persisted, action: merged ? 'merged' : 'closed-unmerged', persisted: persist };
+  return { branch, number: pull.number, headCommit, slices, updatedAt: now() };
 }
 
 /**
  * The repository the forge client writes to, from GITHUB_REPOSITORY — which the runner sets for EVERY
- * event. It used to come from the event payload, which a scheduled fire does not carry (item #613
+ * event. It used to come from the event payload, which a scheduled fire did not carry (item #613
  * follow-up: runs 6539-6569 all died here). A malformed value raises; it is never guessed.
  */
 export function forgeRepository(env = process.env) {
@@ -1359,127 +549,18 @@ export function forgejoClient({ base = process.env.FORGE_API_BASE, owner, repo, 
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
-// FR-012/FR-017 — one run, and what its outcome is called
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-
-/**
- * Plan, execute, verify, and classify — the whole run, in one place so that local and CI take the
- * identical path (FR-020).
- *
- * Outcome classification is the load-bearing part, and there is exactly one misclassification that
- * matters: **a credential, capacity or generator failure must never be reported as `nothing-to-do`**
- * (FR-017). That report would make the cheap path look reachable while the work silently never
- * happened, and would advance the marker over a range nothing had examined.
- */
-export function runMaintenance({
-  root = REPO_ROOT,
-  bundleRoot = null,
-  since = null,
-  policy = null,
-  invoke = undefined,
-  // A stubbed generator needs no model check; the real one does. Explicit `preflight` wins.
-  preflight = invoke === undefined ? defaultPreflight : null,
-  credential = credentialFromEnv(),
-  requireCredential = true,
-  pageBudget = PAGE_BUDGET,
-  timeBudgetSeconds = TIME_BUDGET_SECONDS,
-  maxSlices = null,
-  dryRun = false,
-  now = () => new Date().toISOString(),
-  clock = () => Date.now(),
-} = {}) {
-  const record = readRunRecord(root);
-  const plan = computePlan({ root, bundleRoot, since, record, policy, pageBudget, now });
-
-  if (plan.slices.length === 0) {
-    // The free path, and the whole reason the run record exists: a run that finds nothing to document
-    // advances the marker at no cost, so the next run over the same tree is free too (FR-012).
-    // Deliberately checked BEFORE the credential: finding nothing to do genuinely needs no credential,
-    // and failing here would make the cheap path depend on a secret it never uses.
-    const persisted = dryRun ? record : writeRunRecord(root, {
-      ...record,
-      coveredCommit: plan.baseCommit,
-      coveredAt: now(),
-      lastOutcome: 'nothing-to-do',
-      lastRunBudget: { pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false },
-    });
-    return { outcome: 'nothing-to-do', exitCode: 0, reason: null, plan, results: [], pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false, backlog: record.backlog ?? [], deferred: [], record: persisted, persisted: !dryRun };
-  }
-
-  if (requireCredential && !dryRun && !credential) {
-    // Exit 2, and the record is left exactly as it was. Writing anything here would either certify a
-    // range nothing examined or invent an outcome for a run that never started.
-    return { outcome: 'failed', exitCode: 2, reason: 'missing-credential', plan, results: [], pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false, backlog: record.backlog ?? [], deferred: [], record, persisted: false };
-  }
-
-  {
-    const check = preflightGate({ dryRun, preflight, root });
-    if (!check.ok) {
-      // Same posture as a missing credential: exit 2, the record untouched, and never nothing-to-do.
-      // A model that cannot be called is found here for the price of one token, not after a slice.
-      return { outcome: 'failed', exitCode: 2, reason: 'preflight-failed', detail: check.detail ?? '', plan, results: [], pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false, backlog: record.backlog ?? [], deferred: [], record, persisted: false };
-    }
-    if (check.detail !== 'skipped') console.log(`[wiki-maintain] preflight ok — ${check.detail ?? ''}`);
-  }
-
-  const run = executeSlices({
-    root,
-    bundleRoot,
-    slices: plan.slices,
-    carryForward: plan.deferred,
-    record,
-    policy,
-    ...(invoke === undefined ? {} : { invoke }),
-    pageBudget,
-    timeBudgetSeconds,
-    maxSlices,
-    dryRun,
-    baseCommit: plan.baseCommit,
-    now,
-    clock,
-  });
-
-  return { ...run, reason: run.outcome === 'failed' ? 'slice-failed-verification' : null, plan };
-}
-
-// ════════════════════════════════════════════════════════════════════════════════════════════════
-// C6 — the run budget
+// C6 — what bounds a rebuild
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 //
-// Two budgets, whichever is reached first, both DIRECTLY OBSERVED:
-//   * pages — counted from files that actually appeared in the working tree, never from the
-//     generator's account of its own output (FR-011b). Research R2: nothing constrains the generator
-//     to the page list it was given, so a budget that trusted its self-report would inherit exactly
-//     the false-green failure this feature exists to eliminate.
-//   * wall-clock — measured by the run itself.
+// ONE bound: the CI job deadline (#613, `deadlineCommand`). No generator is started that cannot finish
+// before it, and a running one is stopped at it. The page and 4-minute starting budgets of the
+// unattended run are retired with its backlog (feature 098): they existed to carry work forward to the
+// next scheduled fire, and a manual rebuild has no next fire. A named page that is never attempted is
+// simply `not landed` (exit 1), which the operator sees and re-dispatches.
 //
-// Enforced BETWEEN invocations (and before a retry), so this budget never interrupts an invocation
-// already under way: the TIME budget is a deadline for STARTING work, and the overshoot is one
-// invocation. What DOES interrupt one is the CI job deadline (#613, `deadlineCommand`).
-//
-// Sized 2026-09-28 from measurement (feature 078, research R9, operator sign-off: "~8 pages per run,
-// timeout 60"). On DeepSeek V4.1 Flash at page concurrency 4, one invocation of up to 8 pages is two
-// waves of page workers and measured 15–23 min; HALVED to 4 pages on 2026-11-03 (item #613) when the
-// run records showed 5–8-page invocations stopped at the job deadline 69% of the time. RE-DERIVED 2026-11-01 (item #613) from the committed
-// run records: invocations that ended on their own took up to 2958 s, so WORST_INVOCATION_SECONDS
-// allows 65 (the same +30%), and the guard test derives it from that fixture. The job timeout has
-// to hold the in-job debounce sleep, setup, the start deadline, one worst-case invocation and the
-// publishing around it; a 4-minute start deadline is what fits that inside 60 minutes with 5 minutes' margin (the
-// guard test's own arithmetic caught a 5-minute first draft at 4). In practice a run is ONE invocation —
-// a second starts only if the first finished inside 4 minutes — and
-// a retry happens only after a fast failure; anything else is carried to the next run. Declared
-// EFFECTIVE CEILING: ≤8 pages / ~69 minutes of generation (FR-011a; 16 until item #613 halved the invocation) — MORE than a scheduled run's
-// ~49-minute generator window (60 − setup and the quiet check − DEADLINE_RESERVE_MS; it no longer waits
-// inside the job, 078 R19), so a worst-case invocation fits only a dispatched run; a scheduled run
-// stops it at the deadline and carries it (#613). The guard test derives the
-// workflow's timeout-minutes from these constants rather than remembering a number.
-//
-// The wall-clock budget bounds RUNNER OCCUPANCY (FR-011c) — there is one CI runner and a paid job
-// must not squat on it. **NEITHER BUDGET IS A MONETARY BOUND** (FR-011d): OpenWiki emits no token or
-// cost data (research R1), this repository has no cost measurements, and no requirement in this
-// feature asserts a spend ceiling. Do not describe these as cost controls, and do not add one back.
-
-export const PAGE_BUDGET = MAX_PAGES_PER_INVOCATION;
+// The job deadline bounds RUNNER OCCUPANCY (044 FR-011c) — there is one CI runner and a paid job must
+// not squat on it. **IT IS NOT A MONETARY BOUND** (FR-011d). The guard test derives the workflow's
+// timeout-minutes from the constants below rather than remembering a number.
 
 /**
  * One worst-case generator invocation: the measured worst that ended on its own, +30%. 078 R9 had
@@ -1487,20 +568,19 @@ export const PAGE_BUDGET = MAX_PAGES_PER_INVOCATION;
  * scripts/__tests__/fixtures/wiki-maintain/measured-invocations.json by wiki-maintain.guard.test.mjs.
  */
 export const WORST_INVOCATION_SECONDS = 65 * 60;
-/** CI time outside the budget, from the forge's step durations (078 R9): checkout, installs, plan, guard. */
+/** CI time outside the generator, from the forge's step durations (078 R9): checkout, installs, guard. */
 export const CI_SETUP_SECONDS = 2 * 60;
-/** CI time around the generator inside the execute step: preflight, verification, publishing (078 R9). */
+/** CI time around the generator inside the rebuild step: preflight, verification, publishing (078 R9). */
 export const CI_EXECUTE_OVERHEAD_SECONDS = 4 * 60;
 
 /**
- * Attempts per slice before it goes back to the backlog.
+ * Attempts per invocation before its pages are reported `not landed`.
  *
  * The generator is NON-DETERMINISTIC — measured, not assumed: identical slice, identical message, 3
  * verified pages on one run and nothing on the next. Retrying is the response to a flaky dependency,
- * not a way of hiding one; every attempt is reported, and the run budget still bounds the total.
+ * not a way of hiding one; every attempt is reported, and the job deadline still bounds the total.
  */
 export const ATTEMPTS_PER_SLICE = 3;
-export const TIME_BUDGET_SECONDS = 4 * 60;
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // FR-005/FR-006 — the verifier
@@ -1523,8 +603,7 @@ const GOVERNANCE_GATE = join(REPO_ROOT, 'scripts', 'check-openwiki-governance.mj
 /** Rewrite site-root-absolute body links to file-relative form in the given bundle files.
  *  Returns one entry per file actually changed. Pure text surgery: only the target inside `](…)`
  *  moves, so a page's prose cannot be altered by a normalization pass. */
-export function normalizeBundleLinks({ root = REPO_ROOT, bundleRoot = null, files = [] } = {}) {
-  const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
+export function normalizeBundleLinks({ root = REPO_ROOT, files = [] } = {}) {
   const changed = [];
   for (const rel of files) {
     const abs = join(root, rel);
@@ -1533,12 +612,7 @@ export function normalizeBundleLinks({ root = REPO_ROOT, bundleRoot = null, file
     const { text, rewrites } = normalizeLinks(before, abs, root);
     if (rewrites.length === 0) continue;
     writeFileSync(abs, text);
-    // This runs AFTER the generator has certified the page's bytes in its Claims sidecar and
-    // `.page-manifest.json`. Rewriting a covered page without moving that hash would make openwiki
-    // refuse every later run (item #616), so a pure link-target rewrite carries the hash with it —
-    // only for a page that was durable before the rewrite, never laundering one that was not.
-    const carried = carryClaimsHash(bundleDir, relative(bundleDir, abs).split(sep).join('/'), before, text);
-    changed.push({ path: rel, rewrites, carried });
+    changed.push({ path: rel, rewrites });
   }
   return changed;
 }
@@ -1548,7 +622,8 @@ export function normalizeBundleLinks({ root = REPO_ROOT, bundleRoot = null, file
 // openwiki 0.7.1 "repairs" a page whose model-written YAML does not parse (a stray `: ` in a long
 // unquoted description, a duplicate key, no block at all) by REBUILDING a minimal header —
 // okf/frontmatter.js repairOkfFrontmatter → rebuildMinimalConcept: `type: "Reference"`, a quoted
-// title and `openwiki_generated: true`, then verified/sources/generated on finalisation. It says
+// title and `openwiki_generated: true`, then verified/sources/generated on finalisation (the retired
+// `sources`/`verified` are stripped again by the fingerprint post-step, feature 098). It says
 // nothing to the agent when the rebuild succeeds. Every repository key is gone, and G11 fails the
 // proposal: #775 stacks.md, #791 renovate.md, #857 bff.md. The brief cannot guarantee valid YAML from
 // a model, so the harness restores the keys from HEAD, as it fixes link form.
@@ -1557,7 +632,9 @@ export function normalizeBundleLinks({ root = REPO_ROOT, bundleRoot = null, file
 // governance gate still refuses it (the #857 test). A page not at HEAD has nothing to restore from.
 
 /** Keys the rebuild discards that the repository requires. `type` is replaced, not just dropped. */
-const REBUILD_RESTORED_KEYS = ['type', 'description', 'resource', 'tags', 'timestamp'];
+// `resource-sha256` too (feature 098): the rebuild drops it like any other repository key, and HEAD's
+// value is the right one for an unchanged body — a changed body is re-recorded by verifySlice anyway.
+const REBUILD_RESTORED_KEYS = ['type', 'description', 'resource', 'resource-sha256', 'tags', 'timestamp'];
 const REBUILD_MARKER = /^openwiki_generated:\s*true\s*$/m;
 
 /** Split a front-matter body into top-level key blocks: a key line plus its indented continuation. */
@@ -1575,8 +652,7 @@ const FRONTMATTER = /^---\n([\s\S]*?)\n---\n/;
 
 /** Restore the repository keys openwiki's minimal rebuild dropped, on the given bundle files.
  *  Returns one entry per file actually changed, with the keys restored and whether the hash moved. */
-export function restoreRebuiltFrontmatter({ root = REPO_ROOT, bundleRoot = null, files = [] } = {}) {
-  const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
+export function restoreRebuiltFrontmatter({ root = REPO_ROOT, files = [] } = {}) {
   const changed = [];
   for (const rel of files) {
     const abs = join(root, rel);
@@ -1602,10 +678,7 @@ export function restoreRebuiltFrontmatter({ root = REPO_ROOT, bundleRoot = null,
     const text = `---\n${blocks.flatMap((b) => b.lines).join('\n')}\n---\n${now.slice(current[0].length)}`;
     if (text === now) continue;
     writeFileSync(abs, text);
-    // The Claims cover the BODY, which is untouched; the hash moves with the header, exactly as for a
-    // link rewrite, and only for a page that was durable before (carryClaimsHash's own rule).
-    const carried = carryClaimsHash(bundleDir, relative(bundleDir, abs).split(sep).join('/'), now, text);
-    changed.push({ path: rel, restored, carried });
+    changed.push({ path: rel, restored });
   }
   return changed;
 }
@@ -1643,7 +716,6 @@ export function detectWrittenPaths(root = REPO_ROOT) {
     // A rename reports `old -> new`; the write is the destination.
     const path = body.includes(' -> ') ? body.split(' -> ')[1] : body;
     const clean = path.replace(/^"|"$/g, '');
-    if (clean === STATE_FILE) continue; // our own bookkeeping, not the run's output
     paths.push(clean);
   }
   return paths.sort();
@@ -1657,149 +729,69 @@ const sha = (file) => {
   }
 };
 
-/** Snapshot dirty paths and their content, so a file that was already dirty is not double-counted. */
+const tracked = (root, path) => spawnSync('git', ['cat-file', '-e', `HEAD:${path}`], { cwd: root }).status === 0;
+
+/** Put one path back to its committed bytes, or delete it if it is new. True when it was put back. */
+function putBack(root, path) {
+  if (tracked(root, path)) return spawnSync('git', ['checkout', '--', path], { cwd: root }).status === 0;
+  rmSync(join(root, path), { force: true });
+  return true;
+}
+
 /**
- * After a DEADLINE stop, restore what the slice did not ask for (item #613, run 4606).
+ * Restore what the invocation did not ask for (item #613, run 4606; feature 098).
  *
- * openwiki forces pages whose Claims went stale into every update run, whatever was requested. When
- * the deadline stops the generator part-way through one of those, its half-written bytes break V16 —
- * a whole-invocation conformance failure that discards the requested pages too, even ones that
- * landed. So everything the run changed is put back to its committed state, or deleted if new,
- * EXCEPT the requested pages, their .claims sidecars and the requested areas' index.md. That keeps
- * V16 sound: it compares a page with its own sidecar, and requested pages keep both; a restored
- * .page-manifest.json entry merely lags and openwiki refreshes it. A path that was already dirty
- * before the run is left alone — its pre-run bytes are not in git. Returns the paths it reverted.
+ * After a DEADLINE stop (`scope: 'all'`): everything the run changed is put back to its committed
+ * state, or deleted if new, EXCEPT the requested pages and the requested areas' index.md. A generator
+ * stopped part-way through an unrequested page would otherwise fail the whole invocation on conformance
+ * and discard the requested pages with it.
  *
- * Only for a deadline stop: a run that ENDS on its own is judged on everything it wrote.
+ * After a NORMAL exit (`scope: 'unrequested-pages'`): only the unrequested CONCEPT pages the policy lets
+ * the generator write. A rebuild changes the pages the operator named and nothing else — openwiki
+ * still rewrites pages it was not asked about, and proposing those would be the unrequested rewrite the
+ * rebuild exists to avoid. Anything the policy FORBIDS is deliberately left in place, so verifySlice
+ * still fails the invocation on it rather than this function quietly hiding a scope violation.
+ *
+ * A path that was already dirty before the invocation is left alone either way — its pre-run bytes
+ * are not in git. Returns the paths it put back.
  */
-export function revertUnrequested({ root = REPO_ROOT, bundleRoot = null, slice, before = new Map(), submittedSince = null } = {}) {
+export function revertUnrequested({ root = REPO_ROOT, bundleRoot = null, slice, before = new Map(), scope = 'all', policy = null } = {}) {
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
   const prefix = `${relative(root, bundleDir).split(sep).join('/')}/`;
   const keep = new Set();
-  // Run 5145: openwiki 0.7.1 finalizes each page's Claims ON SUBMIT (submitRepositoryPage), stamping the
-  // sidecar's verification.at with the run's start. So an unrequested (forced) page that submitted
-  // before the stop is durable and paid for, and is kept with its sidecar. A V16-sound page whose
-  // verification PREDATES this invocation is openwiki's restore path (#685), not a submission: reverted.
-  if (submittedSince !== null) {
-    const since = Date.parse(submittedSince);
-    for (const path of detectWrittenPaths(root)) {
-      if (!path.startsWith(prefix) || !isConceptPage(path) || before.has(path)) continue;
-      const rel = path.slice(prefix.length);
-      const claimsPath = `${prefix}${CLAIMS_DIR}/${rel.replace(/\.md$/u, '.json')}`;
-      try {
-        const sidecar = JSON.parse(readFileSync(join(root, claimsPath), 'utf8'));
-        const at = Date.parse(sidecar?.verification?.at ?? '');
-        const actual = `sha256:${createHash('sha256').update(readFileSync(join(root, path))).digest('hex')}`;
-        if (!Number.isNaN(at) && at >= since && sidecar.pageVersion === actual) {
-          keep.add(path);
-          keep.add(claimsPath);
-        }
-      } catch { /* no readable sidecar: not a submission */ }
-    }
-  }
   for (const part of partsOf(slice)) {
     keep.add(`${prefix}${part.area}/index.md`);
-    for (const page of part.pages ?? []) {
-      keep.add(`${prefix}${part.area}/${page}`);
-      keep.add(`${prefix}${CLAIMS_DIR}/${part.area}/${page.replace(/\.md$/u, '.json')}`);
-    }
+    for (const page of part.pages ?? []) keep.add(`${prefix}${part.area}/${page}`);
   }
   const reverted = [];
   for (const path of detectWrittenPaths(root)) {
     if (keep.has(path) || before.has(path)) continue;
-    const tracked = spawnSync('git', ['cat-file', '-e', `HEAD:${path}`], { cwd: root }).status === 0;
-    if (tracked) {
-      if (spawnSync('git', ['checkout', '--', path], { cwd: root }).status !== 0) continue;
-    } else {
-      rmSync(join(root, path), { force: true });
+    if (scope === 'unrequested-pages') {
+      if (!path.startsWith(prefix) || !isConceptPage(path)) continue;
+      if (policy !== null && !mayWrite(policy, path, 'generator').allowed) continue;
     }
-    reverted.push(path);
+    if (putBack(root, path)) reverted.push(path);
   }
   return reverted;
 }
 
 /**
- * The manifest's pages, read before an invocation so a failed part's entry can be put back (#685).
- * Absent is `{}` — "no entries", so an entry the invocation created is removed. Unreadable is null —
- * unknowable, so restoreFailedParts leaves the manifest (and the pages it certifies) alone.
+ * After a failure, put the requested pages that did not land back as they were (item #685, run 4801).
+ * Their bytes would otherwise ride along on a proposal of the pages that DID land. A page that was
+ * already dirty before the invocation is left alone (its prior bytes are not in git), and so is an
+ * UNTRACKED page: it has no committed state, and deleting it would orphan an index link that may point
+ * at it. Returns the paths it restored.
  */
-export function readManifestPages(root = REPO_ROOT, bundleRoot = null) {
-  const file = join(bundleRoot ?? join(root, DEFAULT_BUNDLE), PAGE_MANIFEST);
-  if (!existsSync(file)) return {};
-  try {
-    return JSON.parse(readFileSync(file, 'utf8')).pages ?? {};
-  } catch {
-    return null;
-  }
-}
-
-/**
- * After an ORDINARY failure, put the parts that did not land back as they were (item #685, run 4801).
- *
- * A failed part is carried forward, never proposed — but its bytes stay in the working tree, and the
- * proposal stages the whole tree, so they rode along with whatever DID land. On #684 that was a page
- * openwiki's restore path had rewritten without its `verified:` block, sidecar re-hashed to match:
- * V16 sound, so no gate noticed, and merging would have erased a verification event for a page that
- * was never regenerated. revertUnrequested does the equivalent after a deadline stop.
- *
- * Per failed page, all three or none: the page and its .claims sidecar return to their committed
- * bytes, and its .page-manifest.json entry to what it was before this invocation — so V16 compares a
- * page with its own sidecar and finds them agreeing, and the entry never points at bytes that do not
- * exist. A page whose page or sidecar was already dirty before the invocation is left alone (its
- * prior bytes are not in git), and so is an UNTRACKED page: it has no committed state, and deleting
- * it would orphan the index link that may point at it. Returns the paths it restored.
- */
-export function restoreFailedParts({ root = REPO_ROOT, bundleRoot = null, parts = [], before = new Map(), manifestBefore = null } = {}) {
+export function restoreFailedParts({ root = REPO_ROOT, bundleRoot = null, parts = [], before = new Map() } = {}) {
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
   const prefix = `${relative(root, bundleDir).split(sep).join('/')}/`;
-  const manifestFile = join(bundleDir, PAGE_MANIFEST);
-  let manifest = null;
-  if (existsSync(manifestFile)) {
-    try { manifest = JSON.parse(readFileSync(manifestFile, 'utf8')); } catch { manifest = null; }
-  }
-  // Without a readable manifest on both sides, an entry cannot be put back — and restoring a page
-  // without its entry could leave the entry pointing at bytes that no longer exist. Leave it all to
-  // verifySlice's V16, which reports such a bundle as a conformance failure.
-  if (manifestBefore === null || (existsSync(manifestFile) && manifest === null)) return [];
   const dirtyNow = new Set(detectWrittenPaths(root));
-  const tracked = (path) => spawnSync('git', ['cat-file', '-e', `HEAD:${path}`], { cwd: root }).status === 0;
   const restored = [];
-  const entries = [];
   for (const part of parts) {
     for (const page of part.pages ?? []) {
-      const pagePath = `${prefix}${part.area}/${page}`;
-      const claimsPath = `${prefix}${CLAIMS_DIR}/${part.area}/${page.replace(/\.md$/u, '.json')}`;
-      if (before.has(pagePath) || before.has(claimsPath) || !tracked(pagePath)) continue;
-      const done = [];
-      let ok = true;
-      for (const path of [pagePath, claimsPath]) {
-        if (!dirtyNow.has(path)) continue;
-        if (tracked(path)) {
-          if (spawnSync('git', ['checkout', '--', path], { cwd: root }).status === 0) done.push(path);
-          else ok = false;
-        } else {
-          rmSync(join(root, path), { force: true });
-          done.push(path);
-        }
-      }
-      restored.push(...done);
-      // All three or none: an entry is put back only when page and sidecar both were.
-      if (ok) entries.push(`/${pagePath}`);
-    }
-  }
-
-  if (manifest !== null && entries.length > 0) {
-    const pages = manifest.pages ?? {};
-    let changed = false;
-    for (const key of entries) {
-      if (isDeepStrictEqual(pages[key], manifestBefore[key])) continue;
-      if (manifestBefore[key] === undefined) delete pages[key];
-      else pages[key] = manifestBefore[key];
-      changed = true;
-    }
-    if (changed) {
-      writeFileSync(manifestFile, `${JSON.stringify({ ...manifest, pages }, null, 2)}\n`);
-      restored.push(`${prefix}${PAGE_MANIFEST} (${entries.length} entr${entries.length === 1 ? 'y' : 'ies'})`);
+      const path = `${prefix}${part.area}/${page}`;
+      if (before.has(path) || !dirtyNow.has(path) || !tracked(root, path)) continue;
+      if (spawnSync('git', ['checkout', '--', path], { cwd: root }).status === 0) restored.push(path);
     }
   }
   return restored;
@@ -1812,19 +804,29 @@ export function snapshotTree(root = REPO_ROOT) {
 
 const isConceptPage = (relPath) => relPath.endsWith('.md') && !RESERVED_BUNDLE_FILES.has(basename(relPath));
 
+/** A page's text after its front matter — what a rewrite of the PAGE changes, as opposed to its header. */
+function bodyOf(text) {
+  if (text === null) return null;
+  const m = text.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/);
+  return m ? text.slice(m[0].length) : text;
+}
+
 /**
  * Judge a slice by what actually landed.
  *
- * Success requires ALL FOUR, and the generator's exit status is not among them (contract C1):
- *   1. at least one CONCEPT page appeared or changed — an `index.md` refresh is not work, which is
- *      exactly what 043's false-green run produced;
- *   2. the bundle still passes the OKF conformance gate;
+ * Success requires ALL of these, and the generator's exit status is not among them (contract C1):
+ *   1. every requested page exists after the run;
+ *   2. every requested page is FRESH after the run (#587, #616): either the generator rewrote its body
+ *      — and it then leaves with its source fingerprint recorded (V17, feature 098) — or its recorded
+ *      fingerprint still matches its source, which is an honest "nothing needed changing";
  *   3. every written path was permitted by openwiki/policy.yaml (FR-026e);
- *   4. no requested page is left stale — its cited source newer than its stamp — after the run,
- *      written or not (#587, #616). Conformance (2) includes V16: every page openwiki covers still
- *      matches its verified Claims, since a bundle that breaks that stops every later run.
+ *   4. the bundle still passes the OKF conformance gate (V17 included) and the governance gate.
+ *
+ * The fingerprint is recorded BEFORE the gates run, because V17 fails any derived page without a
+ * current one — and only for a page whose BODY changed: a front-matter-only edit is not a refresh
+ * (#616: a run that deleted a `verified:` block and touched nothing else counted as "written").
  */
-export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy = null, before = new Map(), actor = 'generator', restoredPages = [] } = {}) {
+export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy = null, before = new Map(), actor = 'generator', sourceRoot = REPO_ROOT, now = () => new Date() } = {}) {
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
   const bundlePrefix = `${relative(root, bundleDir).split(sep).join('/')}/`;
 
@@ -1835,18 +837,10 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
 
   const pagesWritten = written.filter((p) => p.startsWith(bundlePrefix) && isConceptPage(p));
 
-  // The contract is the REQUESTED pages, not "some page appeared".
-  //
-  // Counting writes alone was both too weak and too strong. Too weak: a run that wrote three
-  // unrelated pages while ignoring the request would have passed. Too strong: a refresh of a page
-  // that is already accurate legitimately writes nothing, and calling that a failure is the mirror
-  // image of the false green this gate exists to catch — measured, on a 1-page refresh slice that
-  // needed no change and was reported as broken.
-  //
-  // Existence after the run is the checkable deliverable for creation; "nothing needed changing" is
-  // an honest outcome for a refresh, reported distinguishably rather than as either success or failure.
-  // Checked PER PART for a multi-area invocation (078 US2), so a failure names the area/page it is
-  // about and the executor can carry forward only the areas that did not land.
+  // The contract is the REQUESTED pages, not "some page appeared". Counting writes alone was both too
+  // weak (a run that wrote unrelated pages while ignoring the request passed) and too strong (a refresh
+  // of a page that is already accurate legitimately writes nothing). Checked PER PART for a multi-area
+  // invocation (078 US2), so a failure names the area/page it is about.
   const missing = [];
   for (const part of partsOf(slice)) {
     const gone = (part.pages ?? []).filter((page) => !existsSync(join(bundleDir, part.area, page)));
@@ -1858,40 +852,6 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
       'The generator produced nothing usable for them regardless of the status it exited with.',
     );
   }
-  // ...but "nothing needed changing" is only honest for a page whose source has NOT moved since the
-  // page was stamped (item #587). Without this check, a slice was judged as a whole: a generator
-  // that rewrote two of three pages and silently skipped the third passed, the marker moved past
-  // the source change, and the skipped page was never planned again. Measured on 2026-09-26 with
-  // runbooks/renovate.md. A page left unwritten while its cited source is newer than its stamp is
-  // therefore named here, one page at a time, and fails the slice, so the slice is retried, goes
-  // back to the backlog, and the marker is held.
-  // Per part, like `missing`, so a multi-area invocation carries forward only the part that is stale.
-  //
-  // Judged AFTER the run whether or not the page was written (item #616). "Written" only means its
-  // bytes changed: on proposal #615 the run deleted a `verified:` block from ci-diagnostics.md, left
-  // the body and `generated` stamp alone, and the page counted as written — so a check that skipped
-  // written pages never looked, and the marker moved past the source change exactly as in #587. A
-  // real rewrite moves `generated.at` past the source's commit, so it is never flagged here.
-  const stalePages = [];
-  for (const part of partsOf(slice)) {
-    const stale = (part.pages ?? []).filter((page) =>
-      !missing.includes(`${part.area}/${page}`) &&
-      sourceNewerThanStamp(root, join(bundleDir, part.area, page)));
-    stalePages.push(...stale.map((page) => `${part.area}/${page}`));
-  }
-  if (stalePages.length > 0) {
-    violations.push(
-      `${stalePages.length} requested page(s) are still stale after the run — their cited source changed after their stamp: ` +
-      `${stalePages.join(', ')}. A refresh has to move the stamp; unwritten or front-matter-only changes do not.`,
-    );
-  }
-  const noChange = missing.length === 0 && stalePages.length === 0 && pagesWritten.length === 0;
-  // Run 5145: requested pages the executor put back after a worker left them mid-edit. Their committed
-  // bytes may be current, but the request was not done, so they fail and are carried forward.
-  const restored = restoredPages.filter((key) => !missing.includes(key) && !stalePages.includes(key));
-  if (restored.length > 0) {
-    violations.push(`${restored.length} requested page(s) were left mid-edit by their worker and restored: ${restored.join(', ')}.`);
-  }
 
   if (policy !== null) {
     for (const p of written) {
@@ -1902,35 +862,77 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
     }
   }
 
-  // Normalize link form BEFORE the gate reads the bundle, and only over what THIS slice wrote —
-  // those paths have just cleared the policy check above. Sweeping the whole bundle here would
-  // edit pages the slice never touched and that no policy decision covered, which is the kind of
-  // unrequested write the verifier exists to catch.
-  // Item #777 first: openwiki's minimal header rebuild loses `resource`/`description`/`tags`, and the
-  // governance gate below would otherwise fail the slice — and throw away every sibling page with it.
+  // Which requested pages the generator REWROTE — judged on the body, before any harness repair below
+  // touches the bytes, and against the committed page (a new page has none, so it is a rewrite).
+  const rewritten = new Set();
+  for (const part of partsOf(slice)) {
+    for (const page of part.pages ?? []) {
+      const rel = `${bundlePrefix}${part.area}/${page}`;
+      if (!written.includes(rel) || !existsSync(join(root, rel))) continue;
+      if (bodyOf(readFileSync(join(root, rel), 'utf8')) !== bodyOf(fileAt(root, 'HEAD', rel))) rewritten.add(`${part.area}/${page}`);
+    }
+  }
+
+  // Normalize link form and restore a minimally-rebuilt header BEFORE the gates read the bundle, and
+  // only over what THIS slice wrote — those paths have just cleared the policy check above.
   for (const { path, restored } of restoreRebuiltFrontmatter({ root, bundleRoot: bundleDir, files: written.filter((p) => p.startsWith(bundlePrefix)) })) {
     console.log(`[wiki-maintain] restored ${restored.join(', ')} from HEAD in ${path} (openwiki rebuilt its front matter minimally)`);
   }
-  const normalized = normalizeBundleLinks({ root, bundleRoot: bundleDir, files: written.filter((p) => p.startsWith(bundlePrefix)) });
-  for (const { path, rewrites } of normalized) {
+  for (const { path, rewrites } of normalizeBundleLinks({ root, bundleRoot: bundleDir, files: written.filter((p) => p.startsWith(bundlePrefix)) })) {
     console.log(`[wiki-maintain] normalized ${rewrites.length} site-root-absolute link(s) in ${path}`);
   }
 
-  const okf = spawnSync(process.execPath, [OKF_GATE, '--bundle', bundleDir], { cwd: REPO_ROOT, encoding: 'utf8' });
+  // The post-step (feature 098, FR-018): a rewritten derived page leaves with its source fingerprint
+  // and without the retired `sources:`/`verified:`, exactly as `wiki-refresh.mjs --record` leaves it.
+  // An unrewritten page is fresh only if its recorded fingerprint still matches (staleReason).
+  const stalePages = [];
+  for (const part of partsOf(slice)) {
+    for (const page of part.pages ?? []) {
+      const key = `${part.area}/${page}`;
+      if (missing.includes(key)) continue;
+      const abs = join(bundleDir, part.area, page);
+      const derived = readDerivedPage(abs, { root: sourceRoot });
+      if (derived === null) continue; // canonical: no fingerprint to judge
+      if (rewritten.has(key) && existsSync(derived.resourceAbs)) {
+        recordSourceFingerprint(abs, { root: sourceRoot, now: now() });
+      } else if (staleReason(derived) !== null) {
+        stalePages.push(key);
+      }
+    }
+  }
+  if (stalePages.length > 0) {
+    violations.push(
+      `${stalePages.length} requested page(s) are still stale after the run — their source changed since their recorded fingerprint and the body was not rewritten: ` +
+      `${stalePages.join(', ')}. A front-matter-only change is not a refresh.`,
+    );
+  }
+  const noChange = missing.length === 0 && stalePages.length === 0 && pagesWritten.length === 0;
+
+  // V17 on a requested page that is already reported stale above is the SAME finding, attributable to
+  // that page. Counting it again as a whole-bundle conformance failure would discard every landed
+  // area-mate with it (#720), so it is set aside; any other finding fails the invocation.
+  const okf = spawnSync(process.execPath, [OKF_GATE, '--bundle', bundleDir, '--json'], { cwd: REPO_ROOT, encoding: 'utf8' });
   if (okf.status !== 0) {
-    const detail = `${okf.stdout ?? ''}${okf.stderr ?? ''}`.trim().split('\n').filter((l) => l.includes('✗')).join('; ');
-    violations.push(`the bundle is no longer conformant after this slice: ${detail || 'the OKF gate failed'}`);
+    let findings = null;
+    try { findings = JSON.parse(okf.stdout).findings; } catch { findings = null; }
+    const staleAbs = new Set(stalePages.map((key) => join(bundleDir, key)));
+    const other = findings === null ? null : findings.filter((f) => !(f.rule === 'V17' && staleAbs.has(resolve(REPO_ROOT, f.file))));
+    if (other === null || other.length > 0) {
+      const detail = other === null
+        ? `${okf.stdout ?? ''}${okf.stderr ?? ''}`.trim().split('\n').filter((l) => l.includes('✗')).join('; ')
+        : other.map((f) => `${f.file} — ${f.message} (${f.rule})`).join('; ');
+      violations.push(`the bundle is no longer conformant after this slice: ${detail || 'the OKF gate failed'}`);
+    }
   }
 
   // The GOVERNANCE gate too (PR #857, run 6049). The generator rewrote bff.md without its `resource:`;
   // the page stayed OKF-conformant, so this verifier passed it and the run opened a PR that guardrails
-  // failed on G11 — a page that is neither derived nor authoritative has no home for a learning. The
-  // gate already existed; only the verifier never asked it. It reads the whole root (`--root`),
-  // because its rules span the bundle, CLAUDE.md/AGENTS.md and the two governance files.
+  // failed on G11. It reads the whole root (`--root`), because its rules span the bundle,
+  // CLAUDE.md/AGENTS.md and the two governance files.
   //
-  // A bundle WITHOUT protected.yaml is a fixture that predates governance, not a weakened
-  // production run: the real repository always carries it, and guardrails' okf job fails closed
-  // without it. Skipped there out loud, never silently.
+  // A bundle WITHOUT protected.yaml is a fixture that predates governance, not a weakened production
+  // run: the real repository always carries it, and guardrails' okf job fails closed without it.
+  // Skipped there out loud, never silently.
   if (existsSync(join(bundleDir, 'protected.yaml'))) {
     const gov = spawnSync(process.execPath, [GOVERNANCE_GATE, '--root', root], { cwd: REPO_ROOT, encoding: 'utf8' });
     if (gov.status !== 0) {
@@ -1942,52 +944,21 @@ export function verifySlice({ root = REPO_ROOT, bundleRoot = null, slice, policy
   }
 
   // Only the missing-page and stale-page checks are attributable to a PAGE; a policy or conformance
-  // violation is the whole invocation's, so it carries every part forward.
+  // violation is the whole invocation's, so it fails every part.
   const attributable = violations.length > 0
-    && violations.length === (missing.length > 0 ? 1 : 0) + (stalePages.length > 0 ? 1 : 0) + (restored.length > 0 ? 1 : 0);
-  // 078 US6 (review I1): the PAGES that did not land, as `area/page`.
+    && violations.length === (missing.length > 0 ? 1 : 0) + (stalePages.length > 0 ? 1 : 0);
   const failedPages = violations.length === 0 ? []
-    : attributable ? [...missing, ...stalePages, ...restored]
+    : attributable ? [...missing, ...stalePages]
       : partsOf(slice).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`));
-  // A part narrowed to some of its pages. The stored runMessage names every page, so it is dropped
-  // and re-rendered from the narrowed page list.
-  const narrowed = (keep) => partsOf(slice).flatMap(({ runMessage: _unused, ...part }) => {
-    const pages = (part.pages ?? []).filter((page) => keep(`${part.area}/${page}`));
+  const narrowed = (keepKey) => partsOf(slice).flatMap(({ runMessage: _unused, ...part }) => {
+    const pages = (part.pages ?? []).filter((page) => keepKey(`${part.area}/${page}`));
     return pages.length === 0 ? [] : [{ ...part, pages }];
   });
-  // Failed and landed are judged per PAGE, not per part (#720). Run 5010 failed one runbooks page and
-  // discarded the two runbooks pages that had completed beside it. When the failure is attributable,
-  // the bundle is conformant (V16 included) and policy-clean, so the pages that did land are safe to
-  // propose; run 4399 had already shown the same loss one level up, across areas.
+  // Failed and landed are judged per PAGE, not per part (#720): when the failure is attributable the
+  // bundle is conformant and policy-clean, so the pages that did land are safe to propose.
   const failedParts = attributable ? narrowed((key) => failedPages.includes(key)) : partsOf(slice);
   const landedParts = attributable ? narrowed((key) => !failedPages.includes(key)) : [];
-  // Pages openwiki wrote that were never requested — chiefly the stale-Claims reconciliations it forces
-  // into every run (#707). Under the same condition they verified on their own, so they are proposed
-  // rather than paid for and discarded again. After a deadline stop revertUnrequested has already put
-  // them back, so they are not written here and cannot qualify half-finished.
-  const requested = new Set(partsOf(slice).flatMap((part) => (part.pages ?? []).map((page) => `${bundlePrefix}${part.area}/${page}`)));
-  const forcedPages = attributable || violations.length === 0
-    ? pagesWritten.filter((p) => !requested.has(p)).map((p) => p.slice(bundlePrefix.length))
-    : [];
-  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, missingPages: missing, stalePages, failedParts, landedParts, failedPages, forcedPages };
-}
-
-/**
- * Is the page's cited source's last commit newer than the page's stamp? The same comparison the OKF
- * gate's V12 makes (commit date, never mtime; the stamp from ./openwiki-stamp.mjs), resolved against
- * the checkout being verified. Anything it cannot check (no stamp, an external or absent resource,
- * an untracked source) returns false: an unknowable page keeps the honest no-change outcome rather
- * than failing a slice on a guess.
- *
- * A date-only stamp (`…T00:00:00Z`) reads a same-day source commit as newer, so such a page is
- * retried until the generator restamps it. That errs toward retrying, never toward a silent skip.
- *
- * The stamp is the NEWEST of `generated.at`, `verified.at` and `timestamp` — the one rule V12 also
- * reads, imported rather than restated so the two cannot drift apart. A page the generator left
- * byte-identical but whose claims it verified after the source moved is therefore not stale here.
- */
-function sourceNewerThanStamp(root, pageFile) {
-  return sourceCommitAfterStamp({ root, fields: frontMatter(pageFile) })?.stale === true;
+  return { ok: violations.length === 0, noChange, pagesWritten, writtenPaths: written, violations, missingPages: missing, stalePages, failedParts, landedParts, failedPages };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
@@ -2031,7 +1002,7 @@ export function generatorEnv(runMessage, env = process.env, { usageLog = null, r
     throw new Error('run message contains a shell metacharacter — renderRunMessage must produce one safe line');
   }
   // 078 US4: where the usage tap inside the generator writes this invocation's per-call counts.
-  // 078 US6: an escalated invocation overrides the effort; anything else inherits the job's setting.
+  // An explicit effort overrides the job's MCM_WIKI_REASONING_EFFORT; null inherits it.
   return {
     ...env,
     [RUN_MESSAGE_ENV]: runMessage,
@@ -2072,12 +1043,12 @@ export function jobDeadlineMs(env = process.env) {
   return Number(raw.trim()) * 1000;
 }
 
-function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null, reasoningEffort = null }) {
+function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null, reasoningEffort = null } = {}) {
   const message = slice.runMessage ?? renderRunMessage(slice);
   const [cmd, ...args] = deadlineCommand(timeoutMs);
   const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog, reasoningEffort }) });
   if (timeoutMs !== null && (r.status === 124 || r.status === 137)) {
-    console.error(`[wiki-maintain] ✗ the generator was stopped at the job deadline after ${Math.floor(timeoutMs / 1000)}s. openwiki prints nothing until it exits, so this alone does not say whether it was slow or hung — the usage line below counts the model calls it made (#613). The slice is judged on what landed — a stopped generator usually leaves a requested page stale, which fails it; the run still records itself.`);
+    console.error(`[wiki-maintain] ✗ the generator was stopped at the job deadline after ${Math.floor(timeoutMs / 1000)}s. openwiki prints nothing until it exits, so this alone does not say whether it was slow or hung — the usage line below counts the model calls it made (#613). The slice is judged on what landed — a stopped generator usually leaves a requested page stale, which fails it.`);
   }
   return r;
 }
@@ -2109,10 +1080,9 @@ function invocationUsage(logPath, usage) {
 /**
  * Waits before retrying a RATE-LIMITED attempt (item #683), one per retry. Run 4798 retried straight
  * into an active 429 three times in 29 seconds — attempts that cannot succeed, reported as an
- * ordinary "produced nothing". A wait is taken only while the retry would still START inside the
- * time budget and leave the generator its minimum before the job deadline, so the guard test's
- * ceiling arithmetic is unchanged; otherwise the attempt is not retried. Waiting, rather than never
- * retrying, because Fireworks' limits are per-minute windows: a minute is what clears one.
+ * ordinary "produced nothing". A wait is taken only while the retry would still leave the generator
+ * its minimum before the job deadline; otherwise the attempt is not retried. Waiting, rather than
+ * never retrying, because Fireworks' limits are per-minute windows: a minute is what clears one.
  */
 export const RATE_LIMIT_BACKOFF_MS = Object.freeze([60_000, 120_000]);
 
@@ -2165,165 +1135,87 @@ export function archiveUsageLog({ usageLog, pages = [], effort = null, env = nul
 }
 
 /**
- * Run slices in order, verifying each, stopping at CONSECUTIVE failures or at either budget.
+ * Run the named pages' invocations in order, verifying each, stopping at CONSECUTIVE failures or at
+ * the job deadline. Returns which named pages LANDED and which did not; nothing is carried anywhere
+ * (feature 098: no backlog, no run record). Exit 0 when every named page landed, 1 otherwise.
  *
- * The original rule was "stop at the first failure", on the reasoning that a slice producing nothing
- * means something is wrong with the run and grinding through the rest spends paid capacity on the
- * same fault. That reasoning is right about a BROKEN RUN and wrong about a BAD SLICE — and the
- * difference showed up immediately on `main`: one unsatisfiable slice sat at the head of the backlog
- * and starved the legitimate work behind it, run after run, because execution never got past it.
- *
- * So: a failed slice is recorded and the next is attempted; `maxConsecutiveFailures` in a row stops
- * the run. Two consecutive failures distinguishes "this slice cannot be done" from "nothing can".
+ * A failed invocation is recorded and the next is attempted; `maxConsecutiveFailures` in a row stops
+ * the run — two consecutive failures distinguishes "this page cannot be done" from "nothing can".
  */
 export function executeSlices({
   root = REPO_ROOT,
   bundleRoot = null,
   slices = [],
-  record = null,
   policy = null,
   invoke = defaultInvoke,
-  pageBudget = PAGE_BUDGET,
-  timeBudgetSeconds = TIME_BUDGET_SECONDS,
-  maxSlices = null,
-  // Slices the PLAN deferred beyond the page budget. Never invoked here, only carried: the marker
-  // advances past their range, so a backlog that omitted them would lose them for good.
-  carryForward = [],
   maxConsecutiveFailures = 2,
   attemptsPerSlice = ATTEMPTS_PER_SLICE,
   dryRun = false,
-  baseCommit = null,
   clock = () => Date.now(),
-  now = () => new Date().toISOString(),
+  now = () => new Date(),
   usage = defaultUsageContext(),
   deadlineMs = null,
-  effortPolicy = escalationPolicy(),
+  // An explicit effort for every invocation, or null to inherit MCM_WIKI_REASONING_EFFORT from the
+  // job (the workflow's `reasoning-effort` input) — which is what the generator launcher reads anyway.
+  effort = null,
   sleep = sleepSync,
   // Where to keep per-call usage (#682). Null by default: the test suite runs IN CI, and a stub's
   // tap lines must not land in the test job's step logs. Only the CLI path passes process.env.
   archiveEnv = null,
+  sourceRoot = REPO_ROOT,
 } = {}) {
-  const runRecord = record ?? readRunRecord(root);
   // Time the generator may still use, or null when there is no deadline (local runs).
   const generatorAllowance = () => (deadlineMs === null ? null : deadlineMs - clock() - DEADLINE_RESERVE_MS);
   const bundleDir = bundleRoot ?? join(root, DEFAULT_BUNDLE);
   const started = clock();
   const elapsed = () => Math.round((clock() - started) / 1000);
-
-  const queue = maxSlices === null ? [...slices] : slices.slice(0, maxSlices);
-  const carried = [
-    ...(maxSlices === null ? [] : slices.slice(maxSlices)),
-    ...carryForward.map(({ runMessage: _unused, ...slice }) => slice),
-  ];
-
-  const results = [];
-  const backlog = [...carried];
-  // `deferred` is what the BUDGET stopped; `backlog` is everything carried forward, which also
-  // includes a failed slice and anything --max-slices held back. Conflating them would report a
-  // budget stop and a failure as the same state (SC-006a).
-  const deferred = [...carried];
-  let pagesWritten = 0;
-  let stoppedAtBudget = false;
-  let stoppedAtFailureLimit = false;
-  let failed = false;
-  let consecutive = 0;
-  const usageSummaries = [];
+  const requested = slices.flatMap((s) => (s.pages ?? []).map((p) => `${s.area}/${p}`));
 
   // 078 US2: slices are packed into invocations so the generator's fixed planning pass is paid once
-  // per group of areas. Everything carried forward below is expressed in SLICES (the parts), never
-  // in groups, so the committed backlog keeps its shape.
-  //
-  // 078 US6: pages a job deadline stopped last time run first, alone, at low effort. Packing never
-  // mixes them with default-effort work, because effort is per generator PROCESS. With an explicit
-  // effort, or a provider without one, the split is skipped and the tags are simply kept (FR-020).
-  const lowEffort = invocationEffort(effortPolicy, true);
-  const { escalated, normal } = lowEffort === null
-    ? { escalated: [], normal: queue }
-    : splitByEscalation(queue, runRecord.escalations ?? {});
-  const plan = [
-    ...packSlices(escalated).map((work) => ({ work, effort: lowEffort })),
-    ...packSlices(normal).map((work) => ({ work, effort: null })),
-  ];
-  const remainingParts = (from) => plan.slice(from).flatMap((p) => partsOf(p.work));
-  const outcomes = [];
-  const invocationRecords = [];
+  // per group of areas.
+  const plan = packSlices(slices);
 
   if (dryRun) {
     return {
       outcome: slices.length === 0 ? 'nothing-to-do' : 'dry-run',
       exitCode: 0,
-      results: plan.map(({ work: s }) => ({ slice: s, dryRun: true, command: generatorCommand(), runMessage: s.runMessage ?? renderRunMessage(s) })),
+      results: plan.map((s) => ({ slice: s, dryRun: true, command: generatorCommand(), runMessage: s.runMessage ?? renderRunMessage(s) })),
       pagesWritten: 0,
       elapsedSeconds: elapsed(),
-      stoppedAtBudget: false,
-      backlog: slices,
-      deferred: [],
-      persisted: false,
+      landed: [],
+      notLanded: [],
+      stoppedAtDeadline: false,
     };
   }
 
-  for (const [i, { work: slice, effort }] of plan.entries()) {
-    // Budgets are checked BETWEEN slices, never inside one: interrupting a slice mid-generation would
-    // leave a half-written area, which is a conformance failure rather than a saving. The overshoot is
-    // therefore bounded at one slice — the declared effective ceiling in the header comment.
+  const results = [];
+  const usageSummaries = [];
+  let pagesWritten = 0;
+  let stoppedAtDeadline = false;
+  let stoppedAtFailureLimit = false;
+  let consecutive = 0;
+
+  for (const slice of plan) {
     const allowance = generatorAllowance();
-    if ((i > 0 && (pagesWritten >= pageBudget || elapsed() >= timeBudgetSeconds))
-      || (allowance !== null && allowance < MIN_GENERATOR_MS)) {
-      if (allowance !== null && allowance < MIN_GENERATOR_MS) {
-        console.error(`[wiki-maintain] ${Math.max(0, Math.floor(allowance / 60_000))} min left before the job deadline's reserve — not starting a generator that cannot finish; carried forward (#613).`);
-      }
-      stoppedAtBudget = true;
-      backlog.push(...remainingParts(i));
-      deferred.push(...remainingParts(i));
+    if (allowance !== null && allowance < MIN_GENERATOR_MS) {
+      console.error(`[wiki-maintain] ${Math.max(0, Math.floor(allowance / 60_000))} min left before the job deadline's reserve — not starting a generator that cannot finish; its pages are not landed (#613).`);
+      stoppedAtDeadline = true;
       break;
     }
 
-    // RETRY, for residual variance only.
-    //
-    // CORRECTED 2026-08-01. This comment used to say the ~50% zero-page rate was "not a bug to be
-    // found in this code — it is a property of the dependency". THAT WAS WRONG, and it was wrong in
-    // the specific way that stops people looking: it named the symptom (non-determinism) and served
-    // it as the cause. The cause was a fixed, deterministic, silent per-turn output-token ceiling.
-    //
-    // openwiki never passes `maxTokens`, so @langchain/anthropic prefix-matches the model id against
-    // a hard-coded table and falls back to 4096 on a miss. `claude-sonnet-5` — the id this repo
-    // pinned — is absent from that table. A turn truncated at 4096 before it opens a `tool_use` block
-    // returns an assistant message with zero tool calls, which is exactly LangGraph's ReAct stop
-    // condition: the graph exits cleanly, openwiki exits 0, Nx reports success, nothing is written.
-    // Measured on the wire at turn 25 of a real run: stop_reason=max_tokens, output_tokens=4096, no
-    // tool call. Full write-up and reproduction:
-    // specs/044-openwiki-automation-migration/HANDOFF-generator-reliability-ANSWER.md
-    //
-    // The target now pins a model the table covers (16384), and
-    // scripts/__tests__/wiki-maintain.guard.test.mjs fails any id that lands back on the fallback.
-    //
-    // Retry SURVIVES that fix, but its job is now the ordinary residual variance of a model doing
-    // open-ended work — not a systematic ceiling. The distinction matters operationally: against a
-    // ceiling, retrying is close to useless, because every attempt re-runs into the same wall and the
-    // apparent independence of attempts is an illusion. Against residual variance the attempts really
-    // are independent, so the arithmetic below is sound rather than decorative. Bounded by the same
-    // page and wall-clock budgets as everything else, and every attempt is reported, so a slice that
-    // fails repeatedly is still visible rather than buried under a retry.
-    //
-    // If the zero-page rate is ever materially above zero again, DO NOT reach for a fourth attempt.
-    // Measure the wire first — ANTHROPIC_BASE_URL accepts a pass-through proxy, which is how this was
-    // found, and openwiki surfaces no stop_reason of its own.
+    // RETRY, for residual variance only. The ~50% zero-page rate of 2026-07/08 was a fixed per-turn
+    // output-token ceiling, not non-determinism (specs/044-openwiki-automation-migration/
+    // HANDOFF-generator-reliability-ANSWER.md); wiki-maintain.guard.test.mjs pins the cap. If the
+    // zero-page rate is ever materially above zero again, DO NOT reach for a fourth attempt — measure
+    // the wire first.
     let verdict;
     let invocation;
     let attempts = 0;
-    let stopped = false; // 078 US6: was this invocation stopped by the job deadline?
+    let stopped = false;
     let rateLimited = null; // #683: { attempts, calls } answered 429, or null
-    // Snapshotted ONCE, before the first attempt — the slice is judged against the state it started
-    // from, not against the state its own previous attempt left behind.
-    //
-    // Re-snapshotting per attempt LAUNDERED A POLICY VIOLATION INTO A SUCCESS, and the existing tests
-    // caught it immediately: attempt 1 wrote a forbidden path and failed; attempt 2 re-snapshotted,
-    // so that write was now "pre-existing", the stub rewrote the same bytes, nothing new appeared —
-    // and the slice passed. A retry must never be able to forgive what the previous attempt did.
+    // Snapshotted ONCE, before the first attempt: a retry must never be able to forgive what the
+    // previous attempt did (re-snapshotting laundered a policy violation into a success, measured).
     const before = snapshotTree(root);
-    const manifestBefore = readManifestPages(root, bundleDir);
-    // Wall-clock start of this invocation, for telling a page openwiki submitted IN it apart (run 5145).
-    const invocationStart = now();
     // One usage log per invocation, shared by its retries — a retry's tokens are real spend too.
     const usageDir = mkdtempSync(join(tmpdir(), 'wiki-usage-'));
     const usageLog = join(usageDir, 'usage.jsonl');
@@ -2334,18 +1226,15 @@ export function executeSlices({
         const timeoutMs = generatorAllowance();
         if (timeoutMs !== null && timeoutMs < MIN_GENERATOR_MS) break;
         invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog, timeoutMs, reasoningEffort: effort });
-        stopped = isDeadlineStop(invocation, timeoutMs);
-        if (stopped) {
-          const reverted = revertUnrequested({ root, bundleRoot: bundleDir, slice, before, submittedSince: invocationStart });
-          if (reverted.length > 0) {
-            console.error(`[wiki-maintain] deadline stop: restored ${reverted.length} path(s) this slice did not request (openwiki's forced or unfinished pages): ${reverted.slice(0, 6).join(', ')}${reverted.length > 6 ? ' …' : ''}`);
-          }
+        stopped = timeoutMs !== null && (invocation?.status === 124 || invocation?.status === 137);
+        const reverted = revertUnrequested({ root, bundleRoot: bundleDir, slice, before, scope: stopped ? 'all' : 'unrequested-pages', policy });
+        if (reverted.length > 0) {
+          console.error(`[wiki-maintain] restored ${reverted.length} path(s) this rebuild did not request${stopped ? ' (deadline stop)' : ''}: ${reverted.slice(0, 6).join(', ')}${reverted.length > 6 ? ' …' : ''}`);
         }
       } catch (err) {
-        // A thrown invocation is a real failure — but it is NOT `nothing-to-do` (FR-017).
         invocation = { error: err.message };
       }
-      verdict = verifySlice({ root, bundleRoot: bundleDir, slice, policy, before });
+      verdict = verifySlice({ root, bundleRoot: bundleDir, slice, policy, before, sourceRoot, now });
       if (verdict.ok) break;
       const tapped = rateLimitedCalls(usageLog, logOffset);
       const limited = isRateLimited(tapped) ? tapped.limited : 0;
@@ -2353,62 +1242,26 @@ export function executeSlices({
         rateLimited = { attempts: (rateLimited?.attempts ?? 0) + 1, calls: (rateLimited?.calls ?? 0) + limited };
       }
       if (attempt < attemptsPerSlice) {
-        // Do not retry into a budget we have already spent.
-        if (elapsed() >= timeBudgetSeconds) break;
         if (limited > 0) {
-          // #683: a retry into an active rate limit cannot succeed. Wait it out if the retry would
-          // still start inside both budgets; otherwise stop here and say why.
+          // #683: a retry into an active rate limit cannot succeed. Wait it out if the retry would still
+          // leave the generator its minimum before the job deadline; otherwise stop here and say why.
           const wait = RATE_LIMIT_BACKOFF_MS[Math.min(rateLimited.attempts, RATE_LIMIT_BACKOFF_MS.length) - 1];
-          const allowance = generatorAllowance();
-          const fits = elapsed() + wait / 1000 < timeBudgetSeconds && (allowance === null || allowance - wait >= MIN_GENERATOR_MS);
-          if (!fits) {
-            console.error(`[wiki-maintain] ${slice.area}/ attempt ${attempt} was RATE-LIMITED (${limited} call(s) answered HTTP 429) — not retrying: a ${wait / 1000}s wait would overrun the run's start budget or the job deadline.`);
+          const left = generatorAllowance();
+          if (left !== null && left - wait < MIN_GENERATOR_MS) {
+            console.error(`[wiki-maintain] ${slice.area}/ attempt ${attempt} was RATE-LIMITED (${limited} call(s) answered HTTP 429) — not retrying: a ${wait / 1000}s wait would overrun the job deadline.`);
             break;
           }
           console.error(`[wiki-maintain] ${slice.area}/ attempt ${attempt} was RATE-LIMITED (${limited} call(s) answered HTTP 429) — waiting ${wait / 1000}s, then retrying (${attempt + 1}/${attemptsPerSlice}).`);
           sleep(wait);
           continue;
         }
-        console.error(`[wiki-maintain] ${slice.area}/ attempt ${attempt} produced nothing — retrying (${attempt + 1}/${attemptsPerSlice}).`);
+        console.error(`[wiki-maintain] ${slice.area}/ attempt ${attempt} produced nothing usable — retrying (${attempt + 1}/${attemptsPerSlice}).`);
       }
     }
 
-    // Run 5104: a conformance failure CONFINED to pages that failed anyway. A worker that died
-    // mid-edit (HTTP 412) left its page with bytes its Claims sidecar does not certify. V16 is a
-    // whole-invocation failure, so 13 landed pages were discarded with it. When the only violation
-    // not attributable to a page is conformance, put the failed pages back first (#685's restore:
-    // page, sidecar and manifest entry together) and judge again. If the bundle is then conformant,
-    // the break was theirs alone, and the failure is attributable after all. A policy violation, or a
-    // break the restore does not repair, still fails the whole invocation.
-    if (!verdict.ok) {
-      const failedKeys = new Set([...(verdict.missingPages ?? []), ...(verdict.stalePages ?? [])]);
-      // Run 5145: a requested page left mid-edit by a stopped or dead worker breaks V16 while its stamp
-      // is fresh, so it is neither missing nor stale. V16 names the page, which makes it attributable.
-      const requestedKeys = new Set(partsOf(slice).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`)));
-      for (const { page } of claimsDurabilityFindings(bundleDir)) {
-        if (requestedKeys.has(page)) failedKeys.add(page);
-      }
-      const unattributed = verdict.violations.filter((v) => !/^\d+ requested page\(s\) (do not exist|are still stale|were left mid-edit)/u.test(v));
-      if (failedKeys.size > 0 && unattributed.length === 1 && unattributed[0].startsWith('the bundle is no longer conformant')) {
-        const parts = partsOf(slice).flatMap(({ runMessage: _unused, ...part }) => {
-          const pages = (part.pages ?? []).filter((page) => failedKeys.has(`${part.area}/${page}`));
-          return pages.length === 0 ? [] : [{ ...part, pages }];
-        });
-        const restored = restoreFailedParts({ root, bundleRoot: bundleDir, parts, before, manifestBefore });
-        const again = verifySlice({ root, bundleRoot: bundleDir, slice, policy, before, restoredPages: [...failedKeys] });
-        if (!again.violations.some((v) => v.startsWith('the bundle is no longer conformant'))) {
-          console.error(`[wiki-maintain] the conformance failure was confined to the page(s) that failed (${[...failedKeys].join(', ')}); restored ${restored.length} path(s), and the rest are judged on their own (run 5104).`);
-          verdict = again;
-        }
-      }
-    }
-
-    // 078 FR-022: the usage line and record name the effort this invocation actually ran at.
     const spent = invocationUsage(usageLog, usage ? { ...usage, reasoningEffort: effort ?? usage.reasoningEffort ?? null } : usage);
-    archiveUsageLog({ usageLog, pages: partsOf(slice).flatMap((p) => (p.pages ?? []).map((page) => `${p.area}/${page}`)), effort: effort ?? effortPolicy.explicit ?? null, env: archiveEnv });
-    // #719: how each failed page's worker ended, from the tap's page-attributed lines — in the job log,
-    // so it reaches the failure bundle. Four workers run concurrently; without the page field the
-    // per-call log could not say whose calls were whose.
+    archiveUsageLog({ usageLog, pages: partsOf(slice).flatMap((p) => (p.pages ?? []).map((page) => `${p.area}/${page}`)), effort, env: archiveEnv });
+    // #719: how each failed page's worker ended, from the tap's page-attributed lines.
     if (!verdict.ok && existsSync(usageLog)) {
       const trails = pageTrails(readFileSync(usageLog, 'utf8'));
       for (const page of verdict.failedPages ?? []) {
@@ -2421,49 +1274,19 @@ export function executeSlices({
       ? `[wiki-maintain] usage ${slice.area}/: not captured`
       : `[wiki-maintain] usage ${slice.area}/: ${spent.calls} call(s), ${spent.uncached} uncached / ${spent.cached} cached / ${spent.output} output tokens, ~$${spent.estCostUsd} (${spent.provider}${spent.tier ? `/${spent.tier}` : ''}${spent.reasoningEffort ? ` effort=${spent.reasoningEffort}` : ''}, prices ${spent.priceTable})`);
 
-    const effortUsed = effort ?? effortPolicy.explicit ?? null;
-    results.push({ slice, ...verdict, attempts, invocationError: invocation?.error ?? null, usage: spent, effortUsed, deadlineStop: stopped, rateLimited });
-    outcomes.push({
-      parts: partsOf(slice),
-      ok: verdict.ok,
-      landedParts: verdict.landedParts ?? [],
-      failedParts: verdict.ok ? [] : (verdict.failedParts ?? partsOf(slice)),
-      failedPages: verdict.ok ? [] : verdict.failedPages,
-      deadlineStop: stopped,
-      effortUsed,
-    });
-    // 078 FR-022 (review I2): the record names each invocation's effort, not only the run total's.
-    invocationRecords.push({
-      pages: partsOf(slice).flatMap((p) => (p.pages ?? []).map((page) => `${p.area}/${page}`)),
-      effort: effortUsed,
-      deadlineStop: stopped,
-      estCostUsd: spent === NOT_CAPTURED ? null : spent.estCostUsd,
-      // #683: named in the record, so a rate limit is distinguishable from a page the model failed to write.
-      rateLimited,
-    });
+    results.push({ slice, ...verdict, attempts, invocationError: invocation?.error ?? null, usage: spent, deadlineStop: stopped, rateLimited });
 
     if (!verdict.ok) {
-      failed = true;
       consecutive += 1;
-      // The parts that did not land must not ride along on a proposal of the parts that did (#685).
-      const restored = restoreFailedParts({ root, bundleRoot: bundleDir, parts: verdict.failedParts ?? partsOf(slice), before, manifestBefore });
+      // The pages that did not land must not ride along on a proposal of the pages that did (#685).
+      const restored = restoreFailedParts({ root, bundleRoot: bundleDir, parts: verdict.failedParts ?? partsOf(slice), before });
       if (restored.length > 0) {
-        console.error(`[wiki-maintain] restored ${restored.length} path(s) of the part(s) that did not land, so they cannot ride along on the proposal (#685): ${restored.slice(0, 6).join(', ')}${restored.length > 6 ? ' …' : ''}`);
+        console.error(`[wiki-maintain] restored ${restored.length} path(s) of the page(s) that did not land, so they cannot ride along on the proposal (#685): ${restored.slice(0, 6).join(', ')}${restored.length > 6 ? ' …' : ''}`);
       }
-      // Only the pages that did not land (missing and stale are attributable per page, #720); a policy
-      // or conformance violation carries every part of the invocation forward.
-      backlog.push(...(verdict.failedParts ?? partsOf(slice)));
-      // The pages that landed, and forced pages that verified on their own (#707), are proposed (see
-      // proposableSlices), so they count as written work.
-      const landedPages = new Set([
-        ...(verdict.landedParts ?? []).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`)),
-        ...(verdict.forcedPages ?? []),
-      ]);
-      pagesWritten += (verdict.pagesWritten ?? []).filter((p) => landedPages.has(p.split('/').slice(-2).join('/'))).length;
+      const landedKeys = new Set((verdict.landedParts ?? []).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`)));
+      pagesWritten += (verdict.pagesWritten ?? []).filter((p) => landedKeys.has(p.split('/').slice(-2).join('/'))).length;
       if (consecutive >= maxConsecutiveFailures) {
-        // Not "this slice is bad" any more — something about the run is.
         stoppedAtFailureLimit = true;
-        backlog.push(...remainingParts(i + 1));
         break;
       }
       continue;
@@ -2472,176 +1295,62 @@ export function executeSlices({
     pagesWritten += verdict.pagesWritten.length;
   }
 
-  const outcome = failed ? 'failed' : slices.length === 0 ? 'nothing-to-do' : 'completed';
-  const runUsage = sumUsage(usageSummaries);
-
-  // 078 US6: retag what a deadline stopped, clear what landed, count failures at low — and say so.
-  const escalations = nextEscalations({
-    prior: runRecord.escalations ?? {}, outcomes, backlog, now: now(),
-    pageExists: (key) => existsSync(join(bundleDir, key)),
-  });
-  for (const { key, failuresAtLow } of stillFailing(runRecord.escalations ?? {}, escalations)) {
-    console.error(`[wiki-maintain] ⚠ escalated to low and still failing (${failuresAtLow}): ${key} — consider parking it (078 US6)`);
-  }
-
-  // The marker advances on every outcome EXCEPT failure. A budget stop still advances, because the
-  // remainder is in the backlog and therefore not lost; a failure must not, because the range it
-  // covered was examined and NOT dealt with (data-model E3).
-  const persistedRecord = writeRunRecord(root, {
-    ...runRecord,
-    coveredCommit: failed ? runRecord.coveredCommit : (baseCommit ?? runRecord.coveredCommit),
-    coveredAt: failed ? runRecord.coveredAt : now(),
-    lastOutcome: outcome,
-    backlog,
-    escalations,
-    lastRunInvocations: invocationRecords,
-    lastRunBudget: { pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget },
-    // 078 US4: estimated from the tap's counts and a dated price table; NOT_CAPTURED, never zero.
-    lastRunUsage: runUsage,
-  });
-
-  const exitCode = failed ? 1 : stoppedAtBudget || backlog.length > 0 ? 3 : 0;
-
-  return { outcome, exitCode, results, pagesWritten, elapsedSeconds: elapsed(), stoppedAtBudget, stoppedAtFailureLimit, backlog, deferred, usage: runUsage, record: persistedRecord, persisted: true };
+  const landedSet = new Set(landedPages({ results }));
+  const landed = requested.filter((k) => landedSet.has(k));
+  const notLanded = requested.filter((k) => !landedSet.has(k));
+  const outcome = slices.length === 0 ? 'nothing-to-do' : notLanded.length > 0 ? 'failed' : 'completed';
+  return {
+    outcome,
+    exitCode: notLanded.length > 0 ? 1 : 0,
+    results,
+    landed,
+    notLanded,
+    pagesWritten,
+    elapsedSeconds: elapsed(),
+    stoppedAtDeadline,
+    stoppedAtFailureLimit,
+    usage: sumUsage(usageSummaries),
+  };
 }
 
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 // CLI
 // ════════════════════════════════════════════════════════════════════════════════════════════════
 
-export function parseArgs(argv) {
-  const opts = {
-    mode: null,
-    since: null,
-    json: false,
-    dryRun: false,
-    maxSlices: null,
-    pageBudget: PAGE_BUDGET,
-    timeBudgetSeconds: TIME_BUDGET_SECONDS,
-    propose: false,
-    base: null,
-    ours: null,
-    theirs: null,
-  };
-  const wants = (i, flag) => {
-    const v = argv[i];
-    if (v === undefined || v.startsWith('--')) throw new Error(`${flag} requires a value`);
-    return v;
-  };
-  const setMode = (m) => {
-    if (opts.mode !== null && opts.mode !== m) throw new Error(`--${opts.mode} and --${m} are mutually exclusive`);
-    opts.mode = m;
-  };
-
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (a === '--plan') setMode('plan');
-    else if (a === '--execute') setMode('execute');
-    else if (a === '--selftest') setMode('selftest');
-    else if (a === '--normalize-links') setMode('normalize-links');
-    else if (a === '--claims-audit') setMode('claims-audit');
-    else if (a === '--merge-record') setMode('merge-record');
-    else if (a === '--base') opts.base = wants(++i, '--base');
-    else if (a === '--ours') opts.ours = wants(++i, '--ours');
-    else if (a === '--theirs') opts.theirs = wants(++i, '--theirs');
-    else if (a === '--propose') opts.propose = true;
-    else if (a === '--json') opts.json = true;
-    else if (a === '--dry-run') opts.dryRun = true;
-    else if (a === '--since') opts.since = wants(++i, '--since');
-    else if (a.startsWith('--since=')) opts.since = a.slice('--since='.length);
-    else if (a === '--max-slices') opts.maxSlices = Number(wants(++i, '--max-slices'));
-    else if (a.startsWith('--max-slices=')) opts.maxSlices = Number(a.slice('--max-slices='.length));
-    else if (a === '--page-budget') opts.pageBudget = Number(wants(++i, '--page-budget'));
-    else if (a.startsWith('--page-budget=')) opts.pageBudget = Number(a.slice('--page-budget='.length));
-    else if (a === '--time-budget') opts.timeBudgetSeconds = Number(wants(++i, '--time-budget'));
-    else if (a.startsWith('--time-budget=')) opts.timeBudgetSeconds = Number(a.slice('--time-budget='.length));
-    else throw new Error(`unknown argument: ${a}`);
-  }
-
-  if (opts.mode === null) throw new Error('one of --plan, --execute, --claims-audit, --normalize-links, --merge-record or --selftest is required');
-  const files = ['base', 'ours', 'theirs'];
-  if (opts.mode === 'merge-record') {
-    for (const f of files) if (opts[f] === null) throw new Error(`--merge-record requires --${f} <file>`);
-  } else {
-    for (const f of files) if (opts[f] !== null) throw new Error(`--${f} is only valid with --merge-record`);
-  }
-  for (const [k, v] of Object.entries({ maxSlices: opts.maxSlices, pageBudget: opts.pageBudget, timeBudgetSeconds: opts.timeBudgetSeconds })) {
-    if (v !== null && (!Number.isFinite(v) || v <= 0)) throw new Error(`${k} must be a positive number`);
-  }
-  return opts;
-}
-
 const USAGE = [
   'Usage:',
-  '  node scripts/wiki-maintain.mjs --plan    [--since <ref>] [--json]',
-  '  node scripts/wiki-maintain.mjs --execute [--since <ref>] [--max-slices <n>] [--dry-run] [--json]',
+  '  node scripts/wiki-maintain.mjs --pages <area/page.md,…> [--propose] [--dry-run] [--json]',
+  '      PAID: rebuild the named DERIVED pages with the generator, verify each, and (with --propose)',
+  '      open or update the one review proposal. A canonical, unknown or missing-source page is refused',
+  '      (exit 2) before anything is spent. --dry-run prints the run messages and invokes nothing.',
   '  node scripts/wiki-maintain.mjs --normalize-links [--dry-run] [--json]  # bundle-wide link form, offline',
-  '  node scripts/wiki-maintain.mjs --claims-audit [--json]  # pages openwiki will force into the next run, offline (#707)',
-  '  node scripts/wiki-maintain.mjs --merge-record --base <file> --ours <file> --theirs <file>  # the record to commit, on stdout (#748)',
   '  node scripts/wiki-maintain.mjs --selftest',
+  '  node scripts/wiki-maintain.mjs --help',
   '',
-  'Invoke through Nx: `pnpm nx wiki-plan infrastructure-as-code` / `pnpm nx wiki-maintain infrastructure-as-code`.',
+  'Routine freshness is NOT this tool: the session that changes a page\'s source refreshes the page',
+  '(node scripts/wiki-refresh.mjs, skill wiki-refresh). Invoke through Nx:',
+  '`pnpm nx wiki-maintain infrastructure-as-code --args="--pages runbooks/x.md"`.',
 ].join('\n');
 
-export function reportPlan(plan, { json }) {
-  if (json) {
-    console.log(JSON.stringify(plan, null, 2));
-    return;
-  }
-  const since = plan.sinceResolved === false
-    ? `${plan.sinceCommit.slice(0, 8)} NOT IN THIS CHECKOUT — full sweep`
-    : plan.sinceCommit ? plan.sinceCommit.slice(0, 8) : 'never covered — full sweep';
-  console.log(`[wiki-maintain] plan at ${plan.baseCommit.slice(0, 8)} (since ${since})`);
-  console.log(`[wiki-maintain] ${plan.changedPaths.length} documentation path(s) changed in range`);
-  // 082 FR-004: before the early return, so parked pages are visible even when nothing is planned.
-  if (plan.drift) {
-    const d = plan.drift;
-    console.log(`[wiki-maintain] drift: ${d.planned.length} planned, ${d.deferred.length} deferred, ${d.parked.length} parked, ${d.unplannable.length} unplannable`);
-    for (const p of d.planned) console.log(`  planned      ${p}`);
-    for (const p of d.deferred) console.log(`  deferred     ${p}  (over the per-run bound or the budget; found again next run)`);
-    for (const p of d.parked) console.log(`  parked       ${p.page} (item #${p.item}, since ${p.since}): ${p.reason}`);
-    for (const p of d.parkedOrphans ?? []) console.log(`  parked, page gone  ${p}  (remove the entry)`);
-    for (const p of d.unplannable) console.log(`  unplannable  ${p}  (directory resource: any commit under it re-flags the page)`);
-  }
-  // 078 US7 FR-026: what a cooldown held this run, and when each page is plannable again.
-  if (plan.cooldowns && (plan.cooldowns.held.length > 0 || plan.cooldowns.orphans.length > 0)) {
-    console.log(`[wiki-maintain] cooldown: ${plan.cooldowns.held.length} held`);
-    for (const h of plan.cooldowns.held) console.log(`  held         ${h.page} (${h.days}-day cooldown, item #${h.item}) plannable from ${h.plannableFrom.slice(0, 10)}`);
-    for (const o of plan.cooldowns.orphans) console.log(`  cooldown, page gone  ${o}  (remove the entry)`);
-  }
-  // #748: work skipped because the open proposal already holds the page fresh — reported, never silent.
-  for (const p of plan.onProposal ?? []) console.log(`  on the open proposal  ${p}  (fresh there; not planned again)`);
-  if (plan.slices.length === 0) {
-    console.log('[wiki-maintain] 0 slices — nothing to document.');
-    return;
-  }
-  console.log(`[wiki-maintain] ${plan.slices.length} slice(s), ${plan.plannedPages} page(s) this run:`);
-  for (const [i, s] of plan.slices.entries()) {
-    console.log(`  ${i + 1}. ${s.area}/ (${s.areaExists ? 'exists' : 'NEW area'}) — ${s.pages.length} page(s): ${s.pages.join(', ')}`);
-    console.log(`     why: ${s.reason}`);
-  }
-  if (plan.deferred.length > 0) {
-    console.log(`[wiki-maintain] ${plan.deferred.length} slice(s) deferred beyond the ${PAGE_BUDGET}-page budget, carried forward:`);
-    for (const s of plan.deferred) console.log(`  - ${s.area}/ — ${s.pages.join(', ')}`);
-  }
-  if (plan.missingEventDocuments?.length > 0) {
-    console.log(`[wiki-maintain] ${plan.missingEventDocuments.length} event-driven document(s) may be missing (reported, not blocking):`);
-    for (const f of plan.missingEventDocuments) console.log(`  - ${f.path} — ${f.reason}`);
-  }
-  if (plan.dropped?.length > 0) {
-    console.log(`[wiki-maintain] ${plan.dropped.length} carried-forward page(s) dropped — the policy no longer covers their source:`);
-    for (const d of plan.dropped) console.log(`  - ${d}`);
-  }
-  if (plan.uncovered.length > 0) {
-    console.log(`[wiki-maintain] ${plan.uncovered.length} changed source(s) no concept covers yet:`);
-    for (const p of plan.uncovered) console.log(`  - ${p}`);
-  }
+const MODES = ['--pages', '--normalize-links', '--selftest'];
+
+export function parseArgs(argv) {
+  const { flags, values } = partitionArgsWithValues(argv, {
+    accepted: ['--normalize-links', '--selftest', '--propose', '--json', '--dry-run'],
+    withValues: ['--pages'],
+    usage: USAGE,
+  });
+  const modes = MODES.filter((m) => flags.has(m) || values.has(m));
+  if (modes.length !== 1) throw new ArgvError(`exactly one of ${MODES.join(', ')} is required\n\n${USAGE}`);
+  const mode = modes[0].slice(2);
+  if (flags.has('--propose') && mode !== 'pages') throw new ArgvError(`--propose applies only to --pages\n\n${USAGE}`);
+  return { mode, pages: values.get('--pages') ?? null, propose: flags.has('--propose'), json: flags.has('--json'), dryRun: flags.has('--dry-run') };
 }
 
 // ── FR-008: --selftest ──────────────────────────────────────────────────────────
-// Proves the planner and — above all — the VERIFIER still detect their cases, against T001's
-// fixtures and a deliberately sabotaged generator. Offline and keyless: a check on the machinery that
-// needed the paid machinery to run would be useless exactly when it matters.
+// Proves the VERIFIER still detects its cases, against T001's fixtures and a deliberately sabotaged
+// generator. Offline and keyless: a check on the machinery that needed the paid machinery to run would
+// be useless exactly when it matters.
 
 function selftest() {
   const fails = [];
@@ -2650,142 +1359,81 @@ function selftest() {
   };
 
   const fixtures = join(REPO_ROOT, 'scripts', '__tests__', 'fixtures', 'wiki-maintain');
-
-  // ── planner ───────────────────────────────────────────────────────────────────
-  const mixed = planSlices({
-    bundleRoot: join(fixtures, 'new-and-existing-areas'),
-    changedPaths: [],
-    backlog: [
-      { area: 'gotchas', pages: ['musl-vendored-openssl.md'], areaExists: false, reason: 'x' },
-      { area: 'runbooks', pages: ['brand-new.md'], areaExists: true, reason: 'x' },
-    ],
-  });
-  check('planner splits areas', mixed.length === 2, `got ${mixed.length} slice(s)`);
-  check('planner derives areaExists from the tree',
-    mixed.find((s) => s.area === 'gotchas')?.areaExists === true && mixed.find((s) => s.area === 'runbooks')?.areaExists === false,
-    'a caller-supplied areaExists must be ignored');
-
-  const big = planSlices({
-    bundleRoot: join(fixtures, 'new-and-existing-areas'),
-    changedPaths: [],
-    backlog: [{ area: 'gotchas', pages: Array.from({ length: 20 }, (_, i) => `p${i}.md`), reason: 'x' }],
-  });
-  check(`planner caps slices at ${MAX_PAGES_PER_SLICE} pages`, big.every((s) => s.pages.length <= MAX_PAGES_PER_SLICE),
-    `sizes ${big.map((s) => s.pages.length).join(',')}`);
+  const quiet = () => {}; // the stub generator's runs are expected to fail; their log lines are noise here
+  const log = console.log;
+  const err = console.error;
 
   // ── run message ───────────────────────────────────────────────────────────────
   const message = renderRunMessage({ area: 'gotchas', pages: ['a.md', 'b.md'], areaExists: true, reason: 'x' });
   check('run message names every page', message.includes('a.md') && message.includes('b.md'));
   check('run message survives shell parsing', !/["`$\\\n\r]/.test(message), JSON.stringify(message.slice(0, 80)));
 
-  // ── verifier: the sabotaged generator ─────────────────────────────────────────
-  // A generator that exits 0 having written nothing. This is the exact false green feature 043
-  // measured, and a clean verdict here means the detector is broken.
   const scratch = mkdtempSync(join(tmpdir(), 'wiki-selftest-'));
+  console.log = quiet;
+  console.error = quiet;
   try {
-    cpSync(join(fixtures, 'conformant-bundle'), join(scratch, DEFAULT_BUNDLE), { recursive: true });
+    const bundle = join(scratch, DEFAULT_BUNDLE);
+    cpSync(join(fixtures, 'conformant-bundle'), bundle, { recursive: true });
+    const source = 'scripts/__tests__/fixtures/wiki-maintain/source.txt';
+    const page = (title, fp) =>
+      `---\ntype: Convention\ntitle: ${title}\ndescription: Written by --selftest.\nresource: ${source}\nresource-sha256: ${fp}\n---\nBody.\n`;
+    const current = readFileSync(join(bundle, 'invariants', 'auth-chain.md'), 'utf8').match(/^resource-sha256: (\w+)$/m)?.[1];
+    writeFileSync(join(bundle, 'invariants', 'stale.md'), page('Stale', createHash('sha256').update('older').digest('hex')));
+    writeFileSync(join(bundle, 'invariants', 'index.md'), '# Invariants\n- [Auth Chain](auth-chain.md)\n- [Stale](stale.md)\n');
     for (const args of [['init', '-q'], ['config', 'user.email', 'selftest@example.invalid'], ['config', 'user.name', 'selftest'], ['add', '-A'], ['commit', '-qm', 'baseline']]) {
       spawnSync('git', args, { cwd: scratch, encoding: 'utf8' });
     }
 
-    const sabotaged = executeSlices({
-      root: scratch,
-      slices: [{ area: 'invariants', pages: ['nothing.md'], areaExists: true, reason: 'selftest' }],
-      record: { ...readRunRecord(scratch), coveredCommit: 'unchanged-marker' },
-      invoke: () => ({ status: 0 }),
-    });
+    // ── the sabotaged generator: exits 0 having written nothing ─────────────────
+    const sabotaged = executeSlices({ root: scratch, slices: [{ area: 'invariants', pages: ['nothing.md'], areaExists: true, reason: 'selftest' }], invoke: () => ({ status: 0 }), attemptsPerSlice: 1 });
     check('verifier fails a zero-page slice', sabotaged.outcome === 'failed', `got ${sabotaged.outcome}`);
     check('verifier exits 1 on failure', sabotaged.exitCode === 1, `got ${sabotaged.exitCode}`);
-    check('failed slice returns to the backlog', sabotaged.backlog.length === 1);
-    check('marker does not advance on failure', readRunRecord(scratch).coveredCommit === 'unchanged-marker');
+    check('the page that did not land is named', sabotaged.notLanded.join() === 'invariants/nothing.md');
 
-    // ...and a slice that genuinely writes its page verifies clean, so the detector is not simply
-    // failing everything.
-    const honest = executeSlices({
+    // ── a stale page left unrewritten fails, by name (#587); a rewrite lands and is recorded ─────
+    const skipped = executeSlices({ root: scratch, slices: [{ area: 'invariants', pages: ['stale.md'], kind: 'refresh', areaExists: true, reason: 'selftest' }], invoke: () => ({ status: 0 }), attemptsPerSlice: 1 });
+    check('verifier fails a slice that left a stale page unrewritten', skipped.outcome === 'failed', `got ${skipped.outcome}`);
+    check('the stale page is named', JSON.stringify(skipped.results[0]?.stalePages) === '["invariants/stale.md"]', JSON.stringify(skipped.results[0]?.stalePages));
+    const rebuilt = executeSlices({
       root: scratch,
-      slices: [{ area: 'invariants', pages: ['selftest-page.md'], areaExists: true, reason: 'selftest' }],
-      record: readRunRecord(scratch),
-      baseCommit: 'advanced-marker',
+      slices: [{ area: 'invariants', pages: ['stale.md'], kind: 'refresh', areaExists: true, reason: 'selftest' }],
       invoke: () => {
-        writeFileSync(join(scratch, DEFAULT_BUNDLE, 'invariants', 'selftest-page.md'),
-          '---\ntype: Convention\ntitle: Selftest\ndescription: Written by --selftest.\n---\nBody.\n');
-        writeFileSync(join(scratch, DEFAULT_BUNDLE, 'invariants', 'index.md'),
-          '# Invariants\n- [Auth Chain](auth-chain.md)\n- [Selftest](selftest-page.md)\n');
+        writeFileSync(join(bundle, 'invariants', 'stale.md'), readFileSync(join(bundle, 'invariants', 'stale.md'), 'utf8').replace('Body.', 'Body, rebuilt.'));
         return { status: 0 };
       },
     });
-    check('verifier passes a slice that produced pages', honest.outcome === 'completed',
-      `got ${honest.outcome}: ${honest.results.flatMap((r) => r.violations ?? []).join('; ')}`);
-    check('marker advances on success', readRunRecord(scratch).coveredCommit === 'advanced-marker');
+    check('a rewritten page lands', rebuilt.outcome === 'completed', `got ${rebuilt.outcome}: ${rebuilt.results.flatMap((r) => r.violations ?? []).join('; ')}`);
+    check('a landed page carries its current source fingerprint', current !== undefined && readFileSync(join(bundle, 'invariants', 'stale.md'), 'utf8').includes(`resource-sha256: ${current}`));
 
-    // ── verifier: non-conformant output ─────────────────────────────────────────
+    // ── a fresh page may honestly write nothing ──────────────────────────────────
+    const accurate = executeSlices({ root: scratch, slices: [{ area: 'invariants', pages: ['auth-chain.md'], kind: 'refresh', areaExists: true, reason: 'selftest' }], invoke: () => ({ status: 0 }) });
+    check('a page whose source did not move may write nothing', accurate.outcome === 'completed' && accurate.results[0]?.noChange === true,
+      `got ${accurate.outcome}: ${accurate.results.flatMap((r) => r.violations ?? []).join('; ')}`);
+
+    // ── non-conformant output ────────────────────────────────────────────────────
     const broken = executeSlices({
       root: scratch,
       slices: [{ area: 'invariants', pages: ['broken.md'], areaExists: true, reason: 'selftest' }],
-      record: readRunRecord(scratch),
       invoke: () => {
-        writeFileSync(join(scratch, DEFAULT_BUNDLE, 'invariants', 'broken.md'), '---\ntitle: no type\n---\nBody.\n');
+        writeFileSync(join(bundle, 'invariants', 'broken.md'), '---\ntitle: no type\n---\nBody.\n');
         return { status: 0 };
       },
+      attemptsPerSlice: 1,
     });
     check('verifier fails a slice that broke conformance', broken.outcome === 'failed', `got ${broken.outcome}`);
+    // No run record, no Claims sidecars, no manifest: a rebuild leaves no hidden bookkeeping behind.
+    check('a rebuild writes no bookkeeping file', readdirSync(bundle).filter((n) => n.startsWith('.')).length === 0, readdirSync(bundle).join(','));
   } finally {
+    console.log = log;
+    console.error = err;
     rmSync(scratch, { recursive: true, force: true });
   }
 
-  // ── verifier: the generator that skips some of a slice's pages (item #587) ─────
-  // Measured 2026-09-26: a 3-page refresh slice selected because docs/runbooks/renovate.md changed
-  // came back with renovate.md untouched, was counted as "nothing needed changing", and the marker
-  // moved past the change for good. A stale page left unwritten must fail, BY NAME; a page whose
-  // source has not moved since its stamp may still honestly write nothing.
-  const partial = mkdtempSync(join(tmpdir(), 'wiki-selftest-'));
-  try {
-    const bundle = join(partial, DEFAULT_BUNDLE);
-    cpSync(join(fixtures, 'conformant-bundle'), bundle, { recursive: true });
-    // `README.md` because the OKF gate resolves `resource` against the real checkout; the scratch
-    // commit below is what gives the source a commit date newer than the stale stamps.
-    writeFileSync(join(partial, 'README.md'), 'source\n');
-    const page = (title, stamp) =>
-      `---\ntype: Convention\ntitle: ${title}\ndescription: Written by --selftest.\nresource: README.md\ntimestamp: ${stamp}\n---\nBody.\n`;
-    writeFileSync(join(bundle, 'invariants', 'stale-a.md'), page('Stale A', '2020-01-01T00:00:00Z'));
-    writeFileSync(join(bundle, 'invariants', 'stale-b.md'), page('Stale B', '2020-01-01T00:00:00Z'));
-    writeFileSync(join(bundle, 'invariants', 'fresh.md'), page('Fresh', '2099-01-01T00:00:00Z'));
-    writeFileSync(join(bundle, 'invariants', 'index.md'),
-      '# Invariants\n- [Auth Chain](auth-chain.md)\n- [Stale A](stale-a.md)\n- [Stale B](stale-b.md)\n- [Fresh](fresh.md)\n');
-    for (const args of [['init', '-q'], ['config', 'user.email', 'selftest@example.invalid'], ['config', 'user.name', 'selftest'], ['add', '-A'], ['commit', '-qm', 'baseline']]) {
-      spawnSync('git', args, { cwd: partial, encoding: 'utf8' });
-    }
-
-    const skipped = executeSlices({
-      root: partial,
-      slices: [{ area: 'invariants', pages: ['stale-a.md', 'stale-b.md'], kind: 'refresh', areaExists: true, reason: 'source changed: README.md' }],
-      record: { ...readRunRecord(partial), coveredCommit: 'unchanged-marker' },
-      baseCommit: 'advanced-marker',
-      invoke: () => {
-        writeFileSync(join(bundle, 'invariants', 'stale-a.md'), page('Stale A', '2099-01-01T00:00:00Z'));
-        return { status: 0 };
-      },
-    });
-    const why = skipped.results.flatMap((r) => r.violations ?? []).join('; ');
-    check('verifier fails a slice that skipped a stale page', skipped.outcome === 'failed', `got ${skipped.outcome}`);
-    check('the skipped page is named', why.includes('invariants/stale-b.md') && !why.includes('invariants/stale-a.md'), why || 'no violation');
-    check('the skipped page is reported per page', JSON.stringify(skipped.results[0]?.stalePages) === '["invariants/stale-b.md"]',
-      `got ${JSON.stringify(skipped.results[0]?.stalePages)}`);
-    check('a skipped stale page returns to the backlog', skipped.backlog.some((s) => s.pages.includes('stale-b.md')));
-    check('marker does not advance over a skipped stale page', readRunRecord(partial).coveredCommit === 'unchanged-marker');
-
-    const accurate = executeSlices({
-      root: partial,
-      slices: [{ area: 'invariants', pages: ['fresh.md'], kind: 'refresh', areaExists: true, reason: 'carried forward' }],
-      record: readRunRecord(partial),
-      baseCommit: 'advanced-marker',
-      invoke: () => ({ status: 0 }),
-    });
-    check('a refresh whose source did not move may write nothing', accurate.outcome === 'completed' && accurate.results[0]?.noChange === true,
-      `got ${accurate.outcome}: ${accurate.results.flatMap((r) => r.violations ?? []).join('; ')}`);
-    check('marker advances over an honest no-change', readRunRecord(partial).coveredCommit === 'advanced-marker');
-  } finally {
-    rmSync(partial, { recursive: true, force: true });
+  // ── the page list ─────────────────────────────────────────────────────────────
+  for (const [label, pages] of [['an empty list', ','], ['a canonical page', 'invariants/auth-chain.md'], ['an unknown page', 'runbooks/no-such-page.md']]) {
+    let refused = false;
+    try { pagesToSlices({ pages }); } catch (e) { refused = e instanceof PagesError; }
+    check(`the page list refuses ${label}`, refused);
   }
 
   // ── policy ────────────────────────────────────────────────────────────────────
@@ -2795,323 +1443,175 @@ function selftest() {
     check('policy forbids the generator outside the bundle', !mayWrite(policy, 'docs/runbooks/local-dev.md', 'generator').allowed);
     check('policy forbids writing the protection manifest', !mayWrite(policy, 'openwiki/protected.yaml', 'generator').allowed);
     check('policy forbids writing the generation brief', !mayWrite(policy, 'openwiki/INSTRUCTIONS.md', 'generator').allowed);
-  } catch (err) {
-    fails.push(`policy did not load: ${err.message}`);
+  } catch (e) {
+    fails.push(`policy did not load: ${e.message}`);
   }
 
   if (fails.length > 0) {
     console.error('✗ wiki-maintain --selftest FAILED:\n  ' + fails.join('\n  '));
     return 1;
   }
-  console.log('✓ wiki-maintain --selftest passed (planner bounds and area derivation, shell-safe run message, zero-page detection, per-page stale-skip detection, conformance regression, marker advance/hold, policy write scope)');
+  console.log('✓ wiki-maintain --selftest passed (shell-safe run message, zero-page detection, stale-page detection by fingerprint, landed page recorded, honest no-change, conformance regression, page-list refusals, policy write scope, no run record)');
   return 0;
 }
 
-/** What a reviewer sees. States what was written, what is outstanding, and what may be missing. */
-export function proposalBody(plan, result) {
+/** What a reviewer sees: what was asked for, what landed, what did not and why. */
+export function proposalBody(result) {
   const lines = [
-    'Automated OpenWiki knowledge-bundle maintenance.',
+    'Manual OpenWiki rebuild of operator-named pages (feature 098: routine refreshes are made by the coding session that changes a source; this is the operator\'s rebuild path).',
     '',
-    `Covering documentation changes since \`${plan.sinceCommit ? plan.sinceCommit.slice(0, 12) : 'the first commit'}\` up to \`${plan.baseCommit.slice(0, 12)}\`.`,
+    `**Outcome**: \`${result.outcome}\` — ${result.landed.length} page(s) landed, ${result.notLanded.length} not landed, in ${result.elapsedSeconds}s.`,
     '',
-    `**Outcome**: \`${result.outcome}\` — ${result.pagesWritten} page(s) written in ${result.elapsedSeconds}s.`,
-    '',
-    'Every slice below was verified by the pages that actually appeared in the working tree and by the',
-    'OKF conformance gate — never by the generator\'s exit status.',
+    'Every page below was verified by what actually appeared in the working tree, by the OKF conformance',
+    'gate (V17 included — each landed page carries its source\'s current fingerprint) and by the governance',
+    'gate — never by the generator\'s exit status.',
     '',
   ];
   for (const r of result.results) {
-    lines.push(`- ${r.ok ? '✅' : '✗'} \`${r.slice.area}/\`${r.slice.drift ? ' (drift)' : ''} — ${(r.pagesWritten ?? []).length} page(s): ${r.slice.pages.join(', ')}`);
+    lines.push(`- ${r.ok ? '✅' : '✗'} \`${r.slice.area}/\` — ${(r.pagesWritten ?? []).length} page(s) written: ${r.slice.pages.join(', ')}`);
     for (const v of r.violations ?? []) lines.push(`  - ${v}`);
-    if ((r.forcedPages ?? []).length > 0) lines.push(`  - proposed anyway: ${r.forcedPages.join(', ')} — not requested, forced by openwiki's stale Claims, and verified on its own (#707)`);
   }
-  if (result.stoppedAtFailureLimit) {
-    console.error(`[wiki-maintain] stopped after ${result.results.filter((r) => !r.ok).length} consecutive slice failures — this looks like a broken run rather than a bad slice.`);
-  }
-  if (result.stoppedAtBudget) {
-    lines.push('', `Stopped at the run budget with ${result.deferred.length} slice(s) outstanding. That is exit 3 — **not** a failure; the remainder is in the backlog and the next run picks it up.`);
-  }
-  if (plan.missingEventDocuments?.length > 0) {
-    lines.push('', '**Possibly missing event-driven documents** (reported, not blocking):');
-    for (const f of plan.missingEventDocuments) lines.push(`- \`${f.path}\` — ${f.reason}`);
-  }
-  if (plan.uncovered?.length > 0) {
-    lines.push('', 'Changed sources no concept covers yet:');
-    for (const p of plan.uncovered) lines.push(`- \`${p}\``);
-  }
-  lines.push('', 'Review this like any hand-authored documentation change. A commit you push onto this branch survives every subsequent update — the branch is rebased and appended to, never force-replaced. Do not edit a Claims-verified page in place (one listed in openwiki/.page-manifest.json): openwiki then refuses every later run. Uncover it in the same commit instead — see docs/runbooks/wiki-maintenance.md, "The proposal".');
+  if (result.notLanded.length > 0) lines.push('', `Not landed: ${result.notLanded.map((p) => `\`${p}\``).join(', ')} — re-dispatch them, or refresh them in a session.`);
+  lines.push('', 'Review this like any hand-authored documentation change. A commit you push onto this branch survives every subsequent update — the branch is rebased and appended to, never force-replaced. A hand edit here is fine: re-record the page with `node scripts/wiki-refresh.mjs --record <page>` if its source changed.');
   return lines.join('\n');
 }
 
-// The Forgejo client is async (fetch); the lifecycle functions are otherwise synchronous so they can
-// be unit-tested with an in-memory forge. These wrappers await the client without making the whole
-// lifecycle async for every caller.
-async function reconcileProposalAsync({ root, forge, branch = PROPOSAL_BRANCH, persist = true }) {
-  const record = readRunRecord(root);
-  let reconciled = { record, action: 'none' };
-  if (record.proposal?.number) {
-    const pull = await forge.getPull(record.proposal.number);
-    reconciled = reconcileProposal({ root, record, forge: { getPull: () => pull }, persist });
-    if (reconciled.action === 'still-open') return reconciled;
-  }
-  // No open proposal in the record — it was lost, OR it pointed at one that has since merged or closed
-  // while ANOTHER run opened a new one (#748, run 5229: its pointer was #745, merged in the same second
-  // as the merge that started it, while #747 was open). Adopt what the forge says is open, BEFORE any
-  // paid work: the run then continues that branch, instead of generating onto a fresh one that the
-  // publish guard must refuse to push.
+/** The open proposal on the forge, or null. The forge is the only record of it (no run record). */
+async function openProposalOn(forge, branch = PROPOSAL_BRANCH) {
   const open = await Promise.resolve().then(() => forge.listPulls({ state: 'open' })).catch(() => []);
-  const found = open.find((p) => (p.head?.ref ?? p.head) === branch);
-  if (!found) return reconciled;
-  const next = { ...reconciled.record, proposal: { branch, number: found.number, markerBefore: reconciled.record.coveredCommit ?? null, slices: [] } };
-  const adopted = persist ? writeRunRecord(root, next) : next;
-  console.log(reconciled.action === 'none'
-    ? `[wiki-maintain] adopted open proposal #${found.number} into the run record.`
-    : `[wiki-maintain] the recorded proposal #${record.proposal.number} was ${reconciled.action}, and #${found.number} is open on ${branch} — another run opened it; adopted, so this run continues it (#748).`);
-  return { record: adopted, action: 'adopted' };
-}
-
-/**
- * Is this checkout's committed run record BEHIND the remote base branch's (#748)? A queued run checks
- * out its EVENT commit; when an earlier run has committed its record since, planning from the older one
- * repays work that run already did, and committing over it erases what it recorded. Null when it is not
- * behind, or when that cannot be told (a failed fetch, or a checkout that is not an ancestor of the
- * tip): the guard only ever stops a run on positive evidence.
- */
-export function recordBehindRemote({ root = REPO_ROOT, remote = 'origin', baseBranch = 'main' } = {}) {
-  const run = (args) => spawnSync('git', args, { cwd: root, encoding: 'utf8' });
-  if (run(['fetch', '--quiet', remote, baseBranch]).status !== 0) {
-    console.error(`[wiki-maintain] could not fetch ${remote}/${baseBranch} to check the run record is current — proceeding on this checkout's.`);
-    return null;
-  }
-  const tip = run(['rev-parse', 'FETCH_HEAD']).stdout.trim();
-  const head = run(['rev-parse', 'HEAD']).stdout.trim();
-  if (!tip || tip === head || run(['merge-base', '--is-ancestor', head, tip]).status !== 0) return null;
-  const at = (rev) => run(['show', `${rev}:${STATE_FILE}`]).stdout;
-  return at(head) === at(tip) ? null : { head, tip };
-}
-
-/** The open proposal's branch as a ref this checkout can read, fetched first when there is a remote. */
-function proposalRefFor(root, remote, branch = PROPOSAL_BRANCH) {
-  if (remote) {
-    spawnSync('git', ['fetch', '--quiet', remote, `+refs/heads/${branch}:refs/remotes/${remote}/${branch}`], { cwd: root, encoding: 'utf8' });
-    const ref = `refs/remotes/${remote}/${branch}`;
-    return commitResolves(root, ref) ? ref : null;
-  }
-  return commitResolves(root, branch) ? branch : null;
+  return (open ?? []).find((p) => (p.head?.ref ?? p.head) === branch) ?? null;
 }
 
 async function publishProposalAsync({ root, forge, branch = PROPOSAL_BRANCH, ...rest }) {
-  const record = readRunRecord(root);
-
-  let existing = record.proposal?.number ? await Promise.resolve().then(() => forge.getPull(record.proposal.number)).catch(() => null) : null;
-  if (!existing || existing.state !== 'open') {
-    // The record did not know about it. Ask the forge, which does.
-    const open = await Promise.resolve().then(() => forge.listPulls({ state: 'open' })).catch(() => []);
-    existing = open.find((p) => p.head?.ref === branch) ?? null;
-    if (existing) console.log(`[wiki-maintain] adopting existing open proposal #${existing.number} — the run record had lost the pointer to it.`);
-  }
+  const existing = await openProposalOn(forge, branch);
+  if (existing) console.log(`[wiki-maintain] continuing open proposal #${existing.number}.`);
 
   const created = [];
   const sync = {
-    getPull: () => existing,
     listPulls: () => (existing ? [existing] : []),
     createPull: (args) => { created.push(args); return { number: -1 }; },
     updatePull: (number) => ({ number }),
   };
-  const proposal = publishProposal({ root, record, forge: sync, branch, ...rest });
+  const proposal = publishProposal({ root, forge: sync, branch, ...rest });
 
   if (created.length > 0) {
     try {
       const pull = await forge.createPull(created[0]);
       return { ...proposal, number: pull.number };
-    } catch (err) {
-      // 409 = one already exists for this head. A race between the look-up above and this call, or a
-      // forge that knows something the list did not. Adopt it rather than failing the whole run over
-      // a proposal that is already there.
-      if (!/→ 409/.test(err.message)) throw err;
-      const open = await Promise.resolve().then(() => forge.listPulls({ state: 'open' })).catch(() => []);
-      const found = open.find((p) => p.head?.ref === branch);
-      if (!found) throw err;
+    } catch (e) {
+      // 409 = one already exists for this head: a race between the look-up above and this call.
+      // Adopt it rather than failing the whole run over a proposal that is already there.
+      if (!/→ 409/.test(e.message)) throw e;
+      const found = await openProposalOn(forge, branch);
+      if (!found) throw e;
       console.log(`[wiki-maintain] a proposal for ${branch} already existed (#${found.number}) — updating it instead of opening another.`);
-      await forge.updatePull(found.number, { body: rest.body });
+      await forge.updatePull(found.number, { body: rest.body, title: rest.title ?? PROPOSAL_TITLE });
       return { ...proposal, number: found.number };
     }
   }
-  await forge.updatePull(existing.number, { body: rest.body });
+  await forge.updatePull(existing.number, { body: rest.body, title: rest.title ?? PROPOSAL_TITLE });
   return { ...proposal, number: existing.number };
 }
 
 /**
- * The --execute path after its credential check — reconcile, plan, preflight, prepare the proposal
- * branch, generate and verify, publish — returning the exit code. Exported so a test can drive the
- * whole sequence with a stub generator and an in-memory forge: the ORDER of these steps is where
- * item #619 lived, and no test of a single step could see it. `forge` null means no proposal.
+ * The rebuild after its argument and credential checks — refuse a bad page list, preflight, prepare
+ * the proposal branch, generate and verify, publish — returning the exit code. Exported so a test can
+ * drive the whole sequence with a stub generator and an in-memory forge. `forge` null means no proposal.
  */
 export async function executeRun({
   root = REPO_ROOT,
+  bundleRoot = null,
   opts,
   policy = null,
   forge = null,
   invoke = undefined,
   preflight = undefined,
   deadlineMs = null,
-  effortPolicy = escalationPolicy(),
+  effort = null,
   baseBranch = 'main',
   remote = null,
   archiveEnv = null,
+  attemptsPerSlice = ATTEMPTS_PER_SLICE,
+  sourceRoot = REPO_ROOT,
 } = {}) {
-  // Reconcile FIRST — before planning, not merely before generating (item #619). A proposal closed
-  // unmerged returns its slices to the backlog and rolls the marker back (FR-016b); a plan computed
-  // before that sees neither, and executeSlices then persists ITS backlog and marker over the
-  // reconciled ones. Measured: proposal #615's slice vanished on the very next run. Reconciling is
-  // free (one forge read), so it also precedes the preflight.
-  // A dry run reconciles in memory only: it persists nothing, here as everywhere.
-  // #748: a queued run starts from its EVENT commit. If another run has committed a newer record since,
-  // stop here — free — rather than plan from the old one, pay for work it already did, and then fail
-  // to publish it. The workflow also moves to the tip after the debounce; this catches the race.
-  if (remote) {
-    const behind = recordBehindRemote({ root, remote, baseBranch });
-    if (behind) {
-      console.error(`[wiki-maintain] this checkout's run record (${behind.head.slice(0, 8)}) is behind ${remote}/${baseBranch}'s (${behind.tip.slice(0, 8)}): another run has committed a newer record since this run's event commit.`);
-      console.error('[wiki-maintain] Planning from it would repay work already done and overwrite the newer record (#748) — stopping before any paid generation. Nothing was attempted or recorded; the next run plans from the current record.');
-      return 0;
-    }
-  }
-
-  let reconciled = { action: 'none', record: undefined };
-  if (forge) {
-    try {
-      reconciled = await reconcileProposalAsync({ root, forge, persist: !opts.dryRun });
-    } catch (err) {
-      // Planning without the forge's answer is exactly #619's failure, so this is not skipped.
-      console.error(`[wiki-maintain] could not reconcile the previous proposal with the forge: ${err.message}`);
-      console.error('[wiki-maintain] Nothing was planned or attempted, and the record is unchanged.');
-      return 2;
-    }
-    if (reconciled.action !== 'none' && reconciled.action !== 'still-open') {
-      console.log(`[wiki-maintain] previous proposal ${reconciled.action} — record reconciled${opts.dryRun ? ' (dry run: in memory only)' : ''}.`);
-    }
-  }
-
-  let plan;
+  let slices;
   try {
-    // #748: pages the open proposal already holds fresh are not planned again.
-    const proposalOpen = reconciled.action === 'still-open' || reconciled.action === 'adopted';
-    const proposalRef = forge && proposalOpen ? proposalRefFor(root, remote) : null;
-    plan = computePlan({ root, since: opts.since, policy, pageBudget: opts.pageBudget, record: reconciled.record, proposalRef });
-  } catch (err) {
-    console.error(`[wiki-maintain] ${err.message}`);
+    slices = pagesToSlices({ root, bundleRoot, pages: opts.pages, sourceRoot });
+  } catch (e) {
+    if (!(e instanceof PagesError)) throw e;
+    console.error(`[wiki-maintain] ✗ ${e.message}`);
+    console.error('[wiki-maintain] Nothing was invoked.');
     return 2;
   }
+  console.log(`[wiki-maintain] rebuilding ${slices.reduce((n, s) => n + s.pages.length, 0)} named page(s) in ${slices.length} slice(s):`);
+  for (const s of slices) console.log(`  ${s.area}/ — ${s.pages.join(', ')}`);
 
-  if (plan.slices.length === 0) {
-    // The whole point of the run record: a run that finds nothing to document advances the marker
-    // and costs nothing, so the next run over the same tree is free too (FR-012).
-    //
-    // A DRY RUN persists nothing, here as everywhere. This branch used to advance the marker even
-    // under --dry-run, which meant asking "what would this do?" silently certified the range as
-    // covered — the next real run would then find nothing and skip work that was never done.
-    if (opts.dryRun) {
-      console.log('[wiki-maintain] nothing to document — dry run, so the marker was NOT advanced.');
-      return 0;
-    }
-    const record = readRunRecord(root);
-    writeRunRecord(root, {
-      ...record,
-      coveredCommit: plan.baseCommit,
-      coveredAt: new Date().toISOString(),
-      lastOutcome: 'nothing-to-do',
-      lastRunBudget: { pagesWritten: 0, elapsedSeconds: 0, stoppedAtBudget: false },
-    });
-    console.log('[wiki-maintain] nothing to document — marker advanced, no model invoked.');
-    if (opts.json) console.log(JSON.stringify({ outcome: 'nothing-to-do', pagesWritten: 0, plan }, null, 2));
-    return 0;
-  }
-
-  reportPlan(plan, { json: false });
-
-  // 078 FR-005: prove the configured model is callable before touching the proposal branch or
-  // paying for a slice. Exit 2 like a missing credential — never nothing-to-do, and no outcome is
-  // recorded (a proposal reconcile above is the forge's truth, not this run's, so it stands).
-  const check = preflightGate({ dryRun: opts.dryRun, root, preflight });
+  // 078 FR-005: prove the configured model is callable before touching the proposal branch or paying
+  // for a slice. A stubbed generator needs no model check; the real one does.
+  const check = preflightGate({ dryRun: opts.dryRun, root, preflight: preflight === undefined ? (invoke === undefined ? defaultPreflight : null) : preflight });
   if (!check.ok) {
     console.error(`[wiki-maintain] ✗ preflight failed — ${check.detail}`);
-    console.error('[wiki-maintain] The configured model could not be called; no slice was attempted and no outcome was recorded.');
+    console.error('[wiki-maintain] The configured model could not be called; nothing was attempted.');
     return 2;
   }
   if (check.detail !== 'skipped') console.log(`[wiki-maintain] preflight ok — ${check.detail}`);
 
-  if (forge) {
-    prepareProposalBranch({
-      root,
-      baseBranch,
-      remote,
-      // Continue the remote branch only while its proposal is open; see prepareProposalBranch.
-      adoptRemote: reconciled.action === 'still-open' || reconciled.action === 'adopted',
-    });
+  if (forge && !opts.dryRun) {
+    // Continue the remote branch only while its proposal is open: a closed-unmerged proposal's commits
+    // are content a reviewer rejected, and reviving them would re-propose it.
+    const open = await openProposalOn(forge);
+    prepareProposalBranch({ root, baseBranch, remote, adoptRemote: open !== null });
   }
 
-  // The marker as this run FOUND it. A proposal this run opens remembers it as `markerBefore`, so a
-  // later close rolls back to here; read after executeSlices, it is already this run's baseCommit
-  // and the roll-back is a no-op (item #619: proposal #615 recorded its own run's base).
-  const recordBefore = readRunRecord(root);
   const result = executeSlices({
-    deadlineMs,
     root,
-    slices: plan.slices,
-    carryForward: plan.deferred,
+    bundleRoot,
+    slices,
     policy,
-    pageBudget: opts.pageBudget,
-    timeBudgetSeconds: opts.timeBudgetSeconds,
-    maxSlices: opts.maxSlices,
     dryRun: opts.dryRun,
-    baseCommit: plan.baseCommit,
-    effortPolicy,
+    deadlineMs,
+    effort,
     archiveEnv,
+    attemptsPerSlice,
+    sourceRoot,
     ...(invoke === undefined ? {} : { invoke }),
   });
 
   reportRun(result, opts);
 
-  if (forge && result.pagesWritten > 0) {
-    const landed = proposableSlices(result);
+  if (forge && !opts.dryRun && result.landed.length > 0) {
     let proposal;
     try {
       proposal = await publishProposalAsync({
         root,
         forge,
         baseBranch,
-        markerBefore: recordBefore.coveredCommit ?? null,
-        body: proposalBody(plan, result),
-        slices: landed,
+        body: proposalBody(result),
+        slices: result.landed,
         remote,
         returnTo: baseBranch,
       });
-    } catch (err) {
-      console.error(`[wiki-maintain] could not publish the proposal: ${err.message}`);
+    } catch (e) {
+      console.error(`[wiki-maintain] could not publish the proposal: ${e.message}`);
       spawnSync('git', ['checkout', baseBranch], { cwd: root, stdio: 'ignore' });
-      holdMarkerOnPublishFailure({ root, before: recordBefore, slices: landed });
-      console.error('[wiki-maintain] marker held and this run\'s slices returned to the backlog — nothing was proposed.');
+      console.error('[wiki-maintain] nothing was proposed; the landed pages exist only on this runner.');
       return 1;
     }
-    const record = readRunRecord(root);
-    writeRunRecord(root, { ...record, proposal });
     console.log(`[wiki-maintain] proposal #${proposal.number} on ${proposal.branch} — awaiting HUMAN review. Never auto-merged.`);
   }
 
   return result.exitCode;
 }
 
-function reportRun(result, { json }) {
+export function reportRun(result, { json = false } = {}) {
   if (json) {
     console.log(JSON.stringify({
       outcome: result.outcome,
       exitCode: result.exitCode,
+      landed: result.landed,
+      notLanded: result.notLanded,
       pagesWritten: result.pagesWritten,
       elapsedSeconds: result.elapsedSeconds,
-      stoppedAtBudget: result.stoppedAtBudget,
-      deferred: result.deferred,
-      backlog: result.backlog,
       results: result.results.map((r) => ({
         area: r.slice.area,
         pages: r.slice.pages,
@@ -3120,13 +1620,14 @@ function reportRun(result, { json }) {
         violations: r.violations ?? [],
         rateLimited: r.rateLimited ?? null,
         command: r.command ?? null,
+        runMessage: r.runMessage ?? null,
       })),
     }, null, 2));
     return;
   }
 
   if (result.outcome === 'dry-run') {
-    console.log('[wiki-maintain] dry run — nothing was invoked. Per slice, the command would be:');
+    console.log('[wiki-maintain] dry run — nothing was invoked. Per invocation, the command would be:');
     for (const r of result.results) {
       console.log(`  ${r.slice.area}/ → ${r.command.join(' ')}`);
       console.log(`     ${RUN_MESSAGE_ENV}=${r.runMessage}`);
@@ -3136,17 +1637,21 @@ function reportRun(result, { json }) {
 
   for (const r of result.results) {
     const tries = r.attempts > 1 ? ` after ${r.attempts} attempts` : '';
-    if (r.ok && r.noChange) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — every requested page is present and nothing needed changing (0 written)${tries}`);
-    else if (r.ok) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — ${r.pagesWritten.length} page(s) written and verified${tries}`);
+    if (r.ok && r.noChange) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — every requested page is present and current; nothing needed changing (0 written)${tries}`);
+    else if (r.ok) console.log(`[wiki-maintain] ✅ ${r.slice.area}/ — ${r.pagesWritten.length} page(s) written, verified and recorded${tries}`);
     else {
-      console.error(`[wiki-maintain] ✗ ${r.slice.area}/ — slice FAILED verification after ${r.attempts} attempt(s):`);
+      console.error(`[wiki-maintain] ✗ ${r.slice.area}/ — FAILED verification after ${r.attempts} attempt(s):`);
       for (const v of r.violations) console.error(`    ${v}`);
       if (r.invocationError) console.error(`    invocation error: ${r.invocationError}`);
       if (r.rateLimited) console.error(`    RATE-LIMITED: ${r.rateLimited.calls} call(s) answered HTTP 429 across ${r.rateLimited.attempts} attempt(s) — the provider refused, not a page the model failed to write (#683).`);
     }
   }
+  if (result.stoppedAtDeadline) console.error('[wiki-maintain] stopped at the job deadline — the pages after it were not attempted.');
+  if (result.stoppedAtFailureLimit) console.error('[wiki-maintain] stopped after consecutive failures — this looks like a broken run rather than a bad page.');
 
-  console.log(`[wiki-maintain] outcome=${result.outcome} pages=${result.pagesWritten} elapsed=${result.elapsedSeconds}s`);
+  console.log(`[wiki-maintain] outcome=${result.outcome} landed=${result.landed.length} not-landed=${result.notLanded.length} elapsed=${result.elapsedSeconds}s`);
+  for (const p of result.landed) console.log(`[wiki-maintain] landed: ${p}`);
+  for (const p of result.notLanded) console.error(`[wiki-maintain] not landed: ${p}`);
   if (result.usage !== undefined) {
     const u = result.usage;
     console.log(u === NOT_CAPTURED || typeof u !== 'object'
@@ -3155,56 +1660,34 @@ function reportRun(result, { json }) {
         `${u.invocationsNotCaptured ? ` (${u.invocationsNotCaptured} not captured — a PARTIAL total)` : ''}` +
         `, ${u.provider}${u.tier ? `/${u.tier}` : ''}${u.reasoningEffort ? ` effort=${u.reasoningEffort}` : ''}, prices ${u.priceTable}`);
   }
-  if (result.stoppedAtBudget) {
-    console.log(`[wiki-maintain] stopped at the run budget with ${result.deferred.length} slice(s) outstanding — exit 3, NOT a failure.`);
-  }
-  if (result.backlog.length > 0) {
-    console.log(`[wiki-maintain] ${result.backlog.length} slice(s) carried forward in ${STATE_FILE}:`);
-    for (const s of result.backlog) console.log(`  - ${s.area}/ — ${s.pages.join(', ')}`);
-  }
 }
 
 async function main(argv) {
+  if (wantsHelp(argv)) {
+    console.log(USAGE);
+    return 0;
+  }
   let opts;
   try {
     opts = parseArgs(argv);
-  } catch (err) {
-    console.error(`[wiki-maintain] ${err.message}`);
-    console.error(USAGE);
+  } catch (e) {
+    dieOnArgvError(e, { hard: false });
     return 2;
   }
 
-  if (opts.mode === 'merge-record') {
-    // Run by the workflow's record-commit step, with `--theirs` the remote tip's record. Prints the
-    // merged record and nothing else, so a conflict leaves the shell redirect empty and the step fails.
-    try {
-      const read = (file) => JSON.parse(readFileSync(file, 'utf8'));
-      const isAncestor = (a, b) => spawnSync('git', ['merge-base', '--is-ancestor', a, b], { cwd: REPO_ROOT }).status === 0;
-      const { record, conflicts } = mergeRunRecords({ base: read(opts.base), ours: read(opts.ours), theirs: read(opts.theirs), isAncestor });
-      if (conflicts.length > 0) {
-        for (const c of conflicts) console.error(`[wiki-maintain] record conflict — ${c}`);
-        return 1;
-      }
-      process.stdout.write(`${JSON.stringify({ ...EMPTY_RECORD, ...record }, null, 2)}\n`);
-      return 0;
-    } catch (err) {
-      console.error(`[wiki-maintain] --merge-record: ${err.message}`);
-      return 2;
-    }
-  }
+  if (opts.mode === 'selftest') return selftest();
 
   let policy;
   try {
     policy = loadPolicy(REPO_ROOT);
-  } catch (err) {
-    console.error(`[wiki-maintain] ${err.message}`);
+  } catch (e) {
+    console.error(`[wiki-maintain] ${e.message}`);
     return 2;
   }
 
   if (opts.mode === 'normalize-links') {
-    // A bundle-wide sweep, offline and free. `verifySlice` normalizes what a slice writes, which
-    // covers everything the generator produces FROM NOW ON; this is how a bundle that already
-    // contains the bad form is brought into line without hand-editing generated pages.
+    // A bundle-wide sweep, offline and free. `verifySlice` normalizes what a slice writes; this is how
+    // a bundle that already contains the bad form is brought into line.
     const files = bundleMarkdownFiles({ root: REPO_ROOT });
     if (opts.dryRun) {
       const would = files.flatMap((rel) => {
@@ -3230,86 +1713,56 @@ async function main(argv) {
     return 0;
   }
 
-  if (opts.mode === 'claims-audit') {
-    // What openwiki's Claims preflight will force into the next run, whatever is requested (#707).
-    // Offline and free: openwiki's own model-free resolver, from the install a run would use.
+  // --pages. The page list is judged FIRST, before the credential: a refused list is exit 2 whatever
+  // else is or is not configured, and it costs nothing.
+  try {
+    pagesToSlices({ root: REPO_ROOT, pages: opts.pages });
+  } catch (e) {
+    if (!(e instanceof PagesError)) throw e;
+    console.error(`[wiki-maintain] ✗ ${e.message}`);
+    return 2;
+  }
+  // A credential failure is exit 2 and is reported as such — never as "nothing to do". Accepts either
+  // name: the dev container supplies only MCM_ANTHROPIC_API_KEY (CLAUDE.md); CI sets the raw name.
+  let provider;
+  try {
+    provider = resolveWikiProvider();
+  } catch (e) {
+    console.error(`[wiki-maintain] ${e.message}`);
+    return 2;
+  }
+  if (!opts.dryRun && !credentialFromEnv()) {
+    console.error(`[wiki-maintain] No ${provider.provider} credential (${provider.credential.accepted.join(' / ')}) — --pages needs it. Use --dry-run for the free path.`);
+    return 2;
+  }
+
+  let forge = null;
+  if (opts.propose) {
     try {
-      const { version, resolver } = await loadOpenwikiResolver({ root: REPO_ROOT });
-      const rows = await auditClaims({ root: REPO_ROOT, resolver });
-      console.log(opts.json ? JSON.stringify({ openwiki: version, forced: rows }, null, 2) : formatAudit(rows, { version }));
-      return 0;
-    } catch (err) {
-      console.error(`[wiki-maintain] claims audit failed: ${err.message}`);
+      forge = forgejoClient(forgeRepository());
+    } catch (e) {
+      console.error(`[wiki-maintain] ${e.message}`);
       return 2;
     }
   }
-
-  if (opts.mode === 'plan') {
-    let plan;
-    try {
-      // Offline: the proposal branch as the checkout already has it (CI fetches every branch).
-      const proposalRef = readRunRecord(REPO_ROOT).proposal?.number ? proposalRefFor(REPO_ROOT, null, `refs/remotes/origin/${PROPOSAL_BRANCH}`) : null;
-      plan = computePlan({ since: opts.since, policy, pageBudget: opts.pageBudget, proposalRef });
-    } catch (err) {
-      console.error(`[wiki-maintain] ${err.message}`);
-      return 2;
-    }
-    reportPlan(plan, opts);
-    return 0;
+  let deadlineMs;
+  try {
+    deadlineMs = jobDeadlineMs(process.env);
+  } catch (e) {
+    console.error(`[wiki-maintain] ${e.message}`);
+    return 2;
   }
-
-  if (opts.mode === 'execute') {
-    // A credential failure is exit 2 and is reported as such. Classifying it as `nothing-to-do`
-    // would be the worst available lie: the cheap path would look reachable while the work silently
-    // never happened, and the marker would advance over a range nothing examined (FR-017).
-    // Accepts either name. The dev container supplies only MCM_ANTHROPIC_API_KEY, because exporting
-    // the raw ANTHROPIC_API_KEY into the shell makes Claude Code bill the pay-per-token API instead
-    // of the subscription (see .devcontainer/devcontainer.json). CI still sets the raw name.
-    let provider;
-    try {
-      provider = resolveWikiProvider();
-    } catch (err) {
-      console.error(`[wiki-maintain] ${err.message}`);
-      return 2;
-    }
-    if (!opts.dryRun && !credentialFromEnv()) {
-      console.error(`[wiki-maintain] No ${provider.provider} credential (${provider.credential.accepted.join(' / ')}) — --execute needs it.`);
-      console.error('[wiki-maintain] This is a missing credential, NOT "nothing to do". Run --plan for the free path.');
-      return 2;
-    }
-
-    let forge = null;
-    if (opts.propose) {
-      try {
-        forge = forgejoClient(forgeRepository());
-      } catch (err) {
-        console.error(`[wiki-maintain] ${err.message}`);
-        return 2;
-      }
-    }
-    let deadlineMs;
-    try {
-      deadlineMs = jobDeadlineMs(process.env);
-    } catch (err) {
-      console.error(`[wiki-maintain] ${err.message}`);
-      return 2;
-    }
-    return executeRun({
-      root: REPO_ROOT,
-      opts,
-      policy,
-      forge,
-      deadlineMs,
-      effortPolicy: escalationPolicy(process.env),
-      baseBranch: process.env.FORGE_BASE_BRANCH ?? 'main',
-      remote: process.env.FORGE_REMOTE ?? 'origin',
-      archiveEnv: process.env,
-    });
-  }
-
-  return selftest();
+  return executeRun({
+    root: REPO_ROOT,
+    opts,
+    policy,
+    forge,
+    deadlineMs,
+    baseBranch: process.env.FORGE_BASE_BRANCH ?? 'main',
+    remote: process.env.FORGE_REMOTE ?? 'origin',
+    archiveEnv: process.env,
+  });
 }
 
 const invokedDirectly = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 if (invokedDirectly) process.exit(await main(process.argv.slice(2)));
-

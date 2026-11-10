@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 
 import {
-  TIME_BUDGET_SECONDS, WORST_INVOCATION_SECONDS, CI_SETUP_SECONDS, CI_EXECUTE_OVERHEAD_SECONDS,
+  WORST_INVOCATION_SECONDS, CI_SETUP_SECONDS, CI_EXECUTE_OVERHEAD_SECONDS,
 } from '../wiki-maintain.mjs';
 import * as WIKI_MAINTAIN from '../wiki-maintain.mjs';
 import { WIKI_PROVIDERS, buildGeneratorEnv } from '../wiki-provider.mjs';
@@ -40,24 +40,43 @@ const LOCKED_INSTALL = /pnpm --dir tools\/openwiki-generator install --frozen-lo
 /** renovate.json's catch-all `minimumReleaseAge: 3 days`, in the minutes pnpm counts in. */
 const RENOVATE_COOLDOWN_MINUTES = 3 * 24 * 60;
 
-// ── triggers and debounce (FR-009; 078 research R19, item #613) ─────────────────
-// Until item #613 the debounce was `concurrency` + `cancel-in-progress` + a `sleep 900` INSIDE a
-// merge-triggered job, which spent 15 of its 60 minutes waiting. Operator option A (2026-11-01): wait
-// for main to go quiet OUTSIDE the job. A scheduled check decides from git (scripts/wiki-quiet.mjs,
-// whose decision is tested in wiki-quiet.test.mjs) and either generates at once or ends. Since 078
-// US7 (2026-11-09) the schedule was once a day; since 2026-11-10 there is NO schedule — dispatch only.
-
-/** The step that runs the quiet decision. */
-const decideIndex = () => steps().findIndex((s) => /wiki-quiet\.mjs/.test(s.run ?? ''));
+// ── triggers: a manual rebuild of operator-named pages (feature 098, US4) ───────────
+// Scenarios covered: US4-AC3 (FR-017). Until 2026-11-10 a schedule fired a quiet check
+// (scripts/wiki-quiet.mjs) that planned from a committed run record and advanced its marker on main.
+// Feature 098 retired all of it (ADR-0004): summaries are refreshed by the coding session that changes
+// their source, and this workflow only rebuilds the pages an operator names in its `pages` input.
 
 test('the run is dispatch-only — no schedule and no push trigger (session-maintained wiki, 2026-11-10)', () => {
   // The daily fire (078 US7) is paused: run 5104 showed openwiki forcing 30 stale-Claims pages into
   // every run and starving the requested ones, at ~$1.50/day for ~1 landed page. Summaries move to
-  // coding sessions (docs/proposals/PRD-SessionMaintainedWiki.md); the generator stays as a manual
-  // rebuild. A schedule reappearing here would restart unattended spend, so this asserts its absence.
+  // coding sessions (ADR-0004); the generator stays as a manual rebuild. A schedule reappearing here
+  // would restart unattended spend, so this asserts its absence.
   assert.ok(!('push' in wf.on), 'a push-triggered run would spend on every merge');
   assert.ok(!('schedule' in wf.on), 'no unattended fire: the generator is run by hand only');
   assert.ok('workflow_dispatch' in wf.on, 'the manual rebuild is the only entry point');
+});
+
+test('the dispatch REQUIRES the pages to rebuild, and offers no range or slice inputs', () => {
+  const inputs = wf.on.workflow_dispatch?.inputs ?? {};
+  assert.ok(inputs.pages, 'a `pages` input names what to rebuild');
+  assert.equal(inputs.pages.required, true, 'a rebuild with no pages named has nothing to do — the input is required');
+  for (const gone of ['max-slices', 'since']) {
+    assert.ok(!(gone in inputs), `the \`${gone}\` input planned from a git range, which no longer exists`);
+  }
+  const execute = steps().find((s) => /wiki-maintain\.mjs[^\n]*--propose/.test(s.run ?? ''));
+  assert.ok(execute, 'no step runs the rebuild');
+  assert.match(execute.run, /--pages "\$INPUT_PAGES"/, 'the operator-named pages reach the rebuild, quoted');
+  assert.match(JSON.stringify(execute.env ?? {}), /INPUT_PAGES.*github\.event\.inputs\.pages/);
+});
+
+test('none of the unattended machinery survives: no quiet check, no run record, no marker commit', () => {
+  const text = steps().map((s) => `${s.name ?? ''}\n${s.run ?? ''}\n${String(s.if ?? '')}`).join('\n');
+  assert.doesNotMatch(text, /wiki-quiet\.mjs/, 'no step may run the retired quiet check');
+  assert.doesNotMatch(text, /steps\.quiet\./, 'and nothing may be gated on it');
+  assert.doesNotMatch(raw, /maintenance-state\.json/, 'the run record is retired and gitignored');
+  assert.doesNotMatch(text, /advance the maintenance marker|--merge-record/, 'no marker-advance commit');
+  assert.doesNotMatch(text, /git push origin main\b/, 'a rebuild never pushes to main; it opens a proposal');
+  assert.doesNotMatch(text, /wiki-maintain\.mjs --plan|--execute/, 'the retired modes are not invoked');
 });
 
 test('CI reasoning effort defaults to low; a dispatch input or repository variable still wins (078 FR-028)', () => {
@@ -67,62 +86,18 @@ test('CI reasoning effort defaults to low; a dispatch input or repository variab
     /^\$\{\{\s*github\.event\.inputs\.reasoning-effort\s*\|\|\s*vars\.MCM_WIKI_REASONING_EFFORT\s*\|\|\s*'low'\s*\}\}$/);
 });
 
-test('workflow_dispatch exists so an operator can bypass the debounce', () => {
-  assert.ok('workflow_dispatch' in wf.on, 'FR-009c: a manual run must not have to wait out the quiet period');
-});
-
-test('a scheduled fire never cancels a run in progress, and nothing waits inside the job', () => {
-  // cancel-in-progress WAS the debounce. Under a schedule it would let the next fire kill a generation
-  // half-way through; with it false, a fire that arrives mid-run queues, then finds the record covered.
+test('runs never overlap, a dispatch never cancels one in progress, and nothing waits inside the job', () => {
   assert.ok(wf.concurrency, 'runs must still not overlap');
   assert.match(String(wf.concurrency.group), /wiki-maintain/);
   assert.equal(wf.concurrency['cancel-in-progress'], false);
-  assert.doesNotMatch(steps().map((s) => s.run ?? '').join('\n'), /\bsleep\b/, 'the quiet period is waited out by the schedule, not inside the job');
-});
-
-test('a scheduled check pays for nothing: it decides BEFORE any install, and gates every later step', () => {
-  const at = decideIndex();
-  assert.ok(at >= 0, 'no step runs scripts/wiki-quiet.mjs');
-  const firstInstall = steps().findIndex((s) => /pnpm (--dir \S+ )?install|corepack enable/.test(s.run ?? ''));
-  assert.ok(firstInstall > at, 'the decision must come before corepack/pnpm, so a "not yet" costs a checkout and one node process');
-  const decide = steps()[at];
-  assert.ok(decide.id, 'the decision step needs an id for later steps to read');
-  assert.match(decide.run, /DISPATCH="--dispatched"/, 'a dispatch must bypass the wait (FR-009c)');
-  assert.match(decide.run, /wiki-quiet\.mjs\s+"?\$\{?DISPATCH\b/, 'and the flag must actually reach the check');
-  for (const s of steps().slice(at + 1)) {
-    if (/digest|failure/i.test(s.name ?? '') && /always\(\)/.test(String(s.if ?? ''))) continue;
-    assert.match(String(s.if ?? ''), new RegExp(`steps\\.${decide.id}\\.outputs\\.run == 'true'`),
-      `"${s.name}" runs even when the check said not yet — a scheduled fire would pay for it`);
-  }
-});
-
-test('the quiet check reads the TIP of main, not the commit the schedule fired at', () => {
-  // A scheduled fire checks out the commit the schedule was registered at, which stays put while main
-  // moves (runs 6576-6583 all ran at 4dae8842). Read there, the run record is stale: the check said
-  // run=true on every fire, and each fire installed, found nothing, and pushed a marker commit to main.
-  // So the move to origin/main must come first, and must not be gated on the decision it feeds.
-  const tipAt = steps().findIndex((s) => /git checkout\b[^\n]*origin\/main/.test(s.run ?? ''));
-  assert.ok(tipAt >= 0, 'no step moves to origin/main');
-  assert.ok(tipAt < decideIndex(), 'the quiet decision ran before the move to the tip of main — it reads a stale run record');
-  assert.equal(steps()[tipAt].if, undefined, 'the move to the tip must run on every fire');
-  assert.match(steps()[tipAt].run, /git fetch[^\n]*origin main/, 'and fetch first, so origin/main is current');
+  assert.doesNotMatch(steps().map((s) => s.run ?? '').join('\n'), /\bsleep\b/);
 });
 
 test('the old in-job debounce is gone from the orchestrator too', () => {
-  for (const name of ['shouldDeferMaintenance', 'oldestUncoveredAgeSeconds', 'DEBOUNCE_SECONDS', 'MAX_DEFERRAL_SECONDS']) {
-    assert.ok(!(name in WIKI_MAINTAIN), `wiki-maintain.mjs still exports ${name}; the decision lives in wiki-quiet.mjs`);
+  for (const name of ['shouldDeferMaintenance', 'oldestUncoveredAgeSeconds', 'DEBOUNCE_SECONDS', 'MAX_DEFERRAL_SECONDS', 'readRunRecord', 'computePlan', 'STATE_FILE']) {
+    assert.ok(!(name in WIKI_MAINTAIN), `wiki-maintain.mjs still exports ${name}`);
   }
-  assert.doesNotMatch(readFileSync(join(REPO_ROOT, 'scripts', 'wiki-maintain.mjs'), 'utf8'), /--should-wait/);
-});
-
-// ── self-trigger guard (FR-009a) ────────────────────────────────────────────────
-
-test('the run does not trigger itself', () => {
-  // Two ways it would: the `[skip ci]` marker commit it pushes to main, and a bundle-only change (its
-  // own proposal being merged). SC-005a requires a merged proposal to produce no further run. Both are
-  // now recognised by wiki-quiet.mjs's isOwnCommit (tested there); here, the job must use it.
-  assert.ok(decideIndex() >= 0, 'the quiet decision is what recognises the job\'s own commits');
-  assert.match(readFileSync(join(REPO_ROOT, 'scripts', 'wiki-quiet.mjs'), 'utf8'), /\[skip ci\][\s\S]*openwiki\//);
+  assert.doesNotMatch(readFileSync(join(REPO_ROOT, 'scripts', 'wiki-maintain.mjs'), 'utf8'), /--should-wait|maintenance-state\.json/);
 });
 
 // ── budget and timeout (C6) ─────────────────────────────────────────────────────
@@ -131,11 +106,13 @@ test('the job timeout sits above the effective ceiling, derived — not a rememb
   // Updated 2026-09-28 (feature 078, research R9). The old assertion pinned 45; the premise it stood
   // for is that the platform never kills a run the budget would have stopped cleanly (SC-004). The
   // debounce used to SLEEP INSIDE THIS JOB; since item #613 (R19) it does not, so it is no term here.
-  const ceiling = CI_SETUP_SECONDS + TIME_BUDGET_SECONDS + WORST_INVOCATION_SECONDS + CI_EXECUTE_OVERHEAD_SECONDS;
+  // Since feature 098 there is no 4-minute starting budget either (a manual rebuild attempts every page
+  // it is given, and the job deadline is what stops a generator that cannot finish), so the term is gone.
+  const ceiling = CI_SETUP_SECONDS + WORST_INVOCATION_SECONDS + CI_EXECUTE_OVERHEAD_SECONDS;
   const timeout = job()['timeout-minutes'] * 60;
   assert.ok(timeout >= ceiling + 5 * 60,
     `timeout-minutes ${job()['timeout-minutes']} leaves less than 5 min of margin over the ${Math.ceil(ceiling / 60)}-min ceiling ` +
-    '(setup + time budget + one worst-case invocation + publishing)');
+    '(setup + one worst-case invocation + publishing)');
   // Raised from 60 to 120 by operator decision on 2026-10-02 (item #525/#613): at the measured
   // 70-80 tok/s, one uncovered page can need 60-75 minutes. 120 is the hard ceiling for DISPATCHED
   // runs only; merge-triggered runs are still held to 60 by the deadline step (asserted below).
@@ -187,7 +164,7 @@ test('the job verifies the INSTALLED generator before any paid call, and a skip 
   const names = steps().map((st) => `${st.name ?? ''} ${st.run ?? ''}`);
   const install = names.findIndex((n) => LOCKED_INSTALL.test(n));
   const verify = names.findIndex((n) => /wiki-maintain\.guard\.test\.mjs/.test(n));
-  const execute = names.findIndex((n) => /wiki-maintain\.mjs --execute/.test(n));
+  const execute = names.findIndex((n) => /wiki-maintain\.mjs --pages[^\n]*--propose/.test(n));
   assert.ok(install >= 0 && verify > install, 'the guard runs after the generator is installed');
   assert.ok(verify < execute, 'and before any paid work');
   assert.match(names[verify], /skip/i, 'and it fails on a skip, not only on a failure');
@@ -320,10 +297,9 @@ test('no dispatch input is interpolated into a run block', () => {
 
 test('dispatch inputs are validated, not merely quoted', () => {
   // An operator-supplied value should be REJECTED for being malformed, not silently rendered inert.
-  assert.match(raw, /INPUT_MAX_SLICES:/);
-  assert.match(raw, /INPUT_SINCE:/);
-  assert.match(raw, /must be a positive integer/);
-  assert.match(raw, /must be a git ref/);
+  assert.match(raw, /INPUT_PAGES:/);
+  assert.match(raw, /\*\[!A-Za-z0-9\.\/_,-\]\*\)/, 'the pages list is held to a character class, like the old inputs');
+  assert.match(raw, /pages must be a comma-separated list of area\/page\.md/);
 });
 
 // ── the repository coordinates exist on EVERY event (item #613 follow-up) ───────
@@ -404,10 +380,11 @@ test('the job publishes a feature-042 failure digest', () => {
   assert.match(JSON.stringify(digest.env ?? {}), /CI_DIGEST_JOB_STATUS/);
 });
 
-test('the outcome is reported distinguishably, including exit 3', () => {
+test('the outcome is reported distinguishably — every page landed, or which did not', () => {
   const text = stepText();
-  assert.match(text, /nothing-to-do/, 'FR-017: the three outcomes must be distinguishable');
-  assert.match(text, /\b3\b/, 'and a budget stop (exit 3) must not be reported as a failure');
+  assert.match(text, /outcome=all-landed/);
+  assert.match(text, /outcome=not-all-landed/);
+  assert.doesNotMatch(text, /stopped-at-budget|exit 3/, 'exit 3 (a budget stop with a backlog) is retired with the backlog');
 });
 // ── the generator's per-turn output ceiling (research 2026-08-01, revised 2026-09-19) ──────────
 //

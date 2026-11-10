@@ -1,0 +1,5 @@
+# wiki-maintain fixture source
+
+A stable file the wiki-maintain fixtures cite as their `resource`. The OKF gate resolves a
+`resource` against the repository root, so this path resolves for real; its bytes are fingerprinted
+(V17) by the fixture pages that name it, so editing it means re-recording them.

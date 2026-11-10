@@ -175,7 +175,8 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
     // Re-homing them onto the shared mechanism is churn with no defect behind it.
     'check-openwiki-governance.mjs': 'rejects-already', // parseArgs → { error: `unknown argument` }
     'check-openwiki-okf.mjs': 'rejects-already',        // same parser shape
-    'wiki-maintain.mjs': 'rejects-already',             // parseArgs throws, prints USAGE
+    'wiki-maintain.mjs': 'rejects-already',             // parseArgs: partitionArgsWithValues (argv-contract.mjs) rejects, exit 2 (098)
+    'wiki-refresh.mjs': 'rejects-already',              // partitionArgs (argv-contract.mjs) rejects before any write, exit 2 (098)
 
     // FIXED in item #504, and the deferral's premise turned out to be wrong. FR-009's exit-0 rule
     // governs the DIGEST path, not argument-driven paths — `--selftest` has always hard-exited 1 on
