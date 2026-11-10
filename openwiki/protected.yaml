@@ -344,7 +344,8 @@ passages:
     # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
-    fingerprint: "sha256:d04395794b44d1a8d69bd1edaea8d1cd7f3eaa597b4a21ff2be315fd8c3a0a27"
+    # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: a dispatched Renovate run's mode is read from the `renovate/mode` commit status (item #268), not step names or event_payload.inputs; dropped a pointer to a CLAUDE.md "Commands" section that no longer exists.
+    fingerprint: "sha256:34fdd5cea9b2c17ca9421c423f32900972cdd5a540536f74e13a3593104fc71d"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "process/spec-driven-development.md"

@@ -3,10 +3,10 @@ type: Service
 title: BFF (Backend-for-Frontend)
 description: The Node.js server-side layer embedded in the mcm-app Expo Router process — the six bff-api route groups over the shared server-side spine (cookie-only requireAuth, JWKS token validation, the request-scoped redacting logger, the append-only audit sink), the server-held-token session contract (one opaque session cookie, no bearer path in any environment) with the unauthenticated redirect-URI reconciliation route and the dedicated Keycloak client the backup consent runs as, the fail-closed run-scoped agent identity (a refused RFC 8693 mint becomes the route's own 401/503 instead of an identity-less turn), its own MongoDB and Redis state for per-user agent config with live credential probes and for scheduled collection backups across two destination drivers (S3 and WebDAV) with version listing, retention pruning and a create-only restore, the ordered account-deletion pipeline with its step-up re-authentication, the hand-written S3 signer behind the backup driver boundary, the SDK 58 static web output that keeps prerendered pages and the API routes in one Node process, and the server.js and web security-header boundary the image ships with.
 resource: frontend/mcm-app/README.md
-resource-sha256: 4c88ea01daa13226ee6eb4f42bee4564ddd3fadb64f52d48e834c6e4758ff153
+resource-sha256: 6775ff03b235fb2e73bba77c470662ce199a9e4b1c3dbd896c6a14d911101f1f
 tags: [bff, expo-router, auth, keycloak, proxy, nodejs, mongodb, redis, backups, s3, account-deletion]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T03:37:28.047Z
+timestamp: 2026-11-10T11:32:33.634Z
 ---
 
 

@@ -162,7 +162,7 @@ docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml -
 E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app
 ```
 
-See CLAUDE.md → "Final local E2E runs against the BFF container" for the full
+See [docs/runbooks/e2e-testing.md](../../docs/runbooks/e2e-testing.md) → "Final local E2E runs against the BFF container" for the full
 matrix (dev vs prod container, mobile deltas) and the Metro reset afterwards.
 
 ## Two standing constraints the backups feature ran into (feature 073)

@@ -3,10 +3,10 @@ type: Service
 title: Expo/React Native universal app
 description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 58 with React Native 0.88 and React 19.3), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the SDK 58 static web output whose pages are prerendered at build time while the 38 API routes keep running in the same Node process, the settings destination and its area registry, the client network layer that never holds a token, the expo-server express hosting layer this process serves (the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the BFF image's pruned runtime closure with the bare-specifier build gate that keeps it honest, the five feature-087 failure modes that each look healthy but now have their own gate (a second copy of the styling library, a split bundle over budget, an unlisted inline script, a browser CSP violation, a release APK that does not launch), the cold-load web bundle budget's four assertions, the Jest worker/memory bounds and the Jest 30 / RNTL 14 client test traps, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
-resource-sha256: 4c88ea01daa13226ee6eb4f42bee4564ddd3fadb64f52d48e834c6e4758ff153
+resource-sha256: 6775ff03b235fb2e73bba77c470662ce199a9e4b1c3dbd896c6a14d911101f1f
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T23:36:11.840Z" }
-timestamp: 2026-11-10T03:37:28.055Z
+timestamp: 2026-11-10T11:32:33.639Z
 ---
 
 # Expo/React Native universal app
@@ -373,8 +373,8 @@ measured image figures, the traced evidence the closure rests on and the two dec
 - **Lint is an ESLint 10 flat config now, and the config file is the whole migration.** ESLint 10
   removed `.eslintrc.*` support and the `--ext` flag, so feature 081 US5b replaced
   `frontend/mcm-app/.eslintrc.json` and `packages/design-system/.eslintrc.json` with
-  `eslint.config.js` in each project, and the Nx `lint` targets changed with them: both are now bare
-  `eslint src` (mcm-app) / `eslint .` (design-system) run through `nx:run-commands`, with the old
+  `eslint.config.js` in each project, and the Nx `lint` targets changed with them: both are now
+  `eslint .` (followed by a `prettier --check`) run through `nx:run-commands`, with the old
   `--ext .ts,.tsx` gone. Three details are
   load-bearing. First, **`eslint-config-expo`'s flat preset is not its legacy preset re-expressed** —
   it takes `eslint-plugin-react`'s `flat.recommended` (a dozen `react/*` rules move warn → error, plus
