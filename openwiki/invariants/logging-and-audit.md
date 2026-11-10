@@ -51,4 +51,5 @@ downstream shipper.
   logging redaction protects what reaches storage, while the [auth chain](./auth-chain.md)'s
   audit events are what's *supposed* to reach storage, minus anything on the never-log list.
 
-Full field-by-field logger API and RUST_LOG examples: `CLAUDE.md`'s Logging section.
+Full redaction key list and the audit call: `frontend/mcm-app/src/bff-server/logger.ts`; `RUST_LOG`
+examples: `docs/runbooks/local-dev.md`.

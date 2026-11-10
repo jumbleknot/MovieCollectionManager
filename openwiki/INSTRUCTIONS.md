@@ -13,8 +13,9 @@ conformance gate that validates the output.
 This wiki is a **navigation and gotcha layer** over documentation that already exists. It is not a
 second copy of it.
 
-The repository already has high-quality canonical documentation: an architecture overview, fourteen
-operator runbooks, architecture decision records, a governing constitution, and per-project READMEs.
+The repository already has high-quality canonical documentation: an architecture overview, the
+operator runbooks under `docs/runbooks/`, architecture decision records, a governing constitution,
+and per-project READMEs.
 The failure mode to avoid is a drifting paraphrase of those documents.
 
 **Therefore, every concept page MUST:**

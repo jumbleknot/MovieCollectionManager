@@ -319,4 +319,5 @@ this arrangement exists to avoid. **Nothing leaves the gate without a tier that 
 
 Full CI-enforcement rationale and evidence that the gate genuinely catches regressions:
 `specs/041-integration-test-ci-enforcement/SC-003-SC-004-EVIDENCE.md`; day-to-day test-run ordering
-and the mandatory final validation checklist live in `CLAUDE.md`'s Test Run Protocol section.
+is the constitution's Test Run Protocol (`.specify/memory/constitution.md`), and the mandatory final
+validation checklist is [Final validation checklist](./feature-validation-checklist.md).

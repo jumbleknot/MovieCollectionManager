@@ -31,12 +31,15 @@ mod tests {
 ```
 
 **Integration tests** live in `backend/mc-service/tests/integration/` (sibling to `src/`). Each
-file is a separate test binary compiled against the crate. Require MongoDB running.
+top-level `*_test.rs` file is a separate test binary compiled against the crate (declared as a
+`[[test]]` in `Cargo.toml`); its subdirectories hold the modules those binaries include. Require
+MongoDB running.
 
 ```bash
-pnpm nx test mc-service                          # unit tests (inline #[cfg(test)] blocks)
+pnpm nx test:unit mc-service                     # unit tests (inline #[cfg(test)] blocks; cargo test --lib)
 pnpm nx test:integration mc-service              # integration tests (requires mc-service compose up)
-pnpm nx test mc-service -- --test collection_create  # single test by name
+pnpm nx test mc-service                          # both tiers: delegates to test:unit + test:integration
+pnpm nx test:unit mc-service -- name_max_50      # unit tests whose name contains the filter
 ```
 
 ## The RED then GREEN checkpoint format

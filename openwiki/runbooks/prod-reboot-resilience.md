@@ -3,10 +3,10 @@ type: Runbook
 title: Prod reboot resilience
 description: Why a rootless-Docker production homelab did not come back clean after a host reboot, the two rounds of fixes — bind address, keyfile idempotency, reserved-range ports, restart policy and periphery root — that made recovery hands-off, why prod's one-shot inits idle on `sleep infinity` behind a readiness marker, plus the validation reboot on record and the host-operation rules that keep it that way.
 resource: docs/runbooks/prod-reboot-resilience.md
-resource-sha256: ef0f108d8d6668413df8984c2bc42ac2bfd0c43ad01937b3440b98b2a44fdd7f
+resource-sha256: 020c7f3f13f262da6157ae4539a2864eaf5e3256349c436f5eacc50f42abd49d
 tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T03:37:28.107Z
+timestamp: 2026-11-10T11:23:35.122Z
 ---
 
 # Prod reboot resilience
@@ -116,8 +116,8 @@ The two variables that used to scope those publishes are gone, and the reason ge
   but dead config. The admin **URL** was always the separate `KC_HOSTNAME_ADMIN`.
 - **`TS_ADMIN_IP` followed the same course to completion.** It was only the prefix of the two
   observability operator-UI binds; feature 028 made those binds `0.0.0.0`, and the stack config stopped
-  passing the variable on 2026-10-13 (item #727). No stack or compose file reads it now, so the Komodo
-  Variable can be retired.
+  passing the variable on 2026-10-13 (item #727). No stack or compose file reads it now, and the operator has
+  removed the Komodo Variable (item #727).
 
 Retire the stack `environment` line and the Komodo Variable together. Nothing detects a supplied variable
 nobody reads, and because nothing references the name, leaving it seeded cannot fail a deploy — the only

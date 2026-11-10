@@ -3,10 +3,10 @@ type: Convention
 title: Published-port reservation convention
 description: The prod-reserved 19000-19099 host-port range that keeps the three production admin/UI publishes (Keycloak admin 19099, LangFuse 19030, Grafana/otel-lgtm 19002) disjoint from the CI runner's ports on the same shared host, plus the gate that enforces it, the self-referencing URL vars a port move must update, the outage that motivates it, and why a grep for the retired bind-prefix variables finds gate selftest fixtures instead of live config.
 resource: docs/runbooks/prod-reboot-resilience.md
-resource-sha256: ef0f108d8d6668413df8984c2bc42ac2bfd0c43ad01937b3440b98b2a44fdd7f
+resource-sha256: 020c7f3f13f262da6157ae4539a2864eaf5e3256349c436f5eacc50f42abd49d
 tags: [ports, ci, production, collision, komodo, homelab]
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
-timestamp: 2026-11-10T03:37:28.037Z
+timestamp: 2026-11-10T11:23:35.117Z
 ---
 
 # Published-port reservation convention

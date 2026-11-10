@@ -9,7 +9,7 @@ timestamp: 2026-07-30T13:49:05-04:00
 # Feature branch test scope
 
 Run only the suites for areas touched on the current branch during iteration; defer the rest to
-final validation. This mapping (from `CLAUDE.md`'s "Feature Branch Test Scope" section) is the
+final validation. This mapping (relocated from `CLAUDE.md`'s former "Feature Branch Test Scope" section) is the
 lookup table for which Playwright spec file and which Maestro mobile flow(s) correspond to each
 user story, so the correct narrow suite can be run instead of the full regression while iterating.
 The full-suite requirement belongs to the final validation checklist, not here — see

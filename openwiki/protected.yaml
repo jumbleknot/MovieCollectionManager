@@ -140,7 +140,8 @@ passages:
     # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
-    fingerprint: "sha256:84f4721ddb6bd70f1719082e019f44ad5505728a295e2f20699d884922bf53b7"
+    # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: its closing pointer named a CLAUDE.md section that no longer exists (CLAUDE.md is an index); it now names where that content lives.
+    fingerprint: "sha256:374d951cf219b9dc92e5850eb685c99664ec7ef9929d7f1c10c0c74f168ae733"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/feature-validation-checklist.md"
@@ -155,7 +156,8 @@ passages:
     # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
-    fingerprint: "sha256:350616f0b5cb0574d6010d73c458f75182267121990eef36ff0e536d1d0baf20"
+    # Re-fingerprinted 2026-11-10 (feature 098) — passage-corrected: the wiki step named `wiki-update` (now the paid manual rebuild only) instead of the free `wiki-refresh` that ADR-0004 made the per-PR refresh.
+    fingerprint: "sha256:c99a8be51c00ddbc303254a9b00b7f78f292a8fa44d6a670469dc9b3efcb6deb"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/logging-and-audit.md"
@@ -164,7 +166,8 @@ passages:
     # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
-    fingerprint: "sha256:dc90db206333020eb29c1753ce352c7304d0664a46c418946116cb9148581898"
+    # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: its closing pointer named a CLAUDE.md section that no longer exists (CLAUDE.md is an index); it now names where that content lives.
+    fingerprint: "sha256:04d77c1ea5b15c4f4d34b38de84b78e8443f4ff6154268f01037bad847f8d1ef"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/model-provider-scoping.md"
@@ -202,7 +205,8 @@ passages:
     # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
-    fingerprint: "sha256:22447c6a27466a8c7e91e77dbae7dce5063599db2c1749515def08b0f5d08ceb"
+    # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: its closing pointer named a CLAUDE.md section that no longer exists (CLAUDE.md is an index); it now names where that content lives.
+    fingerprint: "sha256:91cc6dec36551199f7495d113bb65146edeb5d2b66c800bc98b0c6cbe779290c"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/package-manager-enforcement.md"
@@ -225,7 +229,8 @@ passages:
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
     # Re-fingerprinted 2026-11-08 (spec 095) — the passage gained the measured RTK rewrite of
     # `prettier --file-info` (`ignored: true` printed as "All files formatted correctly").
-    fingerprint: "sha256:2d4043a8fbce0d8881d5319cc3c8cd019ae1ea42835cede921a5d63efe748ba4"
+    # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: dropped the stale "rtk 0.42.4" pin; nothing in the repo pins RTK and the dev container runs a later release.
+    fingerprint: "sha256:1aa0e6b5ee2090a16c993ba9960e62f2cfe33831bc995a2119ba5918c5949296"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/testing-tiers.md"
@@ -249,7 +254,8 @@ passages:
     # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
-    fingerprint: "sha256:fc15cbe49cabdb39db2d0e75147d45b0516f30f1cd615a9aacd8ca0b3f25ddc3"
+    # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: its closing pointer named a CLAUDE.md section that no longer exists (CLAUDE.md is an index); it now names where that content lives.
+    fingerprint: "sha256:7a54326defb584c49ee1d5f3d4f6770a2285dfa31ee1177e410553b0047fc9e4"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "process/feature-test-scope.md"
@@ -345,7 +351,8 @@ passages:
     anchor: "Gotchas"
     # Canonical since feature 098 (item #739, research R3): the page was a "summary" of `specs/`,
     # a directory, while describing the process, which does not change with the specs' contents.
-    fingerprint: "sha256:d0ae39cb793d098e7a11dc13b8ad47f4e7f223814f1ab554874be7774998cab4"
+    # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: "PowerShell is not installed in the devcontainer" was false since item #221 baked pwsh into toolchain.Dockerfile.
+    fingerprint: "sha256:6f8c0e660f7d4fd6e31a0b9a6e7a651dc55bb698c4dcaa91384706cfa35351da"
     origin: "openwiki/process/spec-driven-development.md (derived from specs/ until feature 098)"
     relocatedAt: "2026-11-10"
   - concept: "architecture/data-model.md"

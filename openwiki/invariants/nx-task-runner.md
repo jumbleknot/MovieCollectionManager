@@ -58,5 +58,4 @@ measured reason — see the first gotcha below.
   `nx-workspace` skill for querying projects/targets/dependencies and `nx-generate` for scaffolding,
   rather than hand-rolling either.
 
-Full per-project target tables and commands: `CLAUDE.md`'s Commands section and each project's
-`project.json`.
+Full per-project target tables and commands: each project's `project.json`.
