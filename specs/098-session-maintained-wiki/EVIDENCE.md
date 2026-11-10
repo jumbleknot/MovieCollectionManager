@@ -188,3 +188,114 @@ rather than the post-098 stamp.
 - OKF on the real tree: only V17 `no source fingerprint` lines (49).
 - The grep part of T016's done-when (`openwiki-claims|wiki-claims-audit` in `scripts`) waits for
   T020: `wiki-maintain.mjs` imports both modules throughout and is rewritten there.
+
+## `--all-fresh` judges by research R8's stamp rule
+
+RED (`node --test --test-name-pattern "R8" scripts/__tests__/wiki-refresh.test.mjs`): 1 test, 0 pass,
+1 fail — `[wiki-refresh] refusing --all-fresh: 1 page(s) need a real refresh first` for a page whose
+only newer-than-source stamp was `verified.at`.
+GREEN: the whole file, **14 / 14 / 0 / 0**. On the real tree `--record --all-fresh` then refused with
+exactly R8's 11 pages, which is the measured set.
+
+## T022–T024 — the cut-over refreshes (10 of 11; the 11th is T028)
+
+Each page: `node scripts/wiki-refresh.mjs --diff <page>`, read the diff against the page, edit only
+what it invalidates, `--record <page>`.
+
+| Page | Source change (diff) | Result |
+|---|---|---|
+| architecture/system-overview.md | MCM-Architecture.md: the gateway's token cache is keyed `(user, audience, sha256(subject token))`, never `user` alone (spec 094) | **edited** — the page stated the old `(user, audience)` key |
+| projects/mc-service.md | same diff | fingerprint-only — the page does not describe the gateway cache |
+| projects/mcp-servers.md | same diff | fingerprint-only — same |
+| projects/repository.md | README.md: Metro is "Node file crawler, hot reload", not watchman-backed (spec 097) | **edited** — one phrase |
+| runbooks/devcontainer.md | watchman removed from the image; a new paragraph on why | fingerprint-only — the page never mentions watchman and its toolchain list is still right |
+| gotchas/expo-router-and-transport-traps.md | server.js: `expo-server`, absolute-URL hook, `trust proxy` comment | fingerprint-only — the page already describes all of it (feature 087 updated the body without moving its stamp) |
+| gotchas/external-id-url-opening.md | movie-detail.tsx: Prettier reformat only | fingerprint-only |
+| gotchas/keycloak-service-account.md | keycloak.ts: Prettier, plus `assignMcUserRole` checks each step → 502 | fingerprint-only — the page already documents the checked chain (feature 092) |
+| gotchas/playwright-testid-mapping.md | `--diff` base: none (the page's only stamp was `verified.at`, which the contract's base excludes) → whole file. The one commit since its `verified.at` (1195ad3c, Prettier) is line-wrapping only (`git diff -w` shows only re-wrapped lines), and the worktree equals 1195ad3c | fingerprint-only |
+| gotchas/session-lifecycle-and-eviction.md | same as above | fingerprint-only |
+
+**SC-005 timing**: T022 (three pages, one body edit) took **25 s** wall-clock from the first `--diff`
+to the last `--record` (03:12:25 → 03:12:50 UTC).
+
+`--stale` after T024 lists no page from the R8 set except `runbooks/wiki-maintenance.md`, held for
+T028 as instructed.
+
+## T028 / T029 — runbook, brief, superseded specs
+
+- `docs/runbooks/wiki-maintenance.md` rewritten (1137 → 748 lines): a lead `## Refresh` section (the
+  `#refresh` anchor the CLAUDE.md gate line links), V17/G14, what was retired with a link to ADR-0004,
+  the manual `pages` dispatch; the sections on cooldowns, escalation, drift/parking, the quiet-trigger,
+  the run record, the 078 US7 schedule, the claims audit and §9 Claims removed (§9 now a short
+  "Claims, retired" note). Measured facts that still explain a rule (the deadline table, the hang, the
+  per-page landing runs) kept.
+- `openwiki/INSTRUCTIONS.md`: "where a new learning goes" now says source **and** refresh the summary
+  in the same PR; §5 explains the fingerprint, V17 and G14 and forbids writing
+  `resource-sha256`/`sources`/`verified`; the §9 Claims-citation rules removed and the old §10 renumbered
+  §9 (its one inbound reference, in the runbook, updated).
+- Pages whose resource is `openwiki/INSTRUCTIONS.md`: `openwiki/quickstart.md` — refreshed and recorded.
+- `openwiki/decisions/adr-0004-session-maintained-wiki.md` added (AGENTS.md promises every ADR a citing
+  concept), indexed in `decisions/index.md` and the CLAUDE.md knowledge index, and recorded.
+- T029: one-paragraph supersession notes on specs 078 (US6, US7, FR-024..FR-029), 082 (whole) and 044
+  (FR-007, FR-009..FR-012, FR-016b).
+
+## T018–T021 — manual `--pages` rebuild (done by a forked session; re-verified here)
+
+RED, taken with the two deleted Claims modules briefly restored as untracked files so
+`wiki-maintain.mjs` could load (they were removed again afterwards):
+- T018 `node --test --test-name-pattern "pages" scripts/__tests__/wiki-maintain.test.mjs`: 17 tests,
+  4 pass, 13 fail, 0 skip — every new `--pages` case failed with
+  `[wiki-maintain] unknown argument: --pages` / `mod.pagesToSlices is not a function`.
+- T019 `node --test scripts/__tests__/wiki-maintain.guard.test.mjs`: 32 tests, 26 pass, 6 fail, 0 skip
+  (`a \`pages\` input names what to rebuild`, `no step may run the retired quiet check`, …).
+
+GREEN (re-run in this session): `wiki-maintain.test.mjs` **93 / 93 / 0 / 0**,
+`wiki-maintain.guard.test.mjs` **32 / 32 / 0 / 0**, `argv-mutating-default.guard.test.mjs` 23 / 23 / 0 / 0
+(gained verdicts for `wiki-refresh.mjs` and `wiki-maintain.mjs`); `wiki-maintain.mjs --selftest` exit 0;
+`--since x` exits 2 (unrecognised); a canonical page is refused before any spend. The workflow is
+`workflow_dispatch` only with a required `pages` input; `grep "wiki-quiet|maintenance-state|max-slices"`
+on it finds nothing. Scenarios covered: T018 → US4-AC1/AC2, T019 → US4-AC3.
+
+**`wiki-maintain.mjs`: 3315 → 1768 lines** (`wiki-maintain.test.mjs` 3791 → 2144). Design calls:
+only the job-deadline guard is kept (page/time budgets and exit 3 removed; an unattempted page is
+`not landed`); a requested page counts as rewritten only if its body differs from HEAD, and a rewritten
+derived page is fingerprinted (`recordSourceFingerprint`) before the gates run; after a normal exit,
+unrequested pages the policy lets the generator write are put back (forbidden writes are left so
+verification fails); the forge is the only proposal state; `project.json` drops `wiki-plan`.
+
+T016's done-when now holds in full: `grep -rn "openwiki-claims\|wiki-claims-audit" scripts .forgejo`
+finds only a history comment and an absence assertion in `wiki-maintain.guard.test.mjs`.
+
+## T023 / T025 / T026 / T027 — the cut-over completes
+
+- T023: `runbooks/wiki-maintenance.md` (the 11th R8 page) refreshed once, after its source was rewritten
+  (T028), and recorded. `process/wiki-maintenance.md` was also refreshed — **not one of the 11**: its
+  `resource` is `infrastructure-as-code/project.json`, which this PR changed (the `wiki-plan` target
+  removed, `wiki-maintain` now `--pages`); V17 would otherwise have failed it.
+- T025: `node scripts/wiki-refresh.mjs --record --all-fresh` exit 0, recording the remaining derived pages;
+  then `--stale` prints nothing (exit 0) and `grep -rlE "^(sources|verified):" openwiki --include=*.md`
+  finds nothing.
+- T026 (SC-002): `node scripts/check-openwiki-okf.mjs` → `✅ 75 concepts conformant across 8 directories.`,
+  **exit 0** (it exited 1 with 52 V17 findings at T005). **SC-006**: `time node scripts/check-openwiki-okf.mjs`
+  → real 0.776 s (under 5 s).
+- **SC-007**: `du -sh openwiki` **6.9M before** retirement → **2.1M after**.
+- T027: V12, its self-test scenarios, the `unstampable` counter and its two unit tests and fixture removed;
+  `scripts/openwiki-drift.mjs` and its test deleted; `--all-fresh` removed from `wiki-refresh.mjs`, its
+  tests and the contract (now exit 2). `grep -rn "openwiki-drift" scripts .forgejo` finds nothing.
+  `--selftest`, the real tree and `wiki-refresh.test.mjs` (11 / 11 / 0 / 0) all pass;
+  `check-openwiki-okf.test.mjs` 27 / 27 / 0 / 0 — its real-bundle test, red since T005, is green.
+
+## T030 — the tiers this diff touches
+
+| Check | Result |
+|---|---|
+| `check-openwiki-okf.mjs` / `--selftest` | 0 / 0 |
+| `check-openwiki-governance.mjs` / `--selftest` | 0 / 0 |
+| `wiki-maintain.mjs --selftest` | 0 |
+| `node --test 'scripts/__tests__/wiki-*.test.mjs' 'scripts/__tests__/*openwiki*.test.mjs'` | **tests 287 · pass 287 · fail 0 · skipped 0** (baseline 412 / 0 skip; the drop is the 9 deleted test files) |
+| `node --test 'scripts/__tests__/*.test.mjs'` | **tests 1910 · pass 1910 · fail 0 · skipped 0** (baseline 2035 / 0 skip) |
+| `CI=true pnpm install --frozen-lockfile` (worktree) | exit 0, 5 m 59.7 s |
+| `pnpm nx affected -t lint test --base=origin/main --skip-nx-cache` | exit 0 — affected set is `["infrastructure-as-code"]`, which defines no `lint`/`test` target: **0 tasks** (an honest no-op, not a pass of anything) |
+| `pnpm nx run-many -t okf-lint okf-governance -p infrastructure-as-code --skip-nx-cache` | **2 tasks: 2 succeeded** — the targets that actually gate this diff |
+
+Skip count: 0 everywhere, no higher than the T001 baseline (0).

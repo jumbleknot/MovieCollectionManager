@@ -149,7 +149,7 @@ T026.
   - Remove `resource`, `sources` and `verified` from both.
   - Add both under `authoritative:` in `openwiki/protected.yaml`, each with at least one fingerprinted passage, following the existing entries' form.
   - **Done when**: `node scripts/check-openwiki-governance.mjs` exits 0. `node scripts/check-openwiki-okf.mjs` reports **no** finding on either page; the only findings left on the real tree are V17 `no fingerprint` lines, expected until T026.
-- [ ] T016 [US3] Retire Claims bookkeeping.
+- [X] T016 [US3] Retire Claims bookkeeping.
   - `git rm -r openwiki/.claims openwiki/.page-manifest.json openwiki/.last-update.json`.
   - Add those three paths and `openwiki/.maintenance-state.json` to `.gitignore`.
   - Remove V16, its self-test scenarios, and its import of `scripts/openwiki-claims.mjs` from `scripts/check-openwiki-okf.mjs`.
@@ -173,7 +173,7 @@ T026.
 
 **Goal**: dispatch-only `--pages`, with the unattended machinery deleted. **Independent test**: quickstart §5. The paid dispatch is operator-only.
 
-- [ ] T018 [P] [US4] Write the new `--pages` tests in `scripts/__tests__/wiki-maintain.test.mjs`. Covers US4-AC1/AC2 and FR-018/FR-019.
+- [X] T018 [P] [US4] Write the new `--pages` tests in `scripts/__tests__/wiki-maintain.test.mjs`. Covers US4-AC1/AC2 and FR-018/FR-019.
   - **Slicing**: `--pages runbooks/a.md,runbooks/b.md,projects/c.md` builds two slices grouped by area, with the run message from `renderRunMessage`.
   - **Refused with exit 2, before any spend**: a canonical page, an unknown page, an empty list, and `--since`.
   - **Post-step**: each landed page gets a current `resource-sha256` and no `sources`/`verified`, via `recordSourceFingerprint`.
@@ -183,14 +183,14 @@ T026.
   - Delete the test cases for range planning, backlog, escalation, cooldowns, drift selection, `--merge-record` and `--claims-audit`. Keep the cases for invocation, `revertUnrequested`, verification and proposal, adapted to `--pages`.
   - **Verify RED**: `node --test scripts/__tests__/wiki-maintain.test.mjs`
   - **Expected RED**: the new `--pages` cases fail with "unknown argument --pages", exit 2.
-- [ ] T019 [P] [US4] Update `scripts/__tests__/wiki-maintain.guard.test.mjs` (FR-017).
+- [X] T019 [P] [US4] Update `scripts/__tests__/wiki-maintain.guard.test.mjs` (FR-017).
   - Keep the dispatch-only assertion.
   - Assert a required `pages` input, and no `max-slices`/`since` inputs.
   - Assert that no step runs `wiki-quiet.mjs`, that no step references `.maintenance-state.json`, and that there is no marker-advance commit step.
   - Remove the assertions about the quiet step, the marker and the cooldown.
   - **Verify RED**: `node --test scripts/__tests__/wiki-maintain.guard.test.mjs`
   - **Expected RED**: the `pages`-input assertion and the no-`wiki-quiet` assertion fail.
-- [ ] T020 [US4] Implement `--pages` in `scripts/wiki-maintain.mjs` (research R7).
+- [X] T020 [US4] Implement `--pages` in `scripts/wiki-maintain.mjs` (research R7).
   - **Add**: slice-building from the named pages, the post-step stamp/strip, and the landed/not-landed report.
   - **Delete**:
     - `computePlan`/`planSlices` range planning, `selectDrift`, `cooledPages`;
@@ -201,7 +201,7 @@ T026.
     - exit code 3.
   - **Delete with their tests**: `scripts/wiki-quiet.mjs`, `scripts/wiki-escalation.mjs`, `wiki-quiet.test.mjs`, `wiki-escalation.test.mjs`, `wiki-cooldown.test.mjs` and `wiki-drift-plan.test.mjs`.
   - **Verify GREEN**: `node --test scripts/__tests__/wiki-maintain.test.mjs` passes, and `node scripts/wiki-maintain.mjs --selftest` exits 0.
-- [ ] T021 [US4] Update `.forgejo/workflows/wiki-maintain.yml`.
+- [X] T021 [US4] Update `.forgejo/workflows/wiki-maintain.yml`.
   - Add a required `pages` input (a comma-separated `area/page.md` list, validated by the same character-class guard the old inputs used).
   - Remove the `max-slices`/`since` inputs, the "Is anything uncovered?" (`wiki-quiet`) step and its `if:` conditions, and the marker-advance/record-merge step.
   - Pass `--pages "$INPUT_PAGES"`.
@@ -214,23 +214,23 @@ T026.
 
 **Goal**: every derived page is fresh and recorded, V17 is live, and V12 is gone. **Independent test**: quickstart §6. Depends on T003, T005, T007, T015 and T016.
 
-- [ ] T022 [US5] Refresh the three pages built on `docs/MCM-Architecture.md`: `openwiki/architecture/system-overview.md`, `openwiki/projects/mc-service.md` and `openwiki/projects/mcp-servers.md`.
+- [X] T022 [US5] Refresh the three pages built on `docs/MCM-Architecture.md`: `openwiki/architecture/system-overview.md`, `openwiki/projects/mc-service.md` and `openwiki/projects/mcp-servers.md`.
   - For each page: run `node scripts/wiki-refresh.mjs --diff <page>`, update only what the source change invalidates, then `--record <page>`.
   - **Done when**: none of the three appears in `--stale`.
-- [ ] T023 [P] [US5] Refresh `openwiki/projects/repository.md` (from `README.md`), `openwiki/runbooks/devcontainer.md` and `openwiki/runbooks/wiki-maintenance.md`, using the same procedure.
+- [X] T023 [P] [US5] Refresh `openwiki/projects/repository.md` (from `README.md`), `openwiki/runbooks/devcontainer.md` and `openwiki/runbooks/wiki-maintenance.md`, using the same procedure.
   - `wiki-maintenance.md`'s source is rewritten in T028; refresh it again after T028.
-- [ ] T024 [P] [US5] Refresh the five code-sourced gotcha pages, using the same procedure:
+- [X] T024 [P] [US5] Refresh the five code-sourced gotcha pages, using the same procedure:
   - `openwiki/gotchas/expo-router-and-transport-traps.md` (`server.js`)
   - `external-id-url-opening.md` (`movie-detail.tsx`)
   - `keycloak-service-account.md` (`keycloak.ts`)
   - `playwright-testid-mapping.md` (`playwright.config.ts`)
   - `session-lifecycle-and-eviction.md` (`session-manager.ts`)
-- [ ] T025 [US5] Run `node scripts/wiki-refresh.mjs --record --all-fresh` for every remaining derived page.
+- [X] T025 [US5] Run `node scripts/wiki-refresh.mjs --record --all-fresh` for every remaining derived page.
   - **Done when**: `node scripts/wiki-refresh.mjs --stale` prints nothing and exits 0, and `grep -rlE "^(sources|verified):" openwiki --include=*.md` finds nothing.
-- [ ] T026 [US5] Confirm V17 is live on the real tree (SC-002).
+- [X] T026 [US5] Confirm V17 is live on the real tree (SC-002).
   - **Verify GREEN**: `node scripts/check-openwiki-okf.mjs` exits 0. It exited 1 at T005.
   - Record the before/after in `EVIDENCE.md`, plus the V17 timing, which must be under 5 s (SC-006): `time node scripts/check-openwiki-okf.mjs`.
-- [ ] T027 [US5] Retire V12 and the drift module.
+- [X] T027 [US5] Retire V12 and the drift module.
   - Remove V12 and its self-test scenarios from `scripts/check-openwiki-okf.mjs`.
   - Delete `scripts/openwiki-drift.mjs` and `scripts/__tests__/openwiki-drift.test.mjs`.
   - Remove `--all-fresh` from `scripts/wiki-refresh.mjs`, its tests, and `contracts/wiki-refresh-cli.md`.
@@ -240,7 +240,7 @@ T026.
 
 ## Phase 8: Polish & cross-cutting
 
-- [ ] T028 Rewrite `docs/runbooks/wiki-maintenance.md` and `openwiki/INSTRUCTIONS.md` for the new model. Covers FR-021.
+- [X] T028 Rewrite `docs/runbooks/wiki-maintenance.md` and `openwiki/INSTRUCTIONS.md` for the new model. Covers FR-021.
   - **Runbook**:
     - a lead section on the session refresh duty (the "§refresh" anchor that the CLAUDE.md line links to);
     - V17/G14;
@@ -250,12 +250,12 @@ T026.
   - **`INSTRUCTIONS.md`**: in "Where a new learning goes", a derived page's learning goes into its source **and** the summary is refreshed in the same PR. Remove the Claims-citation rules (§9 lockfile/digest bans), which have no subject now.
   - Then re-run T023's refresh of `openwiki/runbooks/wiki-maintenance.md` (and of any page whose resource is `openwiki/INSTRUCTIONS.md`), and `--record` it.
   - **Done when**: `--stale` is empty and both gates exit 0.
-- [ ] T029 [P] Mark the superseded specs. Covers FR-020.
+- [X] T029 [P] Mark the superseded specs. Covers FR-020.
   - `specs/078-wiki-generator-cost/spec.md`: US6, US7 and FR-024..FR-029 are superseded by 098.
   - `specs/082-wiki-drift-replanning/spec.md`: superseded.
   - `specs/044-openwiki-automation-migration/spec.md`: the automated maintenance FRs are superseded.
   - Each gets a one-paragraph header note with a link. No rewrites.
-- [ ] T030 Run the tiers this diff touches (CLAUDE.md: run what the diff touches) and record the counts in `EVIDENCE.md`.
+- [X] T030 Run the tiers this diff touches (CLAUDE.md: run what the diff touches) and record the counts in `EVIDENCE.md`.
   - **Gates**: both gates, plain and `--selftest`.
   - **Wiki tests**: `node --test 'scripts/__tests__/wiki-*.test.mjs' 'scripts/__tests__/*openwiki*.test.mjs'`.
   - **Full scripts suite**: `node --test 'scripts/__tests__/*.test.mjs'`, to catch an importer of a deleted module.

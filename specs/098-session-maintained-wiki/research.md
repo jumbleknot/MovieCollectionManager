@@ -166,3 +166,6 @@ Measured on `origin/main` at 211aa928 (2026-11-10) unless stated otherwise.
     Edit the source **and** refresh the summary in the same PR.
 - **Measured**: the CLAUDE.md gate list is one-line entries with a link. `check-openwiki-governance.mjs`
   enforces "index only", so the line must follow that form.
+- **Naming**: the proposal's `wiki-refresh --stamp` is `--record` here (contracts/wiki-refresh-cli.md).
+  "Stamp" already names the page's `generated.at`/`timestamp` date (`openwiki-stamp.mjs`), so the command
+  that writes the source fingerprint is named for what it records.
