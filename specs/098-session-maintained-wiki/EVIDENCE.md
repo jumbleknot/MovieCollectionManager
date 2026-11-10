@@ -111,3 +111,80 @@ newer change; `--recrod x` exits 2 and writes nothing (`git status` clean apart 
   dead link until it existed); ADR-0003 status "Superseded in part by ADR-0004".
 - `node scripts/check-openwiki-governance.mjs`: exit 0. `node scripts/check-openwiki-okf.mjs`: only V17
   findings (52).
+
+## T010 / T011 — list-valued actor, G14, G13 removed
+
+RED (`node scripts/check-openwiki-governance.mjs --selftest`, exit 1):
+
+```
+✗ openwiki-governance gate --selftest FAILED:
+  list-actor-accepted: expected a clean pass, got [G2]
+  g3-list-actor: expected G3, got [G2]
+  g14-directory: expected G14, got [none]
+  g14-env-deploy: expected G14, got [none]
+  g14-renovate-custom-manager: expected G14, got [none]
+exit 1
+```
+
+GREEN: `--selftest` exit 0 (`… G14 one human-written file per derived page, list-valued actor …`).
+`node --test scripts/__tests__/check-openwiki-governance.test.mjs`: 29 tests, 28 pass, 1 fail — the
+real repository failing G14 on the two directory-resource pages, cleared by T015 (below). The
+`--selftest` summary assertion now looks for G14 where it looked for G13. A new unit test pins
+`mayWrite` membership for a list-valued actor (`agent` and `generator` allowed, `robot` refused).
+
+## T012 / T013 — `verified.at` is no longer a stamp
+
+RED (`node --test scripts/__tests__/openwiki-stamp.test.mjs`): **tests 10 · pass 6 · fail 4 · skipped 0** —
+the new "ignores verified.at" case and the three existing `verified` cases reworked to assert it is
+ignored.
+
+GREEN: **10 / 10 / 0 / 0**. `node scripts/check-openwiki-okf.mjs --selftest`: exit 0 after the
+`v5-verified-at` scenario (whose premise — V5 validates `verified.at` — this feature retires) was
+updated at the cause to `v17-verified-field`: a `verified:` field on a derived page is rejected.
+The two `check-openwiki-okf.test.mjs` cases that encoded `verified.at` as a stamp now assert the
+same V17 rejection.
+
+**Measured consequence for the cut-over (T025).** With `verified.at` dropped from the stamp, the
+stamp-vs-last-commit test no longer reproduces research R8's measurement, because R8 was measured
+with V12, which counted `verified.at`:
+
+| Page | R8 (verified counted) | verified ignored |
+|---|---|---|
+| projects/bff.md, projects/sast.md, runbooks/devcontainer-sandbox.md | fresh | stale |
+| architecture/agent-layer.md, gotchas/rfc-9457-problem-details.md, process/constitution.md, runbooks/android-emulator.md | fresh | no stamp |
+| gotchas/playwright-testid-mapping.md, gotchas/session-lifecycle-and-eviction.md | stale (in the 11) | no stamp |
+
+To keep the settled 11-page cut-over faithful to R8, `--record --all-fresh` (cut-over only, deleted
+in T027) judges with R8's own rule — the newest of `generated.at`, `verified.at` and `timestamp` —
+rather than the post-098 stamp.
+
+## T014 / T015 — policy.yaml, two pages canonical
+
+- `openwiki/**` → `actor: [agent, generator]` (rationale cites ADR-0004); the `.claims/**` and
+  `.page-manifest.json` entries removed; `event-driven` entries added for
+  `process/spec-driven-development.md` (`process-changed`) and `architecture/data-model.md`
+  (`domain-model-changed`).
+- Both pages lost `resource`/`sources`/`verified` and are listed under `authoritative:` in
+  `protected.yaml`, each with its `## Gotchas` section fingerprinted (values from the gate's own
+  `--fingerprint`). Both marked **[canonical]** in the CLAUDE.md index.
+- `node scripts/check-openwiki-governance.mjs`: exit 0. OKF: neither page has a finding.
+
+## T016 — Claims bookkeeping retired
+
+`du -sh openwiki` **before** retirement: **6.9M**.
+
+- `git rm`: `openwiki/.claims/` (45 files), `.page-manifest.json`, `.last-update.json` and
+  `.maintenance-state.json` (also tracked, so removed too); all four gitignored —
+  `git ls-files` prints nothing for them, `git check-ignore` matches all four.
+- V16, its self-test scenarios, its unit test and the `openwiki-claims.mjs` import removed from the
+  OKF gate; `openwiki-claims.mjs`, `wiki-claims-audit.mjs` and their tests deleted.
+- `.openwikiignore` deleted with `openwiki-ignore-claims.guard.test.mjs`: every entry it held
+  (`**/.env.deploy`, `**/pnpm-lock.yaml`, `security/sast/allowlist.yaml`) existed only to keep churn
+  out of Claims evidence, by the file's own header and comments. G14 now refuses all three families as
+  a `resource`.
+- `openwiki/decisions/adr-0003-claims-and-fingerprints.md` refreshed (its source's status changed in
+  T017, and it linked the deleted modules — V15): a supersession note, and the two dead links
+  unlinked. `--record`ed. **Not one of the 11 cut-over pages** — an ordinary refresh caused by this PR.
+- OKF on the real tree: only V17 `no source fingerprint` lines (49).
+- The grep part of T016's done-when (`openwiki-claims|wiki-claims-audit` in `scripts`) waits for
+  T020: `wiki-maintain.mjs` imports both modules throughout and is rewritten there.

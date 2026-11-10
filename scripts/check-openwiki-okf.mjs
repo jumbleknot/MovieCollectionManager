@@ -31,7 +31,6 @@ import { bodyLinks, classifyBodyLink, relativeFormFor, splitTarget } from './ope
 import { stampValues } from './openwiki-stamp.mjs';
 import { extractFrontMatter } from './openwiki-front-matter.mjs';
 import { staleDerivedPages } from './openwiki-fingerprint.mjs';
-import { claimsDurabilityFindings } from './openwiki-claims.mjs';
 import { sourceCommitAfterStamp } from './openwiki-drift.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -303,14 +302,6 @@ function validateBundle(bundleRoot, { repoRoot = REPO_ROOT } = {}) {
     }
   }
 
-  // V16 — every page openwiki has COVERED (a `.page-manifest.json` entry) must still hash to the
-  // `pageVersion` its verified Claims sidecar certifies. openwiki refuses the whole run otherwise
-  // ("Markdown and verified Claims are not durable"), so this is a finding, not a warning: a PR that
-  // hand-edits a verified page must go red here instead of bricking the next paid run (#611, #616).
-  for (const f of claimsDurabilityFindings(bundleRoot)) {
-    add('V16', join(bundleRoot, f.page), f.message);
-  }
-
   // V17 — a derived page must match its source (feature 098, contracts/okf-v17.md). This BLOCKS:
   // the coding session that changes a page's `resource` refreshes the page in the same PR. The
   // judgment is staleDerivedPages, the same function `wiki-refresh.mjs --stale` prints (FR-009).
@@ -484,10 +475,12 @@ function selftest() {
     'index.md': idx('a.md'),
     'a.md': '---\ntype: R\ngenerated:\n  by: openwiki/0.5.2\n  at: someday\n---\nb\n',
   }, { rule: 'V5' });
-  scenario('v5-verified-at', {
+  // `verified` is no longer a stamp (feature 098, R2): on a derived page it is a forbidden field,
+  // whatever its value, so it cannot slip through as an unvalidated date.
+  scenario('v17-verified-field', {
     'index.md': idx('a.md'),
-    'a.md': '---\ntype: R\nverified:\n  by: openwiki/0.5.2\n  at: nope\n---\nb\n',
-  }, { rule: 'V5' });
+    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}verified:\n  by: openwiki/0.5.2\n  at: nope\n---\nb\n`,
+  }, { rule: 'V17' });
 
   // A concept citing a source with NO stamp at all: not malformed, so no finding — but it must be
   // COUNTED, because that is the number that makes a silent loss of drift coverage visible.
@@ -562,20 +555,6 @@ function selftest() {
     'b c.md': '---\ntype: R\n---\nb\n',
   }, { clean: true });
 
-  // V16 — a covered page edited after its Claims were verified (#611). The certified hash is the one
-  // of the ORIGINAL bytes; the scenario writes different bytes, which openwiki would refuse to run on.
-  {
-    const original = '---\ntype: R\n---\nb\n';
-    const certified = `sha256:${createHash('sha256').update(original).digest('hex')}`;
-    const covered = (page) => ({
-      'index.md': idx('a.md'), 'a.md': page,
-      '.claims/a.json': JSON.stringify({ pageVersion: certified, verification: { by: 'x', at: '2026-09-29T00:00:00Z' } }),
-      '.page-manifest.json': JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/a.md': { pageVersion: certified } } }),
-    });
-    scenario('v16-durable', covered(original), { clean: true });
-    scenario('v16-edited', covered(`${original}edited\n`), { rule: 'V16' });
-  }
-
   // V17 — a derived page's `resource-sha256` must match its source (feature 098,
   // contracts/okf-v17.md). Each scenario is its own repository root, so the source sits beside the
   // bundle and the stale case can change bytes without touching the real tree.
@@ -613,7 +592,7 @@ function selftest() {
     console.error('✗ openwiki-okf gate --selftest FAILED:\n  ' + fails.join('\n  '));
     return 1;
   }
-  console.log('✓ openwiki-okf gate --selftest passed (V1–V17: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing, site-root-absolute body links rejected with the relative form named, code samples exempt, relative links resolved from their own file, covered pages durable against their verified Claims, derived pages fresh against their source fingerprint)');
+  console.log('✓ openwiki-okf gate --selftest passed (V1–V15, V17: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing, site-root-absolute body links rejected with the relative form named, code samples exempt, relative links resolved from their own file, derived pages fresh against their source fingerprint)');
   return 0;
 }
 

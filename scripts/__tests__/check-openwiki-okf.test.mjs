@@ -185,14 +185,15 @@ function oneConceptBundle(frontMatter) {
   return dir;
 }
 
-test('V12 a page whose claims were VERIFIED after its source changed is not stale (the adr-0001 shape)', () => {
-  // openwiki re-verified the page's claims and left body, `timestamp` and `generated` alone. Reading
-  // only generated.at/timestamp reported a page the generator had just checked as out of date.
+test('V17 a derived page still carrying `verified:` fails, however recent its date (feature 098)', () => {
+  // `verified.at` used to count as a stamp (the adr-0001 shape). Claims are retired (ADR-0004): the
+  // field is forbidden, so a re-verification can no longer stand in for refreshing the page.
   const dir = oneConceptBundle('timestamp: 2001-01-01T00:00:00Z\nverified:\n  - by: openwiki/0.5.2\n    at: 2999-01-01T00:00:00Z\n');
   try {
-    const { code, out } = runGate(['--bundle', dir, '--json']);
-    assert.equal(code, 0, out);
-    assert.deepEqual(JSON.parse(out).warnings, [], 'the newest of generated.at, verified.at and timestamp is the stamp');
+    const { code, out } = runGate(['--bundle', dir]);
+    assert.equal(code, 1, out);
+    assert.match(out, /V17/);
+    assert.match(out, /forbidden field verified/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -208,43 +209,15 @@ test('V12 an OLD verification does not hide drift after a newer source change', 
   }
 });
 
-test('V5 a malformed verified.at in the LIST shape openwiki writes is a finding', () => {
-  // `verified` is a list of events. A path reader that does not descend arrays never saw it, so V5 on
-  // `verified.at` had validated nothing on any real page.
+test('V17 a `verified:` list is a forbidden field, not a date to validate (feature 098)', () => {
+  // `verified` is a list of events. V5 used to validate each `verified.at`; with Claims retired the
+  // whole field is rejected instead, so a malformed one cannot pass as "not a stamp".
   const dir = oneConceptBundle('verified:\n  - by: openwiki/0.5.2\n    at: nope\n');
   try {
     const { code, out } = runGate(['--bundle', dir]);
     assert.equal(code, 1, out);
-    assert.match(out, /V5/);
-    assert.match(out, /verified\.at/);
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-});
-
-test('V16 a covered page whose bytes no longer match its verified Claims fails the gate (#611)', () => {
-  // openwiki 0.6.0 refuses to run at all on this state ("Markdown and verified Claims are not
-  // durable"), so a PR that creates it must go red HERE instead of bricking the next paid run.
-  // Measured twice on 2026-09-29: a hand edit (#606) and a run's own output (#615), both CI-green.
-  const dir = oneConceptBundle('timestamp: 2026-09-01T00:00:00Z\n');
-  try {
-    const page = readFileSync(join(dir, 'page.md'));
-    const certified = `sha256:${createHash('sha256').update(page).digest('hex')}`;
-    mkdirSync(join(dir, '.claims'), { recursive: true });
-    writeFileSync(join(dir, '.claims', 'page.json'), JSON.stringify({ pageVersion: certified, verification: { by: 'openwiki/0.6.0', at: '2026-09-29T00:00:00Z' }, claims: [] }));
-    writeFileSync(join(dir, '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: { '/openwiki/page.md': { pageVersion: certified } } }));
-    assert.equal(runGate(['--bundle', dir]).code, 0, 'consistent: clean');
-
-    writeFileSync(join(dir, 'page.md'), `${page}A hand edit.\n`);
-    const { code, out } = runGate(['--bundle', dir]);
-    assert.equal(code, 1, out);
-    assert.match(out, /V16/);
-    assert.match(out, /page\.md/);
-
-    // The uncovered form is the sanctioned fix: no manifest entry, no sidecar.
-    writeFileSync(join(dir, '.page-manifest.json'), JSON.stringify({ schemaVersion: 1, pages: {} }));
-    rmSync(join(dir, '.claims'), { recursive: true, force: true });
-    assert.equal(runGate(['--bundle', dir]).code, 0, 'uncovered: clean');
+    assert.match(out, /V17/);
+    assert.match(out, /verified/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

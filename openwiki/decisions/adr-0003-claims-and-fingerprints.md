@@ -3,37 +3,23 @@ type: Decision
 title: "ADR-0003: Grounded Claims and protected-passage fingerprints are complements"
 description: The governance decision that Grounded Claims and the protected.yaml fingerprints are complements with disjoint scopes — Claims on derived pages only, fingerprints on authoritative pages only, never both — with G13 enforcing the split and policy rather than luck keeping it.
 resource: docs/decisions/ADR-0003-claims-and-fingerprints.md
+resource-sha256: 40ae5d381bf180b24cda5dbf8c7accc148c473413067ed2f2e23740b63a63f99
 tags: [adr, claims, fingerprints, governance, decision-record]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-03T12:30:54.717Z
-sources:
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-6a85d1785ff9f9a2e0138d3c
-    resource: repo://docs/decisions/ADR-0003-claims-and-fingerprints.md
-  - id: openwiki-source-c231cd090281b3129aaf6167
-    resource: repo://docs/runbooks/wiki-maintenance.md
-  - id: openwiki-source-a50c3dca6e011b3f54f51815
-    resource: repo://scripts/__tests__/check-openwiki-governance.test.mjs
-  - id: openwiki-source-d0e241f24a4e0d3e79f47c5f
-    resource: repo://scripts/__tests__/openwiki-claims.test.mjs
-  - id: openwiki-source-98792bbc9621de1ad3e22856
-    resource: repo://scripts/check-openwiki-governance.mjs
-  - id: openwiki-source-ccaf212e2940e782eb0de272
-    resource: repo://scripts/check-openwiki-okf.mjs
-  - id: openwiki-source-efa55c3a8c70016f55bf6266
-    resource: repo://scripts/openwiki-claims.mjs
-  - id: openwiki-source-31eafb88f9d0f880c0c66a49
-    resource: repo://scripts/openwiki-policy.mjs
-  - id: openwiki-source-e3418ba4f663de6f0edbcde6
-    resource: repo://scripts/wiki-maintain.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T03:30:53.754Z" }
+timestamp: 2026-11-10T03:10:00.491Z
 ---
 
 # ADR-0003: Grounded Claims and protected-passage fingerprints are complements
 
-Accepted governance decision (2026-11-01, item #513) settling that the two mechanisms protecting this
+> **Superseded in part by ADR-0004 (2026-11-10).** The **Claims half** of this decision is retired:
+> feature 098 removed Claims from derived pages (the `.claims/` sidecars, `.page-manifest.json`,
+> `verified:`, V16 and G13). A derived page now records its source's fingerprint instead, checked by
+> V17 in the required `okf` check. The **fingerprint half stands unchanged**: `protected.yaml` still
+> guards authoritative pages (G5–G7). See
+> [`docs/decisions/ADR-0004-session-maintained-wiki.md`](../../docs/decisions/ADR-0004-session-maintained-wiki.md).
+> The rest of this page records the decision as it was made.
+
+Governance decision (2026-11-01, item #513) settling that the two mechanisms protecting this
 bundle answer **different questions about different kinds of page**, so neither supersedes the other:
 
 - **Grounded Claims** live on **derived** pages only — a concept that cites a `resource` and is written
@@ -96,7 +82,7 @@ catch-all, so the coverage mechanism's scope is stated where the other rules are
 
 ## G13: the scope gate and its three failure modes
 
-`claimsScopeFindings` in [`scripts/openwiki-claims.mjs`](../../scripts/openwiki-claims.mjs) implements
+`claimsScopeFindings` in `scripts/openwiki-claims.mjs` (deleted by feature 098) implemented
 the check; [`scripts/check-openwiki-governance.mjs`](../../scripts/check-openwiki-governance.mjs) runs it
 as rule **G13** in the always-on governance gate. That gate is offline and keyless by construction, and
 CI runs it in the `okf` job of `guardrails` on every push to `main` and every pull request —
@@ -117,8 +103,8 @@ G13 itself fails three shapes, and each is a different way for the disjointness 
 
 G13 is what surfaces the first case. Without it, an openwiki release that began writing Claims for pages
 it did not generate would silently create a **second, conflicting protection** on authoritative pages
-rather than failing a pull request. The scope check is pinned by tests in
-[`scripts/__tests__/openwiki-claims.test.mjs`](../../scripts/__tests__/openwiki-claims.test.mjs), and the
+rather than failing a pull request. The scope check was pinned by tests in
+`scripts/__tests__/openwiki-claims.test.mjs` (deleted with it), and the
 governance gate's own `--selftest` proves G13 still detects its case.
 
 ## G13 and V16 are different invariants — do not conflate them

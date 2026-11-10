@@ -43,6 +43,10 @@ authoritative:
   - "process/pull-request-batching.md"
   - "process/test-authoring-conventions.md"
   - "projects/ci-cd-pipeline.md"
+  # Canonical since feature 098 (research R3): each summarised a DIRECTORY, which has no single
+  # source fingerprint (FR-006, G14). Now hand-maintained; see ADR-0004.
+  - "architecture/data-model.md"
+  - "process/spec-driven-development.md"
 
 # Load-bearing passages, fingerprinted. Normalization is line endings and trailing whitespace only:
 # over-normalizing would let a meaning-changing edit pass, which is the one failure this prevents.
@@ -334,3 +338,18 @@ passages:
     fingerprint: "sha256:d04395794b44d1a8d69bd1edaea8d1cd7f3eaa597b4a21ff2be315fd8c3a0a27"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
+  - concept: "process/spec-driven-development.md"
+    anchor: "Gotchas"
+    # Canonical since feature 098 (item #739, research R3): the page was a "summary" of `specs/`,
+    # a directory, while describing the process, which does not change with the specs' contents.
+    fingerprint: "sha256:d0ae39cb793d098e7a11dc13b8ad47f4e7f223814f1ab554874be7774998cab4"
+    origin: "openwiki/process/spec-driven-development.md (derived from specs/ until feature 098)"
+    relocatedAt: "2026-11-10"
+  - concept: "architecture/data-model.md"
+    anchor: "Gotchas"
+    # Canonical since feature 098 (research R3): the page summarises 14 files across mc-service's
+    # domain layer, so no single file is its honest source (FR-006). Re-point it at one file and
+    # drop this entry if the layer becomes active again (ADR-0004 §6).
+    fingerprint: "sha256:e1479177c3a09ae65b0f614c2c986e80db535b78b66854195dac5b769455bc84"
+    origin: "openwiki/architecture/data-model.md (derived from backend/mc-service/src/domain/ until feature 098)"
+    relocatedAt: "2026-11-10"

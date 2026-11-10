@@ -41,8 +41,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { parse as parseYaml } from 'yaml';
 
-import { claimsScopeFindings } from './openwiki-claims.mjs';
-import { loadPolicy, resolvePolicy, POLICY_STATES, ACTORS, GENERATOR_SCOPE_PREFIX } from './openwiki-policy.mjs';
+import { loadPolicy, resolvePolicy, globToRegExp, actorMembers, POLICY_STATES, ACTORS, GENERATOR_SCOPE_PREFIX } from './openwiki-policy.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -229,6 +228,54 @@ function citedPaths(text) {
   return [...out].filter((p) => /^(docs|openwiki|specs|scripts|packages|security|infrastructure-as-code|frontend|backend|agents|mcp-servers)\/[\w./-]+\.(md|ya?ml|json|mjs|toml|sh)$/.test(p));
 }
 
+// ── files an automated writer rewrites (G14, research R4) ────────────────────────
+//
+// The fixed list is the definition of "Renovate-managed" for G14: the files Renovate's DEFAULT managers
+// match (their built-in `fileMatch` sets for npm/pnpm, cargo, pep621/uv, pip_requirements, dockerfile,
+// docker-compose, forgejo/github actions, nvm/node-version, asdf, rust-toolchain, pyenv), plus the
+// `.env.deploy` files CD rewrites. It is not a promise to mirror Renovate exactly; widening it is a
+// one-line edit. The repository's own `customManagers` patterns are read at check time, so a new custom
+// manager is covered without touching this list.
+
+const AUTOMATED_WRITER_GLOBS = [
+  '**/.env.deploy',
+  '**/package.json', '**/pnpm-lock.yaml',
+  '**/Cargo.toml', '**/Cargo.lock',
+  '**/pyproject.toml', '**/uv.lock', '**/requirements*.txt',
+  '**/Dockerfile*', '**/*.Dockerfile',
+  '**/*compose*.yml', '**/*compose*.yaml',
+  '.forgejo/workflows/**',
+  'renovate.json',
+  '**/.nvmrc', '**/.node-version', '**/.tool-versions', '**/rust-toolchain.toml', '**/.python-version',
+];
+
+function automatedWriterMatchers(root) {
+  const out = AUTOMATED_WRITER_GLOBS.map((g) => ({ re: globToRegExp(g), why: `matches \`${g}\`, a file Renovate's default managers or CD rewrite` }));
+  const renovatePath = join(root, 'renovate.json');
+  if (!existsSync(renovatePath)) return out;
+  let config;
+  try {
+    config = JSON.parse(readFileSync(renovatePath, 'utf8'));
+  } catch {
+    return out; // a broken renovate.json is Renovate's own validator's finding, not this gate's
+  }
+  for (const manager of Array.isArray(config.customManagers) ? config.customManagers : []) {
+    for (const pattern of [...(manager.managerFilePatterns ?? []), ...(manager.fileMatch ?? [])]) {
+      if (typeof pattern !== 'string') continue;
+      // Renovate: a `/…/flags` string is a regex, anything else a glob.
+      const m = /^\/(.+)\/([a-z]*)$/.exec(pattern);
+      let re;
+      try {
+        re = m ? new RegExp(m[1], m[2]) : globToRegExp(pattern);
+      } catch {
+        continue;
+      }
+      out.push({ re, why: `matches renovate.json customManagers pattern \`${pattern}\`` });
+    }
+  }
+  return out;
+}
+
 // ── the gate ────────────────────────────────────────────────────────────────────
 
 export function validate(root) {
@@ -279,10 +326,17 @@ export function validate(root) {
     if (!POLICY_STATES.includes(entry.policy)) {
       add('G2', 'openwiki/policy.yaml', `entry \`${entry.glob}\` declares policy \`${entry.policy}\`, which is not one of: ${POLICY_STATES.join(', ')}`);
     }
-    if (entry.actor !== undefined && !ACTORS.includes(entry.actor)) {
-      add('G2', 'openwiki/policy.yaml', `entry \`${entry.glob}\` declares actor \`${entry.actor}\`, which is not one of: ${ACTORS.join(', ')}`);
+    // `actor` may be one name or a list (feature 098, ADR-0004); every member is checked.
+    const actors = actorMembers(entry.actor);
+    if (entry.actor !== undefined && actors.length === 0) {
+      add('G2', 'openwiki/policy.yaml', `entry \`${entry.glob}\` declares an empty actor list`);
     }
-    if (entry.actor === 'generator' && !entry.glob.startsWith(GENERATOR_SCOPE_PREFIX)) {
+    for (const actor of actors) {
+      if (!ACTORS.includes(actor)) {
+        add('G2', 'openwiki/policy.yaml', `entry \`${entry.glob}\` declares actor \`${actor}\`, which is not one of: ${ACTORS.join(', ')}`);
+      }
+    }
+    if (actors.includes('generator') && !entry.glob.startsWith(GENERATOR_SCOPE_PREFIX)) {
       add('G3', 'openwiki/policy.yaml', `entry \`${entry.glob}\` names actor \`generator\` outside \`${GENERATOR_SCOPE_PREFIX}\`. The generator's write scope is the bundle plus its own managed regions; every other regenerate assignment governs an agent under human review. Widening it is a separate decision, not a policy edit`);
     }
     if (entry.policy === 'event-driven' && !(Array.isArray(entry.events) && entry.events.length > 0)) {
@@ -340,9 +394,22 @@ export function validate(root) {
     }
   }
 
-  // ── G13: Claims only where fingerprints are not (item #513, ADR-0003) ─────────
-  for (const f of claimsScopeFindings(join(root, BUNDLE), authoritative)) {
-    add('G13', `${BUNDLE}/${f.page}`, f.message);
+  // ── G14: a derived page summarises ONE file that no bot rewrites (feature 098) ──
+  // FR-006: a directory has no single fingerprint, and a tree hash would block every PR touching any
+  // file in it. FR-007: if Renovate or CD rewrites the source, V17 goes red on a PR with no session
+  // there to refresh the summary.
+  const botWritten = automatedWriterMatchers(root);
+  for (const c of concepts) {
+    if (!c.derived || /^[a-z][a-z0-9+.-]*:\/\//i.test(c.resource)) continue;
+    const path = c.resource.split('#')[0].split('?')[0].replace(/^\.\//, '');
+    if (statSync(join(root, path)).isDirectory()) {
+      add('G14', c.rel, `cites the directory \`${c.resource}\`. A derived page summarises exactly one file, so its fingerprint (V17) has one thing to match — re-point \`resource\` at one file, or make the page canonical (list it under \`authoritative:\` in ${MANIFEST_FILE})`);
+      continue;
+    }
+    const hit = botWritten.find((m) => m.re.test(path.replace(/\/$/, '')));
+    if (hit) {
+      add('G14', c.rel, `cites \`${c.resource}\`, which ${hit.why}. A bot change would make this page stale (V17) with no session there to refresh it — cite the human-written document that explains the subject instead`);
+    }
   }
 
   // ── G5/G6/G7: protected passages ─────────────────────────────────────────────
@@ -495,7 +562,27 @@ function selftest() {
   }, 'G11');
   scenario('g11-both', (f) => { f['openwiki/area/a.md'] = concept(PASSAGE, 'CLAUDE.md'); }, 'G11');
   scenario('g12', (f) => { f['openwiki/policy.yaml'] = f['openwiki/policy.yaml'].replace('  - glob: "openwiki/area/a.md"\n    policy: event-driven\n    actor: agent\n    events: [subject-changed]\n', ''); }, 'G12');
-  scenario('g13', (f) => { f['openwiki/.claims/area/a.json'] = '{}\n'; }, 'G13');
+  // A list-valued actor (feature 098, ADR-0004): sessions AND the manual rebuild both write the bundle.
+  // G2 validates every member; G3 still confines `generator` to openwiki/, list or not.
+  const LIST_ACTOR = (f) => { f['openwiki/policy.yaml'] = f['openwiki/policy.yaml'].replace('policy: regenerate\n    actor: generator', 'policy: regenerate\n    actor: [agent, generator]'); };
+  scenario('list-actor-accepted', LIST_ACTOR, null);
+  scenario('g3-list-actor', (f) => { LIST_ACTOR(f); f['openwiki/policy.yaml'] += '  - glob: "docs/**"\n    policy: regenerate\n    actor: [generator]\n'; }, 'G3');
+  scenario('g2-list-actor-unknown-member', (f) => { f['openwiki/policy.yaml'] = f['openwiki/policy.yaml'].replace('policy: regenerate\n    actor: generator', 'policy: regenerate\n    actor: [agent, robot]'); }, 'G2');
+
+  // G14 — a derived page's `resource` is ONE file that no bot rewrites (feature 098, FR-006/FR-007,
+  // research R4). Otherwise V17 could go red on a change with no session there to refresh the page.
+  const derivedPage = (resource) => (f) => {
+    f['openwiki/area/b.md'] = concept('body', resource);
+    f['openwiki/area/index.md'] = '# Area\n- [a](a.md)\n- [b](b.md)\n';
+  };
+  scenario('g14-clean-file-resource', (f) => { derivedPage('docs/runbooks/x.txt')(f); f['docs/runbooks/x.txt'] = 'x\n'; }, null);
+  scenario('g14-directory', (f) => { derivedPage('some/dir/')(f); f['some/dir/x.txt'] = 'x\n'; }, 'G14');
+  scenario('g14-env-deploy', (f) => { derivedPage('infrastructure-as-code/docker/bff/.env.deploy')(f); f['infrastructure-as-code/docker/bff/.env.deploy'] = 'A=1\n'; }, 'G14');
+  scenario('g14-renovate-custom-manager', (f) => {
+    derivedPage('tools/versions.txt')(f);
+    f['tools/versions.txt'] = 'node 24\n';
+    f['renovate.json'] = JSON.stringify({ customManagers: [{ customType: 'regex', managerFilePatterns: ['/^tools/versions\\.txt$/'] }] });
+  }, 'G14');
   scenario('whitespace-only-drift', (f) => { f['openwiki/area/a.md'] = concept(`${PASSAGE}   `).replace(/\n/g, '\r\n'); }, null);
   scenario('fingerprint-corrected-together', (f) => {
     const reworded = 'A load-bearing sentence that has been deliberately corrected.';
@@ -514,7 +601,7 @@ function selftest() {
     console.error(`✗ openwiki-governance gate --selftest FAILED:\n  ${fails.join('\n  ')}`);
     return 1;
   }
-  console.log('✓ openwiki-governance gate --selftest passed (G1–G4 policy declaration, G5–G7 passage protection incl. removal and derived-concept cases, G8–G10 index and assistant surfaces, G11 concept classification, G12 authoritative-not-regenerate, G13 Claims only on derived pages, whitespace-only drift tolerated, same-change fingerprint correction accepted, managed-region prose exempt, fail-closed on both governance files)');
+  console.log('✓ openwiki-governance gate --selftest passed (G1–G4 policy declaration, G5–G7 passage protection incl. removal and derived-concept cases, G8–G10 index and assistant surfaces, G11 concept classification, G12 authoritative-not-regenerate, G14 one human-written file per derived page, list-valued actor, whitespace-only drift tolerated, same-change fingerprint correction accepted, managed-region prose exempt, fail-closed on both governance files)');
   return 0;
 }
 

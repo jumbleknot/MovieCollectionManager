@@ -278,7 +278,7 @@ test('--selftest proves the rules still detect their cases', () => {
   assert.equal(code, 0, out);
   assert.match(out, /G1/);
   assert.match(out, /G12/);
-  assert.match(out, /G13/);
+  assert.match(out, /G14/); // G13 retired with Claims (ADR-0004); G14 replaced it in the summary
 });
 
 test('--json emits machine-readable findings', () => {
@@ -299,4 +299,17 @@ test('bad usage exits 2', () => {
 test('the real repository passes its own governance gate', () => {
   const { code, out } = runGate([]);
   assert.equal(code, 0, `the repository must satisfy the rules it enforces\n${out}`);
+});
+
+// ── list-valued actor (feature 098, ADR-0004) ───────────────────────────────────
+test('mayWrite: a list-valued actor permits each member and nobody else', async () => {
+  const { mayWrite, actorMembers } = await import(new URL('../openwiki-policy.mjs', import.meta.url).href);
+  const policy = {
+    entries: [{ glob: 'openwiki/**', policy: 'regenerate', actor: ['agent', 'generator'], matcher: /^openwiki\/.*$/, exceptionMatchers: [] }],
+  };
+  assert.equal(mayWrite(policy, 'openwiki/runbooks/x.md', 'agent').allowed, true);
+  assert.equal(mayWrite(policy, 'openwiki/runbooks/x.md', 'generator').allowed, true);
+  assert.equal(mayWrite(policy, 'openwiki/runbooks/x.md', 'robot').allowed, false);
+  assert.deepEqual(actorMembers('agent'), ['agent']);
+  assert.deepEqual(actorMembers(undefined), []);
 });

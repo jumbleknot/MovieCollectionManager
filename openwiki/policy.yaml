@@ -17,7 +17,8 @@
 #   never-written           analyzed if useful, but never written by any automated actor
 #   analyzable-not-covered  read for context, but not a coverage target for the bundle
 #
-# `actor` is `agent` or `generator`. **`generator` is valid only inside `openwiki/`** — the
+# `actor` is `agent`, `generator`, or a list of them (feature 098, ADR-0004) — a list means each
+# member may write. **`generator` is valid only inside `openwiki/`**, list or not — the
 # generator's write scope is the bundle plus its own managed regions, and every other `regenerate`
 # assignment governs an agent working under human review (FR-026c). Widening the generator's scope
 # is a separate feature, not an implementation choice; the whole grid below rests on that assumption.
@@ -86,22 +87,8 @@ paths:
   # what makes that layering work.
   - glob: "openwiki/**"
     policy: regenerate
-    actor: generator
-    rationale: "Derived summaries of a canonical document, freely refreshed from it. The ONLY place `actor: generator` is permitted (FR-026c)"
-
-  # Grounded Claims: openwiki's evidence records for the derived pages above. Declared rather than
-  # inherited from the catch-all so that their scope is stated. They live on DERIVED pages only;
-  # authoritative pages are protected by protected.yaml fingerprints instead, and G13 fails a page
-  # that has both (item #513, ADR-0003).
-  - glob: "openwiki/.claims/**"
-    policy: regenerate
-    actor: generator
-    rationale: "Grounded Claims sidecars, written by the generator alongside the derived page they certify. Never hand-edited: a covered page is uncovered (sidecar, manifest entry and `verified:` removed together) before a hand edit. Never on an authoritative page (G13, ADR-0003)"
-
-  - glob: "openwiki/.page-manifest.json"
-    policy: regenerate
-    actor: generator
-    rationale: "openwiki's page-coverage manifest: which derived pages carry verified Claims. Kept consistent with the sidecars by V16, and never names an authoritative page (G13, ADR-0003)"
+    actor: [agent, generator]
+    rationale: "Derived summaries of a canonical document, refreshed from it. Two writers (ADR-0004): the coding session that changes a page's source refreshes the page in the same PR (V17 blocks a stale one), and the generator writes on a manual rebuild of operator-named pages. The ONLY place `generator` is permitted (FR-026c, G3)"
 
   - glob: "openwiki/INSTRUCTIONS.md"
     policy: never-written
@@ -114,6 +101,19 @@ paths:
   - glob: "openwiki/protected.yaml"
     policy: never-written
     rationale: "The protection manifest (FR-029b). Outside the generator's write scope by design — a sidecar YAML is invisible to both the generator and the OKF gate, which handle markdown only, so protection cannot be stripped by the process it constrains"
+
+  # Canonical since feature 098 (research R3): each summarised a DIRECTORY, which has no single
+  # fingerprint (FR-006). They are hand-maintained, and written when their subject changes.
+  - glob: "openwiki/process/spec-driven-development.md"
+    policy: event-driven
+    actor: agent
+    events: [process-changed]
+    rationale: "Authoritative concept (openwiki/protected.yaml) since feature 098. It describes the proposal → spec → plan → tasks process, which does not change with the specs' contents — so it was never honestly a summary of `specs/` (item #739)"
+  - glob: "openwiki/architecture/data-model.md"
+    policy: event-driven
+    actor: agent
+    events: [domain-model-changed]
+    rationale: "Authoritative concept (openwiki/protected.yaml) since feature 098. It summarises 14 files across mc-service's domain layer, so no single file is its honest source; the layer had 0 commits in the three months before the change. Re-point it at one file if that changes (ADR-0004 §6)"
 
   # Authoritative concepts — relocated instruction-file content, canonical in its own right with no
   # upstream document to cite. `event-driven` rather than `regenerate` (G12) precisely because a

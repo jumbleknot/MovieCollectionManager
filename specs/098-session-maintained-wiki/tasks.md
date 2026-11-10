@@ -115,7 +115,7 @@ T026.
 
 **Goal**: retire Claims bookkeeping, widen the writer policy, and add G14 and ADR-0004. **Independent test**: quickstart §3.
 
-- [ ] T010 [P] [US3] Add self-test scenarios to `scripts/check-openwiki-governance.mjs` (`--selftest`). Covers US3-AC3 and FR-006/FR-007/FR-015.
+- [X] T010 [P] [US3] Add self-test scenarios to `scripts/check-openwiki-governance.mjs` (`--selftest`). Covers US3-AC3 and FR-006/FR-007/FR-015.
   - **Accepted**: `actor: [agent, generator]` on `openwiki/**`.
   - **Rejected**:
     - `actor: [generator]` on `docs/**`, which still fails G3;
@@ -126,26 +126,26 @@ T026.
   - **Removed**: the existing G13 scenarios.
   - **Verify RED**: `node scripts/check-openwiki-governance.mjs --selftest`
   - **Expected RED**: exit 1. The list-actor scenario fails G2 today, and the G14 scenarios report "expected G14, got none".
-- [ ] T011 [US3] Implement the governance changes.
+- [X] T011 [US3] Implement the governance changes.
   - `scripts/openwiki-policy.mjs`: `actor` may be a string or an array. Add a membership check, and `mayWrite(policy, path, actor)` returns true if `actor` is a member.
   - `scripts/check-openwiki-governance.mjs`:
     - G2/G3 iterate the actor members;
     - add G14, which reads `renovate.json` `customManagers[*].managerFilePatterns` plus the fixed deny-list in research R4;
     - delete G13 and its message.
   - **Verify GREEN**: `node scripts/check-openwiki-governance.mjs --selftest` exits 0, and `node --test scripts/__tests__/check-openwiki-governance.test.mjs` passes.
-- [ ] T012 [P] [US3] Extend `scripts/__tests__/openwiki-stamp.test.mjs` (research R2).
+- [X] T012 [P] [US3] Extend `scripts/__tests__/openwiki-stamp.test.mjs` (research R2).
   - New case: `conceptStamp` ignores `verified.at`.
   - Existing `verified` cases are changed to assert that it is ignored.
   - **Verify RED**: `node --test scripts/__tests__/openwiki-stamp.test.mjs`
   - **Expected RED**: the new case fails, because `verified.at` is still picked as the newest.
-- [ ] T013 [US3] Implement `scripts/openwiki-stamp.mjs`: set `EVENT_FIELDS = ['generated']` and update the header comment's rationale.
+- [X] T013 [US3] Implement `scripts/openwiki-stamp.mjs`: set `EVENT_FIELDS = ['generated']` and update the header comment's rationale.
   - **Verify GREEN**: the T012 command passes. Then `node scripts/check-openwiki-okf.mjs --selftest` still exits 0.
-- [ ] T014 [US3] Update `openwiki/policy.yaml`.
+- [X] T014 [US3] Update `openwiki/policy.yaml`.
   - `openwiki/**` becomes `actor: [agent, generator]`, with a rationale citing ADR-0004.
   - Delete the `openwiki/.claims/**` and `openwiki/.page-manifest.json` entries.
   - Add `event-driven` entries for `openwiki/process/spec-driven-development.md` (events: `[process-changed]`) and `openwiki/architecture/data-model.md` (events: `[domain-model-changed]`), so that G12 holds once they are canonical.
   - **Done when**: `node scripts/check-openwiki-governance.mjs` exits 0.
-- [ ] T015 [US3] Make `process/spec-driven-development.md` and `architecture/data-model.md` canonical (research R3).
+- [X] T015 [US3] Make `process/spec-driven-development.md` and `architecture/data-model.md` canonical (research R3).
   - Remove `resource`, `sources` and `verified` from both.
   - Add both under `authoritative:` in `openwiki/protected.yaml`, each with at least one fingerprinted passage, following the existing entries' form.
   - **Done when**: `node scripts/check-openwiki-governance.mjs` exits 0. `node scripts/check-openwiki-okf.mjs` reports **no** finding on either page; the only findings left on the real tree are V17 `no fingerprint` lines, expected until T026.
