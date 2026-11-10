@@ -1,6 +1,6 @@
 # Runbook: E2E Testing (BFF-container modes, flakiness, integration harness)
 
-> Loaded on demand — referenced from CLAUDE.md. The day-to-day Test Run Protocol and Final Validation Checklist live in CLAUDE.md; this runbook holds the container-mode procedures, the flakiness-diagnosis protocol, and the BFF integration-test harness facts. For mobile/Android specifics see [android-emulator.md](android-emulator.md).
+> Loaded on demand — referenced from CLAUDE.md's gates. The day-to-day Test Run Protocol lives in the constitution ([.specify/memory/constitution.md](../../.specify/memory/constitution.md)) and the Final Validation Checklist in [openwiki/invariants/feature-validation-checklist.md](../../openwiki/invariants/feature-validation-checklist.md); this runbook holds the container-mode procedures, the flakiness-diagnosis protocol, and the BFF integration-test harness facts. For mobile/Android specifics see [android-emulator.md](android-emulator.md).
 
 > **Before ANY agent E2E: prove the two images match your source.** Both are **baked, not
 > mounted** — the Expo web bundle lives inside `mcm-bff:latest` and the graph inside
@@ -66,8 +66,9 @@
 > confidence."* **The skip COUNT is the signal**: if it moves, something stopped being tested.
 
 
-`app-ci`'s `app-e2e` job runs `test:integration` for **all three** projects — agent
-(`movie-assistant`), `mc-service`, `mcm-app` — before the web/APK/emulator legs, so a failure costs
+`app-ci`'s `app-e2e` job runs `test:integration` for **six** projects — agent
+(`movie-assistant`), the three MCP servers (`movie-mcp`, `spreadsheet-mcp`, `web-api-mcp`),
+`mc-service`, `mcm-app` — before the web/APK/emulator legs, so a failure costs
 ~5 min instead of burning 25+ min of emulator time first. Every step sets
 **`MCM_REQUIRE_LIVE_STACK=1`, which escalates a SKIP to a FAILURE**: in CI a down dependency is a
 broken harness, not a pass.
@@ -146,8 +147,8 @@ E2E_BFF_TARGET=dev-container pnpm nx e2e mcm-app          # 92/92 green, ~50s (p
 
 ## Running the AGENT specs (they do not run by default)
 
-`pnpm nx e2e mcm-app` runs the general web suite and **skips every `agent-*.spec.ts`** — all ten
-gate on `E2E_AGENT_PRODUCTION=1`, because they need the containerized production-node gateway and
+`pnpm nx e2e mcm-app` runs the general web suite and **skips the agent specs** (`agent-*` / `assistant-*.spec.ts`) — every one
+that needs the stack gates on `E2E_AGENT_PRODUCTION=1`, because they need the containerized production-node gateway and
 MCP servers. The run still reports green, which is the trap: nothing in the output says the agent
 flows were not exercised.
 
@@ -270,8 +271,13 @@ An export can also be checked offline, with no browser: see the table in [the ap
 
 ## Six workers share ONE user — the shared-state traps (item #150 / #165, 2026-08-10)
 
-`playwright.config.ts` sets `fullyParallel: false` and up to **six** workers. That serialises tests
-**within a file** and runs different **files in parallel** — and all of them act as the same
+> Since feature 054 US4 each worker mints its own Keycloak identity (`setup/auth-files.ts`, one
+> `user-<parallelIndex>.json` per worker; worker 0 reuses `E2E_TEST_USER`), and the cap is now up to
+> **ten** workers (half the cores). The account below is the measured 2026-08-10 state; the ownership
+> rule it produced still applies.
+
+`playwright.config.ts` sets `fullyParallel: false` and (then) up to **six** workers. That serialises tests
+**within a file** and runs different **files in parallel** — and all of them acted as the same
 `E2E_TEST_USER`. Everything that user owns is therefore shared mutable state across workers. This is
 the single largest source of what has been recorded here as live-model / live-TMDB nondeterminism.
 
@@ -368,13 +374,14 @@ It fails on `skipped > 0`, on `did not run > 0`, and on a log with **no summary 
 including that it reads the **run-scoped** step log — an unscoped path would read a previous run on
 this persistent runner and pass on stale counts.
 
-⚠️ **`flaky` is still NOT observable on a green run.** The gate proves nothing failed and nothing was
-hidden; it cannot tell you whether a test needed its retry. Do not claim "no flakes" from a green
-tick — that requires publishing the counts on success (open backlog item).
+⚠️ **`flaky` is NOT observable from a green tick.** The gate proves nothing failed and nothing was
+hidden; it cannot tell you whether a test needed its retry. Since feature 054 a green `app-e2e`
+publishes a counts-only bundle (`ci-failure-digest.mjs` `counts` mode), so read `flaky` from that
+bundle — never claim "no flakes" from the tick alone.
 
 ⚠️ **`N did not run` is not a skip.** `playwright.config.ts` declares a second project, `lifecycle`,
-with `dependencies: ['chromium']`, so `bff-prod-lifecycle` + `admin-registration` (3 tests) never
-execute while the main project has ANY failure. They reported "3 did not run" in every measured run
+with `dependencies: ['chromium']`, so `bff-prod-lifecycle` + `admin-registration` (3 tests then; since feature 087 also the
+security-policy walk) never execute while the main project has ANY failure. They reported "3 did not run" in every measured run
 for months, and only ran for the first time on 2026-08-10.
 
 ## A datastore that survives between runs fails the NEXT run, not this one (2026-09-05)
@@ -836,14 +843,15 @@ BFF integration tests (`frontend/mcm-app/tests/integration/*.integration.test.ts
 - **Real tokens:** `helpers/keycloak-test-client.ts` acquires tokens via the **test-only `mcm-bff-test` ROPC client** and manages users through the Admin API (raw `fetch`, no admin-client lib). Call **`ensureRopcAudienceMapper()` in `beforeAll`** for any test that hits `validateJwt` or mc-service — without the audience mapper, ROPC tokens (`azp=mcm-bff-test`) are rejected as "Invalid token audience". The ROPC grant must never be enabled on the production `movie-collection-manager` client.
 - **Headless-untestable happy paths (justified E2E exclusions, enforced by the gate):** login PKCE code exchange, `/auth/refresh` token rotation (production-client refresh token is browser-PKCE-only), and `/auth/verify-email` (Keycloak email action-token). `tests/integration/route-coverage.integration.test.ts` + `route-coverage-map.ts` fail if any `+api.ts` route lacks a test or a justified exclusion — login is the only map-level exclusion.
 
-## The integration tier runs in CI — all three projects (feature 041)
+## The integration tier runs in CI — six projects (feature 041, extended by 048/059)
 
 The `test:integration` tier is enforced in CI via the **`app-e2e`** job (`.forgejo/workflows/app-ci.yml`), reusing
-the stack that job already stands up (no separate integration stack, no new host ports, no new secrets). Three
+the stack that job already stands up (no separate integration stack, no new host ports, no new secrets). These
 steps run **after** bring-up and **before** the web/APK/emulator legs (fast-fail):
 
-1. **Agent** (`movie-assistant`) — `-m "not golden and not ci_quarantine"`. Un-quarantine is in progress; see
-   `specs/041-integration-test-ci-enforcement/IMPLEMENTATION-STATUS.md` + memory `project_mcm_agent_integration_ci`.
+1. **Agent** (`movie-assistant`) — `-m "not golden"` (the `ci_quarantine` marker is gone; all quarantined
+   tests were fixed — `agents/movie-assistant/pyproject.toml`). Then the three MCP servers' suites
+   (`movie-mcp`, `spreadsheet-mcp`, `web-api-mcp`).
 2. **mc-service** — vs the live replica-set Mongo (`27017`, `directConnection=true`) + Keycloak JWKS. The ~24
    full-stack HTTP tests marked `#[ignore = "requires Keycloak JWKS timing; verified in E2E"]` stay ignored (they
    need in-process JWKS timing that's flaky under `build_test_app`) — running them is a tracked follow-up.

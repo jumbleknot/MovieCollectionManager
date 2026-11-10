@@ -243,8 +243,8 @@ already in its environment*, and the container recreated.
   `MCM_ANTHROPIC_API_KEY`: `scripts/wiki-provider.mjs` accepts it and maps it to `FIREWORKS_API_KEY` only
   at the point of use, so the raw name is never set in the shell. It is not a `${localEnv}` forward:
   `.devcontainer/gen-container-secrets-env.sh` writes it into the container's env file with the other
-  credentials. Unset → empty → a local `--execute` on the Fireworks provider exits 2 naming the missing
-  credential. `--plan` and `--claims-audit` need no credential. CI uses its own secret,
+  credentials. Unset → empty → a local `wiki-maintain.mjs --pages` rebuild on the Fireworks provider
+  exits 2 naming the missing credential. `--dry-run` needs no credential. CI uses its own secret,
   `FIREWORKS_API_WIKI_MAINTAIN`.
 
 **Setup (Windows) — the two gotchas that bite here** (identical for `MCM_ANTHROPIC_API_KEY`, `TMDB_API_KEY` and both `MCM_FORGE_*` tokens)**:**
@@ -437,7 +437,7 @@ Ports `8081` (Metro / Expo Web / dev BFF), `8082` (containerized dev BFF), and `
 OAuth) are forwarded (`forwardPorts`). A browser or a **physical device on the LAN** reaches a dev
 server running inside the container via the forwarded address. When LAN routing is inconvenient,
 the **Expo tunnel** is the documented fallback (slower; acceptable for occasional use). The legacy
-Expo `19000/19001/19006` ports are unused by this Expo SDK 57 project — do not forward them.
+Expo `19000/19001/19006` ports are unused by this Expo SDK 58 project — do not forward them.
 
 ### Teardown
 
@@ -822,7 +822,8 @@ pnpm nx test:integration mcm-app          # → 115 collected / 114 pass / 1 fai
 > a Docker DNS name. The `app-e2e` job overrides exactly these four (`KEYCLOAK_URL`, `MC_SERVICE_URL`,
 > `MONGO_URL`, `BFF_BASE_URL`) for the same reason; the recipe above mirrors it.
 >
-> This is the fourth CLAUDE.md gate in its natural habitat: 84 red suites look like a tier that cannot
+> This is the CLAUDE.md gate *"It can't run in this environment" needs the same proof as "it passes"*
+> in its natural habitat: 84 red suites look like a tier that cannot
 > run here, and are three `export`s.
 
 **Suites that look env-gated in here (NOT code failures — don't chase them):**
@@ -1054,7 +1055,7 @@ nothing else would report it.
 
 ## OpenWiki — the OKF knowledge wiki (feature 043)
 
-`openwiki@0.5.2` is **baked into the toolchain image** (`.devcontainer/toolchain.Dockerfile`, beside
+`openwiki@0.7.1` is **baked into the toolchain image** (`.devcontainer/toolchain.Dockerfile`, beside
 the Claude Code CLI), together with its optional `mermaid` + `jsdom` peer dependencies, so it is
 present with no per-developer install. The two peers are installed because their absence is silent:
 OpenWiki embeds Mermaid diagrams by default from 0.5.0 and validates every fence after a run, and
@@ -1198,7 +1199,7 @@ on subsequent opens.
 > image** and runtime-populated by your own builds, so there is no stale-shadow.
 >
 > **Ownership:** the image pre-creates + `chown coder:coder`s each cache-dir target so Docker's
-> empty-volume **copy-up carries uid 1001** into a fresh volume. A root `onCreateCommand`
+> empty-volume **copy-up carries `coder`'s uid (1000)** into a fresh volume. A root `onCreateCommand`
 > `chown -R coder:coder` repairs a volume that a prior aborted run left root-owned. If `cargo`/`pnpm`
 > report permission errors writing the cache, re-run that chown (`sudo chown -R coder:coder ~/.cargo
 > ~/.cache/uv ~/.local/share/pnpm ~/.claude`).

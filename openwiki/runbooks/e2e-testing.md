@@ -3,10 +3,10 @@ type: Runbook
 title: E2E testing (BFF container modes & flakiness diagnosis)
 description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), the CI integration-tier gate with its per-suite skip-escalation flags, the two agent-test tiers that decide what blocks a merge, the security-policy walk that only the browser can see, why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the shared-state, instrument and Playwright-image-pin traps that make a green run prove less than it looks.
 resource: docs/runbooks/e2e-testing.md
-resource-sha256: eb91a7a4e49a41c80557d2780d912b1dc4a225827c8016c45d640d0e3b3cc690
+resource-sha256: a33a6e1ea4aba78dd497bfc5f6f918ac620a218dc95352a25d8e71f4b791ac49
 tags: [e2e, testing, playwright, ci, flakiness, runbook, integration, keycloak, backups]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T03:37:28.094Z
+timestamp: 2026-11-10T11:51:44.491Z
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -138,8 +138,8 @@ The jest preflight's decision path: the escalation flags decide whether a missin
 
 ## Running the agent specs
 
-`pnpm nx e2e mcm-app` runs the general web suite and skips every `agent-*.spec.ts` — all gate on
-`E2E_AGENT_PRODUCTION=1`. The run still reports green, which is the trap. To run agent specs:
+`pnpm nx e2e mcm-app` runs the general web suite and skips the agent specs (`agent-*` /
+`assistant-*.spec.ts`) — every one that needs the stack gates on `E2E_AGENT_PRODUCTION=1`. The run still reports green, which is the trap. To run agent specs:
 
 ```
 node scripts/agent-stack.mjs   # deploy gateway + MCP servers (builds images by default)

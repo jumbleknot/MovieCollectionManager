@@ -148,7 +148,9 @@ deploy".
 
 **The fix was to delete the flag, not to grow one.** A bigger exit code cannot separate two meanings
 that share one integer; two commands can. The deploy path now runs what feature 069's object-store
-image workflow ran (that workflow was deleted by feature 080), once per image and before the push:
+image workflow ran (that workflow was deleted by feature 080), once per image and before the push —
+since spec 084 US3 through the shared `scripts/cd/scan-app-image.sh`, which app-ci's `app-image-scan`
+job also calls:
 
 ```bash
 node scripts/infra-image-scan.mjs --image "$local_tag"   # --format json, NO --exit-code
@@ -213,8 +215,8 @@ curl -sS -H "Authorization: token $MCM_FORGE_TOKEN" "$API/commits/<sha>/statuses
 This is the mechanism behind a whole class of silent staleness. Measured 2026-09-10: two advisories
 landed in Trivy's DB on 2026-09-09 and blocked 11 findings on images `main` already carried, yet
 **nine consecutive `infra-image-scan` runs reported `success`** over the following day — every one of
-them reporting a 2-14 s job duration. The last real sweep had been PR #362's. The weekly cron is the
-safety net, but it fires once a week and attributes the failure to whatever branch it lands on.
+them reporting a 2-14 s job duration. The last real sweep had been PR #362's. The scheduled sweep is the
+safety net, but it fires only twice a week (Tuesday and Friday) and attributes the failure to whatever branch it lands on.
 
 Two consequences worth internalising:
 

@@ -3,10 +3,10 @@ type: Runbook
 title: Infra-image CVE scanning
 description: Trivy's keyless, twice-weekly sweep over the third-party server images this project pulls but does not build (Keycloak, Postgres, Mongo, Vault, OpenSearch, Langfuse, Grafana, Unleash, Caddy, RustFS and the rest of infrastructure-as-code), plus how to read or triage a red result — one scanner per image, the fixable-Critical-only gate, the allowlist cohorts and how an entry is discharged, the bounded retry, the one pinned installer all three scanning workflows share, the shared per-image pipeline both the PR and the deploy call, the labelled container holds that keep the PR's run-scoped scan tags alive across another run's prune, and the publish-versus-promote split.
 resource: docs/runbooks/infra-image-scanning.md
-resource-sha256: f34d4a99a2b3e5e1b09637e8d0296c2e3f2364f2ff09c6a836f5408f66d6dddc
+resource-sha256: fae84ffc04e7d807b4483e1340a3e2e7d5b1f5c10115590e34c818568aa51a30
 tags: [security, cve, trivy, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T03:37:28.097Z
+timestamp: 2026-11-10T11:51:44.493Z
 ---
 
 # Infra-image CVE scanning

@@ -3,10 +3,10 @@ type: Runbook
 title: Containerized dev environment (devcontainer — Docker Desktop / DinD path)
 description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the thin Dockerfile layer and its measured ~13 GB copy-up cost, the canonical egress allowlist behind the in-container firewall (its schema, exclusions and fatal-precondition design), the in-container dev-ollama helper, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
 resource: docs/runbooks/devcontainer.md
-resource-sha256: 8628abda3655ca4b7a227867626c312dee0e24c581b2d7912fe22e15893c6e81
+resource-sha256: ef1a46a27b3d9aa7879c8af256b911c554bfed4e6d39b0485eaad7c68304ee67
 tags: [devcontainer, docker, security, isolation, runbook, android]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T03:13:24.569Z
+timestamp: 2026-11-10T11:51:44.487Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)

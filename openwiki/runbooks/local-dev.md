@@ -3,10 +3,10 @@ type: Runbook
 title: Local dev infrastructure & environment variables
 description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down through their Nx lifecycle targets for local development — the mcm stack's unprofiled stores, their replica-set and MongoDB 9.0 data-ownership rules, and the movie store's dev-only cache/nofile pins — plus the leased test-database pool and the load-bearing ordering, credential-rotation, missing-.env.local and stale-credential gotchas that break a fresh box or a test run if skipped.
 resource: docs/runbooks/local-dev.md
-resource-sha256: 243ef4f3927608fb594d463dfd7b27cf9eb68b256200b3025953c003e59965be
+resource-sha256: 5d044f1350da1fd9f9454fbd0d416f25ac81b2c7dca9bcc72eead8097458e0bb
 tags: [docker-compose, local-dev, secrets, keycloak, mongodb, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
-timestamp: 2026-11-10T03:37:28.099Z
+timestamp: 2026-11-10T11:51:44.495Z
 ---
 
 # Local dev infrastructure & environment variables
