@@ -4,6 +4,8 @@
 
 **Created**: 2026-09-27
 
+> **Superseded in part by [feature 098](../098-session-maintained-wiki/spec.md) (2026-11-10, ADR-0004).** User Story 6 (low-effort escalation after a deadline stop), User Story 7 (the daily schedule and refresh cooldowns) and FR-024 to FR-029 are superseded: routine freshness moved to the coding session that changes a summary's source, the generator is a manual rebuild of operator-named pages, and the escalation, cooldown and schedule machinery is deleted. The provider table, usage capture, invocation packing and job deadline remain in force.
+
 **Status**: Draft. **Amended 2026-10-07** (operator), after scoring 45 real runs (research R14/R15):
 - US5 is extended to OpenWiki **0.7.1**;
 - US6 (escalate to `reasoning_effort: low` after a deadline failure) is added;

@@ -20,7 +20,7 @@
 
 - [openwiki/quickstart.md](openwiki/quickstart.md) — what this repository is and how the knowledge bundle is organized
 - [openwiki/INSTRUCTIONS.md](openwiki/INSTRUCTIONS.md) — the generation brief: scope, exclusions, redaction, and **where a new learning goes**
-- [docs/runbooks/wiki-maintenance.md](docs/runbooks/wiki-maintenance.md) — running, reading and diagnosing a maintenance run
+- [docs/runbooks/wiki-maintenance.md](docs/runbooks/wiki-maintenance.md) — refreshing a page in the same PR as its source, and running, reading and diagnosing a manual rebuild
 - [openwiki/policy.yaml](openwiki/policy.yaml) — which paths may be rewritten, when, and by which actor
 - [openwiki/protected.yaml](openwiki/protected.yaml) — the concepts that are canonical, and the passages fingerprinted inside them
 
@@ -113,6 +113,7 @@
 ### Decision records
 
 - **ADR-0001: Production secrets-management standard** → [openwiki/decisions/adr-0001-prod-secrets-management.md](openwiki/decisions/adr-0001-prod-secrets-management.md) — The ratified decision record selecting Komodo Variables (not HashiCorp Vault) as the sanctioned production secrets mechanism for all core stacks, with Vault kept…
+- **ADR-0004: Wiki summaries are maintained by the coding session** → [openwiki/decisions/adr-0004-session-maintained-wiki.md](openwiki/decisions/adr-0004-session-maintained-wiki.md) — A derived page is refreshed by the session that changes its source, in the same PR; a source fingerprint and the blocking V17 check replace Claims and the scheduled generator…
 
 <!-- nx configuration start-->
 <!-- Leave the start & end comments to automatically receive updates. -->

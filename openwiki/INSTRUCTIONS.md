@@ -173,13 +173,19 @@ documents (preferred), or a canonical URL for genuinely external references. **R
 paths are verified to resolve** by the conformance gate, so a link to a moved or renamed file fails
 the build; keep them accurate.
 
-**`resource` names one canonical FILE, never a directory.** Drift is judged by the cited source's last
-commit, and a directory's last commit is any commit to anything under it. So a page citing a directory
-is re-flagged as stale by every unrelated change beneath it, and regenerating it buys nothing durable.
-`process/spec-driven-development.md` cited `specs/` and was re-flagged by every new spec; the planner now
-reports such a page as *unplannable* rather than paying to regenerate it (feature 082). Cite the
-document that states the process or the rule, such as a runbook, the constitution or a template, not
-the folder its instances live in.
+**`resource` names one canonical FILE, never a directory, and never a file a bot rewrites.** A derived
+page records its source's fingerprint (`resource-sha256`), and the required `okf` check (V17) fails the
+page when the file no longer matches it. A directory has no single fingerprint, and a file Renovate or
+CD rewrites (a manifest, a lockfile, a Dockerfile, a compose file, a workflow, a `.env.deploy`) would
+turn a bot's PR red with no session there to refresh the page; the governance gate's G14 refuses both.
+`process/spec-driven-development.md` cited `specs/` and was re-flagged by every new spec; it is now a
+canonical page (feature 098). Cite the document that states the process or the rule, such as a runbook,
+the constitution or a template, not the folder its instances live in.
+
+**Do not write `resource-sha256`, `sources:` or `verified:`.** The fingerprint is written by
+`scripts/wiki-refresh.mjs --record` and by a rebuild's post-step, from the file's actual bytes;
+`sources:` and `verified:` belonged to openwiki's Claims, which this repository has retired
+(ADR-0004), and V17 rejects a page that carries either.
 
 **`resource` is the field that classifies a page**, so its presence is not cosmetic. A page carrying
 one is a *derived summary* of that document. A page carrying none is *authoritative* — canonical in
@@ -188,8 +194,8 @@ citation you should have made turns a summary into false canon; adding one to ge
 content points a reader at a document that does not hold the answer. The governance gate rejects a
 concept that is neither, and one that is both.
 
-`timestamp` should be ISO 8601. It is compared against the cited source's last modification to report
-drift, so an accurate timestamp is what makes staleness visible.
+`timestamp` should be ISO 8601. A session's `--record` sets it; it records when the page was last
+brought up to date, while staleness itself is judged by the fingerprint, not by any date.
 
 ## 6. Links in the body — relative to the file, never to the site root
 
@@ -247,23 +253,26 @@ mechanically, from the concept covering the subject:
 
 1. Find the concept covering the subject (query by `type`/`tags`, or read the relevant `index.md`).
 2. **Does that concept carry a `resource`?**
-   - **Yes → the learning goes to the cited source, not to the concept.** The concept is a derived
-     summary; write the detail into the runbook, the decision record or the architecture document it
-     cites, and leave the summary to refresh from it.
+   - **Yes → the learning goes to the cited source, and the summary is refreshed in the same PR.**
+     The concept is a derived summary; write the detail into the runbook, the decision record or the
+     architecture document it cites, then bring the summary up to date with that change and record it
+     (`node scripts/wiki-refresh.mjs --diff <page>`, edit, `--record <page>`). The required `okf` check
+     fails the PR otherwise.
    - **No → the concept is authoritative, and the learning goes into the concept.** There is no
      upstream document to write into; the concept *is* the canonical home.
 3. **No concept covers the subject?** Then add one. Where the subject has a canonical document, write
    the detail there and cite it from the new concept. Never append prose to an index instead.
 
-In practice: an operational learning belongs in the runbook, never in the page that summarizes the
-runbook. A concept that becomes a copy of its source has failed section 1 of this brief, and
-hand-writing into derived summaries is exactly how that failure starts.
+In practice: an operational learning belongs in the runbook, never *only* in the page that summarizes
+the runbook. The refresh carries the change into the summary as a summary — what the page covers, in
+its own words — not as a copy. A concept that becomes a copy of its source has failed section 1 of
+this brief.
 
 The only destinations this changes are the subjects relocated out of `CLAUDE.md`: those concepts are
 authoritative, so learnings about them are written **into the concept**. Every other subject keeps the
 canonical home it already had.
 
-**Do not write prose into `CLAUDE.md` and expect a later maintenance run to relocate it.** That file
+**Do not write prose into `CLAUDE.md` and expect a later run to relocate it.** That file
 is an index; a check fails on content beyond its index and its machine-managed regions.
 
 ### A learning that corrects what is written: rewrite it in place
@@ -313,36 +322,13 @@ concrete. Prefer the specific detail that prevents a mistake over the general st
 complete. When a rule exists because something once broke, say so — the reason is what makes the rule
 stick.
 
-## 9. Claims evidence — cite what states the fact, never what churns
+## 9. Never copy live state into a page
 
-Every `repo://` citation in a page's Claims is re-resolved before every run. One that moved or
-vanished forces the whole page into that run as a mandatory reconciliation — a full paid
-regeneration — whatever the run was asked to do. A citation of a file that routine commits rewrite
-therefore costs a page regeneration on every such commit, while the fact it supports has not
-changed. Runs 4960 and 4972 (2026-10-09/10) each paid for five forced pages this way (item #707).
-
-Do **not** cite, as Claims evidence:
-
-- **Lockfiles** — `uv.lock`, `pnpm-lock.yaml`, `Cargo.lock`, `package-lock.json`. Cite the manifest
-  that declares the dependency (`pyproject.toml`, `package.json`, `Cargo.toml`) instead.
-- **Image digest or version-pin lines** — `@sha256:` lines in a Dockerfile `FROM` or a compose
-  `image:`, and the `infrastructure-as-code/docker/*/.env.deploy` files every CD promotion rewrites.
-  Cite the policy or runbook section that says the image is pinned, not the pin.
-- **Line ranges inside a list whose entries rotate** — above all `security/sast/allowlist.yaml`,
-  whose entries are added and expire. Cite the whole file, or the runbook section that states the
-  policy.
-
-Prefer the narrowest **stable** source: a heading-level section of a runbook over a line range of a
-script that is under active change. `node scripts/wiki-maintain.mjs --claims-audit` lists, offline,
-every page openwiki will force into the next run and marks the citations that are churn.
-
-## 10. Never copy live state into a page
-
-`openwiki/.maintenance-state.json`, `.page-manifest.json`, `.last-update.json`, `.run.json` and the
-`.claims/` sidecars are **live state**: the next run rewrites them. Describe what their fields mean
-and where to read them, but do not copy current values into a page: a backlog, an `escalations`
-entry, a `lastOutcome`, a cost or a call count. A copied value is wrong by the next run, and a page
-that quotes it looks authoritative while it is stale. Proposal #737 published "after the 2026-10-11
+Run output and run-time files — a rebuild's report and `.run.json`, and openwiki's own sidecars and
+manifest (gitignored since feature 098) — are **live state**: the next run rewrites them. Describe what
+their fields mean and where to read them, but do not copy current values into a page: an outcome, a
+cost or a call count. A copied value is wrong by the next run, and a page that quotes it looks
+authoritative while it is stale. Proposal #737 published "after the 2026-10-11
 runs it holds `lastOutcome: failed` … `failuresAtLow: 2` … ~$1.69" in `runbooks/wiki-maintenance.md`,
 a snapshot that was already false when proposed. A measured value that explains *why* a rule exists
 belongs in the source runbook, dated, with its run number, and the page may cite it from there.

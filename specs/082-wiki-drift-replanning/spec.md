@@ -4,6 +4,8 @@
 
 **Created**: 2026-10-10
 
+> **Superseded by [feature 098](../098-session-maintained-wiki/spec.md) (2026-11-10, ADR-0004).** Drift is no longer re-planned by an unattended generator: each derived page records its source's fingerprint, and the required `okf` check (V17) blocks the PR that leaves a summary stale, so drift cannot accumulate on `main`. The drift planner, parking and V12 are deleted.
+
 **Status**: Ratified 2026-10-10 by the operator: option 1 bounded plus option 4 (FR-001 to FR-004), as written.
 
 **Input**: Backlog item #526: "Concepts that fall behind the run-record marker are never re-planned; drift

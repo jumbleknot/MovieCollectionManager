@@ -1,65 +1,119 @@
 # Runbook — OpenWiki knowledge-bundle maintenance
 
-**Feature 044.** How to run, read and diagnose maintenance of the OKF bundle at `openwiki/` — locally
-and in CI — and where a new learning goes now that `CLAUDE.md` is an index.
+**Features 044 and 098.** How the OKF bundle at `openwiki/` is kept current. Since feature 098
+(ADR-0004) that is the **coding session's** job, in the same PR as the change that made a summary
+stale; the generator remains only as a **manual rebuild of pages an operator names**. Also: how to
+run and read a rebuild, and where a new learning goes now that `CLAUDE.md` is an index.
 
 Related: [ci-diagnostics.md](ci-diagnostics.md) · [devcontainer.md](devcontainer.md) ·
-`openwiki/INSTRUCTIONS.md` (the generation brief) · `openwiki/policy.yaml` (the regeneration policy).
+[ADR-0004](../decisions/ADR-0004-session-maintained-wiki.md) · `openwiki/INSTRUCTIONS.md` (the
+generation brief) · `openwiki/policy.yaml` (the regeneration policy) · the
+[`wiki-refresh` skill](../../.claude/skills/wiki-refresh/SKILL.md).
 
 ---
 
-## 1. Plan before you pay
+## Refresh
+
+**Changing a file that is a derived page's `resource` means refreshing that page in the same PR.**
+A *derived* page summarises exactly one file, named by its `resource:` front matter, and records that
+file's fingerprint as `resource-sha256:` — the SHA-256 of the file as it sits in the working tree,
+after CRLF→LF normalisation. A *canonical* page has no `resource`, is listed under `authoritative:` in
+`openwiki/protected.yaml`, and is maintained by hand; nothing below applies to it.
 
 ```bash
-pnpm nx wiki-plan infrastructure-as-code            # offline, keyless, free — always safe
-pnpm nx wiki-plan infrastructure-as-code --args=--json
+node scripts/wiki-refresh.mjs --stale              # every derived page that is not fresh; exit 1 if any
+node scripts/wiki-refresh.mjs --diff <page>        # the source's change since the page was last recorded
+#   … edit only what that diff invalidates, following openwiki/INSTRUCTIONS.md …
+node scripts/wiki-refresh.mjs --record <page>      # write resource-sha256 + timestamp; the body is untouched
 ```
 
-The planner decomposes the documentation changes since the last recorded run into **slices**: at most
-**4 pages**, exactly **one bundle area** each. It makes no model call and needs no credential, so
-there is never a reason to skip it before spending. Read the plan; then run it.
+`<page>` is `openwiki/runbooks/x.md` or `runbooks/x.md`. The tool is offline, free and model-free; it
+rejects an unknown flag (exit 2) and `--help` only prints usage.
 
-The plan shows what was **requested**. openwiki adds to it on its own: every page with a stale or
-unresolved Claims citation is forced into every run as a full paid regeneration, whatever was
-requested (item #707). To see that set before paying, run the same model-free check openwiki runs:
+- **`--diff`'s base.** The newest commit whose bytes match the recorded fingerprint, searched back
+  through `git log --follow`. A page with no fingerprint yet diffs from the newest source commit at or
+  before its stamp (the newest of `generated.at` and `timestamp`), and says so on the `base:` line.
+  With neither, it prints the whole file with a notice.
+- **A fingerprint-only record is correct** when the diff changes nothing the page says — a reworded
+  comment, a reformat, a fix in code the page does not describe. Record without editing the body; the
+  reviewer sees exactly that. Of the 11 pages the cut-over refreshed, 8 were fingerprint-only.
+- **Several pages can share a source.** `docs/MCM-Architecture.md` feeds `architecture/system-overview.md`,
+  `projects/mc-service.md` and `projects/mcp-servers.md`; `--stale` names all three.
+- **Never hand-type a hash.** Only `--record` writes `resource-sha256`.
+
+### What the `okf` check enforces (V17, G14)
+
+**V17** (`check-openwiki-okf.mjs`, the required `guardrails / okf` context) fails a derived page when:
+
+| Finding | Fix |
+|---|---|
+| `no source fingerprint` — `resource-sha256` missing, or not 64 lowercase hex | refresh the page, then `--record` |
+| `stale against <resource>` — the hash no longer matches the file | `--diff`, edit, `--record` |
+| `its source <resource> no longer exists` | re-point `resource:` at the file that now holds the subject and `--record`, or retire the page |
+| `is not a single file` — the `resource` is a directory | re-point it at one file, or make the page canonical |
+| `forbidden field sources` / `verified` — retired with Claims | `--record` strips them |
+
+`--stale` and V17 call the same function (`staleDerivedPages` in `scripts/openwiki-fingerprint.mjs`),
+so the tool and the check cannot disagree. V17 replaced V12, the commit-date drift **warning**, which
+never failed a build and so let drift accumulate on `main` between generator runs.
+
+**G14** (`check-openwiki-governance.mjs`) fails a derived page whose `resource` is a directory, or a
+file a bot rewrites: the files Renovate's default managers match (`package.json`, lockfiles,
+`Cargo.toml`, `pyproject.toml`, Dockerfiles, compose files, `.forgejo/workflows/**`, `renovate.json`,
+toolchain pins), CD's `**/.env.deploy`, and every `managerFilePatterns` entry in `renovate.json`'s
+`customManagers`, read at check time. Otherwise a bot's PR would go red on V17 with no session there to
+refresh the page. Cite the human-written document that explains the subject instead.
+
+### What was retired, and why
+
+Feature 098 (ADR-0004) retired the unattended machinery and openwiki's own bookkeeping. **Deleted
+and gitignored**: `openwiki/.claims/` (the Claims sidecars), `openwiki/.page-manifest.json`,
+`openwiki/.last-update.json` and the run record `openwiki/.maintenance-state.json`; the `sources:` and
+`verified:` front-matter fields. **Checks removed**: V16 (Claims durability), V12 (drift warning, now
+V17) and G13 (Claims only on derived pages). **Code removed**: range planning and the run marker, the
+backlog, low-effort escalation, refresh cooldowns, drift re-planning and parking, the quiet-trigger
+(`wiki-quiet.mjs`), the Claims audit and `.openwikiignore`. The measured progression that led here —
+$167.80 over 106 runs in 30 days for 39 distinct pages, and run 5104 paying ~$1.44 for one landed page
+— is ADR-0004 §2.
+
+`openwiki/policy.yaml`'s `openwiki/**` entry is `actor: [agent, generator]`: sessions write the
+bundle routinely, and the generator writes on a manual rebuild. G3 still confines `generator` to
+`openwiki/`.
+
+---
+
+## 1. A manual rebuild of named pages
+
+Use a rebuild when a page needs **regenerating**, not refreshing: a new page, or one so far behind
+its source that a hand refresh would be a rewrite. It is **paid** and operator-only.
+
+**In CI**: dispatch `wiki-maintain` (Actions → *wiki-maintain* → Run workflow) with the required
+**`pages`** input, a comma-separated list of `area/page.md`:
+
+```text
+pages: runbooks/renovate.md,projects/sast.md
+```
+
+**Locally**:
 
 ```bash
-node scripts/wiki-maintain.mjs --claims-audit          # offline, keyless, free; --json for machines
+pnpm nx wiki-maintain infrastructure-as-code --args="--pages runbooks/renovate.md,projects/sast.md --dry-run"
+pnpm nx wiki-maintain infrastructure-as-code --args="--pages runbooks/renovate.md"   # PAID (§1a)
 ```
 
-It loads openwiki's own `RepositoryEvidenceResolver` from the install the `openwiki` binary on `PATH`
-belongs to (exit 2 when there is none). The comparison is `result.evidence.version` against the stored
-version; comparing `result.version`, which does not exist, flags every page.
-
-A page marked **churn citations only: avoidable** is forced only by churn citations. The label comes from
-`churnReason()` in `scripts/wiki-claims-audit.mjs`, which applies fixed rules: a lockfile, a `.env.deploy`
-digest pin, a *line-addressed* `allowlist.yaml` entry, or a cited range that holds an `@sha256:` digest.
-`openwiki/INSTRUCTIONS.md` §9 tells the generator not to cite any of these.
-
-`.openwikiignore` is a **separate** mechanism. It lists the paths openwiki may not cite as Claims evidence at
-all, and the audit never reads it. So a whole-file allowlist citation is ignored but is not churn, and a
-Dockerfile digest pin is churn but is not ignored. Adding a path to `.openwikiignore` while a sidecar still
-cites it crashes openwiki's Claims preflight (`EvidenceResourceError`), so uncover the citing pages in the
-same change.
-
-At execution, consecutive same-kind slices of **different** areas are packed into one generator
-invocation of up to `MAX_PAGES_PER_INVOCATION` pages (feature 078). Every invocation pays a fixed
-planning pass — ~$0.33 on Sonnet, 83% of a one-page run — so a run touching three areas used to plan
-three times. The slice is still the unit of the backlog, but a failure carries forward only the PAGES that
-did not land (§4, "The proposal"); their area-mates that landed are proposed.
-
-```bash
-pnpm nx wiki-maintain infrastructure-as-code        # PAID — needs the selected provider's key (§1a)
-```
-
-Useful overrides (they go through Nx's `--args`, which is appended to the command line):
+The named pages are grouped into one slice per area, and each slice's run message carries the pages it
+asks for. Before anything is spent the run **refuses** (exit 2) an empty list, a page that does not
+exist, and a canonical page (a rebuild has nothing to rebuild it *from*). Every page that lands gets a
+current `resource-sha256` and loses any `sources:`/`verified:` openwiki wrote, so it passes V17. The
+report lists `landed:` and `not landed:`; nothing is written outside the bundle, and no run state is
+kept between rebuilds.
 
 | Flag | Use |
 |---|---|
-| `--args='--since <ref>'` | Ignore the run-record marker and plan over a range you choose. Diagnostics, and one-off sweeps |
-| `--args='--max-slices 1'` | Attempt one slice and stop. The cheapest way to sanity-check a change to the machinery |
-| `--args=--dry-run` | Print the exact command per slice and invoke **nothing**. Persists nothing either |
-| `--args=--json` | Machine-readable output |
+| `--pages <area/page.md,…>` | The pages to rebuild. Required |
+| `--dry-run` | Print the exact command per slice and invoke **nothing** |
+| `--propose` | Push the result to the proposal branch and open or update its PR (CI sets this) |
+| `--json` | Machine-readable output |
 
 ### 1a. Which model writes the bundle (feature 078)
 
@@ -83,9 +137,8 @@ a default; an empty value is unset (how an Actions repository variable that was 
   for its `fireworks` provider. The preflight sends it too, so a value Fireworks rejects fails before paid
   work. A run's usage line and record carry `effort=<value>` when it is set. **Under trial** (item #525):
   latency is roughly output tokens ÷ generation speed, and a lower effort means fewer reasoning tokens
-  per call — but possibly a weaker page. In CI it is the `reasoning-effort` input of a **dispatched** run,
-  so a trial never changes what a scheduled run sends; do not set the repository variable until a
-  trial's page has been reviewed.
+  per call — but possibly a weaker page. In CI it is the `reasoning-effort` input of a dispatch, applied to
+  every invocation of that run; do not set the repository variable until a trial's page has been reviewed.
 
 **In CI** these are repository **variables** (Settings → Actions → Variables), so switching back to
 Anthropic is a settings change, not a commit; the keys are the secrets `ANTHROPIC_API_WIKI_MAINTAIN`
@@ -98,61 +151,25 @@ job's choice (078 research R4). The target runs `scripts/wiki-generate.mjs`, whi
 gives the generator **only** the selected provider's key, and passes `WIKI_RUN_MESSAGE` as one argv
 element with no shell.
 
-**Preflight.** Before the first paid slice, `wiki-maintain --execute` makes one minimal call to the
+**Preflight.** Before the first paid slice, a rebuild makes one minimal call to the
 selected model (`node scripts/wiki-generate.mjs --preflight` does the same by hand). A failure exits
-**2** with the record untouched and names the provider's error type — a withdrawn model id, a revoked
+**2** with nothing spent beyond that call, and names the provider's error type — a withdrawn model id, a revoked
 key or a blocked egress host costs one token, not a slice.
 
-### Sizing a slice, and why the message must carry the SUBJECT
 
-The planner asks for at most **4 pages** when *refreshing* existing concepts (8 until item #613; see
-[The budget](#the-budget)), but at most **3** when *creating* new ones, and it never mixes the two kinds
-in one slice.
+### Sizing a rebuild, and why the message must carry the SUBJECT
 
-> **These two numbers were calibrated against a broken configuration, and nobody has re-measured them
-> since it was fixed.** The evidence for the creation cap — 8-page creation slices "defeating three
-> consecutive runs" — was collected while every turn was being silently truncated at 4096 output
-> tokens (see below). A larger slice means a longer plan, and a longer plan is exactly what used to
-> hit that ceiling, so the observed failure may have been the truncation rather than the page count.
-> With the cap now at 16384 the creation limit of 3 may be needlessly conservative. Treat it as
-> unverified rather than as a finding, and if you raise it, raise it against measurement.
-
-What is *not* in doubt is that creation is dearer than refreshing: a refresh of an accurate page
-needs no per-page source investigation and returns `noChange` in seconds.
+A rebuild sends one slice per area, and every invocation pays a fixed planning pass (~$0.33 on Sonnet,
+83% of a one-page run, feature 078), so a page is cheapest rebuilt alongside others **in its area** —
+but keep the whole dispatch to a few pages (§2). Creation is dearer than a rebuild of an accurate page,
+which needs no per-page source investigation.
 
 More important than the count: **a filename is not a specification.** Given only
 `gotchas/session-lifecycle-and-eviction.md`, the generator spends its whole budget working out what
 that page should say — three runs died mid-research, one of them after printing *"Now I have enough
-evidence for all 8 pages"*, having written nothing in 643 seconds. The run message therefore carries a
+evidence for all 8 pages"*, having written nothing in 643 seconds. Where a subject is known, the run message carries a
 one-line **subject** per page. That single change was the difference between **0 pages in 643s** and
 **3 pages in 367s**.
-
-When seeding a one-off sweep by hand, put the subjects in the run record's `backlog` alongside the
-page names:
-
-```json
-{ "area": "gotchas",
-  "pages": ["docker-internal-dns.md"],
-  "subjects": { "docker-internal-dns.md": "the BFF reaches Keycloak at keycloak-service:8080 inside Docker networks, never localhost" } }
-```
-
-### A slice that can never succeed, and how the backlog sheds it
-
-**The backlog is committed, so it outlives the policy that produced it.** Twice on `main`, a slice
-planned under an older policy — concepts summarizing `CLAUDE.md` and `AGENTS.md`, which are indexes
-*into* the bundle — sat at the head of the backlog and could never succeed, because nothing would ever
-legitimately write those pages. Worse, execution stopped at the first failed slice, so it also starved
-the legitimate work queued behind it.
-
-Both are fixed, and the fixes are worth knowing because they change what a red run means:
-
-- **Carried-forward work is re-validated against the current policy on every plan.** A page whose
-  source is no longer a coverage target is dropped and *reported* — look for
-  `carried-forward page(s) dropped` in the plan output. Changing `policy.yaml` therefore reaches work
-  already in the backlog, not just new work.
-- **A failed slice no longer blocks the next one.** The run continues, and stops only after
-  **two consecutive** failures — which is the line between "this slice cannot be done" and "nothing
-  can". A run that stops there says so explicitly.
 
 ### Why the generator used to write nothing half the time — and what to check if it starts again
 
@@ -240,14 +257,15 @@ land on the 4096 fallback if the explicit cap were removed. **If you change `OPE
 `ANTHROPIC_BASE_URL` at a pass-through proxy that logs each response's `stop_reason` and
 `output_tokens`; that is how this was found, and it is the only place the truth is visible.
 
+
 #### The retry that remains
 
-A slice is attempted up to **3 times within one run** before it goes back to the backlog. This covers
+A slice is attempted up to **3 times within one run** before its pages are reported `not landed`. This covers
 the ordinary residual variance of a model doing open-ended work. Note that retrying is close to
 *useless* against a ceiling like the one above — every attempt runs into the same wall, and the
 apparent independence of attempts is an illusion — so a persistent failure rate is evidence to
-investigate, not a number to raise the attempt count against. Retries are bounded by the same page and
-wall-clock budgets as everything else, and the attempt count is always reported:
+investigate, not a number to raise the attempt count against. Retries are bounded by the job deadline
+like everything else, and the attempt count is always reported:
 
 ```
 [wiki-maintain] ✅ runbooks/ — 1 page(s) written and verified after 2 attempts
@@ -259,11 +277,11 @@ different from one that was merely unlucky.
 **A rate-limited attempt waits instead of retrying at once (item #683).** A failed attempt where at least **half** of
 its calls answered HTTP **429** is recognised from the usage tap's per-call `status` (never from the generator's text);
 a stray 429 that the SDK's own retry absorbed inside a working attempt does not count. The retry then waits
-**60 s** (120 s before a third attempt), but only while it would still *start* inside the 4-minute time budget and leave
-the generator its 5 minutes before the job deadline; otherwise the attempt is **not** retried. Run 4798 (2026-10-06)
+**60 s** (120 s before a third attempt), but only while it would still leave the generator its 5 minutes before the job
+deadline; otherwise the attempt is **not** retried. Run 4798 (2026-10-06)
 had retried straight into an active 429 three times in 29 seconds and reported it as an ordinary "produced nothing".
 Either way it is named: a `RATE-LIMITED (N call(s) answered HTTP 429)` line at the attempt, a `RATE-LIMITED` line under
-the `✗`, and `rateLimited: {attempts, calls}` on the invocation in `lastRunInvocations`. An attempt that produced
+the `✗`, and `rateLimited: {attempts, calls}` on the result in `--json` output. An attempt that produced
 nothing **without** a 429 still retries immediately.
 
 **A retry can never forgive what an earlier attempt did.** The working tree is snapshotted once,
@@ -271,10 +289,10 @@ before the first attempt, so a forbidden write on attempt 1 still fails the slic
 behaves. Re-snapshotting per attempt was tried and it laundered a policy violation into a success —
 the existing policy-guard tests caught it immediately.
 
-Beyond the retries, a failed slice still returns to the committed backlog and the marker still holds,
-so successive runs continue to drain it. Investigate when the *same* slice fails across several runs,
-or when a failure names something other than missing pages — a conformance regression or a policy
-violation is a real defect, not a flaky generator.
+
+Investigate when the *same* page fails across several dispatches, or when a failure names something
+other than missing pages — a conformance regression or a policy violation is a real defect, not a
+flaky generator.
 
 ### Why never the bare CLI
 
@@ -283,7 +301,7 @@ and the raised Node heap, **and OOMs**. `wiki-maintain` shells out to `pnpm nx w
 infrastructure-as-code` for exactly this reason, and a unit test asserts no code path calls the CLI
 directly.
 
-> **Nx `--args` is appended to a shell command line unquoted.** Measured: `--args="--since=one two"`
+> **Nx `--args` is appended to a shell command line unquoted.** Measured: `--args="--x=one two"`
 > arrives as two separate arguments. That is why the generated run message is a single line with no
 > backticks, `$`, or quotes — a markdown-formatted message would be command-substituted, and the
 > generator would scope itself to the first word.
@@ -294,44 +312,24 @@ directly.
 
 | Code | Meaning | Is something wrong? |
 |---|---|---|
-| `0` | Plan produced, or every attempted slice verified, or nothing to do — or `--execute` stopped before any paid generation because the checkout's run record is behind `main`'s (§4; nothing is recorded, and the next run plans from the current record) | No |
-| `1` | A slice **failed verification** — a requested page missing or left stale, the bundle became non-conformant, or a write landed where policy forbids it (§3) | **Yes** |
-| `2` | Bad usage, unreadable run record, a missing credential, a malformed `MCM_WIKI_*` value, or a failed preflight | **Yes** |
-| `3` | Stopped at the run budget with work outstanding | **No** — the remainder is in the backlog |
+| `0` | Every named page landed and verified (or `--dry-run`, or a selftest that passed) | No |
+| `1` | A named page **did not land** — missing or left stale, the bundle became non-conformant, a write landed where policy forbids it (§3), or the proposal could not be published | **Yes** — the report's `not landed:` list says which |
+| `2` | Bad usage (including an empty, unknown or canonical page), a missing credential, a malformed `MCM_WIKI_*` value, or a failed preflight. Nothing was spent | **Yes** |
 
-**Exit 3 is not a failure.** Same reasoning as `ci-status.mjs` distinguishing runner starvation from a
-red build: a run that correctly stopped at its budget must not be reported as broken. Re-run it and it
-continues where it left off.
+There is no exit 3 any more: it meant "stopped at the budget with work in the backlog", and there is no
+backlog. A page the job deadline kept from starting is `not landed`; dispatch it again.
 
-### The budget
+### The job deadline, and how big a rebuild should be
 
-**One generator invocation of at most 4 pages per run, in a 60-minute window (120 when dispatched)** (feature 078, research R9 — operator decision,
-2026-09-28). The constants live in `scripts/wiki-maintain.mjs` (C6) and the guard test *derives* the workflow's
-`timeout-minutes` from them, so changing one without the other fails offline:
+The workflow's first step records `WIKI_JOB_DEADLINE`; each generator invocation runs under GNU
+`timeout` with the time left minus an 8-minute reserve for verification and publishing, and an
+invocation with under 5 minutes left is not started. A deadline stop does **not** by itself fail the
+page: after `revertUnrequested` (§4), the page is judged like any other, by what landed. `timeout`
+signals the whole process group, which matters because nx starts openwiki as a grandchild; that holds
+while nx uses no pseudo-terminal, which it does only when stdout is a TTY — never in CI.
 
-| | Value | Why |
-|---|---|---|
-| Page budget | 4 | one invocation's worth (`MAX_PAGES_PER_INVOCATION`); 8 until item #613, see below |
-| Time budget | **4 min** | a deadline for **starting** work — checked between invocations and retries; it never stops an invocation, the job deadline does |
-| Job deadline | window − 8 | an invocation in CI is **stopped** when it would run into the last 8 minutes of its window (see below) |
-| Worst-case invocation | 65 min | the worst invocation that ended on its own (2958 s), +30 % (item #613) |
-| Window (schedule) | 60 min | the shared-runner hold. No wait inside the job since item #613, so generation gets about 49 minutes |
-| Window (dispatch) | 120 min | the whole job, for the work a scheduled window cannot hold (see below) |
-| Job timeout | 120 min | the hard ceiling (operator decision, 2026-10-02); a scheduled run is held to its 60-minute window by the deadline, not by this |
-
-So a run does one invocation and stops — a second starts only if the first finished inside 4 minutes, and a retry only
-after a fast failure; everything else carries forward in the backlog. That includes slices the **plan** defers past the
-page budget, before any generation: until 2026-10-09 those were printed as "carried forward" but never written to the
-backlog, so the marker advanced past their range and they were lost. Declared effective ceiling: **≤8 pages / ~69 min
-of generation**, re-derived on 2026-11-01 from the committed run records (item #613): the worst invocation that ended on
-its own took 2958 s. A scheduled run's generator window is about 49 minutes (it was about 37 while the run waited out
-the quiet period inside the job). That holds the median invocation (1636 s) and only just the measured worst, not the
-+30 % ceiling of 65 minutes. So the worst case fits only a dispatched run; a scheduled run stops it at the deadline and
-carries it. The page count comes from **files that actually appeared in the working tree**, not from what the
-generator says it wrote.
-
-**Why 4 pages, and not a cap by source size** (item #613, operator decision 2026-11-03). Over the 85
-single-invocation runs since 2026-10-08:
+**Name few pages per dispatch** (item #613, measured over the 85 single-invocation runs from
+2026-10-08): no invocation of 5 or more pages ever ended on its own.
 
 | Pages in the invocation | Runs | Stopped at the job deadline |
 |---|---|---|
@@ -339,57 +337,30 @@ single-invocation runs since 2026-10-08:
 | 3–4 | 13 | 6 (46 %) |
 | 5–8 | 13 | 9 (69 %) |
 
-No invocation of 5 or more pages ever ended on its own. Sizing by the cited sources' line count was measured
-and rejected: across the 35 invocations that ended on their own it correlates with duration at 0.39, no
-better than page count (0.37). The same page varies up to 4.3× from run to run: `runbooks/server-setup.md`
-took 689, 1912 and 2958 s. No size rule can guarantee a fit, so the deadline stop and carry-forward remain
-the backstop. The slice cap is held at or below the invocation cap, because the planner always admits a
-run's first slice whatever its size. The cost is that a large backlog drains over more runs. Carried pages
-wait for the next daily fire that has a real merge to cover, because the trigger counts commits, not the
-backlog. Dispatch a run to drain them sooner.
+Sizing by the cited sources' line count was measured and rejected: across the 35 invocations that
+ended on their own it correlates with duration at 0.39, no better than page count (0.37). The same page
+varies up to 4.3× from run to run (`runbooks/server-setup.md` took 689, 1912 and 2958 s). A page with no
+prior coverage needs about 1.65× the output per call and over 1.6× the calls; rebuild those **one per
+dispatch**.
 
-**The job deadline (item #613).** The workflow's first step records `WIKI_JOB_DEADLINE` from a window chosen **per
-event**: `workflow_dispatch` gets `DISPATCH_MINUTES=120` (the whole job), `schedule` gets `SCHEDULE_MINUTES=60` — so the runs
-the schedule starts keep the shared-runner hold, and raising the ceiling cannot lengthen them. The guard test pins both
-(`DISPATCH_MINUTES` equals `timeout-minutes`, `SCHEDULE_MINUTES` is 60). Each invocation then runs under GNU `timeout` with the time left minus an 8-minute
-reserve for verification, publishing and the run-record commit; a slice with under 5 minutes left is not started and
-carries forward (exit 3). A deadline stop does **not** by itself fail the slice: after the revert below, the slice is
-judged like any other, by what landed. In practice a stopped generator leaves a requested page unwritten or stale, so
-the slice fails (exit 1); a slice whose requested pages all landed fresh before the stop verifies. Either way the run
-**still commits its record, usage and digest**. Before this, a hang ran until the platform killed the job with nothing recorded — measured on runs
-4290, 4385 and 4386. `timeout` signals the whole process group, which matters because nx starts openwiki as a
-grandchild; that holds while nx uses no pseudo-terminal, which it does only when stdout is a TTY — never in CI.
+**Why a run hung for an hour (2026-09-30).** For an OpenAI-compatible provider (Fireworks) openwiki sets
+no request timeout, so the OpenAI SDK's **10-minute** default applies, and at page concurrency above 1
+openwiki retries **5** times: one model request accepted and never answered was about 60 silent
+minutes. The generator's environment sets `OPENWIKI_PROVIDER_RETRY_ATTEMPTS=2` (an explicit operator
+value wins), bounding that at about 30 minutes; the deadline bounds the rest. If a run is ever killed at
+`timeout-minutes` anyway, the deadline arithmetic is wrong: re-measure before raising the timeout,
+which is a decision about the shared runner.
 
-**Why a run hung for an hour (2026-09-30).** For an OpenAI-compatible provider (Fireworks) openwiki sets no request
-timeout, so the OpenAI SDK's **10-minute** default applies, and at page concurrency above 1 openwiki retries **5** times:
-one model request accepted and never answered was about 60 silent minutes. The generator's environment now sets
-`OPENWIKI_PROVIDER_RETRY_ATTEMPTS=2` (an explicit operator value wins), bounding that at about 30 minutes; the deadline
-above bounds the rest. A scheduled run spends about 3 minutes on checkout, the quiet check and setup before it
-generates. Size the work for about 49 minutes, not 60.
-
-**Why dispatched runs get 120 minutes (operator decision, 2026-10-02).** An *uncovered* page — one with no
-`.page-manifest.json` entry, left by openwiki "for full review" — needs about 1.65× the output per call and over 1.6× the
-calls of a covered one. Generation speed on Fireworks also varies by the hour: measured 45–145 tok/s across a few days,
-and latency per call is roughly output tokens ÷ that speed. At 70–80 tok/s, `projects/sast` stopped at the old 51-minute
-deadline after 93 calls of ~29.5 s each, while a covered page finished in 58 calls. Process uncovered pages **one per
-dispatched run**: seed the page through a pull request that edits `backlog` in `.maintenance-state.json`, merge it (the
-merge run then has nothing to do), and dispatch.
-
-If a run is ever killed at `timeout-minutes` anyway, the deadline arithmetic is wrong: re-measure (research R9's
-method) before raising the timeout, which is a decision about the shared runner.
-
-**Neither budget is a monetary bound.** Nothing in this feature enforces a spend ceiling. Until
-feature 078 a run could not tell you what it cost — the only figure was the provider's bill, such as
-the 30-day figure quoted under *Why that model* in §1. It now records an estimate (below), but that is
-a measurement, not a limit. The wall-clock budget bounds *runner occupancy* — there is one CI runner
-and `app-e2e` is ~35 minutes on it.
+**Nothing here is a monetary bound.** A run records an estimate of what it cost (below), but that is a
+measurement, not a limit. The deadline bounds *runner occupancy* — there is one CI runner, and
+`app-e2e` is ~35 minutes on it.
 
 ### What a run cost (feature 078)
 
 OpenWiki reports no usage itself, so `scripts/wiki-usage-tap.mjs` is loaded into the generator process
 and records per-call **counts** (never content). Each invocation's counts are priced from
 `scripts/wiki-provider-prices.json` — a dated table; update `asOf` with every change — and the run total
-lands in the job log and in `lastRunUsage` in `openwiki/.maintenance-state.json`:
+lands in the job log:
 
 ```text
 [wiki-maintain] usage runbooks/: 47 call(s), 183838 uncached / 2801438 cached / 43117 output tokens, ~$0.0883 (fireworks, prices 2026-09-27)
@@ -440,31 +411,19 @@ A slice fails when **any** of four things is true, and the generator's exit stat
    of paid work, one `index.md`, exit 0, reported as success. Writing **nothing** is not by itself a
    failure: a refresh whose requested pages all exist and none is stale (cause 4) passes as
    `✅ … nothing needed changing (0 written)`.
-2. **The bundle stopped being conformant** (`check-openwiki-okf.mjs`, rules V1–V16). V16 is the one
-   that protects every *later* run: each page openwiki has covered (an entry in
-   `openwiki/.page-manifest.json`) must still hash to the `pageVersion` its verified Claims sidecar
-   certifies. openwiki refuses the whole run otherwise (`Markdown and verified Claims are not durable`)
-   — see *Claims sidecars* below.
+2. **The bundle stopped being conformant** (`check-openwiki-okf.mjs`, rules V1–V15 and V17). The
+   rebuild records each landed page's source fingerprint before this check runs, so V17 fails only a
+   page the run left stale — or one it was not asked for.
 3. **A written path was not permitted** by `openwiki/policy.yaml` — including a write into
    `docs/runbooks/`, which is `regenerate` but governed by an *agent*, not the generator.
-4. **A requested page is still stale after the run** (items #587, #616). A requested page that cites
-   a `resource` whose last **commit** is newer than the page's stamp (the **newest** of
-   `generated.at`, `verified.at` and `timestamp`) is named in the failure one page at a time —
-   **whether or not the run changed the file**. A real refresh moves `generated.at` past the source's
-   commit, so it is never flagged; a page left unwritten, or changed only in front matter, is. (Until
-   2026-09-29 only *unwritten* pages were judged, and on proposal #615 a run that merely deleted a
-   `verified:` block counted as a refresh while the page stayed stale.) A multi-page slice no longer
-   passes because *some* of its pages were written. A page whose source has **not** moved
-   since its stamp may still honestly write nothing: that is the `✅ … nothing needed changing` line,
-   not a failure. A page with no stamp, an external resource, or an untracked source cannot be
-   checked and keeps that outcome too. A legacy date-only stamp (see *Drift is reported, never
-   planned* below) reads a same-day source commit as newer, so such a page is retried until the
-   generator restamps it. That errs toward retrying, never toward a silent skip.
-   The stamp rule is `scripts/openwiki-stamp.mjs`, imported by both this check and V12 so the two
-   cannot disagree.
+4. **A requested page is still stale after the run** (items #587, #616): a named page left unwritten,
+   or changed only in front matter, is named in the failure one page at a time — **whether or not the
+   run changed the file**. A multi-page slice does not pass because *some* of its pages were written.
+   Writing nothing is still honest for a page whose source has not moved: that is the
+   `✅ … nothing needed changing` line, not a failure.
 
-The failed slice returns to the backlog and **the marker does not advance**, so the work stays
-outstanding and the next run retries it.
+A page that did not land is listed under `not landed:`; nothing is carried to a later run, so
+dispatch it again once the cause is fixed.
 
 ### In CI
 
@@ -485,182 +444,20 @@ gates have no skip flag and no allowlist by design, because an allowlisted leak 
 
 ---
 
-### Escalation after a deadline failure (078 US6)
+## 4. What CI does
 
-When the job deadline stops the generator (it exits 124 or 137 from `timeout`), every requested page that did not
-land is **tagged**. The next run, whether scheduled or dispatched, gives the tagged pages invocations of their
-own at `reasoning_effort: low`, before any other work. Everything else runs at the default effort.
+**Manual dispatch only.** `.forgejo/workflows/wiki-maintain.yml` has no schedule and no push trigger:
+the daily schedule (078 US7) was removed on 2026-11-10 (PR #980), and with it the quiet-trigger, the
+run-record marker commit and the record merge (feature 098). A dispatch checks out `main`, installs
+the locked generator (below), rebuilds the pages in its `pages` input, and proposes what landed.
 
-- **Only a deadline stop tags.** A worker that "exited without submitting", a provider 429, an openwiki state error
-  and a policy or conformance violation never tag: those are normal exits, and `low` does not cure them (item
-  #682). A start-deadline carry-forward is not a failure either.
-- **Where the tags live:** `escalations` in `openwiki/.maintenance-state.json`, keyed `area/page`, beside the
-  backlog:
-  ```json
-  "escalations": { "runbooks/sast-scanning.md": { "effort": "low", "reason": "deadline", "since": "…", "failuresAtLow": 0 } }
-  ```
-- **Precedence:** an explicit effort, from the `reasoning-effort` dispatch input or the `MCM_WIKI_REASONING_EFFORT`
-  repository variable, applies to the whole run. The tags are kept for later. A provider without reasoning effort
-  (`anthropic`) ignores them.
-- **Clearing:** a tag goes when its page lands. Tags are per page, so a page that landed inside a part that failed
-  is cleared, not tagged.
-- **Which effort each invocation used:** `lastRunInvocations` in the run record (pages, `effort`, `deadlineStop`,
-  `estCostUsd`). `lastRunUsage.reasoningEffort` reads `mixed` when invocations differ.
-- **When `low` also fails:** the tag stays and `failuresAtLow` counts up. The run logs, and the failure bundle
-  carries:
-  `[wiki-maintain] ⚠ escalated to low and still failing (N): area/page — consider parking it (078 US6)`.
-  Nothing is parked automatically.
-- **Parking a tagged page:** see "Parking" below. Remove its `escalations` entry in the same commit. A tag left
-  behind for a page that is neither queued nor present is dropped by the next run. One for a page that exists is
-  kept, and does nothing while the page is parked.
-- **Caveat:** the evidence that `low` lands a slow page is one success on one page (spec 078 research R14). Escalation
-  guarantees the retry happens, and that a repeat failure is visible. It does not guarantee the page lands.
+**Under a dispatch, read nothing from the event payload except the inputs.** Owner and repo come from
+`GITHUB_REPOSITORY`; setting `FORGE_REPO` from `github.event.repository` made every scheduled fire fail
+at the forge client (runs 6539–6569), and a guard test still fails on any other `github.event.*` read.
+Each input is checked against a fixed character class before it reaches a shell.
 
-### Pages that fell behind the marker: drift, and parking (feature 082)
-
-The planner's main input is "documentation changed since the marker". On its own, that made drift a one-way
-ratchet: a page whose source changed **before** the marker, and that was not carried in the backlog, was never
-planned again, because its source would not change again just because the page was out of date (item #526; 23 of
-68 concepts on 2026-09-20). So every plan also looks for **drift**: concepts whose cited source was committed after
-the page's stamp. It uses the same comparison as the OKF gate's V12 warning (`scripts/openwiki-drift.mjs`), so the
-two cannot disagree.
-
-- **Bounded.** At most `DRIFT_PAGES_PER_RUN` (2) drift pages a run, oldest stamp first, and only from the page
-  budget left after change-driven and backlog work. Drift cannot starve that work, and a run never attempts more
-  than `PAGE_BUDGET` pages.
-- **Never queued.** Drift beyond the bound is reported, not written to the backlog. It is found again on the next
-  run. A drift slice that fails is carried like any failed slice.
-- **A drifted page the open proposal already holds is covered.** The proposal's pages are not on `main` yet,
-  so `main`'s stamps make them look drifted. The planner reads each drift candidate from the proposal branch,
-  and one that is fresh there is not planned, either as new drift or from a carried drift slice. `--plan` lists
-  these pages as `on the open proposal`. Dispatch 5264 regenerated two pages into #751, and the next run had
-  queued both again (#748). **Only drift is skipped.** Freshness compares commit dates, and a merged branch
-  keeps its commit's earlier date, so work queued by a source change or a failure is always planned. Drift
-  is re-derived from `main` on every run, so if the proposal closes, nothing is lost.
-- **A directory `resource` is unplannable.** Any commit under the directory re-flags the page, so the plan reports
-  it and does not pay to regenerate it. The brief requires a `resource` to name one file (§5 of
-  `openwiki/INSTRUCTIONS.md`). *Unplannable* is not *parked*. An unplannable page costs nothing whether or not
-  it is also parked, and parking it only records a decision. #739 parked `process/spec-driven-development.md`,
-  which was already unplannable, so that the decision is on record.
-- **V12 stays a warning.** Drift is acted on by the planner, a run at a time. It never fails a build, so a
-  documentation edit never waits on a paid regeneration.
-
-`--plan` prints the four groups before anything else, even when there is nothing to do:
-
-```text
-[wiki-maintain] drift: 0 planned, 1 deferred, 2 parked, 1 unplannable
-```
-
-**Parking.** A page that cannot currently be regenerated, such as one whose worker exits without submitting on
-every attempt, is **parked**: an entry under `parked` in `openwiki/.maintenance-state.json`, made in a reviewed PR:
-
-```json
-"parked": { "runbooks/renovate.md": { "item": 719, "since": "2026-10-10", "reason": "page worker exits without submitting (run 4998)" } }
-```
-
-A parked page is planned by nothing: not by drift, not by a new change to its source, and not from the backlog.
-`--plan` lists it with its item on every run, and reports an entry whose page no longer exists as orphaned.
-**Unparking is removing the entry**, in the change that is expected to let the page land. Until feature 082,
-parking meant advancing `coveredCommit` past the page's source change and dropping the page from the backlog. That
-recorded nothing, and the next change to the source silently undid it. `writeRunRecord` refuses an entry without
-an `item`, a `since` date and a `reason`. Check the result offline with `node scripts/wiki-maintain.mjs --plan`.
-
-### Refresh cooldowns: pages that would otherwise be paid for daily (feature 078 US7)
-
-Some pages' sources change on nearly every PR in their area, so even a daily run regenerates them most days.
-The record's `cooldowns` holds such a page for `days` after it last landed. It maps `"<area>/<page>.md"` to
-`{ days, item, since, reason }`, a reviewed decision like `parked`:
-
-- **What it holds:** a source change, and drift, while the page's stamp is younger than `days`. **Not** the
-  backlog: a failed or budget-deferred page still plans, and its stamp is old anyway.
-- **Nothing is lost.** When the cooldown expires, the skipped change makes the page stale by the V12 rule,
-  and drift plans it (two drifted pages a run, oldest first). A page with no readable stamp is never held.
-- **Visible:** `--plan` prints `cooldown: N held`, each page's plannable-from date, and any entry whose page
-  is gone (`cooldown, page gone`: remove the entry).
-- **Bounded:** `days` is an integer from 1 to 30, and `item` is required. A longer hold is parking; park the
-  page instead.
-
-Seeded 2026-11-09 with 7 days on `runbooks/wiki-maintenance.md`, `runbooks/server-setup.md` and
-`runbooks/renovate.md`, the three most-regenerated pages (research R21). Item #977 scores the result after
-four weeks.
-
-**Reasoning effort in CI defaults to `low`** (078 FR-028). The dispatch input, then the
-`MCM_WIKI_REASONING_EFFORT` repository variable, override it. About half of the month's spend was in failed
-runs, mostly at the model's default effort, while `low` attempts of the same pages usually landed. Pages with
-a deadline tag still run first and alone (FR-020 as amended), because the isolation is what let them land.
-Local runs keep the model default.
-
-## 4. What CI does, and why it waits
-
-> **Paused 2026-11-10: the schedule below is removed and the workflow runs on manual dispatch only.**
-> Run 5104 (2026-11-09) showed openwiki 0.7.1 forcing 30 stale-Claims pages into every run, which
-> starved the 4 requested pages past the deadline at ~$1.50 a day. Keeping summaries fresh is
-> moving to coding sessions ([the proposal](../proposals/PRD-SessionMaintainedWiki.md)). The rest of
-> this section describes the trigger as it ran under 078 US7, for when a dispatch still uses it.
-
-**Scheduled once a day, at 05:00 UTC, generating whenever anything merged since the last run** (feature 078
-US7, amendment 2026-11-09, research R21). Each fire runs `scripts/wiki-quiet.mjs` **before any install**.
-It reads the run record's `coveredCommit`, lists `main`'s first-parent commits past it, and decides:
-
-| Uncovered commits (the job's own ignored) | Result |
-|---|---|
-| none | ends: `nothing uncovered`, at the cost of one checkout and one node process |
-| one or more, of any age | generates now |
-
-**Why daily.** The daily fire is the batching: a page whose source ten merges touched is paid for once.
-Until 2026-11-09 the job fired every 30 minutes and generated once `main` had been quiet for 15 minutes,
-with a 6-hour maximum deferral (item #613). That cost about $37 a week, and 265 page regenerations in a month
-covered only 39 distinct pages. Counting each page at most once a day would have cut that to 147. The
-debounce and the deferral are retired: a daily fire cannot starve, and a debounce would only push a merge
-that landed just before 05:00 to the next day. 05:00 is two hours after Renovate's nightly fire on the same
-runner. The wiki now lags `main` by up to a day; dispatch a run when you need it sooner.
-
-**The check reads the tip of `main`, never the commit the fire was for.** A scheduled fire checks out the
-commit the schedule was registered at, and that commit stays put while `main` moves on. Every fire on
-2026-11-03 ran at `4dae8842`, hours after `main` had moved past it. The run record at that commit is stale,
-so the check said `run=true` on every fire. Each one then installed, found nothing to do at the real tip,
-and pushed another marker commit. The job therefore fetches and checks out `origin/main` **before** the
-quiet check, on every fire. A guard test pins that order.
-
-**Under a schedule, read nothing from the event payload except dispatch inputs.** A scheduled fire has no
-`github.event.repository`. Setting `FORGE_REPO` from that field made every fire fail at the forge client
-(runs 6539–6569). Owner and repo now come from `GITHUB_REPOSITORY`, and a guard test fails on any other
-`github.event.*` read.
-
-Before item #613 this was a push trigger with `cancel-in-progress` and a `sleep 900` inside the job.
-That spent 15 of the run's 60 minutes waiting, which left about 37 for generation.
-
-`workflow_dispatch` runs at once, without waiting for the daily fire.
-
-The run **does not trigger itself**: commits carrying `[skip ci]` (the record marker, and CD's digest
-promotes) and bundle-only commits (its own proposal landing) are not counted as activity.
-
-**A failed quiet check is loud.** If the record's `coveredCommit` is not in `main`'s history (after a
-history rewrite), or the record is missing, the step exits 1 and the run is red. It is never read as
-"nothing to do", which would stop maintenance silently. Fix the record's `coveredCommit` through a pull
-request.
-
-**Runs never overlap, and a fire never cancels one.** `cancel-in-progress` is `false`. A fire that
-arrives during a generation queues behind it, then finds the record covered and ends.
-
-**Overlapping runs (#748).** Found under the old push trigger: two merges **in the same second** (#745 and
-#746, 2026-10-13) made two push runs, and the forge queued the second behind the first. Under the schedule
-a queued run is the normal case. Three mechanisms keep a queued run from repaying work or corrupting the
-record:
-
-- **It runs from the tip, not its event commit.** Once the quiet check says run, the job moves to the
-  current `origin/main`, so it plans from the record the earlier run committed. If `main`'s record moves again before planning,
-  `--execute` stops before any paid generation and exits 0, saying the checkout's record is behind. Nothing
-  is recorded, and the next run plans from the current record.
-- **The record commit merges; it never replays.** The step merges three ways: this run's record, `main`'s
-  current one, and the record the run started from (`--merge-record`). A field only one side changed takes
-  that side's value. Escalation tags, parked pages and backlog pages merge per page, so neither run's tags or
-  queued pages are lost. The marker never moves backwards. Two **different** proposal pointers are a conflict, and the step fails with nothing
-  committed. Run 5229 had replayed its whole record over a newer one, erasing the open proposal's pointer and
-  two deadline tags.
-- **A packed invocation is carried as its per-area slices.** A joined entry such as
-  `area: "invariants + projects + runbooks"` is planned as a NEW area to create, which a paid run cannot
-  satisfy. The planner splits any such entry already in a committed backlog.
+**Runs never overlap.** `cancel-in-progress` is `false`, so a second dispatch queues behind the first.
+Both continue the one open proposal (below), so the later one appends to it.
 
 ### How the generator's dependencies are pinned, and how they are bumped
 
@@ -735,11 +532,12 @@ OPENWIKI_ROOT=$PWD/tools/openwiki-generator/node_modules/openwiki \
 
 A refresh of the transitive tree within the existing pins is
 `pnpm --dir tools/openwiki-generator update`; the cooldown still applies. Either way, a bump changes
-what writes the bundle: check `pnpm nx wiki-plan infrastructure-as-code`, re-check the R15 gaps in
+what writes the bundle: check `node scripts/wiki-maintain.mjs --selftest`, re-check the R15 gaps in
 §1, and review one dispatched run before merging.
 The dev container's global copy is still resolved fresh **at image build**, which is rebuilt rarely
 and never holds a CI credential. Local runs use it by default; put
 `tools/openwiki-generator/node_modules/.bin` first on `PATH` to run the locked tree locally instead.
+
 
 ### The proposal
 
@@ -747,15 +545,17 @@ One long-lived branch (`openwiki-maintenance`), one open pull request, **ever**.
 open **continues the remote branch, rebases and appends** rather than opening a second — so a commit
 you push onto that branch survives every subsequent update. It is **never auto-merged**: a human
 reviews every wiki diff, and the proposal is gated by the normal guardrails like any hand-authored
-change.
+change, V17 included.
 
-**A reviewer commit must not edit a Claims-verified page in place.** A page with an entry in
-`openwiki/.page-manifest.json` is certified byte-for-byte by its `.claims` sidecar; editing it breaks
-that, and openwiki then refuses **every** later run — measured on 2026-09-29, when four hand-corrected
-pages on #606 stopped maintenance until #610 recovered it. The OKF gate's V16 now fails such a PR.
-To correct a covered page by hand, **uncover** it in the same commit: remove its manifest entry,
-delete its sidecar, and delete its front-matter `verified:` event. openwiki then leaves it for full
-review, and the correction stands until the page is next regenerated.
+**A reviewer may correct a page in place.** Edit it, then `node scripts/wiki-refresh.mjs --record
+<page>` in the same commit. (Until feature 098 a hand edit of a Claims-covered page made openwiki refuse
+every later run; that bookkeeping is gone.)
+
+**The forge is the only state.** Which proposal is open is asked of the forge on every run, never
+remembered: a run adopts the open PR for the branch and updates it, and a `POST /pulls → 409` is handled
+by adopting the existing one rather than failing. (The run record used to cache the pointer; it was
+lost once in a push race and the next run tried to open a second proposal.) Closing the proposal
+without merging simply discards it; dispatch the pages again if they are still wanted.
 
 **G11 on a page that was valid on `main` (item #777).** Symptom: `guardrails / okf` and `naming` fail with
 `(G11) … is NEITHER derived nor authoritative` on a page that `main` cites a `resource` for, and its header now
@@ -763,124 +563,41 @@ reads `type: "Reference"`, a double-quoted `title`, and `openwiki_generated: tru
 or `tags`. Cause: the model wrote front matter that did not parse as YAML, and openwiki 0.7.1 rebuilt a minimal header
 in its place without telling the agent (`repairOkfFrontmatter` → `rebuildMinimalConcept`). It hit #775, #791 and
 #857. Since 2026-11-01 `verifySlice` restores `type`, `description`, `resource` and `tags` from `HEAD` on any page
-carrying that marker and carries the Claims hash, so this should no longer reach a proposal; the run log says
-`restored … from HEAD in <page>`. If it still does, the page lost its keys **without** the marker. That was the
-model's own edit, and the governance gate refuses it in the run. To fix it by hand, uncover the page as above and
-restore its header from `main`.
+carrying that marker, so this should no longer reach a proposal; the run log says `restored … from HEAD in <page>`.
+If it still does, the page lost its keys **without** the marker. That was the model's own edit, and the governance
+gate refuses it in the run. To fix it by hand, restore its header from `main` and `--record` it.
 
 The runner is a fresh checkout, so the branch exists there only on the remote; the run checks it out
-from there, and only while its proposal is **open** (a closed one's commits are not revived). Until 2026-09-28 it looked only for a *local* branch, found none on every CI run,
-started from `main`, and the `--force-with-lease` push replaced the open proposal — measured on
-proposal #594, where a 4-page and then an 8-page slice were discarded while the run record still
-listed both. The push now also refuses outright (`pushing would discard N commit(s) from open
-proposal`) if the open proposal holds a commit the new head does not: a red run, never a silent
-overwrite.
+from there, and only while its proposal is **open** (a closed one's commits are not revived). Until 2026-09-28 it
+looked only for a *local* branch, found none on every CI run, started from `main`, and the `--force-with-lease`
+push replaced the open proposal — measured on proposal #594. The push now also refuses outright
+(`pushing would discard N commit(s) from open proposal`) if the open proposal holds a commit the new head does not:
+a red run, never a silent overwrite.
 
-Closing it **without merging** returns its work to the backlog and rolls the marker back to the proposal's
-`markerBefore` — without that, abandoning a proposal leaves the marker certifying work that never landed. The next
-run **reconciles before it plans**, so it plans the returned slices and the whole range from the rolled-back marker;
-`markerBefore` is the marker the opening run *found*, captured before generation. Both were broken until item #619
-(2026-10-09): the run planned before reconciling, so its own backlog and marker overwrote the reconciled ones, and
-`markerBefore` recorded the run's own base commit — proposal #615's slice vanished on the very next run, and was
-re-seeded by hand. `executeRun` in `scripts/wiki-maintain.mjs` is the whole sequence, and a test drives a
-closed-unmerged proposal through it.
-
-**When a proposal is created or updated.** Whenever any page landed — including a run that stopped
-at its budget (exit 3) or had a failed slice (exit 1). A failed slice is returned to the backlog and the run
-carries on to the next slice; it stops early only after two consecutive slice failures.
+**When a proposal is created or updated.** Whenever any named page landed, including on a run where
+another page did not (exit 1).
 
 **Landing is judged per page, and a page that failed is put back before anything is proposed (items #685, #720).**
-When an invocation's failure is attributable to particular pages — a requested page missing, or still stale after the
-run — while conformance (V16 included) and policy are clean, `verifySlice` splits every part by page: `failedPages`
-names the pages that did not land, `failedParts` holds only those pages, and `landedParts` holds every other requested
-page, area-mates of a failed page included. The landed pages are proposed (`proposableSlices`: verified invocations
-plus landed parts), and only the failed pages return to the backlog. A **whole-invocation** failure (conformance or
-policy) still proposes nothing and returns every part. The one exception is a conformance failure **confined
-to pages that failed**: missing or stale pages, or requested pages that V16 names, because a worker that died or
-was stopped mid-edit leaves a fresh stamp over uncertified bytes. Push run 5145 (2026-10-11) lost five submitted
-pages, `runbooks/wiki-maintenance.md` among them, to one such page (`projects/sast.md`). Those pages are restored,
-they count as failed and are carried forward even when their committed bytes are current, and the rest are judged
-on their own. When the only violation not attributable to a page is the conformance gate, the failed
-pages are restored first (below) and the slice is judged again. If the bundle is then conformant, the break was
-theirs, and the pages that landed are proposed. Run 5104 (2026-10-11) needed this: 13 of 15 workers submitted, but
-`runbooks/ci-evidence-pipeline.md`'s worker died on repeated HTTP 412s mid-edit, and its uncertified bytes (V16)
-discarded all 13 (~$2.66). Four runs set this shape:
-
-- Run 4399 (2026-10-01) verified `runbooks/backlog.md` but proposed nothing, because `projects/sast.md` in the same
-  invocation was still stale at the deadline. The backlog page's source change was already behind the marker, so
-  nothing would have planned it again. Fixed by proposing the parts that landed.
-- Run 5010 (2026-10-10) showed the same loss inside one area, while landing was still judged per part (one part per
-  area). `runbooks/devcontainer-sandbox.md` exited without submitting, and the completed `runbooks/ci-evidence-pipeline.md`
-  and `runbooks/sast-scanning.md` were restored and carried forward with it — about $2.26 for one page, and two pages
-  paid for twice. Fixed by judging per page.
-- On #684 (run 4801) a failed page's bytes rode along with what landed, because the proposal stages the whole working
-  tree: `runbooks/sast-scanning.md`, after openwiki's restore path had rewritten it without its `verified:` block and
-  re-hashed its sidecar to match. V16 was sound, no gate noticed, and merging would have erased a verification event for
-  a page that was never regenerated. Fixed by restoring failed pages: each one's page and `.claims` sidecar return to
-  their committed bytes and its `.page-manifest.json` entry to its pre-invocation value — all three or none, so V16
-  still compares a page with its own sidecar — and the run says so (`[wiki-maintain] restored N path(s) of the part(s)
-  that did not land`).
+When a failure is attributable to particular pages — a named page missing, or still stale after the run — while
+conformance and policy are clean, `verifySlice` splits every part by page: `failedPages` names the pages that did
+not land, and every other named page, area-mates of a failed page included, is proposed. A failed page's file is
+restored to its committed bytes first, so it cannot ride along on the proposal (#684, run 4801: the proposal stages
+the whole working tree). A **whole-invocation** failure (conformance or policy) proposes nothing. Run 5010
+(2026-10-10) set this shape: `runbooks/devcontainer-sandbox.md` exited without submitting, and the completed
+`runbooks/ci-evidence-pipeline.md` and `runbooks/sast-scanning.md` were thrown away with it.
 
 The area's `index.md` is not restored: it lists the failed page and its landed area-mates alike, so the proposed tree
-still passes V9. Left alone, and so still possible on a proposal: a failed page whose page or sidecar was dirty
-**before** the invocation (its prior bytes are not in git), and an **untracked** new page (it has no committed state,
-and deleting it would orphan its index link). Review those as such.
+still passes V9. Left alone, and so still possible on a proposal: a failed page that was dirty **before** the
+invocation (its prior bytes are not in git), and an **untracked** new page (it has no committed state, and deleting it
+would orphan its index link). Review those as such.
 
-**Pages openwiki forced in are proposed when they verified on their own (item #707).** openwiki forces every page with
-a stale or unresolved Claim citation into every run (`runClaimsPreflight`). Runs 4960 (~$2.39) and 4972 (~$1.80) paid
-for five such pages and discarded them both times, because the requested part failed and only requested pages counted —
-so each issue survived into the next run and was paid for again. Under the same condition as above (failure
-attributable to requested pages; conformance, V16 and policy clean), a page the run wrote but did not request is now
-reported as `forcedPages`, counted as written and proposed; the proposal body lists it as "proposed anyway". After a
-deadline stop it never qualifies: `revertUnrequested` (below) has already put every unrequested path back, because a
-stopped worker's page may be half-written.
-
-**After a deadline stop, the slice keeps what it requested and what openwiki finished submitting.** openwiki forces
-every page with a Claims issue into a run, so a generator stopped part-way (GNU `timeout` exit 124, or 137 after
-`--kill-after`) can leave a page it was never asked for half-written. On run 4606 (2026-10-04) that broke V16 on
-`projects/keycloak.md`, a whole-invocation failure, and the requested page's $0.96 regeneration was lost.
-`revertUnrequested` therefore restores every path the run changed to its committed state (or deletes it if new),
-**except**:
-
-- the requested pages, their `.claims` sidecars and the requested areas' `index.md`;
-- any unrequested page whose worker **submitted** before the stop.
-
-openwiki 0.7.1 finalizes a page's Claims on `submit_page` (`submitRepositoryPage`), not only at the end of the run,
-so a submitted page's sidecar certifies its bytes and carries `verification.at` from this run. A page is kept only
-when both hold: page and sidecar agree, and `verification.at` is no earlier than the invocation's start. A V16-sound
-page with an older verification is openwiki's restore path (#685), not a submission, so it is reverted. Paths that
-were dirty before the run are left alone. All of this applies **only** to a deadline stop: a generator that exits on
-its own is judged on everything it wrote.
-
-### If the run record and the forge disagree, the forge wins
-
-The record's `proposal` pointer is a **cache** of something the forge owns. It can be lost: the record
-is committed by a step that can fail, and it did — a run created the proposal, its marker commit lost
-a push race against `main`, and the pointer never landed. The next run then tried to open a *second*
-proposal and died on `forge POST /pulls → 409`. The one-proposal invariant survived only because the
-forge refused.
-
-So a run asks the forge which proposal is open for the branch, adopts it, and updates it. A run that has
-lost its record is self-healing rather than permanently stuck, and a 409 is handled by adopting the
-existing proposal rather than failing.
-
-The adoption happens at **reconcile, before planning**, including when the record's own pointer has just
-been reconciled as merged or closed. Run 5229's record pointed at #745, merged in the same second as the
-merge that started it, while another run had opened #747. It reconciled #745 to nothing and generated onto
-a fresh branch. The publish step then refused to push, correctly, because pushing would have discarded
-#747's commit, but only after about $1.35 had been spent on four pages. Adopting first makes the run
-continue #747's branch instead.
-
-### The run record
-
-`openwiki/.maintenance-state.json`, committed, because runners are ephemeral and the marker has to
-advance even on a run that produced no proposal. It is **not** `openwiki/.last-update.json` — that
-file belongs to the tool, and 043 measured it advancing only when wiki content changed, which is
-exactly why the free "nothing to document" path was unreachable.
-
-To seed work by hand (the one-off relocation used this), put slices in its `backlog` array and run
-`wiki-plan`: carried-forward slices are planned first, so a backlog never starves behind fresh
-changes.
+**After a deadline stop, the slice keeps only what it was asked for.** A generator stopped part-way (GNU `timeout`
+exit 124, or 137 after `--kill-after`) can leave a page it was never asked for half-written; on run 4606
+(2026-10-04) that broke conformance on `projects/keycloak.md`, a whole-invocation failure, and the requested page's
+$0.96 regeneration was lost. `revertUnrequested` therefore restores every bundle path the run changed to its
+committed state (or deletes it if new), **except** the named pages and their areas' `index.md`. Paths that were dirty
+before the run are left alone. This applies **only** to a deadline stop: a generator that exits on its own is judged
+on everything it wrote.
 
 ---
 
@@ -891,26 +608,23 @@ changes.
 1. Find the concept covering the subject (query by `type`/`tags`, or read the area's `index.md`).
 2. **Does it carry a `resource`?**
    - **Yes** → it is a *derived summary*. Write the learning into the **cited source** — the runbook,
-     the decision record, the architecture document — and let the summary refresh from it.
+     the decision record, the architecture document — **and refresh the summary in the same PR**
+     ([Refresh](#refresh)).
    - **No** → it is *authoritative*. Write the learning **into the concept**; there is no upstream
      document to write into.
 3. **No concept covers it?** Add one, and where the subject has a canonical document, write the detail
-   there and cite it.
+   there and cite it. A new derived page is `--record`ed like any other.
 
 So an operational learning belongs in the runbook, **not** in the page summarizing the runbook. A
-concept that becomes a copy of its source has failed the generation brief, and hand-writing into
-derived summaries is how that starts.
+concept that becomes a copy of its source has failed the generation brief.
 
-A page states rules and what fields mean, never the current contents of live state. The run record, the
-manifest, a run's `.run.json` and the Claims sidecars are rewritten by the next run, so a copied backlog,
-tag, outcome or cost is wrong by then (`openwiki/INSTRUCTIONS.md` §10). A measured value that explains a
-rule belongs here, in the runbook, dated and with its run number.
+A page states rules and what fields mean, never the current contents of live state; a copied value is
+wrong by the next change (`openwiki/INSTRUCTIONS.md` §9). A measured value that explains a rule belongs
+here, in the runbook, dated and with its run number.
 
 **Do not write prose into `CLAUDE.md`** expecting a later run to relocate it. That file is an index and
 a gate fails on content beyond its index and its three machine-managed regions. The rejected
-alternative — grow the instruction file and clean up later — is recorded in `INSTRUCTIONS.md` §6: it
-needs an automated run to rewrite instruction-file content, which the generator's write scope
-excludes, and it reinstates the grow-then-trim cycle this arrangement exists to end.
+alternative — grow the instruction file and clean up later — is recorded in `INSTRUCTIONS.md` §7.
 
 ### Protected passages
 
@@ -929,6 +643,7 @@ against the document it summarizes would fail every legitimate refresh.
 
 ---
 
+
 ## 6. Link form — the one thing the generator gets wrong on its own
 
 The generator writes `](/openwiki/…)`. **That is a dead link on this forge**, and it is not a
@@ -942,8 +657,8 @@ way before anyone checked, and `okf-lint` passed the whole time because it only 
 Three things now hold the line, and you should not need any of them by hand:
 
 1. `openwiki/INSTRUCTIONS.md` §6 states the convention, so the generator is asked for the right form.
-2. `verifySlice` normalizes whatever the slice wrote, deterministically, before the gate reads it —
-   because the brief is an instruction to a model, not a guarantee.
+2. A rebuild's `verifySlice` normalizes whatever the slice wrote, deterministically, before the gate
+   reads it — because the brief is an instruction to a model, not a guarantee.
 3. `okf-lint` rules **V14** (site-root-absolute) and **V15** (does not resolve from its own file's
    directory) fail the build for anything that arrives by another route.
 
@@ -961,98 +676,42 @@ intended, and `--fingerprint <concept> "<anchor>"` prints the new value.
 
 ---
 
+
 ## 7. Verifying the machinery itself
 
 ```bash
-node scripts/wiki-maintain.mjs --selftest             # planner + verifier, offline, keyless
-pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V16
-pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G0–G13
-node --test scripts/__tests__/wiki-maintain*.test.mjs
+node scripts/check-openwiki-okf.mjs --selftest        # V1–V15, V17 still detect their cases
+node scripts/check-openwiki-governance.mjs --selftest # G1–G12, G14 still detect their cases
+pnpm nx okf-lint infrastructure-as-code               # bundle conformance, V1–V15 and V17
+pnpm nx okf-governance infrastructure-as-code         # policy, protection, index — G0–G12, G14
+node scripts/wiki-maintain.mjs --selftest             # the rebuild's verifier, offline, keyless
+node --test scripts/__tests__/openwiki-fingerprint.test.mjs scripts/__tests__/wiki-refresh.test.mjs
+node --test scripts/__tests__/wiki-maintain.test.mjs scripts/__tests__/wiki-maintain.guard.test.mjs
 node --test scripts/__tests__/openwiki-links.test.mjs # body-link scanner and normalizer
 ```
 
-`--selftest` includes a **deliberately sabotaged generator** that exits 0 having written nothing. If it
-ever passes, the zero-page detector is broken — which is the one failure mode that would let this
-whole arrangement go quietly back to reporting false green.
+`wiki-maintain --selftest` includes a **deliberately sabotaged generator** that exits 0 having written
+nothing. If it ever passes, the zero-page detector is broken — the one failure mode that would let a
+rebuild go quietly back to reporting false green.
 
 ---
 
 ## 8. The OKF v0.1 → v0.2 provenance migration (OpenWiki 0.5.x)
 
 OpenWiki 0.5.x emits **OKF v0.2**, which replaces the flat `timestamp:` scalar with a structured
-`generated: {by, at}` event. The bundle does not convert in one step, and the way it converts is the
-part worth knowing:
+`generated: {by, at}` event:
 
 - `finalizeGeneratedProvenance` stamps `generated` on every page whose **body changed** in the run,
   and in the same pass **removes that page's `timestamp` field**. It is a replacement, not an
   addition.
-- A page whose body did not change keeps its prior stamp untouched. So the bundle carries **both
-  shapes at once**, one per page, and flips over gradually as pages are regenerated.
-- The root `index.md` declares `okf_version: "0.2"`. The legacy `timestamp` stays valid on pages that
-  have not been rewritten, so there is nothing to migrate by hand and no cutover to schedule.
+- A page whose body did not change keeps its prior stamp. So the bundle carries **both shapes at
+  once**, one per page. `wiki-refresh.mjs --record` writes `timestamp`, which v0.2 tolerates.
+- The root `index.md` declares `okf_version: "0.2"`.
 
-**Why this needed a gate change rather than nothing.** `check-openwiki-okf.mjs` reads the stamp for
-V12, the drift warning that reports a concept whose cited source has moved on. Had it kept reading
-only `timestamp`, it would not have failed — it would have gone on printing `✅ conformant` while
-silently covering one fewer page every time a page was regenerated, until drift checked nothing at
-all. The gate now resolves the stamp through one shared helper, `scripts/openwiki-stamp.mjs`, which
-takes the **newest** of `generated.at`, `verified.at` and `timestamp` (operator decision 2026-09-28).
-Newest, because each is an event and OpenWiki can add one without the others: it re-verifies a page's
-Claims and adds `verified` while leaving the body — and so `generated` and `timestamp` — untouched.
-Measured on `decisions/adr-0001-prod-secrets-management.md`, verified at 17:17Z against a source that
-changed at 16:17Z, which V12 went on reporting as stale while it read only the other two. An older
-verification never drags a newer generation backwards.
-
-V5 validates the ISO-8601 shape of every one of those values, including each entry of `verified`,
-which OpenWiki writes as a **list** of `{by, at}` events. Until 2026-09-28 V5 read it with a path
-reader that did not descend lists, so no real `verified.at` had ever been validated.
-
-**The number to watch.** A concept that cites a `resource` but carries no usable stamp is one drift
-cannot check. That is not a conformance violation and never fails the build, but the gate now counts
-and prints those pages:
-
-```
-[openwiki-okf] ⚠️  N concept(s) cite a source but carry no usable `generated.at` or `timestamp` —
-drift is NOT checked for these:
-```
-
-If that count climbs, drift coverage is falling — investigate the generator's provenance pass rather
-than the pages. A silent loss of coverage is precisely the failure this counter exists to make loud.
-
-### How a concept falls behind, and what re-plans it
-
-V12 is **warn-only**: it never touches the exit code, so a documentation edit never waits on a paid
-regeneration. Re-planning is the planner's job. Besides the paths changed since the run-record marker
-and the carried-forward backlog, each plan takes up to `DRIFT_PAGES_PER_RUN` drifted concepts from the
-budget left over, and reports the rest (feature 082; see "Pages that fell behind the marker: drift, and
-parking" in §3). Drift is not fanned out from changed paths: one edit to a widely cited file would
-otherwise enqueue every concept citing it at once, and never clear. The bound is what keeps it finite.
-
-The routes by which a concept used to fall behind, and what closed each:
-
-- **#526 (closed by feature 082)**: nothing re-planned a concept once the marker had passed its source
-  change. On 2026-09-20, 23 of 68 concepts were in that state. Drift slices now re-plan them a bounded
-  number per run. A deliberately **parked** page is excluded and listed instead.
-- **#587 (fixed)**: a refresh slice that wrote nothing for one of its requested pages used to verify,
-  because the only check was that the requested pages *existed*. An existing page that had not been
-  rewritten counted toward `noChange`, and the marker advanced past the change. Measured on
-  `openwiki/runbooks/renovate.md`, 2026-09-26. `verifySlice` now fails the slice for such a page when its
-  source is newer than its stamp (§3, cause 4), so the page returns to the backlog and the marker holds.
-- **#616 (closed)**: a run that only stripped a page's `verified:` block counted as a refresh, and left
-  Markdown and Claims inconsistent (proposal #615). The cause is openwiki's own restore path when a worker
-  exits without submitting. Both guards shipped in #617: a requested page changed only in front matter is
-  judged stale (§3, cause 4), and V16 fails a non-durable bundle. #685 later added the restore of a failed
-  page's page, sidecar and manifest entry, so such bytes can no longer ride along on a proposal.
-- **#525 (closed)**: the one-off drift-driven sweep that cleared the 2026-09 V12 list, once #587 and the
-  canonical-document corrections (#588) were in place.
-
-**Read a V12 line with its stamp in mind.** The comparison is the source's last **commit** date
-against the page's stamp (the newest of `generated.at`, `verified.at` and `timestamp`). Several pages
-still carry a legacy date-only stamp — `timestamp: 2026-08-08T00:00:00+00:00` on
-`openwiki/runbooks/backlog.md`, eleven such pages on 2026-09-28 — so a source commit made later **the same day** reads as drift
-even when the page was generated from it. `backlog.md` is exactly that case: its source's last
-commit is `2026-08-08T19:38:20+00:00`. Compare the dates before queuing such a page; the warning
-clears for good once the page is regenerated and gains a full `generated.at`.
+A page's stamp is the **newest** of `generated.at` and `timestamp`, defined once in
+`scripts/openwiki-stamp.mjs`. `verified.at` was a third candidate while Claims existed; it is not one
+now, and `verified:` itself is a V17 finding. The stamp no longer decides freshness — the fingerprint
+does — but `--diff` uses it as the base for a page that has no fingerprint yet.
 
 ### Diagrams need their parser installed, or they degrade silently
 
@@ -1072,66 +731,18 @@ verified to load and reject a malformed fence from the locked install.
 
 ---
 
-## 9. Claims sidecars (`openwiki/.claims/`)
+## 9. Claims, retired (feature 098)
 
-OpenWiki 0.5.2 records **Claims** for the pages it writes: atomic, evidence-backed propositions that
-the page body relies on. They live beside the bundle, one JSON sidecar per page, mirroring the page's
-path — `openwiki/.claims/runbooks/backups.json` belongs to `openwiki/runbooks/backups.md`. There
-were 43 on 2026-11-01, all written by the generator, every one on a derived page, and each of those
-pages carries a matching `verified:` entry (`by: openwiki/<version>`, `at: <ISO time>`) in its front
-matter.
+OpenWiki 0.5.2 records **Claims** for the pages it writes: evidence-backed propositions in a JSON
+sidecar per page under `openwiki/.claims/`, certified against the page's bytes by
+`openwiki/.page-manifest.json` and a front-matter `verified:` event. From 2026-09-27 to 2026-11-10
+this repository kept them, guarded by V16 (durability) and G13 (scope, ADR-0003).
 
-A sidecar holds `schemaVersion`, a `pageVersion` hash of the page, a `verification: {by, at}` event,
-and a `claims` array. Each claim has a stable `id`, a `statement`, and one or more `evidence` entries,
-each a `repo://<path>` resource (optionally with a `#Lx-Ly` line range) plus a resolver-computed
-`version` hash of that source as it stood when the claim was made. On a later refresh OpenWiki marks
-a claim `stale` when its evidence's version no longer matches (or `unresolved` when the evidence
-cannot be resolved), and the generator must then confirm, revise or retract it — the installed
-package's `dist/claims/guidance.js` states those rules.
+They are **retired** (ADR-0004, superseding ADR-0003's Claims half). openwiki forces every page with a
+stale Claim into every run, whatever was requested; with ~20 pages a week changing source, that forced
+set grew with every merge and starved the requested pages (run 5104: 30 forced pages, ~$1.44 for one
+landed page). A derived page now carries one source fingerprint instead, checked by V17.
 
-What this repository does with them today:
-
-- **Scope: derived pages only (ADR-0003, item #513).** Claims and the fingerprints in
-  `openwiki/protected.yaml` are complements with disjoint scopes. A fingerprint freezes prose we
-  wrote, on an authoritative page that has no upstream source. A Claim certifies a fact the generator
-  wrote, on a derived page, against the source it was derived from. A Claim on an authoritative page
-  would cite the page itself; a fingerprint on a derived page would fight the refresh it exists to
-  allow. Policy keeps the generator off authoritative pages, and **G13** in `okf-governance` fails a
-  break of that.
-- **Policy.** `openwiki/.claims/**` and `openwiki/.page-manifest.json` have their own entries in
-  `openwiki/policy.yaml` (`regenerate`, `actor: generator`), so their scope is declared rather than
-  inherited from the `openwiki/**` catch-all.
-- **Gates.** `okf-lint` touches Claims in three places. V5 validates the ISO-8601 shape of every
-  `verified.at`, and V12 counts it as a stamp (the newest of `generated.at`, `verified.at` and
-  `timestamp`). **V16 reads the sidecars:** every page with a `.page-manifest.json` entry must have a
-  sidecar with a `verification` whose `pageVersion` equals the sha256 of the page's current bytes —
-  the exact invariant openwiki 0.6.0 enforces before it will run (`buildManifestEntry` in
-  `generation/page-manifest.js`), defined once in `scripts/openwiki-claims.mjs`. A page with no
-  manifest entry is not checked; openwiki leaves it for full review. The same module lets
-  wiki-maintain's link normalization carry a covered page's certified hash across a pure link
-  rewrite, so the harness cannot break the invariant it enforces. **G13** in `okf-governance`
-  (`claimsScopeFindings`, same module) fails:
-  - an authoritative page with a sidecar or a manifest entry;
-  - a sidecar whose page does not exist;
-  - a page carrying `verified:` with no sidecar, which claims a verification that nothing records.
-- **What no gate checks.** Nothing checks that a sidecar's claims are *true*, so do not treat one as
-  reviewed content. V12 drift stays the only drift signal for derived pages that have no Claims.
-
-### A failed evidence recheck: `stale` and `unresolved`
-
-On each refresh openwiki rechecks every claim's evidence against the repository.
-
-- **`stale`**: the cited source still exists but its bytes changed. This is normally the system
-  working: the generator confirms, revises or retracts the claim in that run, and nothing needs doing
-  by hand. **The exception is a file rewritten on every deploy.** That claim goes stale on every run
-  and forces its page into every slice. The precedent is CD's digest-promote rewriting every
-  `.env.deploy` (item #525, commit 27220387). Add such a file to `.openwikiignore` so it is never
-  cited again, then **uncover** each page that cites it.
-- **`unresolved`**: the cited source cannot be read at all, usually because it was moved or deleted.
-  The generator revises or retracts the claim on the next refresh of the citing page
-  (`dist/claims/guidance.js`). If the page is not due for a refresh, uncover it so the next run
-  reviews it in full.
-- **Uncovering** is the only safe way to hand-edit a covered page. Remove its `.page-manifest.json`
-  entry, delete its `.claims` sidecar and delete its front-matter `verified:` event, all in the same
-  change. openwiki then leaves the page for full review. Removing only some of the three fails V16 or
-  G13 in the PR, rather than failing the next paid run.
+A manual rebuild may still have openwiki write sidecars and a manifest in the runner's checkout. The
+paths are **gitignored**, so they are never committed, and the rebuild strips `sources:`/`verified:`
+from every page that landed. Nothing in this repository reads them.

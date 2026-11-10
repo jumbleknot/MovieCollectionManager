@@ -4,39 +4,9 @@ title: OpenWiki quickstart — MovieCollectionManager
 description: The root entry point to this repository's OpenWiki bundle — what the bundle is and is not, how to query it by type, tag, resource or directory, a task-routing map to the major concept areas, and how the coverage rule and the derived-versus-authoritative split decide where a new learning belongs.
 tags: [openwiki, navigation, quickstart]
 resource: openwiki/INSTRUCTIONS.md
-sources:
-  - id: openwiki-source-6a85d1785ff9f9a2e0138d3c
-    resource: repo://docs/decisions/ADR-0003-claims-and-fingerprints.md
-  - id: openwiki-source-f003db5a1a23dba30ccf3b03
-    resource: repo://docs/runbooks/ci-evidence-pipeline.md
-  - id: openwiki-source-3428fee3ac79873bee5650fc
-    resource: repo://docs/runbooks/devcontainer-sandbox-lifecycle.md
-  - id: openwiki-source-c231cd090281b3129aaf6167
-    resource: repo://docs/runbooks/wiki-maintenance.md
-  - id: openwiki-source-78ec32b51a25a8fb66d5b292
-    resource: repo://infrastructure-as-code/backup/backup.sh
-  - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
-    resource: repo://infrastructure-as-code/backup/README.md
-  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
-    resource: repo://infrastructure-as-code/project.json
-  - id: openwiki-source-98792bbc9621de1ad3e22856
-    resource: repo://scripts/check-openwiki-governance.mjs
-  - id: openwiki-source-ccaf212e2940e782eb0de272
-    resource: repo://scripts/check-openwiki-okf.mjs
-  - id: openwiki-source-efa55c3a8c70016f55bf6266
-    resource: repo://scripts/openwiki-claims.mjs
-  - id: openwiki-source-c1cb21a9b44d0d18ad2c030a
-    resource: repo://scripts/openwiki-links.mjs
-  - id: openwiki-source-31eafb88f9d0f880c0c66a49
-    resource: repo://scripts/openwiki-policy.mjs
-  - id: openwiki-source-219168cc26e2918922e603f9
-    resource: repo://specs/043-openwiki-okf/spec.md
-  - id: openwiki-source-636b4e73e33915c86a84ab68
-    resource: repo://specs/044-openwiki-automation-migration/spec.md
+resource-sha256: 0a02e64d682f4ab74f1c8ef405157f73747a139760863e6e1b903020eb3c5955
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-06T07:34:17.095Z
+timestamp: 2026-11-10T03:22:23.676Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager
@@ -70,16 +40,17 @@ page is a derived summary). Use these fields rather than guessing filenames:
   span multiple pages regardless of directory; a tag search surfaces all of them together.
 - **By `resource`** — every derived page cites its canonical source as a repository-relative path
   (verified to resolve by the conformance gate) or an external URL. A `resource` names **one canonical
-  file, never a directory**: drift is judged by the cited source's last commit, so a directory citation
-  re-flags the page on every unrelated change beneath it, and the planner reports such a page as
-  *unplannable* rather than paying to regenerate it. A page with **no** `resource` is
+  file, never a directory**, and records that file's fingerprint as `resource-sha256`: the required
+  `okf` check (**V17**) fails a PR whose summary no longer matches its source, so the session that
+  changes a source refreshes its summary in the same PR, and **G14** refuses a directory or a
+  bot-rewritten file as a `resource`. A page with **no** `resource` is
   *authoritative* — canonical in its own right, and listed under `authoritative:` in
   [the protection manifest](./protected.yaml). That split is a ratified decision, not a convention:
-  [ADR-0003](./decisions/adr-0003-claims-and-fingerprints.md) makes Grounded Claims and the
-  `protected.yaml` fingerprints complements with **disjoint scopes** — Claims on derived pages only,
-  fingerprints on authoritative pages only, never both. Governance rule **G11** rejects any concept
-  that is both or neither (a dangling citation classifies as neither, not as derived), and **G13**
-  keeps Claims sidecars off authoritative pages. The
+  [ADR-0003](./decisions/adr-0003-claims-and-fingerprints.md) made Grounded Claims (on derived pages)
+  and the `protected.yaml` fingerprints (on authoritative pages) complements, and
+  [ADR-0004](./decisions/adr-0004-session-maintained-wiki.md) replaced its Claims half with the source
+  fingerprint above. Governance rule **G11** rejects any concept that is both or neither (a dangling
+  citation classifies as neither, not as derived). The
   four reserved bundle files (`index.md`, `INSTRUCTIONS.md`, `log.md` and this quickstart) are not
   concepts at all, so the governance gate's classification check skips them; that is why this page may
   carry a `resource` without appearing under `authoritative:`. The conformance gate draws the reserved
@@ -111,7 +82,7 @@ bundle before anyone checked (item 491).
 | Running or triaging a security scan | [SAST & SCA project page](./projects/sast.md), [the SAST/SCA runbook](./runbooks/sast-scanning.md), [DAST](./runbooks/dast-scanning.md), [infra-image scanning](./runbooks/infra-image-scanning.md), [secrets-management posture](./invariants/secrets-management.md) |
 | Touching backups or account deletion | [per-user collection backups](./runbooks/backups.md), [the prod host restic backup](./projects/backup.md), [the BFF](./projects/bff.md) |
 | Picking up work | [the agent-driven backlog](./runbooks/backlog.md), [spec-driven development](./process/spec-driven-development.md), [PR batching](./process/pull-request-batching.md), [feature-branch test scope](./process/feature-test-scope.md) |
-| Maintaining this wiki | [bundle maintenance](./runbooks/wiki-maintenance.md), [the process view of it](./process/wiki-maintenance.md), [ADR-0003: Claims and fingerprints](./decisions/adr-0003-claims-and-fingerprints.md), [the regeneration policy](./policy.yaml), [the protection manifest](./protected.yaml) |
+| Maintaining this wiki | [bundle maintenance](./runbooks/wiki-maintenance.md), [the process view of it](./process/wiki-maintenance.md), [ADR-0004: session-maintained summaries](./decisions/adr-0004-session-maintained-wiki.md), [ADR-0003: Claims and fingerprints](./decisions/adr-0003-claims-and-fingerprints.md), [the wiki-refresh skill](../.claude/skills/wiki-refresh/SKILL.md), [the regeneration policy](./policy.yaml), [the protection manifest](./protected.yaml) |
 
 ## Concept areas
 
@@ -147,7 +118,9 @@ bundle before anyone checked (item 491).
   [ADR-0002: Stateful major upgrades — OpenSearch 3 then Langfuse 4](./decisions/adr-0002-stateful-major-upgrades.md),
   and
   [ADR-0003: Grounded Claims and protected-passage fingerprints are complements](./decisions/adr-0003-claims-and-fingerprints.md),
-  the governance decision that makes the derived-versus-authoritative split above enforceable.
+  the governance decision that makes the derived-versus-authoritative split above enforceable, and
+  [ADR-0004: wiki summaries are maintained by the coding session](./decisions/adr-0004-session-maintained-wiki.md),
+  which supersedes its Claims half.
 - **[gotchas/](./gotchas/)** — standalone, non-obvious traps not scoped to a single invariant or project,
   covering SSRF guarding, cascade deletes, Docker-internal DNS, `.env` inline comments, Expo Router
   server export and transport traps, collection routing, external-ID URL opening, Keycloak
@@ -214,18 +187,17 @@ document therefore means adding a concept page **and** an entry in its directory
 same change, or the conformance gate fails the build.
 
 A durable learning goes to the **canonical home of its subject**, decided from the concept covering it:
-into the cited source when the concept is a derived summary, into the concept itself when it is
-authoritative, and into a new concept when none covers the subject. Never append the detail to a
-derived page, and never to `CLAUDE.md`, which is an index into this bundle.
+into the cited source when the concept is a derived summary — refreshing the summary in the same PR —
+into the concept itself when it is authoritative, and into a new concept when none covers the subject.
+Never append the detail only to a derived page, and never to `CLAUDE.md`, which is an index into this
+bundle.
 
 Both gates that police the bundle run offline and keyless, so checking it never needs the paid
-generator: `pnpm nx okf-lint infrastructure-as-code` for conformance (rules V1–V16) and
+generator: `pnpm nx okf-lint infrastructure-as-code` for conformance (rules V1–V15 and V17) and
 `pnpm nx okf-governance infrastructure-as-code` for the policy, protection and classification rules
-(rules G0–G13, where G13 keeps Claims sidecars off authoritative pages). Both are fail-closed — an
-absent or partially-written bundle, or a missing governance file, is a violation rather than a skip —
-and neither has a skip flag or an allowlist, so a rejected page is fixed in
-[the generation brief](./INSTRUCTIONS.md) and regenerated rather than accepted in place. Planning the
-bundle is free as well: `pnpm nx wiki-plan infrastructure-as-code`, and the model-free
-`node scripts/wiki-maintain.mjs --claims-audit` that lists the pages openwiki will force into the next
-run, need no credential and make no model call — so read a plan before reaching for the paid
-`pnpm nx wiki-maintain infrastructure-as-code`.
+(rules G0–G12 and G14). Both are fail-closed — an absent or partially-written bundle, or a missing
+governance file, is a violation rather than a skip — and neither has a skip flag or an allowlist, so a
+rejected page is fixed in the page (or in [the generation brief](./INSTRUCTIONS.md), for a rebuild)
+rather than accepted. Refreshing a page is free too: `node scripts/wiki-refresh.mjs --stale`, then
+`--diff` and `--record` per page, with no credential and no model call. The paid generator is only a
+manual rebuild of named pages (`pnpm nx wiki-maintain infrastructure-as-code --args="--pages …"`).

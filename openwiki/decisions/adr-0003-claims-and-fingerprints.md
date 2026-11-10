@@ -163,7 +163,7 @@ case. Nothing else in the decision is a standing invitation to revisit it.
 
 This page deliberately does not restate the procedure. When a claim's evidence goes `stale` or
 `unresolved`, and when a covered page has to be uncovered before a hand edit, the handling is in
-[wiki-maintenance runbook §9](../../docs/runbooks/wiki-maintenance.md#9-claims-sidecars-openwikiclaims).
+[wiki-maintenance runbook §9](../../docs/runbooks/wiki-maintenance.md#9-claims-retired-feature-098).
 The related concept pages are [OpenWiki knowledge-bundle maintenance](../runbooks/wiki-maintenance.md)
 and [OpenWiki bundle generation and maintenance](../process/wiki-maintenance.md); the scope and
 canonical-home rules the generator reads are in
