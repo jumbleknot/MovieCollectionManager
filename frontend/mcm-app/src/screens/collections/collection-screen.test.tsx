@@ -17,7 +17,6 @@
 
 import React from 'react';
 import { render, fireEvent, waitFor } from '@/test-support/render';
-import type { ReactTestInstance } from 'react-test-renderer';
 import { CollectionScreen } from '@/screens/collections/collection-screen';
 import { OpenPanelProvider } from '@/hooks/use-open-panel';
 import type {
@@ -202,11 +201,9 @@ async function openViewOptions(utils: Awaited<ReturnType<typeof render>>): Promi
   expect(utils.getByTestId('view-options-panel')).toBeTruthy();
 }
 
-/** Host testIDs in render (document) order. */
-function testIdOrder(root: ReactTestInstance): string[] {
-  return root
-    .findAll((n) => typeof n.type === 'string' && typeof n.props.testID === 'string')
-    .map((n) => n.props.testID as string);
+/** Host testIDs in render (document) order — RNTL queries walk the tree depth-first. */
+function testIdOrder(utils: Awaited<ReturnType<typeof render>>): string[] {
+  return utils.queryAllByTestId(/.+/).map((n) => n.props.testID as string);
 }
 
 describe('CollectionScreen', () => {
@@ -241,8 +238,7 @@ describe('CollectionScreen', () => {
     });
 
     it('places the bar between the search bar and the count row (FR-002)', async () => {
-      const { UNSAFE_root } = await renderScreen();
-      const order = testIdOrder(UNSAFE_root);
+      const order = testIdOrder(await renderScreen());
       const search = order.indexOf('movie-search-input');
       const toggle = order.indexOf('view-options-toggle');
       const count = order.indexOf('movie-count-line');
