@@ -30,6 +30,7 @@ import { createHash } from 'node:crypto';
 import { bodyLinks, classifyBodyLink, relativeFormFor, splitTarget } from './openwiki-links.mjs';
 import { stampValues } from './openwiki-stamp.mjs';
 import { extractFrontMatter } from './openwiki-front-matter.mjs';
+import { staleDerivedPages } from './openwiki-fingerprint.mjs';
 import { claimsDurabilityFindings } from './openwiki-claims.mjs';
 import { sourceCommitAfterStamp } from './openwiki-drift.mjs';
 
@@ -83,9 +84,9 @@ function classifyResource(value) {
   return { kind: 'external', wellFormed: Boolean(url.protocol && url.host) };
 }
 
-function resolveRelativeResource(value) {
+function resolveRelativeResource(value, repoRoot) {
   const withoutFragment = value.split('#')[0].split('?')[0];
-  return { target: withoutFragment, abs: resolve(REPO_ROOT, withoutFragment) };
+  return { target: withoutFragment, abs: resolve(repoRoot, withoutFragment) };
 }
 
 // ── the concept provenance stamp (OKF v0.1 `timestamp` → v0.2 `generated.at`) ───
@@ -137,7 +138,7 @@ function classifyFile(name) {
 
 // ── the gate ────────────────────────────────────────────────────────────────────
 
-function validateBundle(bundleRoot) {
+function validateBundle(bundleRoot, { repoRoot = REPO_ROOT } = {}) {
   const findings = [];
   const warnings = [];
   const unstampable = [];
@@ -259,7 +260,7 @@ function validateBundle(bundleRoot) {
         if (!cls.wellFormed) add('V7', file, `external resource is malformed: ${value}`);
         // Never fetched. Liveness of an external link is out of scope by design.
       } else {
-        const { target, abs } = resolveRelativeResource(value);
+        const { target, abs } = resolveRelativeResource(value, repoRoot);
         if (!existsSync(abs)) {
           add('V6', file, `resource does not resolve: ${target}`);
         } else {
@@ -267,7 +268,7 @@ function validateBundle(bundleRoot) {
           // regeneration run, so this can never touch the exit code.
           // The comparison is ./openwiki-drift.mjs, shared with wiki-maintain's verifier and drift
           // planner (feature 082). Only V12 falls back to mtime for an untracked source.
-          const drift = sourceCommitAfterStamp({ root: REPO_ROOT, fields, fallbackToMtime: true });
+          const drift = sourceCommitAfterStamp({ root: repoRoot, fields, fallbackToMtime: true });
           if (drift?.unstampable) {
             // A concept that cites a source but carries no usable stamp is one V12 CANNOT check.
             // Counted rather than dropped: the whole point of the fallback above is that this
@@ -310,9 +311,34 @@ function validateBundle(bundleRoot) {
     add('V16', join(bundleRoot, f.page), f.message);
   }
 
+  // V17 — a derived page must match its source (feature 098, contracts/okf-v17.md). This BLOCKS:
+  // the coding session that changes a page's `resource` refreshes the page in the same PR. The
+  // judgment is staleDerivedPages, the same function `wiki-refresh.mjs --stale` prints (FR-009).
+  const bundleRel = relative(repoRoot, bundleRoot) || '.';
+  for (const s of staleDerivedPages({ root: repoRoot, bundle: bundleRel })) {
+    add('V17', resolve(repoRoot, s.page), v17Message(s));
+  }
+
   findings.sort((a, b) => a.file.localeCompare(b.file) || a.rule.localeCompare(b.rule));
   warnings.sort((a, b) => a.file.localeCompare(b.file));
   return { findings, warnings, unstampable, conceptCount, directoryCount: byDir.size, missingBundle: false };
+}
+
+function v17Message({ page, resource, reason }) {
+  if (reason === 'no fingerprint') {
+    return `V17 ${page}: no source fingerprint — run: node scripts/wiki-refresh.mjs --record ${page} (after refreshing it)`;
+  }
+  if (reason === 'source changed') {
+    return `V17 ${page}: stale against ${resource} — refresh it: node scripts/wiki-refresh.mjs --diff ${page}, update the page, then --record ${page}. Skill: wiki-refresh`;
+  }
+  if (reason === 'resource missing') {
+    return `V17 ${page}: its source ${resource} no longer exists — re-point resource: at the file that now holds this subject (then --record), or retire the page`;
+  }
+  if (reason === 'resource is not a file') {
+    return `V17 ${page}: its source ${resource} is not a single file — a derived page summarises one file (FR-006); re-point resource: at one file, or make the page canonical`;
+  }
+  const field = reason.replace(/^forbidden field: /, '');
+  return `V17 ${page}: forbidden field ${field} (retired with Claims, ADR-0004)`;
 }
 
 // ── reporting ───────────────────────────────────────────────────────────────────
@@ -366,7 +392,7 @@ function report(result, bundleRoot, asJson) {
 function selftest() {
   const root = mkdtempSync(join(tmpdir(), 'okf-selftest-'));
   const fails = [];
-  const scenario = (name, files, expect) => {
+  const scenario = (name, files, expect, { asRepoRoot = false } = {}) => {
     const dir = join(root, name);
     mkdirSync(dir, { recursive: true });
     for (const [rel, content] of Object.entries(files)) {
@@ -374,7 +400,9 @@ function selftest() {
       mkdirSync(dirname(p), { recursive: true });
       writeFileSync(p, content);
     }
-    const r = validateBundle(dir);
+    // `asRepoRoot`: the scenario directory is also the repository root its `resource`s resolve
+    // from, so a V17 scenario can own (and edit) its source file.
+    const r = validateBundle(dir, asRepoRoot ? { repoRoot: dir } : {});
     const rules = new Set(r.findings.map((f) => f.rule));
     if (expect.rule && !rules.has(expect.rule)) {
       fails.push(`${name}: expected ${expect.rule}, got [${[...rules].join(',') || 'none'}]`);
@@ -395,6 +423,9 @@ function selftest() {
     return r;
   };
 
+  // A scenario citing the real README.md is a derived page, so a clean one must carry README's
+  // current fingerprint (V17) — computed here, never pasted, so a README edit cannot break it.
+  const readmeFp = `resource-sha256: ${createHash('sha256').update(readFileSync(join(REPO_ROOT, 'README.md'), 'utf8').replace(/\r\n/g, '\n')).digest('hex')}\n`;
   const idx = (link) => `---\ntype: Reference\ndescription: Index.\n---\n# I\n- [x](${link})\n`;
   // The generator emits index.md with `okf_version` and NO `type` — must be accepted (V2 exemption).
   const genIdx = (link) => `---\nokf_version: "0.1"\n---\n# Files\n- [x](${link})\n`;
@@ -421,7 +452,7 @@ function selftest() {
   // V12 — drift warns without escalating. The most likely accidental escalation.
   scenario('v12', {
     'index.md': idx('a.md'),
-    'a.md': '---\ntype: R\nresource: README.md\ntimestamp: 2001-01-01T00:00:00Z\n---\nb\n',
+    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}timestamp: 2001-01-01T00:00:00Z\n---\nb\n`,
   }, { warns: true, warnsCleanExit: true });
 
   // ── OKF v0.2 provenance (openwiki >=0.5.0) ─────────────────────────────────────
@@ -433,19 +464,19 @@ function selftest() {
   // Drift is detected from the v0.2 stamp alone, exactly as it was from the v0.1 one.
   scenario('v12-generated-at', {
     'index.md': idx('a.md'),
-    'a.md': '---\ntype: R\nresource: README.md\ngenerated:\n  by: openwiki/0.5.2\n  at: 2001-01-01T00:00:00Z\n---\nb\n',
+    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}generated:\n  by: openwiki/0.5.2\n  at: 2001-01-01T00:00:00Z\n---\nb\n`,
   }, { warns: true, warnsCleanExit: true, unstampable: 0 });
 
   // A fresh stamp must NOT warn — proves the v0.2 value is really being parsed, not just found.
   scenario('v12-generated-at-fresh', {
     'index.md': idx('a.md'),
-    'a.md': '---\ntype: R\nresource: README.md\ngenerated:\n  by: openwiki/0.5.2\n  at: 2999-01-01T00:00:00Z\n---\nb\n',
+    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}generated:\n  by: openwiki/0.5.2\n  at: 2999-01-01T00:00:00Z\n---\nb\n`,
   }, { clean: true, noWarns: true, unstampable: 0 });
 
   // `generated.at` wins over a stale legacy `timestamp` left behind on the same page.
   scenario('v12-generated-at-precedence', {
     'index.md': idx('a.md'),
-    'a.md': '---\ntype: R\nresource: README.md\ntimestamp: 2001-01-01T00:00:00Z\ngenerated:\n  by: openwiki/0.5.2\n  at: 2999-01-01T00:00:00Z\n---\nb\n',
+    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}timestamp: 2001-01-01T00:00:00Z\ngenerated:\n  by: openwiki/0.5.2\n  at: 2999-01-01T00:00:00Z\n---\nb\n`,
   }, { clean: true, noWarns: true, unstampable: 0 });
 
   // V5 reaches INSIDE the nested v0.2 events. A malformed `generated.at` is a finding, not a shrug.
@@ -462,7 +493,7 @@ function selftest() {
   // COUNTED, because that is the number that makes a silent loss of drift coverage visible.
   scenario('v12-unstampable', {
     'index.md': idx('a.md'),
-    'a.md': '---\ntype: R\nresource: README.md\n---\nb\n',
+    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}---\nb\n`,
   }, { clean: true, noWarns: true, unstampable: 1 });
 
   // V2 exemption — a GENERATED directory summary carries no `type`. Regression guard: requiring it
@@ -545,8 +576,36 @@ function selftest() {
     scenario('v16-edited', covered(`${original}edited\n`), { rule: 'V16' });
   }
 
+  // V17 — a derived page's `resource-sha256` must match its source (feature 098,
+  // contracts/okf-v17.md). Each scenario is its own repository root, so the source sits beside the
+  // bundle and the stale case can change bytes without touching the real tree.
+  {
+    const SRC = '# Source\n\nline one\n';
+    const fpOf = (s) => createHash('sha256').update(s).digest('hex');
+    const derived = (extra) => `---\ntype: R\nresource: src.txt\n${extra}---\nb\n`;
+    const v17 = (name, files, expect) => scenario(name, files, expect, { asRepoRoot: true });
+
+    v17('v17-fresh', { 'index.md': idx('a.md'), 'src.txt': SRC, 'a.md': derived(`resource-sha256: ${fpOf(SRC)}\n`) }, { clean: true });
+    const stale = v17('v17-stale', { 'index.md': idx('a.md'), 'src.txt': `${SRC}edited\n`, 'a.md': derived(`resource-sha256: ${fpOf(SRC)}\n`) }, { rule: 'V17' });
+    if (!stale.findings.some((f) => f.rule === 'V17' && f.file.endsWith('a.md') && f.message.includes('wiki-refresh.mjs --diff'))) {
+      fails.push('v17-stale: the finding must name the page and the wiki-refresh --diff hint');
+    }
+    v17('v17-missing', { 'index.md': idx('a.md'), 'src.txt': SRC, 'a.md': derived('') }, { rule: 'V17' });
+    v17('v17-malformed', { 'index.md': idx('a.md'), 'src.txt': SRC, 'a.md': derived('resource-sha256: not-a-hash\n') }, { rule: 'V17' });
+    v17('v17-crlf', { 'index.md': idx('a.md'), 'src.txt': SRC.replace(/\n/g, '\r\n'), 'a.md': derived(`resource-sha256: ${fpOf(SRC)}\n`) }, { clean: true });
+    v17('v17-canonical-ignored', { 'index.md': idx('a.md'), 'a.md': '---\ntype: R\ntitle: Canonical\n---\nb\n' }, { clean: true });
+    v17('v17-sources-field', {
+      'index.md': idx('a.md'), 'src.txt': SRC,
+      'a.md': derived(`resource-sha256: ${fpOf(SRC)}\nsources:\n  - id: openwiki-source-1\n    resource: repo://src.txt\n`),
+    }, { rule: 'V17' });
+    const gone = v17('v17-resource-missing', { 'index.md': idx('a.md'), 'a.md': derived(`resource-sha256: ${fpOf(SRC)}\n`) }, { rule: 'V17' });
+    if (!gone.findings.some((f) => f.rule === 'V17' && f.message.includes('re-point') && f.message.includes('retire'))) {
+      fails.push('v17-resource-missing: the finding must say to re-point `resource` or retire the page');
+    }
+  }
+
   // V13 — a conformant bundle passes.
-  scenario('v13', { 'index.md': idx('a.md'), 'a.md': '---\ntype: R\ntitle: A\nresource: README.md\ntags:\n  - t\n---\nb\n' }, { clean: true });
+  scenario('v13', { 'index.md': idx('a.md'), 'a.md': `---\ntype: R\ntitle: A\nresource: README.md\n${readmeFp}tags:\n  - t\n---\nb\n` }, { clean: true });
 
   rmSync(root, { recursive: true, force: true });
 
@@ -554,7 +613,7 @@ function selftest() {
     console.error('✗ openwiki-okf gate --selftest FAILED:\n  ' + fails.join('\n  '));
     return 1;
   }
-  console.log('✓ openwiki-okf gate --selftest passed (V1–V16: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing, site-root-absolute body links rejected with the relative form named, code samples exempt, relative links resolved from their own file, covered pages durable against their verified Claims)');
+  console.log('✓ openwiki-okf gate --selftest passed (V1–V17: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing, site-root-absolute body links rejected with the relative form named, code samples exempt, relative links resolved from their own file, covered pages durable against their verified Claims, derived pages fresh against their source fingerprint)');
   return 0;
 }
 

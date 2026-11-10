@@ -58,11 +58,11 @@ T026.
 
 **Goal**: rule V17 in the required `okf` gate. **Independent test**: quickstart §1 and §2.
 
-- [ ] T004 [US1] Add self-test scenarios to `scripts/check-openwiki-okf.mjs` (`--selftest`), per `contracts/okf-v17.md`. Covers US1-AC1..AC4.
+- [X] T004 [US1] Add self-test scenarios to `scripts/check-openwiki-okf.mjs` (`--selftest`), per `contracts/okf-v17.md`. Covers US1-AC1..AC4.
   - Scenarios: `v17-fresh` passes, `v17-stale` fails naming the page, `v17-missing` fails, `v17-malformed` fails, `v17-crlf` passes, `v17-canonical-ignored` passes, `v17-sources-field` fails, `v17-resource-missing` fails with the re-point/retire message.
   - **Verify RED**: `node scripts/check-openwiki-okf.mjs --selftest`
   - **Expected RED**: exit 1; the scenarios that expect `rule: 'V17'` fail as "expected V17, got none".
-- [ ] T005 [US1] Implement V17 in `scripts/check-openwiki-okf.mjs`. It calls `staleDerivedPages` and uses the exact messages from `contracts/okf-v17.md`, including the `wiki-refresh` hint.
+- [X] T005 [US1] Implement V17 in `scripts/check-openwiki-okf.mjs`. It calls `staleDerivedPages` and uses the exact messages from `contracts/okf-v17.md`, including the `wiki-refresh` hint.
   - **Verify GREEN**: `node scripts/check-openwiki-okf.mjs --selftest` exits 0 and its summary line now lists V17.
   - **Expected on the real tree**: `node scripts/check-openwiki-okf.mjs` now exits 1 with about 50 `no fingerprint` lines. This is by design until T026.
 

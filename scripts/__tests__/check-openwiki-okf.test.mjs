@@ -32,6 +32,10 @@ function runGate(args) {
 
 const onFixture = (name) => runGate(['--bundle', join(FIXTURES, name)]);
 
+// A temp-built concept that cites the real README.md is a derived page, so it must carry README's
+// current fingerprint (V17, feature 098) — computed here, never pasted.
+const README_FP = createHash('sha256').update(readFileSync(join(REPO_ROOT, 'README.md'), 'utf8').replace(/\r\n/g, '\n')).digest('hex');
+
 // ── V13: the conformant baseline ────────────────────────────────────────────────
 test('V13 a fully conformant bundle passes with no findings', () => {
   const { code, out } = onFixture('valid');
@@ -161,7 +165,7 @@ test('V12 drift is still reported when the concept is checked out with CRLF endi
     );
     writeFileSync(
       join(dir, 'stale.md'),
-      crlf('---\ntype: Runbook\ntitle: Stale\nresource: README.md\ntimestamp: 2001-01-01T00:00:00Z\n---\nBody written long before the source changed.\n'),
+      crlf(`---\ntype: Runbook\ntitle: Stale\nresource: README.md\nresource-sha256: ${README_FP}\ntimestamp: 2001-01-01T00:00:00Z\n---\nBody written long before the source changed.\n`),
     );
 
     const { code, out } = runGate(['--bundle', dir]);
@@ -177,7 +181,7 @@ function oneConceptBundle(frontMatter) {
   const dir = mkdtempSync(join(tmpdir(), 'okf-stamp-'));
   writeFileSync(join(dir, 'index.md'),
     '---\ntype: Reference\ntitle: Test Bundle\ndescription: Index.\n---\n# Test Bundle\n- [Page](page.md) — a concept.\n');
-  writeFileSync(join(dir, 'page.md'), `---\ntype: Decision\ntitle: Page\nresource: README.md\n${frontMatter}---\nBody.\n`);
+  writeFileSync(join(dir, 'page.md'), `---\ntype: Decision\ntitle: Page\nresource: README.md\nresource-sha256: ${README_FP}\n${frontMatter}---\nBody.\n`);
   return dir;
 }
 

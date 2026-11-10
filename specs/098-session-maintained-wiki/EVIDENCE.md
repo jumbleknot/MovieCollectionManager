@@ -51,3 +51,38 @@ front-matter line is a flow collection (`tags: [a]\r` → `Unexpected scalar at 
 would have failed V1 on a Windows checkout. The CRLF `recordSourceFingerprint` case exposed it;
 the fix strips the one trailing `\r` the terminator slice leaves. The OKF gate and `--selftest` still
 exit 0 after the move.
+
+## T004 / T005 — V17 in the OKF gate
+
+RED (`node scripts/check-openwiki-okf.mjs --selftest`, exit 1), after the fixture source was renamed
+`src.txt` so it is not itself read as a concept:
+
+```
+✗ openwiki-okf gate --selftest FAILED:
+  v17-fresh: expected no findings, got V6
+  v17-stale: expected V17, got [V6]
+  v17-stale: the finding must name the page and the wiki-refresh --diff hint
+  v17-missing: expected V17, got [V6]
+  v17-malformed: expected V17, got [V6]
+  v17-crlf: expected no findings, got V6
+  v17-sources-field: expected V17, got [V6]
+  v17-resource-missing: expected V17, got [V6]
+  v17-resource-missing: the finding must say to re-point `resource` or retire the page
+exit 1
+```
+
+GREEN: `✓ openwiki-okf gate --selftest passed (V1–V17: … derived pages fresh against their source fingerprint)`, exit 0.
+
+Guards updated at the cause, not deleted: the pre-existing clean self-test scenarios and the
+`check-openwiki-okf.test.mjs` fixtures that cite a real file now carry that file's fingerprint —
+computed at run time for README.md, and a new stable `fixtures/openwiki-okf/source.txt` for the
+committed fixtures, so a README edit cannot break them.
+
+Real tree (expected until T026): `node scripts/check-openwiki-okf.mjs` exit 1, **52** V17 findings —
+50 `no source fingerprint`, plus the two directory resources (`specs/`, `backend/mc-service/src/domain/`)
+reported as "not a single file" until T015 makes those pages canonical. No non-V17 finding.
+
+`node --test scripts/__tests__/check-openwiki-okf.test.mjs`: 31 tests, 29 pass, 2 fail — both expected:
+`the real bundle has no … body link` (asserts the real tree exits 0; green at T026) and
+`V12 a page whose claims were VERIFIED after its source changed is not stale` (asserts `verified.at`
+is a stamp, which this feature retires; removed at T013).
