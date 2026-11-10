@@ -32,4 +32,5 @@ produce static libs. The Dockerfile's build stage installs `perl make` for that 
   link against without the vendored (compile-from-source) feature.
 
 See [mc-service](../projects/mc-service.md) for how this fits into the service's Docker
-build overall, and `CLAUDE.md`'s Non-Obvious Design Decisions section for the full narrative.
+build overall, and the comment above the `cfg(target_env = "musl")` block in
+`backend/mc-service/Cargo.toml` for the same reasoning in situ.

@@ -264,9 +264,11 @@ unconfigured — the agent layer must work in a plain dev environment with none 
   parsed spreadsheet is stashed once in spreadsheet-mcp's transient store and only the small opaque
   `import_handle` is checkpointed across clarification turns — re-serializing the whole parsed
   workbook per turn was the actual cause of a prior "it timed out" failure on large imports.
-- **Vault is a foundational platform secret store, not part of the Control Tower**, and it holds
-  only shared infrastructure secrets (the gateway's Keycloak OAuth client secret, the BFF's master
-  encryption key) — never user, model-provider, or TMDB credentials, which are per-user by design
+- **Vault is not part of the Control Tower, and it is not the production secret store.** The
+  dev-mode Vault lives in the `auth` stack under `--profile vault` and exists only to exercise the
+  gateway's optional, fail-open Vault reader; production secrets are Komodo Variables and production
+  Vault is deployed dormant ([ADR-0001](../decisions/adr-0001-prod-secrets-management.md)). User,
+  model-provider and TMDB credentials are never centralized anywhere — they are per-user by design
   (see the per-user config section above).
 - **The generic degrade reply (`"Sorry — I couldn't complete that just now."`) has exactly two
   sources; the circuit breaker has exactly one input.** `_degrade_node` is reachable only through

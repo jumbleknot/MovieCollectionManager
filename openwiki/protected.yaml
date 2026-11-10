@@ -110,7 +110,10 @@ passages:
     # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
-    fingerprint: "sha256:402531fe498e828f919c45e0f041f38f1287f784c1dfccbf36fabd84abb81dc0"
+    # Re-fingerprinted 2026-11-10 (feature 098 baseline review) — the closing pointer named
+    # `CLAUDE.md`'s Non-Obvious Design Decisions section, which no longer exists (CLAUDE.md is an
+    # index); it now points at the Cargo.toml comment. Previous: sha256:402531fe498e828f919c45e0f041f38f1287f784c1dfccbf36fabd84abb81dc0
+    fingerprint: "sha256:c8ba6f462e25943775c8bee244b42b4f3c59c9c08f589d7b117b31475e7d6ee1"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "gotchas/mongodb-indexes-and-uniqueness.md"

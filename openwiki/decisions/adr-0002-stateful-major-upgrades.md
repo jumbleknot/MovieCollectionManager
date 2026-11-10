@@ -1,7 +1,7 @@
 ---
 type: Decision
 title: "ADR-0002: Stateful major upgrades — OpenSearch 3 then Langfuse 4"
-description: Derived summary of the ratified decision to upgrade OpenSearch 2→3 before Langfuse 3→4 in separate specs, as landed on 2026-09-13 — both ceilings lifted and replaced by approval gates, the §3 gate measured, the audit store preserved under the §4a amendment, and the shared Postgres pin held on 16 by config.
+description: Derived summary of the ratified decision to upgrade OpenSearch 2→3 before Langfuse 3→4 in separate specs, as landed on 2026-09-13 — both ceilings lifted and replaced by approval gates, the §3 gate measured, the audit store preserved under the §4a amendment, and the shared Postgres pin kept as one unit by a guard.
 resource: docs/decisions/ADR-0002-stateful-major-upgrades.md
 resource-sha256: 37e7d4fd3c599edc65971581dcc4744b5b60b9bc959f6f35abf426b35c3da347
 tags: [adr, opensearch, langfuse, security, upgrade, decision-record, stateful]
@@ -21,15 +21,15 @@ entries carry an expiry of 2026-10-01. The 14-day warning tier opens 2026-09-17.
 Both halves have since landed: feature 071 (OpenSearch 3) and feature 072 (Langfuse 4, carrying the
 ClickHouse major it drags with it). The two `renovate.json` ceilings — `opensearchproject/opensearch`
 `allowedVersions: "<3"` and the `langfuse/langfuse` + `langfuse/langfuse-worker` `< 4` hold, which the
-ADR's own text numbers packageRules 19 and 20 (still those two images at those indices; their
-`description` text in `renovate.json` still reads as the hold and is stale) — are both gone. Each was replaced, not deleted: a `matchUpdateTypes:
+ADR's own text numbers packageRules 19 and 20 (the rules have since moved to other indices, and their
+`description` text in `renovate.json` still opens as the hold before recording the outcome) — are both gone. Each was replaced, not deleted: a `matchUpdateTypes:
 ["major"]` plus `dependencyDashboardApproval: true` rule now makes the next major require an explicit
 dashboard tick, which is the ADR's "not by accident" expressed as config, while minors and patches
 stay automatic as the security patch stream. The same reasoning now governs two further rules:
-`langfuse/langfuse` and `-worker` are pinned by **version** (`4.35.0@sha256`) rather than the floating
+`langfuse/langfuse` and `-worker` are pinned by **version** (`4.x.y@sha256`) rather than the floating
 `:4` and kept in their own group deliberately outside `docker base images`, because a Langfuse
 *minor* runs Postgres and ClickHouse migrations on a prod stack; and the shared observability
-Postgres pin is held on 16 (see the gotcha below). See the
+Postgres pin moves only as one unit (see the gotcha below). See the
 [infra-image scanning runbook](../runbooks/infra-image-scanning.md) for how the gate and allowlist
 interact.
 
@@ -134,25 +134,26 @@ literally — see the ClickHouse gotcha below.
   an unreviewed combination upstream does not ship — so the two cannot land separately. Widening was
   safe only because of §4: recreating the volumes collapsed a multi-major ClickHouse migration into
   a container swap. The pin has since moved further still — both `compose.yaml` and
-  `compose.prod.yaml` now pull `clickhouse/clickhouse-server:26.6`, two majors past the `24.3` the
-  spec started from — but **not under §4**. That bump arrived through a routine Renovate image update
-  on 2026-10-09 (#698), *after* the 072 cutover and over live production traces; §4 ratified
-  discarding the trace store **at that cutover only**, so it does not make later majors data-free. A
-  green CI did not exercise it either — `app-e2e` never starts the observability stack. Requiring a
-  dashboard tick for ClickHouse (and the other stateful datastore) majors is the follow-up proposed
-  in PR #705.
-  `postgres` stayed on **16**, deliberately: `langfuse-postgres` and `unleash-postgres` pin the same
-  digest, and Unleash's store is not covered by §4's disposability ratification, so a Postgres major
-  would have needed its own mandate. That is now enforced rather than merely remembered.
-  `scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs` asserts, against **both** compose
-  files, that the two services reference one identical pin and that its tag starts with `16` — so a
-  find-and-replace on the Postgres image cannot migrate Unleash as a silent side effect. The guard
-  earned its keep on PR #698 (2026-10-09), when `docker base images (major)` moved all four
-  observability refs `16-alpine → 18-alpine` and red-lined `guardrails / naming`; the response was a
-  `postgres allowedVersions: "<17"` packageRule scoped by `matchFileNames` to the two observability
-  compose files, which blocks the major while leaving 16.x patches and digest refreshes flowing.
-  Raising it is only legitimate through the spec that moves both databases, with the guard updated in
-  the same change.
+  `compose.prod.yaml` now pull a `clickhouse/clickhouse-server:26.x` image, past the `24.3` the
+  spec started from — but **not under §4**. The first of those bumps (25.12 → 26.6) arrived through a
+  routine Renovate image update on 2026-10-09 (#698), *after* the 072 cutover and over live production
+  traces; §4 ratified discarding the trace store **at that cutover only**, so it does not make later
+  majors data-free. A green CI did not exercise it either — `app-e2e` never starts the observability
+  stack. A `renovate.json` packageRule now requires an explicit dashboard tick for a major of every
+  stateful datastore image (`postgres`, `mongodb/mongodb-community-server`, `redis`,
+  `clickhouse/clickhouse-server`).
+  `postgres` stayed on **16** through feature 072, deliberately: `langfuse-postgres` and
+  `unleash-postgres` pin the same digest, and Unleash's store is not covered by §4's disposability
+  ratification, so a Postgres major needed its own mandate. The guard
+  `scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs` earned its keep on PR #698
+  (2026-10-09), when `docker base images (major)` moved all four observability refs
+  `16-alpine → 18-alpine` and red-lined `guardrails / naming`. The mandate then arrived as its own
+  spec: **spec 081 US8b moved both databases 16 → 18 together**, preserving Unleash's flag state by
+  dump/restore while the Langfuse traces were discarded per §4, and the guard was updated at its
+  cause. It now asserts, against **both** compose files, that the two services reference one
+  identical digest-pinned image on the **18** line and mount the 18 data layout
+  (`/var/lib/postgresql`) — so a find-and-replace on the Postgres image still cannot migrate Unleash
+  as a silent side effect, and a move to 19 is a new spec, not a diff.
 
 - **The Langfuse major broke a verification, not just an image.** Langfuse 4 removes
   `GET /api/public/traces` (404) — precisely the endpoint the SC-008 integration test polled for

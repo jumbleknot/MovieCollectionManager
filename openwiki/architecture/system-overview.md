@@ -3,10 +3,10 @@ type: Architecture
 title: System overview (MCM)
 description: The whole-system map of MovieCollectionManager — the core components (mcm-app/BFF, mc-service, mc-db, mcm-bff-db, Keycloak), the additive AI Agents layer and its boundary, the RBAC/DAC access-control split, and the load-bearing gotchas around them — distilled from the canonical architecture document.
 resource: docs/MCM-Architecture.md
-resource-sha256: 915b72d554f775b291b29e2bd32e43efdcde70faf1fc0ad5ff82793077580269
+resource-sha256: 75472c1a0b56ec7fc8fe8f6d833a3588ceb1df04c3bcac5a97e53326a83f9f70
 tags: [architecture, overview, rbac, dac, agents, docker-compose]
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T02:11:17.233Z" }
-timestamp: 2026-11-10T03:12:50.120Z
+timestamp: 2026-11-10T11:20:29.560Z
 ---
 
 # System overview (MCM)
@@ -115,11 +115,6 @@ assignments live **in the included component files**, not re-declared in the agg
 [Infrastructure stacks](../projects/infrastructure-stacks.md) has the per-stack profile table and
 the production Komodo half; [Dev stack env files](../projects/stacks.md) covers how each stack's
 secrets reach Compose.
-
-The architecture document's *Monorepo locations* paragraph still describes adding `agent-db` and the
-agent services to the repo-root `compose.yaml` under a new agents profile with the existing
-`app`/`keycloak`/`bff` profiles unchanged. Feature 020 retired that aggregator, so read the four
-stacks above as the current shape and that paragraph as historical.
 
 The `mcm` stack is the one holding the application. Its no-profile services are the test infra
 (`mc-service-store-mongo` + rs-init, `mcm-bff-cache-redis`, `mcm-bff-store-mongo`); `app` adds
