@@ -174,12 +174,30 @@ function cmdRecord(root, pageArgs) {
 
 // Cut-over only (research R8): before fingerprints exist, "stamp newer than the source's last
 // commit" is the best available evidence that a page is current. Removed once the cut-over lands.
+//
+// The stamp here is R8's OWN: the newest of generated.at, verified.at and timestamp, which is what V12
+// read when R8 measured the 11-page set. The post-098 stamp ignores verified.at (R2); using it here
+// would quietly refresh a different set from the one measured — pages whose Claims openwiki had
+// re-verified against their sources after the source changed.
+function r8Stamp(fields) {
+  const ats = [];
+  const stamp = conceptStamp(fields);
+  if (stamp !== null) ats.push(stamp.value);
+  const verified = fields.verified;
+  for (const e of Array.isArray(verified) ? verified : [verified]) {
+    if (e && typeof e === 'object' && typeof e.at === 'string') ats.push(e.at.trim());
+  }
+  const newest = ats.map((v) => ({ v, ms: Date.parse(v) })).filter((x) => !Number.isNaN(x.ms)).sort((a, b) => b.ms - a.ms)[0];
+  return newest?.v ?? null;
+}
+
 function cmdRecordAllFresh(root) {
   const todo = [];
   const refused = [];
   for (const p of derivedPages({ root })) {
     if (staleReason(p) === null) continue; // already recorded and fresh
-    const judged = sourceCommitAfterStamp({ root, fields: p.fields });
+    const stamp = r8Stamp(p.fields);
+    const judged = sourceCommitAfterStamp({ root, fields: { resource: p.fields.resource, ...(stamp ? { timestamp: stamp } : {}) } });
     if (judged === null || judged.unstampable || judged.stale) {
       const why = judged === null ? 'cannot judge (missing or untracked source)' : judged.unstampable ? 'no usable stamp' : 'source committed after the page stamp';
       refused.push(`${p.page} ← ${p.resource}  (${why})`);
