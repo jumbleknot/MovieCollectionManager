@@ -45,20 +45,19 @@ const RENOVATE_COOLDOWN_MINUTES = 3 * 24 * 60;
 // merge-triggered job, which spent 15 of its 60 minutes waiting. Operator option A (2026-11-01): wait
 // for main to go quiet OUTSIDE the job. A scheduled check decides from git (scripts/wiki-quiet.mjs,
 // whose decision is tested in wiki-quiet.test.mjs) and either generates at once or ends. Since 078
-// US7 (2026-11-09) the schedule is once a day and there is no debounce: the daily fire IS the batching.
+// US7 (2026-11-09) the schedule was once a day; since 2026-11-10 there is NO schedule — dispatch only.
 
 /** The step that runs the quiet decision. */
 const decideIndex = () => steps().findIndex((s) => /wiki-quiet\.mjs/.test(s.run ?? ''));
 
-test('the run is scheduled and dispatchable, never push-triggered — a push is by definition not quiet', () => {
-  assert.ok(!('push' in wf.on), 'a push-triggered check could only ever answer "not yet"');
-  const crons = [].concat(wf.on.schedule ?? []).map((c) => c.cron);
-  assert.equal(crons.length, 1, 'one schedule');
-  // 078 FR-024 (amendment 2026-11-09, research R21): ONE fire a day is the batching — a page changed by
-  // ten merges is paid for once. Not at 03:00, which is Renovate's nightly fire on the same runner.
-  const m = /^(\d{1,2}) (\d{1,2}) \* \* \*$/.exec(crons[0]);
-  assert.ok(m, `expected a once-a-day cron "M H * * *", got '${crons[0]}'`);
-  assert.notEqual(Number(m[2]), 3, "03:00 UTC is Renovate's nightly fire on the one shared runner");
+test('the run is dispatch-only — no schedule and no push trigger (session-maintained wiki, 2026-11-10)', () => {
+  // The daily fire (078 US7) is paused: run 5104 showed openwiki forcing 30 stale-Claims pages into
+  // every run and starving the requested ones, at ~$1.50/day for ~1 landed page. Summaries move to
+  // coding sessions (docs/proposals/PRD-SessionMaintainedWiki.md); the generator stays as a manual
+  // rebuild. A schedule reappearing here would restart unattended spend, so this asserts its absence.
+  assert.ok(!('push' in wf.on), 'a push-triggered run would spend on every merge');
+  assert.ok(!('schedule' in wf.on), 'no unattended fire: the generator is run by hand only');
+  assert.ok('workflow_dispatch' in wf.on, 'the manual rebuild is the only entry point');
 });
 
 test('CI reasoning effort defaults to low; a dispatch input or repository variable still wins (078 FR-028)', () => {
