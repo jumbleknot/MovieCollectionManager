@@ -48,7 +48,7 @@ export function ViewOptionsDock({ activeFilterCount }: ViewOptionsDockProps): Re
   const theme = useTheme();
   const { openPanel, toggle, close } = useOpenPanel();
   const open = openPanel === PANEL;
-  const toggleRef = useRef<View>(null);
+  const toggleRef = useRef<React.ComponentRef<typeof View>>(null);
 
   // Leaving the screen re-docks the panel, so the next visit starts docked (FR-004).
   useFocusEffect(useCallback(() => () => close(PANEL), [close]));
@@ -112,7 +112,7 @@ function OpenViewOptionsPanel({
   onClose: () => void;
 }): React.JSX.Element {
   const theme = useTheme();
-  const headingRef = useRef<Text>(null);
+  const headingRef = useRef<React.ComponentRef<typeof Text>>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 

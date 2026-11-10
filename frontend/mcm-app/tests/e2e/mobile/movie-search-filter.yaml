@@ -175,6 +175,13 @@ appId: com.grumpyrobot.mcmapp
     timeout: 15000
 
 # --- Column selector test ---
+# 098 US1: the column, sort and filter controls are docked behind the view-options bar.
+- tapOn:
+    id: "view-options-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "view-options-panel"
+    timeout: 5000
 # year/contentType are always-on and no longer toggleable (FR-019b); use the
 # 'language' toggle — the leftmost (always visible) item in the column selector row.
 - tapOn:
@@ -185,5 +192,10 @@ appId: com.grumpyrobot.mcmapp
 # Toggle it back to original state
 - tapOn:
     id: "column-toggle-language"
+- waitForAnimationToEnd:
+    timeout: 1000
+# 098 US1: re-dock the panel so the list it overlays is uncovered again.
+- tapOn:
+    id: "view-options-close"
 - waitForAnimationToEnd:
     timeout: 1000

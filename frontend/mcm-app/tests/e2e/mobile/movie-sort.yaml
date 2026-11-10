@@ -25,6 +25,14 @@ appId: com.grumpyrobot.mcmapp
       id: "movie-search-input"
     timeout: 8000
 
+# 098 US1: the column, sort and filter controls are docked behind the view-options bar.
+- tapOn:
+    id: "view-options-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "view-options-panel"
+    timeout: 5000
+
 # --- US1-AC1: sort control is present with the default Title field ---
 - assertVisible:
     id: "movie-sort-control"

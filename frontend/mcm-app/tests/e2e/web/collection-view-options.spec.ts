@@ -136,6 +136,37 @@ test.describe('Collection view options — docked (098 US1)', () => {
       .toBe('view-options-toggle');
   });
 
+  test('a filter chip is reachable and operable by keyboard alone (WCAG 2.1.1, T011a)', async ({
+    page,
+  }) => {
+    await page.setViewportSize(PHONE);
+    await gotoBrowse(page);
+    await page.getByTestId('view-options-toggle').click();
+    await expect(page.getByTestId('view-options-panel')).toBeVisible();
+
+    // Focus is on the panel heading (FR-016); Tab forward until the chip holds focus.
+    const chip = page.getByTestId(`filter-chip-contentType-${CONTENT_TYPE}`);
+    let reached = false;
+    for (let i = 0; i < 60 && !reached; i++) {
+      await page.keyboard.press('Tab');
+      reached = await chip.evaluate((el) => el === document.activeElement);
+    }
+    expect(reached, 'Tab never reached the filter chip').toBe(true);
+
+    await page.keyboard.press('Enter');
+    await expect(chip).toHaveAttribute('aria-pressed', 'true');
+    await page.keyboard.press('Escape');
+    await expect(page.getByTestId('movie-list-item-row')).toHaveCount(SERIES_COUNT, {
+      timeout: 15000,
+    });
+
+    // Leave the read-only fixture view as found.
+    await page.getByTestId('view-options-toggle').click();
+    await page.getByTestId('filter-clear-button').click();
+    await page.getByTestId('view-options-close').click();
+    await expect(page.getByTestId('view-options-active-count')).toHaveCount(0);
+  });
+
   test('desktop: the same docked bar, no inline controls (FR-010)', async ({ page }) => {
     await page.setViewportSize(DESKTOP);
     await gotoBrowse(page);
