@@ -24,7 +24,7 @@ T026.
 
 ## Phase 1: Setup
 
-- [ ] T001 Record the baseline in `specs/098-session-maintained-wiki/EVIDENCE.md`:
+- [X] T001 Record the baseline in `specs/098-session-maintained-wiki/EVIDENCE.md`:
   - the exit codes of `node scripts/check-openwiki-okf.mjs`, `node scripts/check-openwiki-governance.mjs` and both with `--selftest`;
   - pass/fail/skip counts of `node --test 'scripts/__tests__/wiki-*.test.mjs' 'scripts/__tests__/*openwiki*.test.mjs'`;
   - the V12 drift list, which should be the 12 pages in research R8.
@@ -34,7 +34,7 @@ T026.
 
 ## Phase 2: Foundational (blocks US1, US2, US5)
 
-- [ ] T002 Write `scripts/__tests__/openwiki-fingerprint.test.mjs` against fixture bundles built in `mkdtemp`. Covers US1-AC1/AC4, US2-AC1 and the spec's edge cases.
+- [X] T002 Write `scripts/__tests__/openwiki-fingerprint.test.mjs` against fixture bundles built in `mkdtemp`. Covers US1-AC1/AC4, US2-AC1 and the spec's edge cases.
   - **Hashing**: `sourceFingerprint(path)` equals SHA-256 of the bytes with CRLF normalised to LF. An LF file and its CRLF copy hash equal.
   - **`staleDerivedPages({root})` reports, in this precedence order:**
     - nothing for a fresh page;
@@ -46,7 +46,7 @@ T026.
   - **Also**: it ignores a page with no `resource` (canonical), and names all three pages that share one resource.
   - **Verify RED**: `node --test scripts/__tests__/openwiki-fingerprint.test.mjs`
   - **Expected RED**: fails with `ERR_MODULE_NOT_FOUND … openwiki-fingerprint.mjs`.
-- [ ] T003 Implement `scripts/openwiki-fingerprint.mjs`, exporting `sourceFingerprint`, `staleDerivedPages` and `recordSourceFingerprint(pagePath, {now})`.
+- [X] T003 Implement `scripts/openwiki-fingerprint.mjs`, exporting `sourceFingerprint`, `staleDerivedPages` and `recordSourceFingerprint(pagePath, {now})`.
   - It reuses the front-matter reader the OKF gate already uses; do not write a second parser.
   - `recordSourceFingerprint` rewrites only the front-matter keys `resource-sha256` and `timestamp`, removes `sources` and `verified`, and leaves the body byte-identical.
   - Add a one-line provenance comment citing FR-001/FR-002/FR-009.
