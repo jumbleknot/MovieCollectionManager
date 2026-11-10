@@ -3,10 +3,10 @@ type: Runbook
 title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: 06da82d4a8932f56b45a6b8e6434236ddf534c6c667bb10a06c2416b1dcf297b
+resource-sha256: 09e87483d62a183bb4fcd7b4c8916bb6e772448b514209c172e6e218ab8fb00b
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T03:37:28.112Z
+timestamp: 2026-11-10T11:40:29.758Z
 ---
 
 # SAST & SCA static scanning

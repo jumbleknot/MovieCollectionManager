@@ -3,10 +3,10 @@ type: Service
 title: The three scoped MCP servers
 description: The three purpose-scoped MCP (Model Context Protocol) servers the Agent Gateway calls as tools — movie-mcp (mc-service proxy carrying the caller's downscoped token), web-api-mcp (outbound TMDB enrichment under the requesting user's own key), and spreadsheet-mcp (token-free file processing over a transient handle) — each with a deliberately narrow identity and network footprint.
 resource: docs/MCM-Architecture.md
-resource-sha256: 75472c1a0b56ec7fc8fe8f6d833a3588ceb1df04c3bcac5a97e53326a83f9f70
+resource-sha256: 8f7b3e4c87b355ae290db90980f89910f72a50675e43ccfe492d833d06c83033
 tags: [mcp, agents, python, scoped-capability, security]
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-timestamp: 2026-11-10T11:20:29.566Z
+timestamp: 2026-11-10T11:40:29.751Z
 ---
 
 # The three scoped MCP servers

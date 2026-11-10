@@ -4,9 +4,9 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
 tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: 06da82d4a8932f56b45a6b8e6434236ddf534c6c667bb10a06c2416b1dcf297b
+resource-sha256: 09e87483d62a183bb4fcd7b4c8916bb6e772448b514209c172e6e218ab8fb00b
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
-timestamp: 2026-11-10T03:37:28.069Z
+timestamp: 2026-11-10T11:40:29.754Z
 ---
 
 # SAST & SCA static security scanning
@@ -629,60 +629,41 @@ a scan that happened to pass.
   above), and deleting it means a regression re-blocks — which
   is the convention this file follows everywhere.
 
-  **A no-fix acceptance has a shape, and the committed file currently shows it three times.** An
-  advisory whose affected range has no fix at all (`node-forge <= 1.4.0`, `braces <= 3.0.3` — the
-  latter still `latest` on npm) cannot be remediated by bumping, so the entry is **pinned to the exact
-  vulnerable version** (`^node-forge@1\.4\.0$`, not `node-forge@.*`) and **short-dated**. The pin means
-  a *different* version of the package re-blocks for a fresh assessment rather than inheriting an
-  acceptance written for the old one; the short expiry means it stops suppressing on its own. The three
-  are the node-forge entry, the root `braces` entry, and a **second** `braces` entry anchored to
-  `tools/openwiki-generator:` (item #721) — the nested workspace's tree needed its own entry because
-  the root one, anchored at `^braces@`, correctly never reaches a `<workspace>:pkg@version` location,
-  and because the reachability answer there is the opposite one (below). The first two state
-  reachability **checked rather than assumed**: the audit classifies them as runtime only because
-  `expo` lists its CLI as a production dependency, while the code paths involved are build/test tooling
-  that ships in neither bundle and, in root `braces`' case, expand globs from repository configuration
-  rather than from a request. The two `braces` expiries were renewed together on 2026-10-10 to the same
-  2026-12-01 date as the infra-image cohorts (items #633/#648), so all of them are re-triaged in one
-  sitting. Removal is tracked on the backlog (a patched release, or the dependency leaving the tree) —
-  each entry is a dated holding position, not a fix.
+  **An acceptance has a shape: pinned to the exact vulnerable version, short-dated, reachability
+  written into the justification.** The pin (`^graphql-scalars@1\.26\.0$`, not `graphql-scalars@.*`)
+  means a *different* version re-blocks for a fresh assessment rather than inheriting an acceptance
+  written for the old one; the short expiry means it stops suppressing on its own. The two pnpm-audit
+  entries in the committed file today are both the **second** exception — a fix exists only outside the
+  range the consumers declare — and share the 2026-12-01 expiry: `zod` 3.25.75/3.25.76 (fixed only in
+  zod 4, which CopilotKit / ag-ui still exclude) and `graphql-scalars` 1.26.0 (fixed only in 2.0.1,
+  outside its dependents' `^1` ranges). Each was renewed once on re-measurement, with the re-check
+  written into the entry, and each is a dated holding position, not a fix.
 
-  The generator's `braces` entry is the case where the reachability answer is **yes**: `braces@3.0.3`
-  arrives via `openwiki > deepagents > micromatch` (and via `fast-glob`), and deepagents' `glob`/`grep`
-  tools pass the **model's** tool-call arguments to micromatch, so the pattern is model-chosen and the
-  model reads repository content. Measured against the installed tree: a ~20 KB nested-brace pattern
-  takes 0.4 s, and at ~40 KB the V8 regexp compiler aborts the whole process (uncatchable OOM, exit
-  134). It is accepted anyway as **availability-only** impact on one unattended, non-required,
-  non-production job — the `wiki-maintain` generator dies, the run fails, the next merge re-triggers
-  it, and nothing is read or written. Triggering it needs prompt injection through content already
-  merged to `main`, which is reviewed, and there is no lockfile lever because deepagents pins
-  micromatch `^4`.
-
-  The **second** exception — a fix exists, but only outside the range the package's consumers declare —
-  took the same shape (pinned to the exact vulnerable version, short-dated, reachability written into
-  the justification), and its one instance is now **discharged rather than renewed**. The
-  `@graphql-tools/utils@11.2.2` entry existed because the fix (12.0.1) sat outside the `^11.2.0` range
-  `graphql-yoga` and `@graphql-yoga/plugin-defer-stream` declared, so the only bump would have crossed a
-  major they did not support. It was deleted on 2026-10-09 (item #674) because the first acceptance
-  route the backlog item named actually happened: graphql-yoga 5.24.4 and the defer-stream plugin
-  3.24.4 declare `@graphql-tools/utils: ^12.0.3`, and the lock refresh that resolved both removed the
-  vulnerable 11.2.2 from `pnpm-lock.yaml`, leaving only the patched 12.0.3. Deletion rather than
-  expiry-extension is the direction that restores blocking if 11.x ever returns.
+  Earlier acceptances show the ways an entry leaves. `@graphql-tools/utils@11.2.2` (the same second
+  exception) was deleted on 2026-10-09 (item #674) when upstream widened its range and a lock refresh
+  resolved the patched 12.0.3. The `node-forge` entry was deleted on 2026-11-04 (item #633) once a lock
+  refresh moved the tree to the fixed 1.4.2 — keyed to 1.4.0, it had suppressed nothing since. The two
+  `braces` entries — root, and one anchored to `tools/openwiki-generator:` because a root `^braces@`
+  entry never reaches a `<workspace>:pkg@version` location — were deleted the same day (item #648)
+  because GitHub **withdrew** the advisory, not because a fix shipped: braces 3.0.3 is still the latest
+  release. The generator's measured behaviour outlives the withdrawal: there `braces` arrives via
+  `openwiki > deepagents > micromatch`, deepagents' `glob`/`grep` tools pass the **model's** tool-call
+  arguments to micromatch, and a ~40 KB nested-brace pattern aborts the whole process (V8 regexp
+  compiler OOM, exit 134). The allowlist's tombstone comment records that, so a wiki run that dies with
+  exit 134 has a first place to look. In every case deletion rather than expiry-extension is the
+  direction that restores blocking if the vulnerable version returns.
 
 - **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
   when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
-  package", which is a different question from "is the vulnerable code path exercised". The node-forge
-  and root `braces` acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a
-  production dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces only
-  through micromatch in Metro's file watcher and Jest (re-measured 2026-10-10, which added `fast-glob`
-  via `@tamagui/static`/`globby` and `http-proxy-middleware` via Nx to the dependent list — all build or
-  dev tooling). Neither is imported by first-party code, neither ships in the web or server bundle, and
-  the glob patterns those tools expand come from repository configuration rather than a request. The
-  same distinction applied to the now-deleted `@graphql-tools/utils` entry, which was tagged runtime
-  through `@copilotkit/runtime` while being only listed as a dependency, never reached on a request
-  path. That reasoning has to be **checked and written into the justification**, because the tag alone
-  would have said the opposite — and the generator's `braces` entry is the proof that the tag is not a
-  verdict either way: it carries the same runtime tag, and there the code path *is* reachable.
+  package", which is a different question from "is the vulnerable code path exercised". The
+  `graphql-scalars` acceptance is tagged runtime through `@copilotkit/runtime`, yet its ReDoS is in the
+  `GraphQLPhoneNumber` regex, which graphql-js runs only for a value of that scalar type — and the
+  shipped dist of the pinned versions imports no such type (measured 2026-10-29). The deleted
+  node-forge and root `braces` entries were the same case the other way round: tagged runtime only
+  because `expo` lists `@expo/cli` as a production dependency, while the code paths were build/test
+  tooling. That reasoning has to be **checked and written into the justification**, because the tag
+  alone would have said the opposite — and the generator's `braces` path is the proof that the tag is
+  not a verdict either way: it carried the same runtime tag, and there the code path *is* reachable.
 
 - **`mcm-auth-before-authz` firing on a service-layer function is a false positive you must NOT "fix"
   by adding the guard — the correct response is a file-pinned allowlist entry.** The rule's structural

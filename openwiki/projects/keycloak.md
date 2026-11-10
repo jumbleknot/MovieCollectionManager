@@ -3,10 +3,10 @@ type: Service
 title: Keycloak (Identity and Access Management)
 description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head and its Postgres 18 realm store whose volume must mount the parent /var/lib/postgresql, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, the kc-admin-api client scope Keycloak 26.8.2 requires on mcm-bff-service together with the service-account roles and the six redirect addresses production must list by hand, the 2026-11-07 console correction of production's running realm versus what the committed file guarantees for a rebuild, RFC 8693 token exchange, the dedicated backup-consent client that keeps grant revocation from ending a member's session, and the realm guards plus service/network topology rules that keep auth reachable.
 resource: infrastructure-as-code/docker/keycloak/README.md
-resource-sha256: 5f23d75c6261e78c628fdb990c8348a0dd3fbac4377cddd77d53a0ddeb2f5a6a
+resource-sha256: 7220c320d5f5e6472d91ea1d703ef542444cf897ad58bf529d7e879a1ab01088
 tags: [auth, keycloak, iam, docker, realm, jwt]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T03:37:28.064Z
+timestamp: 2026-11-10T11:40:29.747Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -51,7 +51,7 @@ carries five facts worth reading directly, because none of them is visible in a 
 
 - **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.2@sha256:3879c623…`, the
   identical pin in `compose.prod.yaml`, so dev and prod cannot drift apart. A bump is a change to both
-  compose files *and* to the README's import-proof snippet, which still invokes the 26.8.1 image (see
+  compose files *and* to the README's import-proof snippet, which must invoke the same image (see
   the gotchas). The digest matters separately from the tag: an infra-image CVE allowlist entry suppresses
   a finding only while its `image` regex still matches the scanned `repo:tag`, its `id` regex matches the
   advisory and the entry has not expired — so keying a suppression to a pinned version makes a tag bump
@@ -333,10 +333,7 @@ server-held expiry moved forward; and `POST /bff-api/auth/refresh` — still the
 succeeds on the session cookie alone and re-sets nothing but `mcm_session_id`. The cookie jar is
 checked for the two retired token cookies at baseline too. So the spec still proves the refresh path
 independently of the realm's `accessTokenLifespan`, but it now proves the *server* half of the chain;
-the client-side 401 → refresh → retry orchestration over a real refused run is not covered here. The
-keycloak README's own sentence about this spec ("clears the access cookie explicitly") is pre-085 text
-that survived the re-scoping — the surrounding claims (dev and CI at 5400 s, prod at 300 s, local dev
-therefore not seeing realistic expiry) are unaffected.
+the client-side 401 → refresh → retry orchestration over a real refused run is not covered here.
 
 ## RFC 8693 token exchange
 
@@ -516,9 +513,8 @@ command is in the keycloak README's realm-import proof section
 ([`infrastructure-as-code/docker/keycloak/README.md`](../../infrastructure-as-code/docker/keycloak/README.md)).
 That proof is meant to run the *same* image the compose files pin, which makes it a genuine
 version-parity check as well as a schema/deserialisation one — and that is exactly why a version bump
-is not finished when the two compose files agree: the README's snippet still invokes
-`quay.io/keycloak/keycloak:26.8.1` while both compose files now pin `26.8.2`, so today's proof is a
-minor version behind the deployed pin and has silently downgraded to schema-only. It stays a check of
+is not finished when the two compose files agree: a snippet left on the old tag silently downgrades the
+proof to schema-only. It stays a check of
 the realm *against* the image either way, not of the image's own behaviour: the same class of change
 that made Keycloak 26.6+ enforce the realm password policy against imported user credentials was a
 *server* behaviour change that no realm edit would have revealed. Keep the proof image and the compose
@@ -526,8 +522,8 @@ pins in step deliberately. Read the env-var names in the command against the rea
 them: placeholder replacement is on by default since Keycloak 26.0.0, and an unresolved `${...}` is left
 intact rather than failing the import (that is why the realm's own `${role_*}` / `${client_*}` i18n
 keys survive an import), so a name that no longer matches the realm can still import "successfully"
-while leaving the literal placeholder where a secret belongs. The ROPC client's placeholder is
-`${E2E_ROPC_CLIENT_SECRET}`.
+while leaving the literal placeholder where a secret belongs (the ROPC client's placeholder is
+`${E2E_ROPC_CLIENT_SECRET}`, not the client's own name).
 
 **The CI runner is persistent, so `app-ci` deletes the realm volume on every run.** `IGNORE_EXISTING`
 means a stale realm would *never* pick up a `ci-realm.json` change, and stale Mongo/Redis data breaks
@@ -552,8 +548,7 @@ no user credential, so its import is unaffected.
 
 **`${BASE_DOMAIN}` in `prod-realm.json` is rendered by hand with `sed`, not `envsubst`.** Use
 `sed 's|${BASE_DOMAIN}|<domain>|g'` — `envsubst` would also expand Keycloak's own `${role_*}` /
-`${client_*}` i18n placeholders and corrupt the realm. Verified: 32 such placeholders survive the
-`sed` render intact. The rendered file is gitignored and pointed to by `PROD_REALM_FILE`; the
+`${client_*}` i18n placeholders and corrupt the realm; the `sed` render leaves them intact. The rendered file is gitignored and pointed to by `PROD_REALM_FILE`; the
 committed template keeps the placeholder. (`compose.prod.yaml` and `.env.prod.example` still describe
 the restricted-`envsubst` form; the hand-run `sed` is what is actually used, and the two differ in
 exactly the way that matters.)

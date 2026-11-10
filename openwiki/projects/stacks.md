@@ -3,10 +3,10 @@ type: Convention
 title: Dev stack env files and local secret generation
 description: The two-file-per-stack env contract under infrastructure-as-code/docker/stacks — the four committed <stack>.env.example templates that are the single source for each stack's keys and generation kinds, the gitignored <stack>.env files minted from them by scripts/gen-dev-secrets.mjs, how those files become Compose's interpolation source, the fail-fast ${VAR:?…} contract and its documented exceptions, the gen-dev-env.mjs projection with its realm verification, and the traps (back-fill rather than a plain skip, password-on-first-init credentials, the blank template key the generator must never fill).
 resource: infrastructure-as-code/docker/stacks/README.md
-resource-sha256: f8d3bec1fb1c417feb70cbd75d65db8e7143bf34b34bcb80d7bcdb143a95c591
+resource-sha256: d849d69e15c204a267c15274f3c72c43070f7eee7c180f9162b8496544fee855
 tags: [infrastructure, docker-compose, secrets, env-vars, dev-environment, gates]
 generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }
-timestamp: 2026-11-10T03:37:28.072Z
+timestamp: 2026-11-10T11:40:29.756Z
 ---
 
 
@@ -185,9 +185,8 @@ key uses which kind is recorded in the template beside the key itself, not in th
 `infrastructure-as-code/docker/stacks/<stack>.env.example`. Every kind above is still exercised by the
 live templates, so none of them is a vestige: `hex-64` and `b62-48` appear in `auth.env.example`,
 `complex-16` in `auth`, `mcm` and `audit`, `b62-32` in `mcm` and `observability`, `mongo-keyfile` only
-in `mcm.env.example`, and the two Unleash kinds only in `observability.env.example`. The README's own
-kind list is still incomplete: it names `b62-32`, `b62-48`, `hex-64`, `complex-16`, `unleash-admin` and
-`unleash-client` but omits `mongo-keyfile`, which `mcm.env.example` uses for `MONGO_MC_KEYFILE`.
+in `mcm.env.example` (for `MONGO_MC_KEYFILE`), and the two Unleash kinds only in
+`observability.env.example`.
 
 ## Fail-fast: a blank credential aborts, it does not degrade
 

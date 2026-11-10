@@ -1,12 +1,12 @@
 ---
 type: Reference
 title: MovieCollectionManager repository — structure and working conventions
-description: The MCM monorepo itself — its directory layout, the polyglot tech stack re-derived from the declaring manifests rather than from the README's tech-stack table (which still names Expo SDK 57 while both manifests are on SDK 58 / React Native 0.88 / React 19.3), the toolchain and lint conventions features 081 and 087 moved (Expo SDK 58 with Jest 30, ESLint 10 flat config, the single exact Tamagui 3 pin, pnpm/Nx exact pins, the Gradle 9.4.1 bake, the still-held babel / TypeScript / async-storage / JDK majors), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas — the `sbx` v0.51.0 pin and its upgrade ritual, `sbx run`'s false dockerd failure, the memory bounds, and why egress enforcement lives outside the VM.
+description: The MCM monorepo itself — its directory layout, the polyglot tech stack re-derived from the declaring manifests rather than from the README's tech-stack table, the toolchain and lint conventions features 081 and 087 moved (Expo SDK 58 with Jest 30, ESLint 10 flat config, the single exact Tamagui 3 pin, pnpm/Nx exact pins, the Gradle 9.4.1 bake, the still-held babel / TypeScript / async-storage / JDK majors), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas — the `sbx` v0.51.0 pin and its upgrade ritual, `sbx run`'s false dockerd failure, the memory bounds, and why egress enforcement lives outside the VM.
 resource: README.md
-resource-sha256: 8592a59fb36152afa4ddf6f24090dc6fb5b67d1cb30bfa158b260a9845d1c546
+resource-sha256: a10aa592408a822f1e09900cef84030b89d5a5ab58751a4add56cd7dd77bfb7f
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding, eslint, tamagui, dependencies, expo, react-native, jest]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T03:13:07.684Z
+timestamp: 2026-11-10T11:40:29.752Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -19,10 +19,10 @@ flows through a spec → plan → tasks artifact set before any implementation c
 
 **Re-derive the pins from the manifests, never from a README line range.** The README's tech-stack
 table sits in a section that shifts as the document is edited, so a line-range citation of it drifts
-away from the rows it was meant to name while every fact it stated stays true — and the table also
-**lags a landed stage**: it still lists Expo SDK 57 / React Native 0.86 / React 19.2 after feature 087
-moved the app to SDK 58 / RN 0.88 / React 19.3 in both workspace manifests and in the constitution. The
-declarations themselves are the authority:
+away from the rows it was meant to name while every fact it stated stays true — and the table can
+also **lag a landed stage**: it went on listing Expo SDK 57 / React Native 0.86 / React 19.2 for a time
+after feature 087 moved both workspace manifests and the constitution to SDK 58 / RN 0.88 / React 19.3.
+The declarations themselves are the authority:
 
 | Area | Pin | Declared in |
 |---|---|---|
@@ -75,8 +75,8 @@ reason above. For individual deployable-unit pages, see the rest of the
 ```
 
 The portable dev-environment asset is `.devcontainer/` — the two `devcontainer.json` variants, the
-`toolchain.Dockerfile` that builds the pre-provisioned image, the canonical egress allowlist and its
-generator, and the `verify/` harness described below. Both variants reference their Dev Containers
+`toolchain.Dockerfile` that builds the pre-provisioned image, the canonical egress allowlist (its
+generator is `scripts/gen-egress-policy.mjs`), and the `verify/` harness described below. Both variants reference their Dev Containers
 *feature* by a **floating tag**, so the real pin is the committed `devcontainer-lock.json` beside each
 config: the CLI re-resolves the tag to a digest on **every** build and rewrites the lock file, which is
 tracked in git on purpose as the supply-chain control. A rebuild that rewrites it with the same digest
@@ -110,7 +110,7 @@ artifacts.
   side and reported no counts at all.
 - **ESLint 10 flat config (US5b).** `.eslintrc.json` is gone from both `frontend/mcm-app/` and
   `packages/design-system/`, replaced by `eslint.config.js` in each, and the app's lint target now runs
-  `eslint src` with no `--ext`. Three things in those files are load-bearing rather than stylistic: the
+  `eslint .` with no `--ext` (spec 097 widened it from `eslint src` to tests, scripts and config files). Three things in those files are load-bearing rather than stylistic: the
   JS extensions are `globalIgnores`d, because flat config lints `*.js`/`*.mjs`/`*.cjs` by default and
   cannot *narrow* extensions from the CLI — so the JS extensions are ignored to preserve the old linted
   set, and widening lint to JS is a separate decision rather than a side effect of the format change;
@@ -185,7 +185,7 @@ wired belongs here; the feature's own artifacts carry the order and the evidence
   asks for, so an older image has its wrapper try to download 9.4.1 and fail behind the egress
   firewall.
 - **The constitution was amended, not bypassed.** `.specify/memory/constitution.md` is at **v2.8.0**
-  (approved 2026-11-08), which advanced the frontend stack baseline to SDK 58 / RN 0.88 / React 19.3
+  (amended 2026-11-07), which advanced the frontend stack baseline to SDK 58 / RN 0.88 / React 19.3
   and rewrote the BFF output line; the same amendment corrected a stale `node:24.14.1-alpine3.23` to
   the `node:24.22.1-alpine3.23` all three stages of `frontend/mcm-app/Dockerfile` actually use. The
   constitution's own Node line above it still reads `v24.14.1`, so the BFF API line and the JavaScript

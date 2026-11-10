@@ -3,10 +3,10 @@ type: Service
 title: mc-service (Rust/Axum movie-collection service)
 description: The Rust/Axum microservice that owns all movie-collection domain logic — CRUD, business-rule validation, and RBAC/DAC enforcement — for MovieCollectionManager, built as four Clean Architecture layers with CQRS, repository, and specification patterns over its own replica-set MongoDB.
 resource: docs/MCM-Architecture.md
-resource-sha256: 75472c1a0b56ec7fc8fe8f6d833a3588ceb1df04c3bcac5a97e53326a83f9f70
+resource-sha256: 8f7b3e4c87b355ae290db90980f89910f72a50675e43ccfe492d833d06c83033
 tags: [rust, axum, clean-architecture, cqrs, mongodb]
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-timestamp: 2026-11-10T11:20:29.564Z
+timestamp: 2026-11-10T11:40:29.748Z
 ---
 
 # mc-service (Rust/Axum movie-collection service)
@@ -155,11 +155,7 @@ case-insensitive `$regex` `$or` over `title`, `originalTitle`, `directors`, `act
 literally; a NUL byte is rewritten to the `\x00` escape because a BSON regex pattern is a NUL-free
 `CString`, which keeps the pattern a total function of the input rather than a 500.
 `GET /collections` is a flat `find({ ownerId })` returning every collection for the caller, with no
-cursor at all; the `owner_id_list` index exists but the query does not page through it. One
-divergence to know when reading the architecture doc: its pagination bullet still describes the
-cursor as "a base64-encoded MongoDB ObjectId", which was true before the compound cursor landed —
-`docs/MCM-Architecture.md` is authoritative for the layer table and index tables, but not for the
-cursor payload.
+cursor at all; the `owner_id_list` index exists but the query does not page through it.
 
 ## Packaging and operations
 
@@ -289,5 +285,5 @@ cursor payload.
 See [Auth chain](../invariants/auth-chain.md) for how mc-service fits into the end-to-end
 authorization sequence, [data model](../architecture/data-model.md) for the domain entities, and
 `docs/MCM-Architecture.md` — whose `## mc-service Architecture` section is the authoritative source
-for the layer table and CQRS description, with its MongoDB collection/index tables immediately
+for the layer table and CQRS description, with its MongoDB collection table immediately
 below — for the full diagrammed description.

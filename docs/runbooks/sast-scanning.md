@@ -14,7 +14,7 @@ blocking `sast` CI gate. Config tree: [security/sast/](../../security/sast/).
 
 ## Run it locally
 
-Prereqs (no app stack needed — this is a static scan): Node ≥ 20, `uv`/`uvx`, a Rust toolchain with
+Prereqs (no app stack needed — this is a static scan): Node ≥ 22.13 (the root `engines.node` floor), `uv`/`uvx`, a Rust toolchain with
 `cargo-audit` (`cargo install cargo-audit --locked`), pnpm, and **all four Python venvs synced**
 (`uv sync` in `agents/movie-assistant` and in each `mcp-servers/*` — pip-audit audits the installed
 env, per surface). An unsynced surface **fails** the scan; it is never silently skipped.
@@ -64,9 +64,9 @@ iteration. `--emit-allowlist` writes `reports/allowlist.proposed.yaml` (baseline
 
 The blocking **`sast`** job in [.forgejo/workflows/guardrails.yml](../../.forgejo/workflows/guardrails.yml)
 runs on every pull request and on every push to `main` (the `push:` trigger is branch-scoped; the
-required contexts come from `pull_request`, auto-covered by the `guardrails*` branch-protection glob). Keyless — no
-`${{ secrets }}`. Steps: install uv + Rust/cargo-audit fresh + `pnpm install` + `uv sync` the agent
-venv → `check-sast-findings.mjs --selftest` → `sast-scan.mjs` (`--scope changed` on PRs, `--scope full`
+required contexts come from `pull_request`, auto-covered by the `guardrails*` branch-protection glob). Keyless — no scanner uses a
+`${{ secrets }}` value (the only one in the job is the shared failure-digest step's). Steps: install uv + Rust/cargo-audit fresh + `pnpm install` + `uv sync` each of the
+four Python venvs → `check-sast-findings.mjs --selftest` → `sast-scan.mjs --test-rules` → `sast-scan.mjs` (`--scope changed` on PRs, `--scope full`
 on push; **SCA always full**) → `check-sast-findings.mjs` (the gate) → on PRs,
 `check-dependency-downgrade.mjs` (the downgrade gate, below) → upload the `sast-report` artifact
 (always, for triage). **No `paths:` filter** — a newly-published advisory can hit an unchanged dep, so

@@ -101,7 +101,7 @@ values. A run prints key *names* only, never values.
 Generation kinds are minted by the script, not the README: `b62-32` / `b62-48` (URL- and shell-safe
 base62), `hex-64` (32-byte hex), `complex-16` (upper+lower+digit+special from a URL/shell-safe
 charset), `unleash-admin` / `unleash-client`, and `mongo-keyfile` — the base64 replica-set keyfile
-content behind `MONGO_MC_KEYFILE`, which the template list documents but the README's kind list omits.
+content behind `MONGO_MC_KEYFILE`.
 Full template table, rotation and fail-fast behaviour:
 [stacks README](../../infrastructure-as-code/docker/stacks/README.md).
 
@@ -344,10 +344,10 @@ never happened aborts the deploy rather than falling back to a floating tag.
 Only the three CI-built stacks receive it, and the fan-out is script-driven rather than an inline
 workflow step. `scripts/cd/scan-push.sh` mints one generated file — `env-deploy.generated`, one
 `<REPO_UPPER>_DIGEST=<bare sha256>` line per image it scanned and pushed, under a generated header —
-and `scripts/cd/promote-digest.sh` copies that single file into every directory named in the
-workflow's `ENV_DEPLOY_PATHS` (`infrastructure-as-code/docker/bff`, `mc-service`, `agents`), commits
-it and pushes. So every Komodo Stack reads a local `.env.deploy` rather than a fragile `../` path,
-and a new CI-built production stack is wired in by adding its run directory to `ENV_DEPLOY_PATHS`
+and `scripts/cd/promote-digest.sh` copies that single file to every `.env.deploy` path named in the
+workflow's `ENV_DEPLOY_PATHS` (under `infrastructure-as-code/docker/bff`, `mc-service`, `agents`),
+commits them and pushes. So every Komodo Stack reads a local `.env.deploy` rather than a fragile `../` path,
+and a new CI-built production stack is wired in by adding its `.env.deploy` path to `ENV_DEPLOY_PATHS`
 and its `additional_env_files` — nothing else in the promotion path is per-stack. All three files
 therefore carry all six `<REPO>_DIGEST` lines, and each stack consumes only the names its own images
 need — `MCM_BFF_DIGEST` for `bff`, `MC_SERVICE_DIGEST` for `mc-service`, and
