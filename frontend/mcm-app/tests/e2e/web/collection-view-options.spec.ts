@@ -9,6 +9,8 @@
  *   FR-010  the same docked bar at desktop width — no inline controls at any width
  *   FR-005a opening/closing the panel does not move or re-scroll the list
  *   FR-016  focus returns to the bar on close
+ *   US3     the bar, the assistant toggle and "+ Add movie" never overlap, and opening either panel
+ *           closes the other (FR-015)
  *
  * Runs against the read-only BROWSE fixture; every expected count is derived from FIXTURE_MOVIES.
  * Requires the full stack (pnpm nx e2e mcm-app).
@@ -18,6 +20,7 @@ import { test, expect } from './fixtures/worker-session';
 import { type Page } from '@playwright/test';
 import { FIXTURE_COLLECTIONS, FIXTURE_MOVIES } from '../fixtures/base-dataset';
 import { E2E_BASE_URL as BASE } from './setup/target';
+import { agentStackRequired, REQUIRE_AGENT_STACK_ENV } from './setup/agent-stack-gate';
 
 const PHONE = { width: 360, height: 640 };
 const DESKTOP = { width: 1280, height: 800 };
@@ -195,5 +198,85 @@ test.describe('Collection view options — docked (098 US1)', () => {
     await expect(page.getByTestId('view-options-panel')).toHaveCount(0);
 
     expect(await firstRowInView(page)).toBe(before);
+  });
+});
+
+/**
+ * The assistant dock renders only when the E2E user's assistant config is runnable (as seeded).
+ * Without it these tests cannot run: SKIP — unless the run says the stack is supposed to be up
+ * (`E2E_REQUIRE_AGENT_STACK=1`), in which case a missing dock is a FAILURE, never a quiet green.
+ */
+async function requireDock(page: Page): Promise<void> {
+  const present = await page
+    .getByTestId('assistant-dock-toggle')
+    .waitFor({ state: 'visible', timeout: 15000 })
+    .then(() => true)
+    .catch(() => false);
+  if (present) return;
+  if (agentStackRequired()) {
+    throw new Error(
+      `${REQUIRE_AGENT_STACK_ENV}=1 but the assistant dock is not rendered — the E2E user's ` +
+        'assistant config is not runnable, so this test would have SKIPPED and reported green.',
+    );
+  }
+  test.skip(true, "The assistant dock is not rendered (the E2E user's config is not runnable).");
+}
+
+type Box = { x: number; y: number; width: number; height: number };
+const intersects = (a: Box, b: Box): boolean =>
+  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+// Untagged on purpose: these assert layout and panel exclusivity, not a model decision, so they
+// belong to the gate tier (098 T019).
+test.describe('Collection view options + assistant dock (098 US3)', () => {
+  for (const [name, vp] of [
+    ['phone', PHONE],
+    ['desktop', DESKTOP],
+  ] as const) {
+    test(`${name}: the bar, the assistant toggle and "+ Add movie" do not overlap (US3-AC1)`, async ({
+      page,
+    }) => {
+      await page.setViewportSize(vp);
+      await gotoBrowse(page);
+      await requireDock(page);
+      const ids = ['view-options-toggle', 'assistant-dock-toggle', 'collection-screen-add-movie'];
+      const boxes: Box[] = [];
+      for (const id of ids) {
+        const b = await page.getByTestId(id).boundingBox();
+        expect(b, `${id} has no box`).not.toBeNull();
+        boxes.push(b!);
+      }
+      for (let i = 0; i < boxes.length; i++) {
+        for (let j = i + 1; j < boxes.length; j++) {
+          expect(intersects(boxes[i]!, boxes[j]!), `${ids[i]} overlaps ${ids[j]}`).toBe(false);
+        }
+      }
+    });
+  }
+
+  test('opening the view options closes the assistant panel (US3-AC2, FR-015)', async ({
+    page,
+  }) => {
+    await page.setViewportSize(DESKTOP);
+    await gotoBrowse(page);
+    await requireDock(page);
+    await page.getByTestId('assistant-dock-toggle').click();
+    await expect(page.getByTestId('assistant-dock-panel')).toBeVisible({ timeout: 30000 });
+
+    await page.getByTestId('view-options-toggle').click();
+    await expect(page.getByTestId('view-options-panel')).toBeVisible();
+    await expect(page.getByTestId('assistant-dock-panel')).toHaveCount(0);
+  });
+
+  test('opening the assistant closes the view options (US3-AC2, FR-015)', async ({ page }) => {
+    await page.setViewportSize(DESKTOP);
+    await gotoBrowse(page);
+    await requireDock(page);
+    await page.getByTestId('view-options-toggle').click();
+    await expect(page.getByTestId('view-options-panel')).toBeVisible();
+
+    await page.getByTestId('assistant-dock-toggle').click();
+    await expect(page.getByTestId('assistant-dock-panel')).toBeVisible({ timeout: 30000 });
+    await expect(page.getByTestId('view-options-panel')).toHaveCount(0);
   });
 });
