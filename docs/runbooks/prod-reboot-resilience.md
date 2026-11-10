@@ -171,7 +171,7 @@ prod$ mkdir -p /home/prod/komodo/periphery-root
 prod$ docker compose -p komodo -f ferretdb.compose.yaml up -d  # recreates periphery with the persistent root
 ```
 
-Verify: `docker exec komodo-periphery-1 sh -c 'df -h /home/prod/komodo/periphery-root | tail -1'` shows the real `ext4` LVM disk (not `tmpfs`), and `docker logs komodo-periphery-1` shows `root_directory: "/home/prod/komodo/periphery-root"` + `Logged in to Komodo Core`. **Also update `Server-Setup-Runbook.md` Phase 9** so a rebuild does not reintroduce `/etc/komodo`.
+Verify: `docker exec komodo-periphery-1 sh -c 'df -h /home/prod/komodo/periphery-root | tail -1'` shows the real `ext4` LVM disk (not `tmpfs`), and `docker logs komodo-periphery-1` shows `root_directory: "/home/prod/komodo/periphery-root"` + `Logged in to Komodo Core`. `Server-Setup-Runbook.md` Phase 9 now sets this value at bootstrap, so a rebuild does not reintroduce `/etc/komodo`.
 
 ### RC#2 — `unless-stopped` never survives a daemon shutdown here → `restart: always`
 

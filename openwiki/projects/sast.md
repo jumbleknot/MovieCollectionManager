@@ -4,9 +4,9 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
 tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: 09e87483d62a183bb4fcd7b4c8916bb6e772448b514209c172e6e218ab8fb00b
+resource-sha256: d47f5e845ae1f01d5abf73e50853ff7c5c86235bbebd47f2c183d48393edf649
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
-timestamp: 2026-11-10T11:40:29.754Z
+timestamp: 2026-11-10T11:59:39.638Z
 ---
 
 # SAST & SCA static security scanning

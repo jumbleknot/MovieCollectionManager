@@ -3,10 +3,10 @@ type: Runbook
 title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: 09e87483d62a183bb4fcd7b4c8916bb6e772448b514209c172e6e218ab8fb00b
+resource-sha256: d47f5e845ae1f01d5abf73e50853ff7c5c86235bbebd47f2c183d48393edf649
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T11:40:29.758Z
+timestamp: 2026-11-10T11:59:39.648Z
 ---
 
 # SAST & SCA static scanning
@@ -170,8 +170,8 @@ for three stated reasons:
   change that made the dev tree *worse*, and the downgrade gate blocks exactly that, in every scope.
 - **Blocking standing dev advisories would block PRs that changed nothing.** A newly published advisory
   in build tooling would turn every PR red until someone allowlisted it — the advisory-churn shape,
-  multiplied across the whole dev tree. Most of those packages have no patched release either (braces,
-  node-forge), so the allowlist would grow with entries that carry no decision.
+  multiplied across the whole dev tree. Most of those packages have no patched release either (braces, for
+  one), so the allowlist would grow with entries that carry no decision.
 - **"Runs in a credentialed job" is not something the scan can see.** The audit knows dev from runtime.
   It does not know which jobs a package executes in, or which secrets those jobs hold. A rule keyed on
   it would need a hand-kept package list, which goes stale silently.
@@ -243,23 +243,23 @@ that job), not by flipping the whole tier.
   override, or removing the secret from that job), not by flipping the whole tier.
 - **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
   when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
-  package", which is a different question from "is the vulnerable code path exercised". The two live
-  no-fix acceptances in the root tree are tagged runtime purely because `expo` lists `@expo/cli` as a
-  production dependency: node-forge arrives only through Expo CLI / code-signing tooling, and braces
-  only through `micromatch` in build and test tooling — Metro's file map, Jest, and (added at the
-  2026-10-10 re-measurement) `fast-glob` and `http-proxy-middleware`. Neither is imported by
-  first-party code, neither ships in the web or server bundle, and the glob patterns those tools
-  expand come from repository configuration rather than a request. The same distinction governed the
-  now-deleted `@graphql-tools/utils` acceptance, which was tagged runtime through
-  `@copilotkit/runtime` while only being listed as a dependency rather than reached on a request
-  path. That reasoning has to be **checked and written into the justification**, because the tag
-  alone would have said the opposite. **And the check can come back the other way:** the third live
-  braces acceptance — the one anchored to `tools/openwiki-generator` (item #721) — is *genuinely
-  reachable*, because `deepagents`' `glob`/`grep` tools pass the model's tool-call arguments to
-  `fast-glob`/`micromatch.isMatch`, and a ~40 KB nested-brace pattern aborts the Node process (V8
-  `RegExpCompiler` OOM, exit 134). It is accepted as availability-only impact on one unattended,
-  non-required job. Same package, same advisory, opposite reachability verdict — which is why each
-  workspace's entry carries its own evidence rather than inheriting the root one's.
+  package", which is a different question from "is the vulnerable code path exercised". The live
+  `graphql-scalars` acceptance is tagged runtime through `@copilotkit/runtime`, yet its ReDoS is in the
+  `GraphQLPhoneNumber` regex, which graphql-js runs only for a value of that scalar type — and the
+  shipped dist of the pinned versions imports no such type (measured 2026-10-29). The now-deleted
+  node-forge and root `braces` entries (both removed 2026-11-04, items #633/#648) were tagged runtime
+  purely because `expo` lists `@expo/cli` as a production dependency, while their code paths were
+  Expo CLI / code-signing and build/test tooling whose glob patterns come from repository
+  configuration rather than a request. That reasoning has to be **checked and written into the
+  justification**, because the tag alone would have said the opposite. **And the check can come back
+  the other way:** the generator's `braces` copy (`tools/openwiki-generator`, item #721) was
+  *genuinely reachable*, because `deepagents`' `glob`/`grep` tools pass the model's tool-call
+  arguments to `fast-glob`/`micromatch.isMatch`, and a ~40 KB nested-brace pattern aborts the Node
+  process (V8 `RegExpCompiler` OOM, exit 134). Its entry was deleted the same day as the root one
+  because GitHub **withdrew** the advisory — no fix shipped, and the measured crash outlives the
+  withdrawal (the allowlist's tombstone comment records it). Same package, same advisory, opposite
+  reachability verdict — which is why each workspace's entry carried its own evidence rather than
+  inheriting the root one's.
 - **`pnpm why <pkg> --prod` without `-r` reports the wrong scope.** Without `-r` the command runs at
   the repo root only and prints nothing for a dep that is runtime-reachable via a sub-package (e.g.
   `mcm-app > @copilotkit/runtime > … > fast-uri`). That empty output is **not** "dev-only" — it is
@@ -281,7 +281,7 @@ that job), not by flipping the whole tier.
   entries included — on 2026-10-17). The audit is lockfile-only, so the `sast` job installs nothing
   extra. **The locations differ:** a root finding keeps the bare `pkg@version` the existing entries
   anchor to
-  (`^braces@3\.0\.3$`), while a nested workspace's is prefixed `<workspace>:pkg@version`
+  (`^graphql-scalars@1\.26\.0$`), while a nested workspace's is prefixed `<workspace>:pkg@version`
   (`tools/openwiki-generator:braces@3.0.3`). A root entry therefore never silently covers the same
   package in another tree, which needs its own entry with its own reachability justification — and
   that distinction is not academic: the root `braces` copy has no input path, while the generator's
@@ -452,18 +452,20 @@ that job), not by flipping the whole tier.
   justification did not anticipate (the `image-size` pair was cleared when the dependency left the
   tree entirely, not by the fix its entry predicted). Check npm before assuming: on feature 057 both
   "needs an acceptance" advisories turned out to have published fixes. Where no patched version exists
-  at all, the convention the file has settled into is: pin the `locationPattern` to the **exact
-  vulnerable version** (`^node-forge@1\.4\.0$`, `^braces@3\.0\.3$`,
-  `^tools/openwiki-generator:braces@3\.0\.3$`) and date the entry shortly ahead, so a *different*
+  at all — or none inside the consumers' declared ranges — the convention the file has settled into is: pin the `locationPattern` to the **exact
+  vulnerable version** (today `^zod@3\.25\.7[56]$` and `^graphql-scalars@1\.26\.0$`; earlier
+  `^node-forge@1\.4\.0$` and `^braces@3\.0\.3$`) and date the entry shortly ahead, so a *different*
   version re-blocks for a fresh assessment and the entry stops suppressing on its own. The
   justification then carries the reachability check that was actually done — which tree the
   package arrives through, whether any first-party code imports it, and whether the input path the
   advisory needs exists at all — because the audit's runtime tag alone is not evidence (see the
   runtime-scope gotcha above). A renewal is not a re-date: the no-fix entries were renewed only after
   re-measuring that no patched release had shipped and re-listing the dependents (items #633/#648,
-  2026-10-10, all three moved to the shared 2026-12-01 date so they re-triage in one sitting), and the
-  generator entry was added the same day the nested workspace first became audited at all. A renewal
-  whose only change is the date is exactly the re-dating this rule forbids.
+  2026-10-10), and those re-measurements are also how they left — node-forge was deleted on
+  2026-11-04 once a lock refresh carried the fixed 1.4.2, and both `braces` entries the same day
+  because the advisory was withdrawn. The live `zod` and `graphql-scalars` acceptances were renewed the
+  same way on 2026-11-01, each with its re-check written into the entry, and share the 2026-12-01
+  expiry. A renewal whose only change is the date is exactly the re-dating this rule forbids.
 - **A suppression that matches nothing is not harmless, so delete rather than re-anchor it.** The
   retired click entry and the feature-034 remediations were deleted, not renewed, for the same
   reason: a dead entry would have absorbed a genuine regression on that package, silently, until its

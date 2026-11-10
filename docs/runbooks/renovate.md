@@ -157,8 +157,9 @@ session, two tokens: pick by endpoint.
 since features 071/072; the first four since 2026-10-09, after PR #698 merged clickhouse 25.12 -> 26.6
 and redis 7 -> 8 for production Langfuse on a green CI. **app-e2e never starts the observability
 stack**, so green said nothing about either. Before ticking, name the stack the image runs in and how
-its data survives the move. The observability postgres is held below 17 outright (spec FR-005: it is
-shared with Unleash), so it never reaches this list.
+its data survives the move. The observability postgres (shared by Langfuse and Unleash) was held below 17
+outright until spec 081 US8b moved both databases to 18 together; it now rides this tick like every other
+postgres.
 
 > ⚠️ **A `renovate/*` branch that already exists is not evidence of pending work — check ANCESTRY
 > before ticking it.** A merged Renovate PR used to leave its branch behind; Renovate keeps listing
@@ -856,9 +857,10 @@ stopped in `renovate.json`, asserted on the RESOLVED rules by `renovate-workflow
   pending on 2026-10-18. `major` is `enabled: false` for that file. Patch and minor stay open, because a
   genuine floor raise arrives on them. `check-override-consistency.mjs` also fails any value cap past
   `<key major + 1`. **Reject such a proposal; never merge one.**
-- **SDK- or lint-pinned toolchain majors wait for a tick.** These are jest/babel-jest/@types/jest,
-  @babel/core and @babel/runtime, typescript, and async-storage. Each rule's description holds its
-  measured blocker and its re-check rule.
+- **SDK- or lint-pinned toolchain majors wait for a tick.** These are @babel/core and @babel/runtime,
+  typescript, and async-storage. (jest/babel-jest/@types/jest were held the same way until the SDK 58
+  move, feature 087, lifted that hold.) Each rule's description holds its measured blocker and its
+  re-check rule.
   - **Approval, not `allowedVersions`.** What a ceiling admits depends on the dep's versioning. US4
     measured `'<18'` admitting *only* 18.0 under semver-partial. An approval gate has no version
     semantics.
@@ -1002,11 +1004,11 @@ Recorded from the 2026-08-30 latent-issue audit so the next reader knows each wa
   criterion that a pnpm bump re-checks it.
 - **Node rides two Renovate groups.** Workflow `node-version` entries ride `ci actions`
   (github-actions manager); Dockerfile `FROM node` rides `docker base images`. A Node bump can
-  therefore arrive as two PRs, and the pins already differ (24.19.0 workflows / 24.14.1 app
+  therefore arrive as two PRs, and the pins already differ (24.19.0 workflows / 24.22.1 app
   Dockerfile / bare `24` in infra-image-scan.yml). Accepted **while the gate floor-checks** — none
   of this can merge unsafe. If Node drift ever bites for real, the fix is the nx/playwright/pnpm
   pattern: one group, one guard.
-- **`runs-on: ubuntu-latest` is extracted** by the github-runners manager (15 refs). On act_runner
+- **`runs-on: ubuntu-latest` is extracted** by the github-runners manager (15 refs at the audit). On act_runner
   the label maps to a runner-side container and a "bump" would be meaningless — if such a proposal
   ever appears, close it as not applicable (it is not a `lockFileMaintenance` PR; the §4 rule about
   hand-closing marks only that one label rejected, which is the intent here).

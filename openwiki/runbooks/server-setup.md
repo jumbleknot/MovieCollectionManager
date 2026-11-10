@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: 0dee6d06ebdf205b2cc954fc91e52fb7fb1dc2926f99354a8d5658dc48452eaa
+resource-sha256: dd5ad527beadaecf9a5eb98a357116a59a088944a9f47015793bbb44fd71ce4c
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T03:37:28.115Z
+timestamp: 2026-11-10T11:59:39.650Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -80,10 +80,9 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   host-type `kvm:host` (referenced as `runs-on: kvm`, the label *name*), on which jobs execute directly
   on the host as the unprivileged `ci` user with no job container — the emulator job, which needs
   `/dev/kvm` plus a single-host view of `localhost:8082` / `10.0.2.2:8082`, and the
-  Docker-image-building jobs, which need a reachable `ci` rootless daemon. The runbook's Phase 7 block
-  still names only three tenants — `app-e2e`, `dast` and `build-deploy`; the tracked workflows have
-  grown since, and the *complete* set today is `app-e2e` and `dast` and `app-image-scan` (`app-ci`),
-  `build-deploy` (`cd-deploy`) and `build-publish` (`devcontainer-image`).
+  Docker-image-building jobs, which need a reachable `ci` rootless daemon. The complete set today is
+  `app-e2e`, `dast` and `app-image-scan` (`app-ci`), `build-deploy` (`cd-deploy`) and `build-publish`
+  (`devcontainer-image`).
 - **8 — Self-hosted Nx remote cache, RustFS-backed (feature 080).** The open-source Rust
   `nx-cache-server` binary runs as a `prod`-user systemd-user service implementing Nx's built-in
   custom remote-cache-server API (Nx ≥ 20.8) — the first-party `@nx/s3-cache` / `@nx/shared-fs-cache`
@@ -321,8 +320,7 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   - **KVM is the emulator job's requirement, not the label's.** Five jobs share the label today —
     `app-e2e` and `dast` and `app-image-scan` in `app-ci`, `build-deploy` in `cd-deploy`, and
     `build-publish` in `devcontainer-image` — and only `app-e2e` needs `/dev/kvm`; the rest need the
-    Docker CLI and the `ci` daemon, which is why the runbook's Phase 7 note still enumerates a shorter
-    set (emulator, DAST, image build) and the tracked workflows have grown past it.
+    Docker CLI and the `ci` daemon.
   - **One host job's own error text still describes the pre-`235f2f4c` container setup.**
     `cd-deploy`'s Docker guard tells the operator to "mount `/run/user/1001/docker.sock` into the kvm
     job (runner `config.yaml` `container.options`)" — advice for a job container that no longer exists;

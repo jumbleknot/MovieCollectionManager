@@ -3,10 +3,10 @@ type: Runbook
 title: Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
 description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade, deployed in production on 2026-10-24 and completed by the post-soak FCV raise to 9.0 on 2026-11-01.
 resource: docs/runbooks/prod-data-tier-auth.md
-resource-sha256: 66a3a433d7f97462e8dba53617643acfbb10ff58478571b365608377ee2241a5
+resource-sha256: 19592a7fc6530deca41acc920f0460e2984496aac6ee8e54888ad264ce54404a
 tags: [production, mongodb, auth, security, upgrade, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
-timestamp: 2026-11-10T03:37:28.105Z
+timestamp: 2026-11-10T11:59:39.643Z
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade

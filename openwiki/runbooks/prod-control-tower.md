@@ -3,10 +3,10 @@ type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
 description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the six one-time stateful cutovers they have carried — the completed and closed-out RustFS object-store swap on the shipped 1.0.4 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move, and the two schema-carrying Langfuse minors (4.56.0 → 4.68.0, item 839, and 4.68.0 → 4.72.0, item 895) whose merge is the migration — with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
-resource-sha256: 1afbd258758c99488452c80fb62c5b215bf314ae6fff827eb250277d100e815b
+resource-sha256: eb8819035c5594a8f6a4f64145fc1dd425682b7e345c10355838294125fbba7e
 tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, clickhouse, cutover, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T03:37:28.103Z
+timestamp: 2026-11-10T11:59:39.640Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -617,11 +617,7 @@ state they care about does the dump → pre-seed steps too. The shared pin also 
 `allowedVersions: "<17"` hold: a Postgres major now rides the stateful-datastore
 `dependencyDashboardApproval` tick like every other database image here (see
 [the Renovate runbook](./renovate.md) for what ticking it means, and
-[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it). One line of that
-runbook now trails this change: its "database MAJOR waits in Pending Approval" paragraph still says the
-observability postgres is "held below 17 outright … so it never reaches this list". That was true before
-US8b; the ceiling is discharged, and `renovate.json`'s stateful-datastore rule plus
-`renovate-workflow.guard.test.mjs` are the current reading.
+[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it).
 
 ## Langfuse 4.56.0 → 4.68.0, the schema-carrying minor (spec 081 US8 PR 8d, item 839) — done in production
 

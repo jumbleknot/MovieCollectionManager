@@ -3,10 +3,10 @@ type: Runbook
 title: Prod reboot resilience
 description: Why a rootless-Docker production homelab did not come back clean after a host reboot, the two rounds of fixes — bind address, keyfile idempotency, reserved-range ports, restart policy and periphery root — that made recovery hands-off, why prod's one-shot inits idle on `sleep infinity` behind a readiness marker, plus the validation reboot on record and the host-operation rules that keep it that way.
 resource: docs/runbooks/prod-reboot-resilience.md
-resource-sha256: 020c7f3f13f262da6157ae4539a2864eaf5e3256349c436f5eacc50f42abd49d
+resource-sha256: adb389f4b7b968aad804f5f060e3bb8e018dc8b074ceb4dc6090d26b743f01fd
 tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T11:23:35.122Z
+timestamp: 2026-11-10T11:59:39.645Z
 ---
 
 # Prod reboot resilience

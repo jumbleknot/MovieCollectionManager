@@ -700,7 +700,7 @@ lower). Re-run the check (`free -h` + `docker stats --no-stream`) before any fut
 ## Load-bearing gotchas (do not "fix" away)
 
 - **Audit-init image MUST ship bash + curl.** `init-audit-user.sh` is `#!/usr/bin/env bash`; the bash-less
-  `curlimages/curl` (Alpine) can't run it → `agent-audit-init` reuses `opensearchproject/opensearch:2`.
+  `curlimages/curl` (Alpine) can't run it → `agent-audit-init` reuses the node's own `opensearchproject/opensearch:3` image.
 - **`mkdir -p …/stacks` before running the init script.** The reused script self-locates `../stacks/audit.env`
   and `cd`s into it BEFORE the `[ -f ]` guard; under `set -euo pipefail` a missing dir aborts the whole
   script (verified). The init service pre-creates an empty sibling `stacks` dir so the cd succeeds, no
@@ -712,7 +712,7 @@ lower). Re-run the check (`free -h` + `docker stats --no-stream`) before any fut
 - **OPA uses the `-debug` image variant.** Distroless `openpolicyagent/opa` has no shell; `-debug` adds
   busybox so the `/health` wget healthcheck (and Komodo status) works. Policies already `import rego.v1`
   (OPA 1.x compatible). OPA is **fail-closed** on the BFF + gateway when `OPA_URL` is set.
-- **ClickHouse capped via `mem_limit: 4g`** (R5) — 24.3 is cgroup-aware, so the container limit bounds its
+- **ClickHouse capped via `mem_limit: 4g`** (R5) — ClickHouse is cgroup-aware (since 24.3), so the container limit bounds its
   internal `max_server_memory_usage`. OpenSearch pinned `-Xms1g -Xmx1g`.
 - **Dormant Vault health override.** `?uninitcode=200&sealedcode=200&standbycode=200` makes uninitialized +
   sealed read as healthy; the codes resume real meaning once an operator inits + unseals (future).
