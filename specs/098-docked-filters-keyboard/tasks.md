@@ -259,19 +259,19 @@ the other, and both toggles and "+ Add movie" can be clicked.
 
 ## Phase 6: Polish and cross-cutting
 
-- [ ] T020 [P] Measure SC-001's baseline on `main`, then on the branch: the number of visible rows at
+- [X] T020 [P] Measure SC-001's baseline on `main`, then on the branch: the number of visible rows at
   360×640, read from the T010 test's evidence or a one-off Playwright run. Record both numbers in the
   Evidence table.
-- [ ] T021 Run the tiers the diff touches, one at a time with `--skip-nx-cache`:
+- [X] T021 Run the tiers the diff touches, one at a time with `--skip-nx-cache`:
   `pnpm nx lint mcm-app`, `pnpm nx typecheck mcm-app`, `pnpm nx test mcm-app` (watch the **skip count**),
   `pnpm nx export-server mcm-app`, then `pnpm nx bundle-budget mcm-app`.
   **Done when**: all exit 0, `bundle-budget` is under 2,000,000 bytes with no `@copilotkit/*` in the entry
   chunk, and the counts are recorded.
 - [ ] T022 Run the full web regression `pnpm nx e2e mcm-app` with `E2E_TIER=gate`, then
   `pnpm nx e2e:mobile mcm-app`. **Done when**: 0 failed, and any skip is a pre-existing, named one.
-- [ ] T023 [P] iOS check (quickstart §5). If a simulator or device is available, record the result.
+- [X] T023 [P] iOS check (quickstart §5). If a simulator or device is available, record the result.
   Otherwise write "iOS unverified — no runner" in the PR body. Do not claim it works.
-- [ ] T024 [P] Documentation: in `docs/` (the source cited by the Expo app's openwiki concept, not the
+- [X] T024 [P] Documentation: in `docs/` (the source cited by the Expo app's openwiki concept, not the
   concept itself), note that the collection controls live in the view-options dock and that the
   assistant dock follows the keyboard inset. **Done when**: `pnpm nx okf-lint infrastructure-as-code` and
   `pnpm nx okf-governance infrastructure-as-code` pass.
@@ -365,3 +365,8 @@ T002 ─┬─ T003→T004 ─┐                            │
 | T018 | **NOT RUN — no emulator here (see T001).** Owed on a KVM host: `assistant-keyboard.yaml` GREEN with the screenshot showing the typed text above the keyboard (SC-004), then `assistant-query.yaml` + `assistant-navigate.yaml` | — |
 | T019 GREEN | 4 tests added to `collection-view-options.spec.ts`, untagged (gate tier): overlap at 360×640 and 1280×800, and FR-015 in both directions. The skip is conditional on the dock rendering (i.e. a runnable seeded config) and becomes a thrown FAILURE under `E2E_REQUIRE_AGENT_STACK=1` (reuses `agentStackRequired()` from `setup/agent-stack-gate.ts`). With `E2E_REQUIRE_AGENT_STACK=1` the whole file reports **10 passed, 0 failed, 0 skipped** (12.4 s) | `scratchpad/t019-green.log` |
 | T019 RED | Deliberate temporary revert: `useOpenPanel` in `assistant-dock.tsx` replaced by a local `useState`, built as a separate image tag (`mcm-bff:098-red`), and the file restored straight after the build (`git diff --stat` on it is empty). Run `-g "098 US3"` with `E2E_REQUIRE_AGENT_STACK=1`: **2 failed, 2 passed**. Both mutual-exclusion directions failed with the other panel still present (`toHaveCount(0)`, received 1), so both panels were visible. The two overlap tests passed, as predicted. The RED image was then deleted and the GREEN image redeployed | `scratchpad/t019-red.log` |
+| T020 (SC-001) | One-off probe (staged only into the E2E volume, then deleted), at 360×640 on the BROWSE fixture, against container BFFs built from `origin/main` **211aa928** and from this branch: rows fully inside the viewport on load **main 0** (first row's top at y = 592) → **branch 5** (first row's top at y = 300). SC-001 needs ≥ 3: met | `scratchpad/sc001-*.log` |
+| T021 | One at a time, `--skip-nx-cache`: `lint mcm-app` exit 0 (0 errors, 168 warnings, none on lines this branch changed); `typecheck mcm-app` exit 0; `test mcm-app` **170 suites, 1806 passed, 0 skipped**; `export-server mcm-app` exit 0; `bundle-budget mcm-app` **PASS** — 1,932,312 B / 2,000,000 B (67,688 B spare), 8/8 deferred packages (incl. `@copilotkit/*`) absent from the entry chunk. Also `test design-system` 144 passed, 0 skipped (T011a) | `scratchpad/t021-*.log` |
+| T023 | **iOS unverified — no runner** (no macOS host or simulator in this sandbox). The iOS path (`keyboardWillShow`/`keyboardWillHide`) is unit-tested only. This goes into the PR body | — |
+| T024 | `frontend/mcm-app/README.md` (the `resource` of `openwiki/projects/expo-app.md`) gains a "Docked panels" section: the docked controls and the open-first rule for tests, one-panel-at-a-time and its entry-chunk constraint, the dock following the keyboard inset, and the Tamagui web role/tabindex trap. `okf-lint` and `okf-governance` both pass. (`prettier --check` flags this README on `main` too — a pre-existing format drift, left alone) | docs |
+| T022 (partial — web here; mobile + full stack owed to CI) | Full **gate tier** web run (`E2E_TIER=gate`, every project, container BFF built from this branch, 1 worker, 0 retries): **165 passed, 8 failed, 16 skipped, 5 did not run** of 194 (8.8 min). Every non-pass is a named environment gap here, not this branch: **7 failed** `backups.spec.ts` (destinations not running → backlog item #981); **1 failed** `assistant.spec.ts:99` live AG-UI reply (no agent gateway here, and the spec has no stack guard); **16 skipped** — listed by a `--reporter=list` re-run — are all agent-flow specs gated on `E2E_AGENT_PRODUCTION` (agent-card-navigate, agent-import(-disambiguate), agent-navigate-collection ×2, assistant-add(-ambiguous), assistant-config ×6, assistant-list-refresh, assistant-navigate ×2); **5 did not run** = the `lifecycle` project, a dependent of `chromium` that Playwright skips once `chromium` has a failure. `settings.spec.ts:312` (item #982) **passed** in this full run — it fails only in the four-spec subset, so it is order/state-dependent (noted on item #982). `e2e:mobile` **not run — no emulator** (T001). CI runs the gate tier with the agent stack and backup targets up (`E2E_REQUIRE_AGENT_STACK=1`, `E2E_REQUIRE_BACKUP_TARGETS=1`): that run is the authoritative T022 and is quoted at T025 | `scratchpad/t022-gate.log`, `scratchpad/t022-skips.log` |
