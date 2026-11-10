@@ -1,0 +1,58 @@
+appId: com.grumpyrobot.mcmapp
+---
+# 098 US2 (SC-004, FR-011): the assistant's input, typed text and send button stay above the
+# on-screen keyboard on Android. T001 runs this on `main` as US2's Verify RED; T018 is its GREEN.
+#
+# The keyboard is deliberately left UP throughout: no `hideKeyboard`, no `pressKey: Back` before
+# send (assistant-query.yaml presses Back before send — that is the workaround this feature removes).
+#
+# INSTRUMENT NOTE: Maestro's `assertVisible` reads the app's view hierarchy, and the IME is a separate
+# window, so an element BEHIND the keyboard can still score as "visible". The `assertVisible` steps are
+# therefore not the discriminating check on their own. The behavioural step is: tap send with the
+# keyboard up, then require a user message to appear. If the keyboard covers the send button, the tap
+# lands on a key, nothing is sent, and `assistant-msg-user` never appears — the flow fails regardless of
+# how Maestro scores visibility. The screenshot is the human-readable evidence.
+#
+# Requires: the agent stack + an assistant-enabled E2E user (as assistant-query.yaml), adb reverse
+# tcp:8081 + tcp:8099. Env vars: E2E_TEST_USER, E2E_TEST_PASSWORD.
+# Run: scripts/maestro-run.sh tests/e2e/mobile/assistant-keyboard.yaml
+
+- launchApp:
+    stopApp: true
+    clearState: true
+- runFlow: "_login-helper.yaml"
+- extendedWaitUntil:
+    visible:
+      id: "home-screen-create-button"
+    timeout: 20000
+
+- tapOn:
+    id: "assistant-dock-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-dock-panel"
+    timeout: 10000
+- tapOn:
+    id: "assistant-dock-input"
+- inputText: "show me my sci-fi movies please"
+
+# Keyboard is up. The input (with the typed text) and send must be on screen above it.
+- assertVisible:
+    id: "assistant-dock-input"
+- assertVisible:
+    id: "assistant-dock-send"
+- takeScreenshot: assistant-keyboard-up
+
+# Discriminating step: send WITHOUT dismissing the keyboard; the message must actually be sent.
+- tapOn:
+    id: "assistant-dock-send"
+- extendedWaitUntil:
+    visible:
+      id: "assistant-msg-user"
+    timeout: 15000
+- takeScreenshot: assistant-keyboard-sent
+
+# Teardown: dismiss the keyboard and dock the assistant.
+- hideKeyboard
+- tapOn:
+    id: "assistant-dock-toggle"

@@ -47,6 +47,7 @@ import { useRequestImportFileTool } from '@/components/agent/request-import-file
 import { useRenderImportReportTool } from '@/components/agent/render-import-report';
 import { ASSISTANT_AGENT_ID, AssistantProvider, useAssistantRun } from '@/hooks/use-assistant';
 import { useBumpAssistantData } from '@/hooks/use-assistant-data-sync';
+import type { AssistantPanelLayout } from '@/utils/assistant-runtime-loader';
 
 // `ToolCall` is CopilotKit's own (re-exported from @ag-ui/client). It was a local structural copy
 // until 066/#265: `useRenderToolCall` takes the real type, whose `type` is the literal 'function',
@@ -116,7 +117,7 @@ export function useScrollToEndOnChange(revision: number, scrollToEnd: () => void
   }, [revision, scrollToEnd]);
 }
 
-function AssistantPanel() {
+function AssistantPanel({ height = 420, keyboardInset = 0 }: Partial<AssistantPanelLayout> = {}) {
   const [input, setInput] = useState('');
   const theme = useTheme();
   const styles = makeStyles(theme);
@@ -190,6 +191,9 @@ function AssistantPanel() {
   // 013 Inc5 enhancement 1: keep the view pinned to the bottom when a new item — especially a card,
   // whose poster image lays out asynchronously — is appended (onContentSizeChange alone misses it).
   useScrollToEndOnChange(items.length, scrollToLatest);
+  // 098 FR-012: the keyboard opening shrinks the panel (the dock caps its height), which can push
+  // the newest message out of view — re-pin to it whenever the inset changes.
+  useScrollToEndOnChange(keyboardInset, scrollToLatest);
 
   const send = useCallback(() => {
     const text = input.trim();
@@ -203,7 +207,7 @@ function AssistantPanel() {
   }, [input, run]);
 
   return (
-    <View testID="assistant-dock-panel" style={styles.panel}>
+    <View testID="assistant-dock-panel" style={[styles.panel, { height }]}>
       <FlatList
         ref={listRef}
         testID="assistant-dock-messages"
@@ -288,7 +292,7 @@ const makeStyles = (theme: Theme) => ({
   toggleText: { color: theme.onSurface?.val, fontFamily: 'Inter', fontWeight: '600' as const },
   panel: {
     width: 320,
-    height: 420,
+    // height is set inline from the dock (098 FR-013): 420, or less when the keyboard is up.
     marginTop: 8,
     backgroundColor: theme.surface1?.val,
     borderRadius: 12,
@@ -317,10 +321,12 @@ const makeStyles = (theme: Theme) => ({
  * A default export because `@/utils/assistant-runtime-loader` resolves `.default` — keeping the
  * dynamic import's shape trivial, and keeping the dock ignorant of what the provider is.
  */
-export default function AssistantRuntime(): React.JSX.Element {
+export default function AssistantRuntime(
+  layout: Partial<AssistantPanelLayout> = {},
+): React.JSX.Element {
   return (
     <AssistantProvider>
-      <AssistantPanel />
+      <AssistantPanel {...layout} />
     </AssistantProvider>
   );
 }

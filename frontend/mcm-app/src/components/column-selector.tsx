@@ -9,11 +9,18 @@
  *   onToggle       — called with the column key when a toggle is pressed
  *
  * testIDs:
- *   column-toggle-{key} — the Switch/TouchableOpacity for each column
+ *   column-toggle-{key}           — the toggle: ONE labelled switch control per column
+ *   column-toggle-{key}-indicator — its visual-only track + thumb (hidden from assistive tech)
+ *
+ * 098 T011b: each toggle used to nest an RN <Switch> inside the switch-role Pressable. On web that
+ * rendered a second, unlabeled, focusable 40×20 input inside the control (axe: label,
+ * nested-interactive, target-size), and RNW does not reflect accessibilityState.checked, so the
+ * Pressable announced no state (aria-required-attr). The Pressable is now the single control, with
+ * `role`, `aria-checked` and a label set explicitly; the switch is drawn, not a second control.
  */
 
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, type SwitchProps } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import type { ColumnKey, ColumnVisibility } from '@/types/collection';
 
@@ -46,35 +53,44 @@ const COLUMN_KEYS: ColumnKey[] = (Object.keys(COLUMN_LABELS) as ColumnKey[]).fil
 export function ColumnSelector({ visibleColumns, onToggle }: ColumnSelectorProps) {
   const theme = useTheme();
   const styles = makeStyles(theme);
-  // The toggle's "on" thumb defaulted to react-native-web's teal-green (`activeThumbColor`
-  // #009688), which clashes with the Cinema theme. Drive both the Android (`thumbColor`) and
-  // web (`activeThumbColor`) thumb from the theme so the circle matches the palette. Cast to
-  // SwitchProps via unknown because `activeThumbColor` is RNW-only (not in RN's SwitchProps).
-  const thumbColors = {
-    thumbColor: theme.onPrimary?.val,
-    activeThumbColor: theme.onPrimary?.val,
-  } as unknown as SwitchProps;
   return (
     <ScrollView horizontal style={styles.container} contentContainerStyle={styles.content}>
-      {COLUMN_KEYS.map((key) => (
-        <Pressable
-          key={key}
-          testID={`column-toggle-${key}`}
-          style={styles.item}
-          onPress={() => onToggle(key)}
-          accessibilityRole="switch"
-          accessibilityState={{ checked: visibleColumns[key] }}
-        >
-          <Text style={styles.label}>{COLUMN_LABELS[key]}</Text>
-          <Switch
-            value={visibleColumns[key]}
-            onValueChange={() => onToggle(key)}
-            trackColor={{ true: theme.primary?.val, false: theme.surfaceVariant?.val }}
-            {...thumbColors}
-            pointerEvents="none" // let Pressable handle the touch
-          />
-        </Pressable>
-      ))}
+      {COLUMN_KEYS.map((key) => {
+        const on = visibleColumns[key];
+        return (
+          <Pressable
+            key={key}
+            testID={`column-toggle-${key}`}
+            style={styles.item}
+            onPress={() => onToggle(key)}
+            accessibilityRole="switch"
+            accessibilityState={{ checked: on }}
+            accessibilityLabel={COLUMN_LABELS[key]}
+            role="switch"
+            aria-checked={on}
+          >
+            <Text style={styles.label}>{COLUMN_LABELS[key]}</Text>
+            {/* Visual-only switch, in the palette the old RN Switch used (track primary /
+                surfaceVariant, thumb onPrimary). Hidden from AT: the Pressable carries the state. */}
+            <View
+              testID={`column-toggle-${key}-indicator`}
+              aria-hidden
+              importantForAccessibility="no-hide-descendants"
+              accessibilityElementsHidden
+              pointerEvents="none"
+              style={[
+                styles.track,
+                {
+                  backgroundColor: on ? theme.primary?.val : theme.surfaceVariant?.val,
+                  justifyContent: on ? 'flex-end' : 'flex-start',
+                },
+              ]}
+            >
+              <View style={[styles.thumb, { backgroundColor: theme.onPrimary?.val }]} />
+            </View>
+          </Pressable>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -97,6 +113,19 @@ const makeStyles = (theme: Theme) =>
     item: {
       alignItems: 'center',
       gap: 4,
+    },
+    track: {
+      width: 40,
+      height: 20,
+      borderRadius: 10,
+      padding: 2,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    thumb: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
     },
     label: {
       fontFamily: 'Inter',

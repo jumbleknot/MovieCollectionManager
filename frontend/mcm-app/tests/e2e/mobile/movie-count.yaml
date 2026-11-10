@@ -32,11 +32,23 @@ appId: com.grumpyrobot.mcmapp
 # (Selected filter chips re-render with a different testID on mobile, so this flow asserts the
 # count line stays present through a filter apply — exact filtered/total values are asserted on
 # web. Clear-filter UX is exercised by movie-search-filter.yaml.)
+# 098 US1: the column, sort and filter controls are docked behind the view-options bar.
+- tapOn:
+    id: "view-options-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "view-options-panel"
+    timeout: 5000
 - assertVisible:
     id: "movie-filter-panel"
 - tapOn:
     id: "filter-chip-contentType-Movie"
 - waitForAnimationToEnd:
     timeout: 2000
+# 098 US1: re-dock the panel so the list it overlays is uncovered again.
+- tapOn:
+    id: "view-options-close"
+- waitForAnimationToEnd:
+    timeout: 1000
 - assertVisible:
     id: "movie-count-line"

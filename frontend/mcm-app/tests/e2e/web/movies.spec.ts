@@ -130,6 +130,26 @@ async function navigateToCollection(
   await page.waitForSelector('[data-testid="collection-screen-add-movie"]', { timeout: 15000 });
 }
 
+/**
+ * 098 US1 (FR-017): the column, sort and filter controls are docked behind the `view-options-toggle`
+ * bar and appear only while its panel is open. Open it before touching one — a no-op when it is
+ * already open. `visible: true` because Expo Router's Stack keeps earlier screen instances in the DOM.
+ */
+async function openViewOptions(page: Page): Promise<void> {
+  const panel = page.getByTestId('view-options-panel').filter({ visible: true });
+  if ((await panel.count()) > 0) return;
+  await page.getByTestId('view-options-toggle').filter({ visible: true }).click();
+  await expect(panel).toBeVisible();
+}
+
+/** Re-dock the panel — needed only where a later step clicks a movie row the open panel covers. */
+async function closeViewOptions(page: Page): Promise<void> {
+  const panel = page.getByTestId('view-options-panel').filter({ visible: true });
+  if ((await panel.count()) === 0) return;
+  await page.getByTestId('view-options-close').filter({ visible: true }).click();
+  await expect(panel).toHaveCount(0);
+}
+
 async function clickAddMovie(page: Page) {
   await page.click('[data-testid="collection-screen-add-movie"]');
   await page.waitForSelector('[data-testid="movie-form-title-input"]', { timeout: 10000 });
@@ -447,6 +467,7 @@ test.describe('Movie browse/search/filter (T137)', () => {
       FIXTURE_COLLECTIONS.MUTATION,
     );
     await expect(page.getByTestId('movie-search-input')).toBeVisible();
+    await openViewOptions(page);
     await expect(page.getByTestId('movie-filter-panel')).toBeVisible();
     // Either the list or the empty state should be present
     const listOrEmpty = await page.$(
@@ -468,6 +489,7 @@ test.describe('Movie browse/search/filter (T137)', () => {
   });
 
   test('column selection — toggling runtime column shows it in list rows', async ({ page }) => {
+    await openViewOptions(page);
     await page.waitForSelector('[data-testid="column-toggle-runtime"]', { timeout: 8000 });
 
     // Runtime column is hidden by default
@@ -560,6 +582,7 @@ test.describe('Movie browse/search/filter (T137)', () => {
 
     // The genre chip should now appear in the filter panel (filter-options refreshes on focus)
     const chipTestId = `filter-chip-genre-${uniqueGenre}`;
+    await openViewOptions(page);
     await page.waitForSelector(`[data-testid="${chipTestId}"]`, { timeout: 10000 });
 
     // Click the genre chip to apply the filter
@@ -576,6 +599,7 @@ test.describe('Movie browse/search/filter (T137)', () => {
     await expect(rows.filter({ hasText: genreTitle })).toBeVisible({ timeout: 10000 });
 
     // Teardown: navigate to the movie and delete it
+    await closeViewOptions(page); // the open panel covers the row (098 US1)
     const movieRow = page.getByTestId('movie-list-item-row').filter({ hasText: genreTitle });
     await movieRow.click();
     await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 10000 });
@@ -641,6 +665,7 @@ test.describe('Movie browse/search/filter (T137)', () => {
 
     // The ownedMedia chip should now appear in the filter panel
     const chipTestId = 'filter-chip-ownedMedia-DVD';
+    await openViewOptions(page);
     await page.waitForSelector(`[data-testid="${chipTestId}"]`, { timeout: 10000 });
 
     // Click the chip
@@ -654,6 +679,7 @@ test.describe('Movie browse/search/filter (T137)', () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Teardown
+    await closeViewOptions(page); // the open panel covers the row (098 US1)
     const movieRow = page.getByTestId('movie-list-item-row').filter({ hasText: ownedTitle });
     await movieRow.click();
     await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 10000 });
@@ -685,6 +711,7 @@ test.describe('Movie browse/search/filter (T137)', () => {
 
     // The ripQuality chip should now appear in the filter panel
     const chipTestId = 'filter-chip-ripQuality-Blu-Ray';
+    await openViewOptions(page);
     await page.waitForSelector(`[data-testid="${chipTestId}"]`, { timeout: 10000 });
 
     // Click the chip
@@ -698,6 +725,7 @@ test.describe('Movie browse/search/filter (T137)', () => {
     ).toBeVisible({ timeout: 10000 });
 
     // Teardown
+    await closeViewOptions(page); // the open panel covers the row (098 US1)
     const movieRow = page.getByTestId('movie-list-item-row').filter({ hasText: rippedTitle });
     await movieRow.click();
     await page.waitForSelector('[data-testid="movie-detail-delete-button"]', { timeout: 10000 });
@@ -830,6 +858,7 @@ test.describe('Column visibility persistence (FR-019a)', () => {
       .catch(() => false);
 
     // Toggle the Media column; wait for AsyncStorage write to settle.
+    await openViewOptions(page);
     await visible('column-toggle-ownedMedia').click();
     await page.waitForTimeout(300);
     const mediaVisibleAfterToggle = await mediaHeader()
@@ -860,6 +889,7 @@ test.describe('Column visibility persistence (FR-019a)', () => {
 
     // Restore original state.
     if (mediaVisibleAfterNav !== mediaVisibleBefore) {
+      await openViewOptions(page);
       await visible('column-toggle-ownedMedia').click();
       await page.waitForTimeout(300);
     }
@@ -969,6 +999,7 @@ test.describe('Movie filter exact counts (T015 / FR-010)', () => {
 
   for (const c of cases) {
     test(`filter ${c.label} → exactly ${c.expected} movies`, async ({ page }) => {
+      await openViewOptions(page);
       await page.click(`[data-testid="${c.chip}"]`);
       await page.waitForTimeout(700); // filter debounce + list reload
       await expect(page.getByTestId('movie-list-item-row')).toHaveCount(c.expected, {
@@ -1096,6 +1127,7 @@ test.describe('movie sort (013 US1)', () => {
 
   test('toggling direction to descending reverses the order (US1-AC2)', async ({ page }) => {
     await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await openViewOptions(page);
     await page.click('[data-testid="sort-dir-toggle"]');
     await page.waitForTimeout(700); // reload
     const titles = await visibleTitles(page);
@@ -1105,6 +1137,7 @@ test.describe('movie sort (013 US1)', () => {
 
   test('sort applies to the filtered subset (US1-AC3)', async ({ page }) => {
     await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await openViewOptions(page);
     await page.click('[data-testid="filter-chip-contentType-Movie"]');
     await page.waitForTimeout(700);
     const titles = await visibleTitles(page);
@@ -1116,8 +1149,10 @@ test.describe('movie sort (013 US1)', () => {
 
   test('chosen sort survives a filter change (US1-AC4)', async ({ page }) => {
     await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await openViewOptions(page);
     await page.click('[data-testid="sort-dir-toggle"]'); // descending
     await page.waitForTimeout(700);
+    await openViewOptions(page);
     await page.click('[data-testid="filter-chip-contentType-Movie"]');
     await page.waitForTimeout(700);
     const titles = await visibleTitles(page);
@@ -1129,6 +1164,7 @@ test.describe('movie sort (013 US1)', () => {
 
   test('a fresh open resets to the default order (US1-AC5)', async ({ page }) => {
     await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await openViewOptions(page);
     await page.click('[data-testid="sort-dir-toggle"]'); // descending
     await page.waitForTimeout(700);
     // Leave and re-open the collection — sort is session-scoped, not persisted.
@@ -1162,11 +1198,13 @@ test.describe('movie count line (013 US2)', () => {
     page,
   }) => {
     await navigateToCollection(page, FIXTURE_COLLECTIONS.BROWSE);
+    await openViewOptions(page);
     await page.click('[data-testid="filter-chip-contentType-Movie"]');
     await page.waitForTimeout(700);
     const movieCount = FIXTURE_MOVIES.filter((m) => m.contentType === 'Movie').length;
     expect(await countLineText(page)).toBe(`${movieCount} of ${FIXTURE_MOVIES.length} movies`);
     // Clear the filter — count returns to the unfiltered total.
+    await openViewOptions(page);
     await page.click('[data-testid="filter-chip-contentType-Movie"]');
     await page.waitForTimeout(700);
     expect(await countLineText(page)).toBe(`${FIXTURE_MOVIES.length} movies`);

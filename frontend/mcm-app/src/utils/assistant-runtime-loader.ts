@@ -21,7 +21,17 @@
 import type { ComponentType } from 'react';
 
 /** What the deferred module exports: the panel, already wrapped in its provider. */
-export type AssistantRuntimeModule = { default: ComponentType<Record<string, never>> };
+/**
+ * Layout the dock hands the deferred panel (098 US2): its capped height, and the on-screen keyboard
+ * inset so the panel can re-pin to the newest message when the keyboard opens (FR-012). Declared
+ * here, not in the panel module, so nothing in the eager graph needs to import the panel for a type.
+ */
+export interface AssistantPanelLayout {
+  height: number;
+  keyboardInset: number;
+}
+
+export type AssistantRuntimeModule = { default: ComponentType<AssistantPanelLayout> };
 
 type Importer = () => Promise<AssistantRuntimeModule>;
 

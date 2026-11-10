@@ -46,6 +46,14 @@ export interface ChipProps extends Omit<ViewProps, 'onPress'> {
   selectionRole?: 'button' | 'checkbox' | 'radio';
 }
 
+/**
+ * Whether a key activates a chip (web): Enter or Space, as for a native button (WCAG 2.1.1).
+ * Pure so it is testable — Tamagui does not forward `onKeyDown` on native, where it is unused.
+ */
+export function chipKeyActivates(key: string): boolean {
+  return key === 'Enter' || key === ' ' || key === 'Spacebar';
+}
+
 export const Chip = React.forwardRef<any, ChipProps>(function Chip(
   {
     type = 'assist',
@@ -68,6 +76,24 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
   // 'checkbox' announces a checked/unchecked state (multi-select); 'radio'/'button' use `selected`.
   const a11yState =
     selectionRole === 'checkbox' ? { disabled, checked: selected } : { disabled, selected };
+
+  // On web Tamagui translates NEITHER accessibilityRole/accessibilityState NOR `accessible`, so the
+  // chip rendered as a bare <div> with no role and no tabindex: unreachable by keyboard and
+  // announced as plain text (098 T011a). Set the role, the state and the tab stop explicitly, as the
+  // DS Button does. checkbox/radio carry aria-checked; a button-role chip that holds a selection
+  // (filter / choice) is a toggle button, so aria-pressed.
+  const isSelectable = type === 'filter' || type === 'choice';
+  const ariaState =
+    selectionRole === 'button'
+      ? isSelectable
+        ? { 'aria-pressed': selected }
+        : {}
+      : { 'aria-checked': selected };
+  const onKeyDown = (e: { key: string; preventDefault?: () => void }) => {
+    if (disabled || !onPress || !chipKeyActivates(e.key)) return;
+    e.preventDefault?.(); // Space must not scroll the page
+    onPress();
+  };
 
   // ── Colour logic ─────────────────────────────────────────────────────────
   // Filter selected uses secondaryContainer; all others use surfaceVariant / surface1
@@ -120,6 +146,12 @@ export const Chip = React.forwardRef<any, ChipProps>(function Chip(
       accessible
       accessibilityRole={selectionRole}
       accessibilityState={a11yState}
+      role={selectionRole}
+      {...ariaState}
+      aria-disabled={disabled ? true : undefined}
+      tabIndex={disabled ? -1 : 0}
+      // Web only — Tamagui drops it on native, where the accessibility actions come from the role.
+      onKeyDown={onKeyDown}
       flexDirection="row"
       alignItems="center"
       height={32}
