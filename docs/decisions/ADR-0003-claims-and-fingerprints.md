@@ -1,6 +1,6 @@
 # ADR-0003 — Grounded Claims and Protected-Passage Fingerprints Are Complements
 
-**Status**: Accepted
+**Status**: Superseded in part by [ADR-0004](ADR-0004-session-maintained-wiki.md) (Claims on derived pages). The fingerprint half stands.
 **Date**: 2026-11-01
 **Feature**: none. A governance decision recorded under item #513
 **Deciders**: Steven Watson

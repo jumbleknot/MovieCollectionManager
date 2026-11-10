@@ -72,7 +72,7 @@ T026.
 
 **Goal**: the refresh CLI, the skill, and the instructions. **Independent test**: quickstart §1.
 
-- [ ] T006 [P] [US2] Write `scripts/__tests__/wiki-refresh.test.mjs` per `contracts/wiki-refresh-cli.md`, using a fixture repo made with `git init` in `mkdtemp`. Covers US2-AC1..AC3.
+- [X] T006 [P] [US2] Write `scripts/__tests__/wiki-refresh.test.mjs` per `contracts/wiki-refresh-cli.md`, using a fixture repo made with `git init` in `mkdtemp`. Covers US2-AC1..AC3.
   - **`--stale`**: output equals `staleDerivedPages`; exit 1 when stale, 0 when clean. `--stale --json` has the documented shape.
   - **`--diff <page>`**:
     - shows only the change since the commit whose bytes match the recorded hash;
@@ -87,12 +87,12 @@ T026.
   - **Arguments**: an unknown flag exits 2 and writes nothing. `--help` exits 0 and writes nothing.
   - **Verify RED**: `node --test scripts/__tests__/wiki-refresh.test.mjs`
   - **Expected RED**: fails, because `scripts/wiki-refresh.mjs` is missing.
-- [ ] T007 [US2] Implement `scripts/wiki-refresh.mjs`.
+- [X] T007 [US2] Implement `scripts/wiki-refresh.mjs`.
   - Arguments go through `scripts/lib/argv-contract.mjs` (`partitionArgs`, `wantsHelp`, `dieOnArgvError`).
   - Staleness and recording come from `openwiki-fingerprint.mjs`.
   - `--all-fresh` uses `sourceCommitAfterStamp` from `scripts/openwiki-drift.mjs`. That module is removed in T027.
   - **Verify GREEN**: the T006 command passes, with 0 failures and 0 skips.
-- [ ] T008 [P] [US2] Write the skill `.claude/skills/wiki-refresh/SKILL.md`. Covers FR-010.
+- [X] T008 [P] [US2] Write the skill `.claude/skills/wiki-refresh/SKILL.md`. Covers FR-010.
   - **When to use**: you changed a file that is some page's `resource`, or the `okf` check said V17.
   - **Steps**:
     1. `--stale`;
@@ -102,7 +102,7 @@ T026.
     5. commit in the same PR.
   - **Also state**: a fingerprint-only refresh is correct when the diff changes nothing the page says; three pages share `docs/MCM-Architecture.md`; never hand-type a hash.
   - **Done when**: the file exists and the CLI flags it names match the contract.
-- [ ] T009 [US2] Update the instructions. Covers FR-011 and US2-AC4.
+- [X] T009 [US2] Update the instructions. Covers FR-011 and US2-AC4.
   - **`CLAUDE.md`**: add **one** gate line under "Gates that run before you act". It says that changing a file that is an `openwiki/` page's `resource` means refreshing that page in the same PR, and links to the skill and to runbook §refresh.
   - **`CLAUDE.md:28`**, in "Where a new learning goes": change "write the learning into the **cited source**, not the concept" to "write it into the cited source **and refresh the concept in the same PR**", keeping the link. This is index text, not prose, so it stays one line.
   - **`AGENTS.md`**: rewrite the "Knowledge wiki (OKF)" notes. Remove "Do not hand-edit pages under `openwiki/` that carry a `resource`" and describe the refresh duty and the manual rebuild.
@@ -156,7 +156,7 @@ T026.
   - Delete `scripts/openwiki-claims.mjs`, `scripts/wiki-claims-audit.mjs`, and their tests `openwiki-claims.test.mjs` and `wiki-claims-audit.test.mjs`.
   - Delete `scripts/__tests__/openwiki-ignore-claims.guard.test.mjs` together with the `.openwikiignore` lines it guarded, if they existed only for Claims (check first and keep anything else).
   - **Done when**: `git ls-files openwiki/.claims openwiki/.page-manifest.json openwiki/.last-update.json` prints nothing; `git check-ignore` matches all four paths; `node scripts/check-openwiki-okf.mjs --selftest` exits 0; `grep -rn "openwiki-claims\|wiki-claims-audit" scripts .forgejo` finds nothing.
-- [ ] T017 [P] [US3] Write `docs/decisions/ADR-0004-session-maintained-wiki.md` and update ADR-0003.
+- [X] T017 [P] [US3] Write `docs/decisions/ADR-0004-session-maintained-wiki.md` and update ADR-0003.
   - **ADR-0004 structure**: Status Accepted, Date 2026-11-10, Deciders Steven Watson. Sections:
     1. decision;
     2. the dated progression table from the proposal's §7, with the measured driver of each step (043 → 044 → Fireworks → deadline → low-effort escalation → #707 → 082 → R19/R20 → US7 → run 5104);

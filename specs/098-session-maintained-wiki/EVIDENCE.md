@@ -86,3 +86,28 @@ reported as "not a single file" until T015 makes those pages canonical. No non-V
 `the real bundle has no … body link` (asserts the real tree exits 0; green at T026) and
 `V12 a page whose claims were VERIFIED after its source changed is not stale` (asserts `verified.at`
 is a stamp, which this feature retires; removed at T013).
+
+## T006 / T007 — `wiki-refresh.mjs`
+
+RED (`node --test scripts/__tests__/wiki-refresh.test.mjs`): **tests 13 · pass 0 · fail 13 · skipped 0**,
+each `Error: Cannot find module '…/scripts/wiki-refresh.mjs'`.
+
+GREEN (same command): **tests 13 · pass 13 · fail 0 · skipped 0**. With the fingerprint tests:
+28 / 28 / 0 / 0. Hashing is one definition (`fingerprintBytes` in `openwiki-fingerprint.mjs`),
+used by both `sourceFingerprint` and `--diff`'s history search.
+
+Real-tree smoke (read-only): `--stale` lists 52 lines; `--diff gotchas/keycloak-service-account.md`
+prints `base: commit at page stamp 2026-11-07T19:02:58.048Z (3d657a96b7)` and a diff of only the
+newer change; `--recrod x` exits 2 and writes nothing (`git status` clean apart from the new files).
+
+## T008 / T009 / T017 — skill, instruction surfaces, ADR-0004
+
+- `.claude/skills/wiki-refresh/SKILL.md` names `--stale`, `--diff`, `--record`, matching the contract.
+- `CLAUDE.md`: one new gate line, and the "derived summary" index line now says to refresh the
+  concept in the same PR. `AGENTS.md`: the OKF notes rewritten; the generated `OPENWIKI:START` block
+  is untouched, and a new first entry in the corrections list says its no-hand-edit line does not
+  apply here (ADR-0004).
+- ADR-0004 written (pulled forward from Phase 5 because AGENTS.md links it and G10 failed on the
+  dead link until it existed); ADR-0003 status "Superseded in part by ADR-0004".
+- `node scripts/check-openwiki-governance.mjs`: exit 0. `node scripts/check-openwiki-okf.mjs`: only V17
+  findings (52).

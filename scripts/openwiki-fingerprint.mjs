@@ -20,10 +20,15 @@ const HEX64 = /^[0-9a-f]{64}$/;
 
 const posix = (p) => p.split(sep).join('/');
 
-/** SHA-256 (hex) of a file's bytes with every CRLF normalised to LF. */
+/** SHA-256 (hex) of a byte buffer with every CRLF normalised to LF (latin1 round-trips bytes 1:1). */
+export function fingerprintBytes(buf) {
+  const text = Buffer.from(buf).toString('latin1').replace(/\r\n/g, '\n');
+  return createHash('sha256').update(Buffer.from(text, 'latin1')).digest('hex');
+}
+
+/** The fingerprint of a file as it sits in the working tree. */
 export function sourceFingerprint(absPath) {
-  const bytes = readFileSync(absPath).toString('latin1').replace(/\r\n/g, '\n');
-  return createHash('sha256').update(Buffer.from(bytes, 'latin1')).digest('hex');
+  return fingerprintBytes(readFileSync(absPath));
 }
 
 const isExternal = (value) => {
