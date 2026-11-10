@@ -234,8 +234,9 @@ grep -c '10\.0\.2\.2:8082' /tmp/b.js   # expect 0
   **Always**. CI never sees this — its emulator is fresh.
 - **A live Chrome SSO session breaks the *next* login.** If Keycloak has already authenticated the
   browser, the helper still types credentials into the form and Keycloak rejects the submission with
-  `error="already_logged_in"`, redirecting back with **no `code`**. `scripts/ci-mobile-agent-flows.sh`
-  exists partly for this: `adb shell pm clear com.android.chrome`, then re-skip the FRE.
+  `error="already_logged_in"`, redirecting back with **no `code`**. The CI runners handle this with
+  `reset_chrome_sso` in `scripts/ci-mobile-lib.sh` (shared by both mobile runners): `adb shell pm clear
+  com.android.chrome`, then re-skip the FRE.
 
 ### Session startup ritual (mandatory order)
 
@@ -332,7 +333,7 @@ After install, run Metro from `frontend/mcm-app` (default layout) and Maestro as
 
 > **`@expo/dom-webview` version pin (SDK 56):** a stale lockfile kept `@expo/dom-webview@55.0.6` even though `expo@56.0.8` declares `~56.0.5`. The SDK-55 native module crashes at launch under SDK-56 `expo-modules-core` with `java.lang.NoClassDefFoundError: expo/modules/kotlin/types/AnyTypeProvider` at `expo.modules.webview.DomWebViewModule`. Fix: a pnpm `overrides` entry `"@expo/dom-webview": "^56.0.5"` **plus deleting `pnpm-lock.yaml` and regenerating** (the override alone won't repropagate a poisoned transitive pin). This is harmless for web/JS (which is why web E2E stays green) but fatal for the native Android build.
 
-> **The override moves with every SDK bump.** It is a floor on the SDK's own major, so leaving it behind re-creates exactly this crash one SDK later. Feature 081 US4 (SDK 56 → 57) moved it to `^57.0.1` (SDK 57's `bundledNativeModules.json` lists `~57.0.1`) in the same PR as `expo`.
+> **The override moves with every SDK bump.** It is a floor on the SDK's own major, so leaving it behind re-creates exactly this crash one SDK later. Feature 081 US4 (SDK 56 → 57) moved it to `^57.0.1` (SDK 57's `bundledNativeModules.json` lists `~57.0.1`) in the same PR as `expo`. The SDK 58 move took it to `^58.0.2`.
 
 ### After `pm clear` / `clearState: true` in Maestro
 

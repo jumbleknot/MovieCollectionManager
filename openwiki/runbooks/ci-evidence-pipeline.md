@@ -3,10 +3,10 @@ type: Runbook
 title: CI evidence pipeline (producing the evidence)
 description: How CI produces the evidence a session reads back — the per-job failure digest with its three channels (PR comment, digest inside the bundle, and the green-run counts bundle), the 5 MB ci-failures bundle with its recursive packing and trimming rules, per-step durations and the generated ceiling table with the guard that makes a row agree with its own basis, and the coverage, wrapper and CRLF gates that stop the machinery eroding. The producing half of the CI-diagnostics pair; ci-diagnostics.md covers reading it.
 resource: docs/runbooks/ci-evidence-pipeline.md
-resource-sha256: fe56e9c2adc9c7dab209acfe4d450f28df3f3590b6d21e09986c0c851b78e1c9
+resource-sha256: 8f9c08b85753ca6cf229299c755f7882f15302c67aa816619431ae2676dbcdfc
 tags: [ci, forgejo, evidence, diagnostics, tooling, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T03:37:28.086Z
+timestamp: 2026-11-10T11:46:33.762Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -287,7 +287,7 @@ defect. It stays at 2700 s because an uncalibrated step's legitimate duration is
 and the asymmetry still holds: a fast **false** red costs a ~35-40 min re-run on this capacity-1 runner;
 a slow **true** failure costs only the difference between that bound and the job's ceiling.
 
-The table's commented `ON THE BACKSTOP` block currently lists **twenty** steps, while the `app-e2e`
+The table's commented `ON THE BACKSTOP` block currently lists **twenty-one** steps, while the `app-e2e`
 workflow's own comment still claims "exactly one step is on it" — read that line as stale rather than as
 the inventory.
 
@@ -319,6 +319,10 @@ The other **eight** are `app-e2e`'s own, all bounded by the 2700 s backstop:
   a *pass* has no other channel on this forge. The first is a bounded launch plus a bounded wait for the
   login screen (120 s) and a logcat read; the second is one bounded POST. Being wrapped inside `app-e2e`,
   both fall under `#338n`, so neither can go unrecorded.
+
+The twenty-first, **`affected-expo-doctor`** (feature 087), is not an `app-e2e` step at all: it runs in the
+`affected` job as a non-blocking (`continue-on-error`) audit, bounded by a `timeout 300` on its own
+command.
 
 None of the eight has the 10 observed samples a calibration needs, so all eight are bounded by the 2700 s
 backstop — which is exactly why the `app-e2e` job ceiling is raised from 75 to 110 minutes in full mode:
@@ -654,5 +658,5 @@ claim.
 - [E2E testing](./e2e-testing.md), [DAST scanning](./dast-scanning.md),
   [SAST & SCA scanning](./sast-scanning.md), [Infra-image CVE scanning](./infra-image-scanning.md) — the
   jobs whose steps are wrapped, and the failure classes they emit.
-- [OpenWiki bundle maintenance](../process/wiki-maintenance.md) — the scheduled job whose dispatch
-  inputs are one of the wrapped blocks.
+- [OpenWiki bundle maintenance](../process/wiki-maintenance.md) — the manually dispatched job whose
+  dispatch inputs are one of the wrapped blocks.

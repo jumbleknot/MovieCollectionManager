@@ -3,11 +3,11 @@ type: Runbook
 title: "Per-user collection backups (scheduled & on-demand)"
 description: Feature 073's per-user scheduled and on-demand collection backups to user-owned S3-compatible or WebDAV storage, and the load-bearing gotchas an operator or coding agent needs first — the offline-token standing permission with no fallback identity, the deny-by-default destination guard, the standalone-Mongo single-document claim that is the real exactly-once guarantee, the loopback tick and its dev-mode gap, the Komodo-owned production switches, the two-half public-scheme fix (trust proxy plus an absolute request URL) that the consent callback needs in production, retention that prunes nothing on a failed run, and the feature 083 consent-client defect that ends a member's sign-in session.
 resource: docs/runbooks/backups.md
-resource-sha256: abc2c67ca900e1d012c828ce3fdda5302464d576279ca87ba15fbaacf74617a6
+resource-sha256: 0ab7d15be6df561b4797acadbf7719aee87f501f110bd021e9582b8477b1f7ae
 tags: [backups, bff, keycloak, ssrf, mongodb, retention, runbook]
 openwiki_generated: true
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-timestamp: 2026-11-10T03:37:28.078Z
+timestamp: 2026-11-10T11:46:33.757Z
 ---
 
 # Per-user collection backups (scheduled & on-demand)

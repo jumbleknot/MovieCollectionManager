@@ -143,8 +143,9 @@ client from the session. The member's access token still validates at the BFF, w
 locally, but Keycloak then refuses everything it must honour itself:
 
 - the agent subject-token exchange fails with `TOKEN_EXCHANGE_ERROR … error="invalid_token",
-  reason="subject_token validation failure"`, so the assistant answers *"No caller identity is
-  available for this action"*;
+  reason="subject_token validation failure"`; since feature 085 the BFF answers `/bff-api/agent/run`
+  with 401 `AGENT_IDENTITY_REJECTED` and the member is asked to sign in again (before 085 the turn ran
+  without identity and the assistant answered *"No caller identity is available for this action"*);
 - the next refresh fails with `Session not active`, so the member is signed out.
 
 Measured on Keycloak 26.8.0. `prompt=login` does not avoid it (Keycloak reuses the session), and

@@ -17,9 +17,10 @@ evidence is or is not in a bundle. This file was split out of `ci-diagnostics.md
 
 ## The digest
 
-Published per failing job, `if: always()` + `continue-on-error: true` in **every job of all nine
-workflows** — 21 jobs, 21 digest steps, counted 2026-10-22 after feature 080 retired the object-store
-image workflow (16 jobs in six workflows when this was first written). Channel depends on the event:
+Published per failing job, `if: always()` + `continue-on-error: true` in **every job of every
+workflow** — 24 digest steps across eleven workflows, counted 2026-11-10 (21 in nine on 2026-10-22,
+after feature 080 retired the object-store image workflow; 16 jobs in six workflows when this was
+first written). Channel depends on the event:
 
 | Event | Channel | Identity |
 |---|---|---|
@@ -42,7 +43,8 @@ image workflow (16 jobs in six workflows when this was first written). Channel d
 - **A cancelled run publishes nothing.** Its contexts read as `failure`, so without this a single
   rapid re-push would upsert a failure comment for every cancelled job.
 - **Degradation is stated, not silent.** Container jobs have no Docker CLI, and only `app-ci/app-e2e`
-  writes `~/mcm-ci-last-failure/` today, so "no container health" is normal — it appears under
+  and `app-ci/dast` write `~/mcm-ci-last-failure/` (each stamping `_bundle-owner.txt`, which the digest
+  checks against its own run and job — item #645), so "no container health" is normal — it appears under
   **Not collected** rather than as an empty section.
 
 ### Redaction is fail-closed
@@ -250,18 +252,19 @@ only to a step with at least **10 observed (non-killed) samples**.
 
 **`CI_STEP_TIMEOUT_SECONDS` survives as the BACKSTOP, not the ceiling.** It bounds a wrapped step
 with no calibrated row, so a table miss can never fall through to unbounded and restore the #326
-defect. Three steps are on it today (see the commented `ON THE BACKSTOP` rows in the table):
-`app-e2e-collect-container-logs`, which runs only on the failure path and has n=2, and
-`app-e2e-build-images` and `app-e2e-bring-up-backup-destinations`, both new in feature 073 with no
-observations yet — regenerate the table once ~10 runs have published a duration for them. It stays at 2700 s because an uncalibrated step's legitimate duration is
+defect. The steps on it are the commented `ON THE BACKSTOP` rows in the table, each with its reason
+(for example `app-e2e-collect-container-logs`, which runs only on the failure path and has n=2, and
+steps too new to have observations) — regenerate the table once ~10 runs have published a duration for them. It stays at 2700 s because an uncalibrated step's legitimate duration is
 by definition unknown, and the asymmetry still holds there: a fast **false** red costs a ~35-40 min
 re-run on this capacity-1 runner; a slow **true** failure costs only the difference between that
-bound and the job's 75 min.
+bound and the job's ceiling (75 min; 110 in the opt-in full mobile suite).
 
-Three guards in `scripts/__tests__/ci-log-step.test.mjs` keep this honest: **#338k** re-checks the
+Guards in `scripts/__tests__/ci-log-step.test.mjs` keep this honest: **#338k** re-checks the
 below-the-job-ceiling arithmetic for *every* row rather than one value, **#338m** fails a row whose
-basis does not state its sample, and **#338n** fails if a wrapped `app-e2e` step is neither
-calibrated nor recorded as deliberately on the backstop.
+basis does not state its sample, **#338n** fails if a wrapped `app-e2e` step is neither
+calibrated nor recorded as deliberately on the backstop, **#338o** fails if the backstop disappears or
+stops saying what it is for, and **#480a** re-derives every row's ceiling from its own basis through
+`ceilingForMax` (**#480b** exempts the commented backstop rows).
 
 ### Recalibrating the table
 
@@ -295,9 +298,10 @@ node --test scripts/__tests__/ci-log-step.test.mjs scripts/__tests__/ci-status.t
 **Three traps, all measured rather than reasoned about:**
 
 - **NEVER hand-edit a ceiling.** The guards check that a basis is *present* (#338m) and that the
-  value clears the job ceiling (#338k). **Neither checks that a ceiling matches its own basis.**
-  Measured: `web-e2e⇥60⇥n=40 max=280s x3=840s -> 840s` passes all 37 guards. A hand-edited number
-  beside a stale basis is item #338's original defect — a figure whose stated justification
+  value clears the job ceiling (#338k). **Until item #480 neither checked that a ceiling matches its
+  own basis** — measured: `web-e2e⇥60⇥n=40 max=280s x3=840s -> 840s` passed all 37 guards; #480a now
+  catches that, but a hand-typed value that happens to derive from its basis still traces to no
+  sample. A hand-edited number beside a stale basis is item #338's original defect — a figure whose stated justification
   describes a different measurement — reproduced inside the file built to prevent it. The file says
   `GENERATED, do not hand-edit` in its own header for this reason.
 - **A step that keeps timing out gets LOOSER, not tighter.** Kills are censored, so a step killed

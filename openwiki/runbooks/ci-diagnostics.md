@@ -3,10 +3,10 @@ type: Runbook
 title: CI self-serve diagnostics
 description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the one pinned Trivy installer all three scanning workflows share, and the labelled container holds that stop another run's prune deleting the scan tags, the event-versus-trigger_event split (including which run posted a check) and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
-resource-sha256: 94656b7b442ac4a814bdce45a512cec9252c130e9881806663e6bf7af6538c82
+resource-sha256: 3eef42b7a6419ba31e8d77021ea904e4eea293369febdf4c5c2fa1059b2636ab
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T03:37:28.082Z
+timestamp: 2026-11-10T11:46:33.760Z
 ---
 
 # CI self-serve diagnostics
@@ -674,7 +674,7 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   **Two branches not to delete, and the reaper enforces both:** an open PR's head (deleting it is
   hand-closing by another route, with the same consequence — for a `lockFileMaintenance` branch it marks
   the channel rejected) and an automation-owned branch such as `openwiki-maintenance`, whose workflow
-  re-creates it each scheduled run, so a lingering ref there is its normal working state rather than
+  re-creates it on each run, so a lingering ref there is its normal working state rather than
   debris. `scripts/__tests__/reap-merged-branches.test.mjs` pins each keep-reason with a mutation test,
   so deleting any one check turns the suite red.
 - **`durations` — per-step timing exists now, but three traps prevent a naive reading from being
