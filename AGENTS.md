@@ -59,11 +59,11 @@ does not exist, not that it is not yet covered.
 Two corrections to the generated block above, which describes OpenWiki's defaults rather than this
 repository:
 
-- **The wiki IS refreshed automatically now (feature 044), but not the way that block says.** It is
-  driven by merges, on a self-hosted **Forgejo** instance under `.forgejo/workflows/wiki-maintain.yml`,
-  not GitHub Actions. A check once a day (05:00 UTC) generates when `main` has uncovered merges, so each
-  changed page is paid for at most once a day (feature 078 US7). It is not a periodic sweep: with nothing merged,
-  nothing is paid for.
+- **The wiki is NOT refreshed automatically (paused 2026-11-10), and not the way that block says.**
+  The generator lives on a self-hosted **Forgejo** instance under `.forgejo/workflows/wiki-maintain.yml`,
+  not GitHub Actions, and since 2026-11-10 it runs **only on manual dispatch**: the daily schedule
+  (feature 078 US7) cost ~$1.50 a day while landing almost nothing. Summaries are moving to coding
+  sessions — see [docs/proposals/PRD-SessionMaintainedWiki.md](docs/proposals/PRD-SessionMaintainedWiki.md).
   Each run plans bounded slices, verifies every slice by the pages that actually landed in the
   working tree, and opens **one** always-current pull request for review. It is **never** auto-merged.
   See [docs/runbooks/wiki-maintenance.md](docs/runbooks/wiki-maintenance.md).

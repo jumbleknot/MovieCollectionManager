@@ -1,4 +1,4 @@
-# Feature 044 (US2) — OpenWiki knowledge-bundle maintenance, run once a day over what merged (078 US7).
+# Feature 044 (US2) — OpenWiki knowledge-bundle maintenance. MANUAL DISPATCH ONLY since 2026-11-10 (schedule paused).
 #
 # Freshness without a human remembering: after merges to `main` settle, plan the documentation work
 # that landed, generate it in bounded slices, verify each slice by what actually appeared in the
@@ -40,12 +40,10 @@
 name: wiki-maintain
 
 on:
-  # ONCE A DAY, 05:00 UTC (078 FR-024, amendment 2026-11-09): the fire is the batching, so a page
-  # changed by ten merges is paid for once (research R21: −45% of page attempts on the month before).
-  # Two hours after Renovate's 03:00 nightly fire on the same runner. A day with no merge pays nothing.
-  schedule:
-    - cron: '0 5 * * *'
-  # An operator run does not wait for the daily fire (FR-009c).
+  # NO SCHEDULE since 2026-11-10. The daily fire (078 US7) was paused after run 5104: openwiki forced
+  # 30 stale-Claims pages into every run and starved the requested ones (~$1.50/day for ~1 landed
+  # page). Summaries move to coding sessions (docs/proposals/PRD-SessionMaintainedWiki.md); this
+  # workflow is a manual rebuild only. The guard test fails if a schedule reappears.
   workflow_dispatch:
     inputs:
       max-slices:

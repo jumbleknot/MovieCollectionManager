@@ -592,6 +592,12 @@ Local runs keep the model default.
 
 ## 4. What CI does, and why it waits
 
+> **Paused 2026-11-10: the schedule below is removed and the workflow runs on manual dispatch only.**
+> Run 5104 (2026-11-09) showed openwiki 0.7.1 forcing 30 stale-Claims pages into every run, which
+> starved the 4 requested pages past the deadline at ~$1.50 a day. Keeping summaries fresh is
+> moving to coding sessions ([the proposal](../proposals/PRD-SessionMaintainedWiki.md)). The rest of
+> this section describes the trigger as it ran under 078 US7, for when a dispatch still uses it.
+
 **Scheduled once a day, at 05:00 UTC, generating whenever anything merged since the last run** (feature 078
 US7, amendment 2026-11-09, research R21). Each fire runs `scripts/wiki-quiet.mjs` **before any install**.
 It reads the run record's `coveredCommit`, lists `main`'s first-parent commits past it, and decides:
