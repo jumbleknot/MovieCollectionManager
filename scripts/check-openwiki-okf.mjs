@@ -31,7 +31,6 @@ import { bodyLinks, classifyBodyLink, relativeFormFor, splitTarget } from './ope
 import { stampValues } from './openwiki-stamp.mjs';
 import { extractFrontMatter } from './openwiki-front-matter.mjs';
 import { staleDerivedPages } from './openwiki-fingerprint.mjs';
-import { sourceCommitAfterStamp } from './openwiki-drift.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_BUNDLE = 'openwiki';
@@ -88,30 +87,10 @@ function resolveRelativeResource(value, repoRoot) {
   return { target: withoutFragment, abs: resolve(repoRoot, withoutFragment) };
 }
 
-// ── the concept provenance stamp (OKF v0.1 `timestamp` → v0.2 `generated.at`) ───
-//
-// OKF v0.2 replaced the flat `timestamp` scalar with a `generated: {by, at}` event, and openwiki
-// >=0.5.0 does not merely ADD it — `finalizeGeneratedProvenance` calls
-// `removeFrontmatterField(..., "timestamp")` on every page whose body changed in the run. So a
-// bundle mid-migration carries BOTH shapes, one per page, and the set flips over gradually as pages
-// are regenerated.
-//
-// Reading only `timestamp` would therefore not fail loudly — it would make V12 quietly stop
-// covering each page as that page was rewritten, until drift detection covered nothing while the
-// gate still printed `✅ conformant`. That is the same silent-green failure the normalizeFields
-// comment above documents, arriving by a different route, so the rule is written once and every
-// caller goes through it.
-//
-// `timestamp` is still honoured because v0.2 explicitly tolerates it on pages that have not been
-// rewritten yet, and because a hand-authored concept may carry it indefinitely.
-
-// The stamp rule itself — the NEWEST of generated.at, verified.at and timestamp — lives in
-// ./openwiki-stamp.mjs, shared with wiki-maintain's #587 check so the two readers cannot disagree.
-
-// ── drift (V12) — git commit date, NOT mtime ────────────────────────────────────
-// A fresh checkout stamps every file's mtime with the checkout time, so an mtime-based comparison
-// would report EVERY concept as stale in CI. The last-commit date is the only meaningful signal. The
-// comparison lives in ./openwiki-drift.mjs (feature 082), shared with wiki-maintain.
+// ── the concept provenance stamp ──────────────────────────────────────────────────
+// The stamp (newest of generated.at and timestamp) is ./openwiki-stamp.mjs. V5 validates every value
+// it yields. Freshness is NOT judged from it: V17 compares the page's source fingerprint instead
+// (feature 098), which replaced V12's commit-date drift warning.
 
 // ── bundle walk ─────────────────────────────────────────────────────────────────
 
@@ -139,8 +118,6 @@ function classifyFile(name) {
 
 function validateBundle(bundleRoot, { repoRoot = REPO_ROOT } = {}) {
   const findings = [];
-  const warnings = [];
-  const unstampable = [];
   const rel = (p) => relative(REPO_ROOT, p).split(sep).join('/');
   const add = (rule, file, message) => findings.push({ rule, file: rel(file), message });
 
@@ -148,7 +125,7 @@ function validateBundle(bundleRoot, { repoRoot = REPO_ROOT } = {}) {
   if (!existsSync(bundleRoot) || !statSync(bundleRoot).isDirectory()) {
     return {
       findings: [{ rule: 'V10', file: rel(bundleRoot), message: 'no bundle — the bundle is a required artifact' }],
-      warnings: [], conceptCount: 0, directoryCount: 0, missingBundle: true,
+      conceptCount: 0, directoryCount: 0, missingBundle: true,
     };
   }
 
@@ -157,7 +134,7 @@ function validateBundle(bundleRoot, { repoRoot = REPO_ROOT } = {}) {
   if (validated.length === 0) {
     return {
       findings: [{ rule: 'V10', file: rel(bundleRoot), message: 'bundle contains no concepts — the bundle is a required artifact' }],
-      warnings: [], conceptCount: 0, directoryCount: 0, missingBundle: true,
+      conceptCount: 0, directoryCount: 0, missingBundle: true,
     };
   }
 
@@ -242,7 +219,7 @@ function validateBundle(bundleRoot, { repoRoot = REPO_ROOT } = {}) {
 
     // V5 — every ISO-8601-valued key must parse, in BOTH the v0.1 and the v0.2 shape. No `.trim()`
     // here: normalizeFields has already done it for every field, nested values included, which is
-    // what stops the next validator being written without one (see V12 below).
+    // what stops the next validator being written without one.
     // `verified` is a LIST of events in the shape openwiki writes; stampValues descends it (a plain
     // path reader did not, so this rule had validated no real `verified.at` at all).
     for (const { value, field } of stampValues(fields)) {
@@ -262,21 +239,6 @@ function validateBundle(bundleRoot, { repoRoot = REPO_ROOT } = {}) {
         const { target, abs } = resolveRelativeResource(value, repoRoot);
         if (!existsSync(abs)) {
           add('V6', file, `resource does not resolve: ${target}`);
-        } else {
-          // V12 — drift REPORTS ONLY. A documentation edit must never block a merge on a paid
-          // regeneration run, so this can never touch the exit code.
-          // The comparison is ./openwiki-drift.mjs, shared with wiki-maintain's verifier and drift
-          // planner (feature 082). Only V12 falls back to mtime for an untracked source.
-          const drift = sourceCommitAfterStamp({ root: repoRoot, fields, fallbackToMtime: true });
-          if (drift?.unstampable) {
-            // A concept that cites a source but carries no usable stamp is one V12 CANNOT check.
-            // Counted rather than dropped: the whole point of the fallback above is that this
-            // number is visible, so a migration that strips stamps shows up as coverage falling
-            // instead of as a gate that silently checks less each run.
-            unstampable.push({ file: rel(file), source: target });
-          } else if (drift?.stale) {
-            warnings.push({ rule: 'V12', file: rel(file), source: target });
-          }
         }
       }
     }
@@ -311,8 +273,7 @@ function validateBundle(bundleRoot, { repoRoot = REPO_ROOT } = {}) {
   }
 
   findings.sort((a, b) => a.file.localeCompare(b.file) || a.rule.localeCompare(b.rule));
-  warnings.sort((a, b) => a.file.localeCompare(b.file));
-  return { findings, warnings, unstampable, conceptCount, directoryCount: byDir.size, missingBundle: false };
+  return { findings, conceptCount, directoryCount: byDir.size, missingBundle: false };
 }
 
 function v17Message({ page, resource, reason }) {
@@ -341,8 +302,6 @@ function report(result, bundleRoot, asJson) {
       conceptCount: result.conceptCount,
       directoryCount: result.directoryCount,
       findings: result.findings,
-      warnings: result.warnings,
-      unstampable: result.unstampable,
     }, null, 2));
     return;
   }
@@ -350,22 +309,6 @@ function report(result, bundleRoot, asJson) {
   if (result.missingBundle) {
     console.error(`[openwiki-okf] ✗ ${result.findings[0].message} (${result.findings[0].rule}) — ${result.findings[0].file}`);
     return;
-  }
-
-  if (result.warnings.length > 0) {
-    console.log(`[openwiki-okf] ⚠️  ${result.warnings.length} concept(s) may be stale (source changed after the concept's stamp):`);
-    for (const w of result.warnings) console.log(`  ${w.file} ← ${w.source}`);
-  }
-
-  // Never a finding — an unstamped concept is not malformed. But it IS a concept drift cannot
-  // check, and the number has to be visible: a silent drop in V12 coverage is precisely how this
-  // gate could go on printing green while checking less every run.
-  if (result.unstampable.length > 0) {
-    console.log(
-      `[openwiki-okf] ⚠️  ${result.unstampable.length} concept(s) cite a source but carry no usable ` +
-        `\`generated.at\` or \`timestamp\` — drift is NOT checked for these:`,
-    );
-    for (const u of result.unstampable) console.log(`  ${u.file} ← ${u.source}`);
   }
 
   if (result.findings.length > 0) {
@@ -401,16 +344,6 @@ function selftest() {
     if (expect.clean && r.findings.length > 0) {
       fails.push(`${name}: expected no findings, got ${r.findings.map((f) => f.rule).join(',')}`);
     }
-    if (expect.warns && r.warnings.length === 0) fails.push(`${name}: expected a drift warning, got none`);
-    if (expect.warnsCleanExit && r.findings.length > 0) {
-      fails.push(`${name}: drift must not produce findings, got ${r.findings.map((f) => f.rule).join(',')}`);
-    }
-    if (expect.noWarns && r.warnings.length > 0) {
-      fails.push(`${name}: expected no drift warning, got ${r.warnings.length}`);
-    }
-    if (expect.unstampable !== undefined && r.unstampable.length !== expect.unstampable) {
-      fails.push(`${name}: expected ${expect.unstampable} unstampable, got ${r.unstampable.length}`);
-    }
     return r;
   };
 
@@ -440,36 +373,6 @@ function selftest() {
     'a.md': '---\ntype: R\n---\nb\n',
   }, { clean: true });
 
-  // V12 — drift warns without escalating. The most likely accidental escalation.
-  scenario('v12', {
-    'index.md': idx('a.md'),
-    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}timestamp: 2001-01-01T00:00:00Z\n---\nb\n`,
-  }, { warns: true, warnsCleanExit: true });
-
-  // ── OKF v0.2 provenance (openwiki >=0.5.0) ─────────────────────────────────────
-  //
-  // These four are the regression guard for the upgrade to 0.5.2. The generator STRIPS `timestamp`
-  // from every page whose body it rewrites and replaces it with `generated: {by, at}`, so a gate
-  // that reads only the v0.1 field would keep printing green while covering fewer pages each run.
-
-  // Drift is detected from the v0.2 stamp alone, exactly as it was from the v0.1 one.
-  scenario('v12-generated-at', {
-    'index.md': idx('a.md'),
-    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}generated:\n  by: openwiki/0.5.2\n  at: 2001-01-01T00:00:00Z\n---\nb\n`,
-  }, { warns: true, warnsCleanExit: true, unstampable: 0 });
-
-  // A fresh stamp must NOT warn — proves the v0.2 value is really being parsed, not just found.
-  scenario('v12-generated-at-fresh', {
-    'index.md': idx('a.md'),
-    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}generated:\n  by: openwiki/0.5.2\n  at: 2999-01-01T00:00:00Z\n---\nb\n`,
-  }, { clean: true, noWarns: true, unstampable: 0 });
-
-  // `generated.at` wins over a stale legacy `timestamp` left behind on the same page.
-  scenario('v12-generated-at-precedence', {
-    'index.md': idx('a.md'),
-    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}timestamp: 2001-01-01T00:00:00Z\ngenerated:\n  by: openwiki/0.5.2\n  at: 2999-01-01T00:00:00Z\n---\nb\n`,
-  }, { clean: true, noWarns: true, unstampable: 0 });
-
   // V5 reaches INSIDE the nested v0.2 events. A malformed `generated.at` is a finding, not a shrug.
   scenario('v5-generated-at', {
     'index.md': idx('a.md'),
@@ -481,13 +384,6 @@ function selftest() {
     'index.md': idx('a.md'),
     'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}verified:\n  by: openwiki/0.5.2\n  at: nope\n---\nb\n`,
   }, { rule: 'V17' });
-
-  // A concept citing a source with NO stamp at all: not malformed, so no finding — but it must be
-  // COUNTED, because that is the number that makes a silent loss of drift coverage visible.
-  scenario('v12-unstampable', {
-    'index.md': idx('a.md'),
-    'a.md': `---\ntype: R\nresource: README.md\n${readmeFp}---\nb\n`,
-  }, { clean: true, noWarns: true, unstampable: 1 });
 
   // V2 exemption — a GENERATED directory summary carries no `type`. Regression guard: requiring it
   // would fail a file the generator itself produces.
@@ -592,7 +488,7 @@ function selftest() {
     console.error('✗ openwiki-okf gate --selftest FAILED:\n  ' + fails.join('\n  '));
     return 1;
   }
-  console.log('✓ openwiki-okf gate --selftest passed (V1–V15, V17: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, drift-warns-without-failing, site-root-absolute body links rejected with the relative form named, code samples exempt, relative links resolved from their own file, derived pages fresh against their source fingerprint)');
+  console.log('✓ openwiki-okf gate --selftest passed (V1–V15, V17: front matter, tags, timestamp, resource resolution, index/orphan structure, fail-closed on absent+empty, INSTRUCTIONS.md exemption, site-root-absolute body links rejected with the relative form named, code samples exempt, relative links resolved from their own file, derived pages fresh against their source fingerprint)');
   return 0;
 }
 

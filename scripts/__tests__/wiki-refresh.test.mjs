@@ -182,52 +182,12 @@ test('--record exits 2 for a canonical or non-existent page, and writes nothing'
   assert.equal(status(root), '', 'a refused --record writes nothing, not even the valid page');
 });
 
-// ── --record --all-fresh (cut-over only) ────────────────────────────────────────
-
-test('--record --all-fresh refuses, listing the pages, when a resource commit is newer than its page stamp', (t) => {
-  const root = repo();
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-  const r = run(root, ['--record', '--all-fresh']);
-  assert.equal(r.code, 1);
-  assert.match(`${r.out}${r.err}`, /openwiki\/runbooks\/fresh\.md/);
-  assert.match(`${r.out}${r.err}`, /openwiki\/runbooks\/unrecorded\.md/);
-  assert.equal(status(root), '', 'a refused --all-fresh writes nothing');
-});
-
-test('--record --all-fresh records every page whose stamp is newer than its resource commit', (t) => {
-  const root = repo();
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-  write(root, 'openwiki/runbooks/fresh.md', page('timestamp: 2026-03-02T00:00:00Z\n'));
-  write(root, 'openwiki/runbooks/unrecorded.md', page('generated: { by: "openwiki/0.6.0", at: "2026-03-05T00:00:00Z" }\nsources: []\n'));
-  commit(root, 'restamp', '2026-03-06T00:00:00Z');
-  const r = run(root, ['--record', '--all-fresh']);
-  assert.equal(r.code, 0, r.err);
-  assert.match(r.out, /^recorded openwiki\/runbooks\/fresh\.md /m);
-  assert.match(r.out, /^recorded openwiki\/runbooks\/unrecorded\.md /m);
-  assert.deepEqual(staleDerivedPages({ root }), []);
-});
-
-test('--record --all-fresh judges by research R8\'s rule: a page re-verified after its source changed counts as fresh', (t) => {
-  // R8 measured the 11-page cut-over set with V12, whose stamp was the newest of generated.at,
-  // verified.at and timestamp. The post-098 stamp ignores verified.at; the one-off cut-over must not,
-  // or it would refresh pages R8 measured as current.
-  const root = repo();
-  t.after(() => rmSync(root, { recursive: true, force: true }));
-  write(root, 'openwiki/runbooks/fresh.md', page('timestamp: 2026-03-02T00:00:00Z\n'));
-  write(root, 'openwiki/runbooks/unrecorded.md', page('generated: { by: "openwiki/0.6.0", at: "2026-01-15T00:00:00Z" }\nverified:\n  - by: openwiki/0.6.0\n    at: 2026-03-05T00:00:00Z\n'));
-  commit(root, 'reverified', '2026-03-06T00:00:00Z');
-  const r = run(root, ['--record', '--all-fresh']);
-  assert.equal(r.code, 0, `${r.out}${r.err}`);
-  assert.match(r.out, /^recorded openwiki\/runbooks\/unrecorded\.md /m);
-  assert.doesNotMatch(readFileSync(join(root, 'openwiki/runbooks/unrecorded.md'), 'utf8'), /^verified:/m);
-});
-
 // ── the argument contract ───────────────────────────────────────────────────────
 
 test('an unknown flag exits 2 and writes nothing', (t) => {
   const root = repo();
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  for (const args of [['--recrod', 'openwiki/runbooks/fresh.md'], ['--record', '--all_fresh'], ['--stale', '--dry-run'], []]) {
+  for (const args of [['--recrod', 'openwiki/runbooks/fresh.md'], ['--record', '--all-fresh'], ['--stale', '--dry-run'], []]) {
     const r = run(root, args);
     assert.equal(r.code, 2, `${args.join(' ')} → ${r.code}\n${r.out}${r.err}`);
   }
@@ -237,8 +197,8 @@ test('an unknown flag exits 2 and writes nothing', (t) => {
 test('--help exits 0, names every flag, and writes nothing', (t) => {
   const root = repo();
   t.after(() => rmSync(root, { recursive: true, force: true }));
-  const r = run(root, ['--record', '--all-fresh', '--help']);
+  const r = run(root, ['--record', '--help']);
   assert.equal(r.code, 0);
-  for (const flag of ['--stale', '--json', '--diff', '--record', '--all-fresh', '--help']) assert.ok(r.out.includes(flag), flag);
+  for (const flag of ['--stale', '--json', '--diff', '--record', '--help']) assert.ok(r.out.includes(flag), flag);
   assert.equal(status(root), '');
 });

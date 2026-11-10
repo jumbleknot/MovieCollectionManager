@@ -15,28 +15,23 @@ import { partitionArgs, wantsHelp, dieOnArgvError, ArgvError } from './lib/argv-
 import {
   FINGERPRINT_FIELD,
   fingerprintBytes,
-  derivedPages,
   readDerivedPage,
   recordSourceFingerprint,
   staleDerivedPages,
-  staleReason,
 } from './openwiki-fingerprint.mjs';
 import { conceptStamp } from './openwiki-stamp.mjs';
-import { sourceCommitAfterStamp } from './openwiki-drift.mjs';
 
 const USAGE = `Usage: node scripts/wiki-refresh.mjs <command>
 
   --stale [--json]            list every derived page that is not fresh (exit 1 if any)
   --diff <page>               the source's change since the page was last recorded
   --record <page> [<page>…]   record the page's source fingerprint (front matter only)
-  --record --all-fresh        cut-over only: record every page whose stamp is newer than its
-                              source's last commit; refuses if any is not
   --help                      this text
 
 <page> is a path from the repository root (openwiki/runbooks/x.md) or from openwiki/ (runbooks/x.md).
 Procedure: --stale, then per page --diff, edit only what the diff invalidates, then --record.`;
 
-const ACCEPTED = ['--stale', '--json', '--diff', '--record', '--all-fresh', '--help', '-h'];
+const ACCEPTED = ['--stale', '--json', '--diff', '--record', '--help', '-h'];
 
 function repoRoot() {
   const r = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd: process.cwd(), encoding: 'utf8' });
@@ -55,14 +50,12 @@ function parse(argv) {
   if (commands.length !== 1) throw new ArgvError(`exactly one of --stale, --diff, --record is required\n\n${USAGE}`);
   const [command] = commands;
   if (flags.has('--json') && command !== '--stale') throw new ArgvError(`--json applies only to --stale\n\n${USAGE}`);
-  if (flags.has('--all-fresh') && command !== '--record') throw new ArgvError(`--all-fresh applies only to --record\n\n${USAGE}`);
   if (command === '--stale' && positionals.length) throw new ArgvError(`--stale takes no page\n\n${USAGE}`);
   if (command === '--diff' && positionals.length !== 1) throw new ArgvError(`--diff takes exactly one page\n\n${USAGE}`);
   if (command === '--record') {
-    if (flags.has('--all-fresh') && positionals.length) throw new ArgvError(`--all-fresh takes no page\n\n${USAGE}`);
-    if (!flags.has('--all-fresh') && positionals.length === 0) throw new ArgvError(`--record needs a page (or --all-fresh)\n\n${USAGE}`);
+    if (positionals.length === 0) throw new ArgvError(`--record needs a page\n\n${USAGE}`);
   }
-  return { command, json: flags.has('--json'), allFresh: flags.has('--all-fresh'), pages: positionals };
+  return { command, json: flags.has('--json'), pages: positionals };
 }
 
 /** Resolve a page argument to a derived page, or throw a UsageError (exit 2). */
@@ -172,51 +165,6 @@ function cmdRecord(root, pageArgs) {
   return 0;
 }
 
-// Cut-over only (research R8): before fingerprints exist, "stamp newer than the source's last
-// commit" is the best available evidence that a page is current. Removed once the cut-over lands.
-//
-// The stamp here is R8's OWN: the newest of generated.at, verified.at and timestamp, which is what V12
-// read when R8 measured the 11-page set. The post-098 stamp ignores verified.at (R2); using it here
-// would quietly refresh a different set from the one measured — pages whose Claims openwiki had
-// re-verified against their sources after the source changed.
-function r8Stamp(fields) {
-  const ats = [];
-  const stamp = conceptStamp(fields);
-  if (stamp !== null) ats.push(stamp.value);
-  const verified = fields.verified;
-  for (const e of Array.isArray(verified) ? verified : [verified]) {
-    if (e && typeof e === 'object' && typeof e.at === 'string') ats.push(e.at.trim());
-  }
-  const newest = ats.map((v) => ({ v, ms: Date.parse(v) })).filter((x) => !Number.isNaN(x.ms)).sort((a, b) => b.ms - a.ms)[0];
-  return newest?.v ?? null;
-}
-
-function cmdRecordAllFresh(root) {
-  const todo = [];
-  const refused = [];
-  for (const p of derivedPages({ root })) {
-    if (staleReason(p) === null) continue; // already recorded and fresh
-    const stamp = r8Stamp(p.fields);
-    const judged = sourceCommitAfterStamp({ root, fields: { resource: p.fields.resource, ...(stamp ? { timestamp: stamp } : {}) } });
-    if (judged === null || judged.unstampable || judged.stale) {
-      const why = judged === null ? 'cannot judge (missing or untracked source)' : judged.unstampable ? 'no usable stamp' : 'source committed after the page stamp';
-      refused.push(`${p.page} ← ${p.resource}  (${why})`);
-    } else {
-      todo.push(p);
-    }
-  }
-  if (refused.length) {
-    console.error(`[wiki-refresh] refusing --all-fresh: ${refused.length} page(s) need a real refresh first (--diff, edit, --record):`);
-    for (const r of refused) console.error(`  ${r}`);
-    return 1;
-  }
-  for (const p of todo) {
-    const r = recordSourceFingerprint(p.pageAbs, { root });
-    console.log(`recorded ${r.page} ${r.fingerprint.slice(0, 12)}`);
-  }
-  return 0;
-}
-
 // ── main ────────────────────────────────────────────────────────────────────────
 
 function main(argv) {
@@ -235,7 +183,7 @@ function main(argv) {
   try {
     if (opts.command === '--stale') return cmdStale(root, opts.json);
     if (opts.command === '--diff') return cmdDiff(root, opts.pages[0]);
-    return opts.allFresh ? cmdRecordAllFresh(root) : cmdRecord(root, opts.pages);
+    return cmdRecord(root, opts.pages);
   } catch (err) {
     if (!(err instanceof UsageError)) throw err;
     console.error(`[wiki-refresh] ${err.message}`);
