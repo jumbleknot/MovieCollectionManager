@@ -3,33 +3,10 @@ type: Decision
 title: "ADR-0002: Stateful major upgrades — OpenSearch 3 then Langfuse 4"
 description: Derived summary of the ratified decision to upgrade OpenSearch 2→3 before Langfuse 3→4 in separate specs, as landed on 2026-09-13 — both ceilings lifted and replaced by approval gates, the §3 gate measured, the audit store preserved under the §4a amendment, and the shared Postgres pin held on 16 by config.
 resource: docs/decisions/ADR-0002-stateful-major-upgrades.md
+resource-sha256: 37e7d4fd3c599edc65971581dcc4744b5b60b9bc959f6f35abf426b35c3da347
 tags: [adr, opensearch, langfuse, security, upgrade, decision-record, stateful]
-sources:
-  - id: openwiki-source-45464ccea280daa5176a3646
-    resource: repo://agents/movie-assistant/src/audit_sink.py
-  - id: openwiki-source-a32b06ef0f76afb80af4d88a
-    resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
-  - id: openwiki-source-7c76000f237dd683a4fb0536
-    resource: repo://docs/runbooks/infra-image-scanning.md
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-0ff61f596da1302e58282fa2
-    resource: repo://infrastructure-as-code/docker/observability/compose.yaml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
-    resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
-  - id: openwiki-source-6a31387312db2b158048d4d9
-    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
-  - id: openwiki-source-4708763005c35901b04f5740
-    resource: repo://security/infra-images/allowlist.yaml
-  - id: openwiki-source-0142cec1b04f10ba9cda1285
-    resource: repo://specs/071-opensearch-3-major/research.md
-  - id: openwiki-source-c3e8d381767b446d4f50d6f6
-    resource: repo://specs/072-langfuse-4-major/research.md
-  - id: openwiki-source-c8fd59e28a7d780b80a80bd7
-    resource: repo://specs/072-langfuse-4-major/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
+timestamp: 2026-11-10T03:37:28.034Z
 ---
 
 # ADR-0002: Stateful major upgrades — OpenSearch 3 then Langfuse 4

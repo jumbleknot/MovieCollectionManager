@@ -591,13 +591,15 @@ still passes V9. Left alone, and so still possible on a proposal: a failed page 
 invocation (its prior bytes are not in git), and an **untracked** new page (it has no committed state, and deleting it
 would orphan its index link). Review those as such.
 
-**After a deadline stop, the slice keeps only what it was asked for.** A generator stopped part-way (GNU `timeout`
-exit 124, or 137 after `--kill-after`) can leave a page it was never asked for half-written; on run 4606
-(2026-10-04) that broke conformance on `projects/keycloak.md`, a whole-invocation failure, and the requested page's
-$0.96 regeneration was lost. `revertUnrequested` therefore restores every bundle path the run changed to its
-committed state (or deletes it if new), **except** the named pages and their areas' `index.md`. Paths that were dirty
-before the run are left alone. This applies **only** to a deadline stop: a generator that exits on its own is judged
-on everything it wrote.
+**A slice keeps only what it was asked for.** A generator stopped part-way (GNU `timeout` exit 124, or
+137 after `--kill-after`) can leave a page it was never asked for half-written; on run 4606 (2026-10-04)
+that broke conformance on `projects/keycloak.md`, a whole-invocation failure, and the requested page's
+$0.96 regeneration was lost. `revertUnrequested` therefore restores every bundle path a **stopped** run
+changed to its committed state (or deletes it if new), **except** the named pages and their areas'
+`index.md`. After a run that exits **on its own**, it puts back any unrequested concept page the policy
+lets the generator write — a rebuild proposes only what it was asked for, and openwiki no longer forces
+pages in through stale Claims — but leaves a **forbidden** write in place, so verification still fails on
+it. Paths that were dirty before the run are left alone either way.
 
 ---
 

@@ -3,85 +3,10 @@ type: Convention
 title: Dev stack env files and local secret generation
 description: The two-file-per-stack env contract under infrastructure-as-code/docker/stacks — the four committed <stack>.env.example templates that are the single source for each stack's keys and generation kinds, the gitignored <stack>.env files minted from them by scripts/gen-dev-secrets.mjs, how those files become Compose's interpolation source, the fail-fast ${VAR:?…} contract and its documented exceptions, the gen-dev-env.mjs projection with its realm verification, and the traps (back-fill rather than a plain skip, password-on-first-init credentials, the blank template key the generator must never fill).
 resource: infrastructure-as-code/docker/stacks/README.md
+resource-sha256: f8d3bec1fb1c417feb70cbd75d65db8e7143bf34b34bcb80d7bcdb143a95c591
 tags: [infrastructure, docker-compose, secrets, env-vars, dev-environment, gates]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-ea70eb6c045047448e446296
-    resource: repo://.gitignore
-  - id: openwiki-source-95a7ed7500d24b0881fc3468
-    resource: repo://docs/runbooks/backups.md
-  - id: openwiki-source-f84ce669ebf8d13e89ba2f75
-    resource: repo://docs/runbooks/local-dev.md
-  - id: openwiki-source-7a0ce0b0b1a10dd515633969
-    resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
-  - id: openwiki-source-31d511fea0cea1f9f299fe85
-    resource: repo://infrastructure-as-code/docker/agents/.env.prod.example
-  - id: openwiki-source-34479801b303c2005c7d1de1
-    resource: repo://infrastructure-as-code/docker/agents/compose.prod.yaml
-  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
-    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
-  - id: openwiki-source-f873d74e3a5ee524df98c4b4
-    resource: repo://infrastructure-as-code/docker/bff/.env.prod.example
-  - id: openwiki-source-03de7146fd7e33f2e3019d9d
-    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
-  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
-    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
-  - id: openwiki-source-16f23fb13b0e88082b534458
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml
-  - id: openwiki-source-73ccac5c4c3b2e02cb1b3ec1
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.yaml
-  - id: openwiki-source-d5b1faab58eeb909bb999298
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
-  - id: openwiki-source-852cc196002c1a675baddf5c
-    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
-  - id: openwiki-source-0ff61f596da1302e58282fa2
-    resource: repo://infrastructure-as-code/docker/observability/compose.yaml
-  - id: openwiki-source-18dcf2373667222e1bc520c1
-    resource: repo://infrastructure-as-code/docker/stacks/audit.compose.yaml
-  - id: openwiki-source-ac1ebfc865a36e43b1b3c4f8
-    resource: repo://infrastructure-as-code/docker/stacks/audit.env.example
-  - id: openwiki-source-79878dc2da65b6b5c71034f7
-    resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
-  - id: openwiki-source-f71a8c09fa1dfc3547dbcf23
-    resource: repo://infrastructure-as-code/docker/stacks/auth.env.example
-  - id: openwiki-source-164936b930a31e48cf0a65fc
-    resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
-  - id: openwiki-source-90e20f6cb63d8bd67d0fd623
-    resource: repo://infrastructure-as-code/docker/stacks/mcm.env.example
-  - id: openwiki-source-803bcd8d160132605ee08429
-    resource: repo://infrastructure-as-code/docker/stacks/observability.compose.yaml
-  - id: openwiki-source-3d0ce5a1df7b9900637ae21d
-    resource: repo://infrastructure-as-code/docker/stacks/observability.env.example
-  - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
-    resource: repo://infrastructure-as-code/docker/stacks/README.md
-  - id: openwiki-source-d951526f31e9f2cb4d68995b
-    resource: repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
-    resource: repo://infrastructure-as-code/project.json
-  - id: openwiki-source-b04e37691ebfb88e99a080d8
-    resource: repo://scripts/__tests__/doc-env-example-citations.guard.test.mjs
-  - id: openwiki-source-44335116b1e1ad90d0eaa667
-    resource: repo://scripts/__tests__/gen-dev-env.guard.test.mjs
-  - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
-    resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
-  - id: openwiki-source-85a6abb4f828129c0cce9653
-    resource: repo://scripts/check-no-inline-secrets.mjs
-  - id: openwiki-source-6f10e821d1ec074deb438a3e
-    resource: repo://scripts/check-topology-scrub.mjs
-  - id: openwiki-source-864993a079e6e4df052ac4ea
-    resource: repo://scripts/gen-ci-env.mjs
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-1dabdb308579a8f9d6d49612
-    resource: repo://scripts/gen-dev-secrets.mjs
-  - id: openwiki-source-ac2000cc53be6b0ffb997de7
-    resource: repo://scripts/up-mcm-agents.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-10-17T13:24:33.842Z" }
+timestamp: 2026-11-10T03:37:28.072Z
 ---
 
 

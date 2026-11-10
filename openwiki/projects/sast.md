@@ -4,73 +4,9 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
 tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-sources:
-  - id: openwiki-source-0efadc7633f45e85ee45a617
-    resource: repo://.devcontainer/egress-allowlist.json
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-7bd434a17ed7c27916b1d2ae
-    resource: repo://.forgejo/workflows/infra-image-scan.yml
-  - id: openwiki-source-045a0d186e0b60056b359b2e
-    resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-ae915b1b987b44cca82fc6bf
-    resource: repo://docs/runbooks/sast-scanning.md
-  - id: openwiki-source-40275cb92c3610938f16ade3
-    resource: repo://pnpm-workspace.yaml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-b7793decf9d7c9ba48e57e0f
-    resource: repo://rust-toolchain.toml
-  - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
-    resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
-  - id: openwiki-source-c4b92dabf869c989f00aa0e8
-    resource: repo://scripts/__tests__/check-dependency-downgrade.test.mjs
-  - id: openwiki-source-cf7a80239370178114067d03
-    resource: repo://scripts/__tests__/check-override-consistency.test.mjs
-  - id: openwiki-source-1813b4b5c82e84caead4e177
-    resource: repo://scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs
-  - id: openwiki-source-08ab4a1d1f3934b68be3d4ae
-    resource: repo://scripts/__tests__/sast-scan-retry.guard.test.mjs
-  - id: openwiki-source-b24a848c671edad8616a78b0
-    resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
-  - id: openwiki-source-52c33ce59ba156d00cf24a1d
-    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
-  - id: openwiki-source-60011cd55e5b787da8893ea3
-    resource: repo://scripts/allowlist-expiry.mjs
-  - id: openwiki-source-6515c9bbb2befe56115dab03
-    resource: repo://scripts/check-dependency-downgrade.mjs
-  - id: openwiki-source-be4449db5d1cd6939f816b1e
-    resource: repo://scripts/check-override-consistency.mjs
-  - id: openwiki-source-3597b8f7b798d708bd7e75a1
-    resource: repo://scripts/check-sast-findings.mjs
-  - id: openwiki-source-0b13188628bc70e422253f37
-    resource: repo://scripts/gen-egress-policy.mjs
-  - id: openwiki-source-b202cb0e9ae4a5b1b46e466a
-    resource: repo://scripts/lib/scanner-retry.mjs
-  - id: openwiki-source-302b6b882f29dba1e61bfa9e
-    resource: repo://scripts/override-lever.mjs
-  - id: openwiki-source-bd64475e04b69688a7d80d8d
-    resource: repo://scripts/sast-scan.mjs
-  - id: openwiki-source-dc4b183eb81f4bf37332aff8
-    resource: repo://security/sast/README.md
-  - id: openwiki-source-a19234abfb32b98f346a6d4f
-    resource: repo://security/sast/rules/mcm-auth-before-authz.yaml
-  - id: openwiki-source-d7ba5b8b7daf5b7b6fcb0f5a
-    resource: repo://security/sast/rules/mcm-ci-curl-pipe-shell.yaml
-  - id: openwiki-source-5bfacc731db8fdb56be7df9d
-    resource: repo://security/sast/rules/mcm-no-token-logging.yaml
-  - id: openwiki-source-9372ce7270e3121a73a61934
-    resource: repo://security/sast/semgrep.yaml
-  - id: openwiki-source-8462fd09d611de231506af9b
-    resource: repo://security/sast/severity-map.yaml
-  - id: openwiki-source-4256f85b16adb450a2d592c1
-    resource: repo://specs/080-minio-to-rustfs/plan.md
-  - id: openwiki-source-648eaf5879418af1871aac66
-    resource: repo://specs/080-minio-to-rustfs/spec.md
+resource-sha256: 06da82d4a8932f56b45a6b8e6434236ddf534c6c667bb10a06c2416b1dcf297b
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-01T18:13:07.622Z
+timestamp: 2026-11-10T03:37:28.069Z
 ---
 
 # SAST & SCA static security scanning

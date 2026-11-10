@@ -3,48 +3,10 @@ type: Decision
 title: "ADR-0001: Production secrets-management standard"
 description: The ratified decision record selecting Komodo Variables (not HashiCorp Vault) as the sanctioned production secrets mechanism for all core stacks, with Vault kept dormant and agent-layer-scoped only.
 resource: docs/decisions/ADR-0001-prod-secrets-management.md
+resource-sha256: be5f3cd8c71881abca4e0e3cb0d7ed08a399d2ae941f0b21d6c97e5b9ac133d9
 tags: [adr, secrets, komodo, vault, decision-record, security]
-sources:
-  - id: openwiki-source-bff475d8fa855e3592cfedc2
-    resource: repo://.specify/memory/constitution.md
-  - id: openwiki-source-157ea154f0d418e464705985
-    resource: repo://agents/movie-assistant/src/secrets.py
-  - id: openwiki-source-3886664bef2237616f46c07e
-    resource: repo://agents/movie-assistant/src/tools/token_exchange.py
-  - id: openwiki-source-c1146bc275906084150591a5
-    resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
-  - id: openwiki-source-95a7ed7500d24b0881fc3468
-    resource: repo://docs/runbooks/backups.md
-  - id: openwiki-source-23175e1d10427daa3344d3ec
-    resource: repo://docs/runbooks/prod-control-tower.md
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-e69fe30016fa84209ae5e815
-    resource: repo://frontend/mcm-app/src/config/env.ts
-  - id: openwiki-source-3b86829117dd0577834407fc
-    resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
-  - id: openwiki-source-8ada931f45dbc32482cecf9f
-    resource: repo://infrastructure-as-code/docker/vault/config/vault.hcl
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-a6996cae4bd83db81e823602
-    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
-  - id: openwiki-source-6a31387312db2b158048d4d9
-    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-4708763005c35901b04f5740
-    resource: repo://security/infra-images/allowlist.yaml
-  - id: openwiki-source-2c24e272c750d36f7963e28d
-    resource: repo://specs/026-prod-data-auth-vault/spec.md
-  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
-    resource: repo://specs/080-minio-to-rustfs/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
+timestamp: 2026-11-10T03:37:28.032Z
 ---
 
 # ADR-0001: Production secrets-management standard

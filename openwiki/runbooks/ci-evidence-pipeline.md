@@ -3,62 +3,10 @@ type: Runbook
 title: CI evidence pipeline (producing the evidence)
 description: How CI produces the evidence a session reads back — the per-job failure digest with its three channels (PR comment, digest inside the bundle, and the green-run counts bundle), the 5 MB ci-failures bundle with its recursive packing and trimming rules, per-step durations and the generated ceiling table with the guard that makes a row agree with its own basis, and the coverage, wrapper and CRLF gates that stop the machinery eroding. The producing half of the CI-diagnostics pair; ci-diagnostics.md covers reading it.
 resource: docs/runbooks/ci-evidence-pipeline.md
+resource-sha256: fe56e9c2adc9c7dab209acfe4d450f28df3f3590b6d21e09986c0c851b78e1c9
 tags: [ci, forgejo, evidence, diagnostics, tooling, runbook]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-ceecf221f842ba07ba6a91b2
-    resource: repo://.forgejo/workflows/registry-retention.yml
-  - id: openwiki-source-3c099d9af7cba6b30d6eaf07
-    resource: repo://.gitattributes
-  - id: openwiki-source-c3e333457ea705ec015d1cbd
-    resource: repo://backend/mc-service/src/api/collections/delete.rs
-  - id: openwiki-source-12999abcc7373e8376b400bb
-    resource: repo://backend/mc-service/src/api/collections/list.rs
-  - id: openwiki-source-4ed96763667f13cac6dcc6ce
-    resource: repo://backend/mc-service/src/api/middleware/logging.rs
-  - id: openwiki-source-f003db5a1a23dba30ccf3b03
-    resource: repo://docs/runbooks/ci-evidence-pipeline.md
-  - id: openwiki-source-900e4fa48a3671f4d583c11d
-    resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
-  - id: openwiki-source-0a51228742c9892eef223b4e
-    resource: repo://scripts/__tests__/app-image-scan.test.mjs
-  - id: openwiki-source-c87b16f17fb0c4f5c8105cae
-    resource: repo://scripts/__tests__/check-ci-digest-coverage.test.mjs
-  - id: openwiki-source-583e0d299d9b65d403bcd328
-    resource: repo://scripts/__tests__/ci-failure-digest.test.mjs
-  - id: openwiki-source-2c4ab3ecf382cf5390cc484c
-    resource: repo://scripts/__tests__/ci-log-step.test.mjs
-  - id: openwiki-source-85895d0ff4bd77f9e7c359df
-    resource: repo://scripts/__tests__/ci-maestro-debug.test.mjs
-  - id: openwiki-source-c84c5149aa3c4f5090fd8fae
-    resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
-  - id: openwiki-source-0bed00f693d972828ff1210e
-    resource: repo://scripts/__tests__/publish-android-launch.test.mjs
-  - id: openwiki-source-3672bd476fb3e523ec6e9ad6
-    resource: repo://scripts/android-launch-smoke.sh
-  - id: openwiki-source-bba8fcebaba450eb74159c23
-    resource: repo://scripts/check-ci-digest-coverage.mjs
-  - id: openwiki-source-27ab715525d8fb5ce461266d
-    resource: repo://scripts/ci-digest-redact.mjs
-  - id: openwiki-source-478a776ff0b75f2af5dc3190
-    resource: repo://scripts/ci-failure-digest.mjs
-  - id: openwiki-source-1edeb18757a8f02d496d8f2b
-    resource: repo://scripts/ci-log-step.sh
-  - id: openwiki-source-13872023ae5e43aa417073f0
-    resource: repo://scripts/ci-maestro-debug.sh
-  - id: openwiki-source-70875ab1853f42b7c7d4b78a
-    resource: repo://scripts/ci-status.mjs
-  - id: openwiki-source-7183777a95d300ed54250302
-    resource: repo://scripts/ci-step-ceilings.tsv
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T19:55:04.696Z
+timestamp: 2026-11-10T03:37:28.086Z
 ---
 
 # CI evidence pipeline (producing the evidence)

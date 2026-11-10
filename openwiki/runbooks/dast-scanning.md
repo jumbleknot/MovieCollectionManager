@@ -3,8 +3,9 @@ type: Runbook
 title: DAST scanning (OWASP ZAP)
 description: Config-as-code dynamic application security testing against BFF, mc-service, and the agent gateway — the baseline-vs-full scan split, the network-attach-not-published-ports design, and the guard that refuses a destructive active scan outside a disposable environment.
 resource: docs/runbooks/dast-scanning.md
+resource-sha256: 9652078ce5811db4bcabfa78ea02e9cb26e373adfe2680dfe072bc1c0b610b77
 tags: [security, dast, zap, ci, runbook]
-timestamp: 2026-07-08T19:30:16-04:00
+timestamp: 2026-11-10T03:37:28.088Z
 ---
 
 # DAST scanning (OWASP ZAP)

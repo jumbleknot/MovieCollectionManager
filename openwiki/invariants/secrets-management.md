@@ -3,55 +3,10 @@ type: Convention
 title: Secrets management posture
 description: The no-clear-text-secrets-in-git rule, the dev / production / CI / per-user credential channels, why Vault is deployed but dormant, and the CI gates that enforce all of it.
 resource: docs/decisions/ADR-0001-prod-secrets-management.md
+resource-sha256: be5f3cd8c71881abca4e0e3cb0d7ed08a399d2ae941f0b21d6c97e5b9ac133d9
 tags: [secrets, security, komodo, vault, ci-gates]
-sources:
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-ea70eb6c045047448e446296
-    resource: repo://.gitignore
-  - id: openwiki-source-bff475d8fa855e3592cfedc2
-    resource: repo://.specify/memory/constitution.md
-  - id: openwiki-source-712d29ffd98b465b467ff106
-    resource: repo://agents/movie-assistant/src/models.py
-  - id: openwiki-source-157ea154f0d418e464705985
-    resource: repo://agents/movie-assistant/src/secrets.py
-  - id: openwiki-source-3886664bef2237616f46c07e
-    resource: repo://agents/movie-assistant/src/tools/token_exchange.py
-  - id: openwiki-source-c1146bc275906084150591a5
-    resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
-  - id: openwiki-source-98d68c854e7c7955c9f2546f
-    resource: repo://frontend/mcm-app/src/bff-server/agent-config-crypto.ts
-  - id: openwiki-source-4112862ea6c5cfe97e6a60ca
-    resource: repo://frontend/mcm-app/src/bff-server/agent-config-store.ts
-  - id: openwiki-source-7a0ce0b0b1a10dd515633969
-    resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
-  - id: openwiki-source-f19b1b248dfe2d6c0cd22998
-    resource: repo://infrastructure-as-code/docker/bff/.env.deploy
-  - id: openwiki-source-73ccac5c4c3b2e02cb1b3ec1
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.yaml
-  - id: openwiki-source-79878dc2da65b6b5c71034f7
-    resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
-  - id: openwiki-source-3b86829117dd0577834407fc
-    resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-a6996cae4bd83db81e823602
-    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
-  - id: openwiki-source-ff29a86792dd3d25f502c64d
-    resource: repo://scripts/__tests__/leak-gate-coverage.test.mjs
-  - id: openwiki-source-af50b58cf1a2475cdfd99d0e
-    resource: repo://scripts/check-no-argv-secrets.mjs
-  - id: openwiki-source-85a6abb4f828129c0cce9653
-    resource: repo://scripts/check-no-inline-secrets.mjs
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-1dabdb308579a8f9d6d49612
-    resource: repo://scripts/gen-dev-secrets.mjs
-  - id: openwiki-source-33d177ccb5008acd450b4d41
-    resource: repo://scripts/maestro-run.sh
-  - id: openwiki-source-8ab3254e163b04cd23ac8122
-    resource: repo://scripts/secret-scan.mjs
 generated: { by: "openwiki/0.6.0", at: "2026-09-29T01:49:10.027Z" }
+timestamp: 2026-11-10T03:37:28.038Z
 ---
 
 # Secrets management posture

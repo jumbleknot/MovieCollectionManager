@@ -3,84 +3,10 @@ type: Runbook
 title: Infra-image CVE scanning
 description: Trivy's keyless, twice-weekly sweep over the third-party server images this project pulls but does not build (Keycloak, Postgres, Mongo, Vault, OpenSearch, Langfuse, Grafana, Unleash, Caddy, RustFS and the rest of infrastructure-as-code), plus how to read or triage a red result — one scanner per image, the fixable-Critical-only gate, the allowlist cohorts and how an entry is discharged, the bounded retry, the one pinned installer all three scanning workflows share, the shared per-image pipeline both the PR and the deploy call, the labelled container holds that keep the PR's run-scoped scan tags alive across another run's prune, and the publish-versus-promote split.
 resource: docs/runbooks/infra-image-scanning.md
+resource-sha256: f34d4a99a2b3e5e1b09637e8d0296c2e3f2364f2ff09c6a836f5408f66d6dddc
 tags: [security, cve, trivy, ci, runbook]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-7bd434a17ed7c27916b1d2ae
-    resource: repo://.forgejo/workflows/infra-image-scan.yml
-  - id: openwiki-source-6e3646982d72c64cb5e2486d
-    resource: repo://.forgejo/workflows/renovate.yml
-  - id: openwiki-source-ea70eb6c045047448e446296
-    resource: repo://.gitignore
-  - id: openwiki-source-f83bd1373e0f000fa5d548c0
-    resource: repo://docs/runbooks/ci-diagnostics.md
-  - id: openwiki-source-7c76000f237dd683a4fb0536
-    resource: repo://docs/runbooks/infra-image-scanning.md
-  - id: openwiki-source-23175e1d10427daa3344d3ec
-    resource: repo://docs/runbooks/prod-control-tower.md
-  - id: openwiki-source-045a0d186e0b60056b359b2e
-    resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-4042a47526d6016cff835628
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
-  - id: openwiki-source-0ff61f596da1302e58282fa2
-    resource: repo://infrastructure-as-code/docker/observability/compose.yaml
-  - id: openwiki-source-7ad99116ef3a9756b7c06307
-    resource: repo://infrastructure-as-code/docker/opensearch/compose.yaml
-  - id: openwiki-source-3b86829117dd0577834407fc
-    resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
-  - id: openwiki-source-819b0a18008c0f90a7eaf2b3
-    resource: repo://infrastructure-as-code/docker/vault/compose.yaml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-0a51228742c9892eef223b4e
-    resource: repo://scripts/__tests__/app-image-scan.test.mjs
-  - id: openwiki-source-9569e077273f937a713aad61
-    resource: repo://scripts/__tests__/cd-scan-push-gate.guard.test.mjs
-  - id: openwiki-source-27bdf2533d99346470f527d9
-    resource: repo://scripts/__tests__/ci-install-trivy.test.mjs
-  - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
-    resource: repo://scripts/__tests__/infra-image-scan.test.mjs
-  - id: openwiki-source-9718a90a7733637f39e0b867
-    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
-  - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
-    resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
-  - id: openwiki-source-6a31387312db2b158048d4d9
-    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
-  - id: openwiki-source-52c33ce59ba156d00cf24a1d
-    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
-  - id: openwiki-source-60011cd55e5b787da8893ea3
-    resource: repo://scripts/allowlist-expiry.mjs
-  - id: openwiki-source-0af8f352da052e268e893ea2
-    resource: repo://scripts/cd/promote-digest.sh
-  - id: openwiki-source-b86ccae465a7267495c319ec
-    resource: repo://scripts/cd/scan-app-image.sh
-  - id: openwiki-source-fe6babf23c099d13c73c6b6f
-    resource: repo://scripts/cd/scan-push.sh
-  - id: openwiki-source-214c4d8d22f6d46c2e78f3b4
-    resource: repo://scripts/check-infra-image-findings.mjs
-  - id: openwiki-source-daf4f583f7313d88c7671f4b
-    resource: repo://scripts/ci-install-trivy.sh
-  - id: openwiki-source-70875ab1853f42b7c7d4b78a
-    resource: repo://scripts/ci-status.mjs
-  - id: openwiki-source-d1e0316ab362ff8dcec4fc0d
-    resource: repo://scripts/infra-image-scan.mjs
-  - id: openwiki-source-b202cb0e9ae4a5b1b46e466a
-    resource: repo://scripts/lib/scanner-retry.mjs
-  - id: openwiki-source-7d0fa5a3a30eb305011c4b8d
-    resource: repo://scripts/publish-sweep-verdict.mjs
-  - id: openwiki-source-4708763005c35901b04f5740
-    resource: repo://security/infra-images/allowlist.yaml
-  - id: openwiki-source-0a3ed93b2a41764b679ff58d
-    resource: repo://security/infra-images/severity-map.yaml
-  - id: openwiki-source-2e26935bed37e1316dc175a0
-    resource: repo://specs/081-major-dependency-upgrades/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T19:55:04.696Z
+timestamp: 2026-11-10T03:37:28.097Z
 ---
 
 # Infra-image CVE scanning

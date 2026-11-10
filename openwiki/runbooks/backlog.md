@@ -3,40 +3,10 @@ type: Runbook
 title: The agent-driven backlog (Forgejo Issues)
 description: How the MCM backlog lives in the repository's own Forgejo tracker and is worked by the coding assistant through scripts/backlog.mjs — the credential bounded server-side by its scope (issues only) and, for this tool, by a client-side guard on which repository it writes, the measured API traps that make a filter fail open, and why a present status/blocked label wins over the dependency graph.
 resource: docs/runbooks/backlog.md
+resource-sha256: 385821369363cdca9c8a0fe0fbcf542691b14732fcda8dfb22b74fc6335652fe
 tags: [backlog, forgejo, issues, tooling, runbook]
-sources:
-  - id: openwiki-source-5d36302c890471f584e749ee
-    resource: repo://.claude/skills/forgejo-issues/SKILL.md
-  - id: openwiki-source-6f05dd48779dfbb36df9fa7b
-    resource: repo://.claude/skills/speckit-taskstoissues/SKILL.md
-  - id: openwiki-source-f7c89635dfc6efb0ecec007f
-    resource: repo://.devcontainer/devcontainer.json
-  - id: openwiki-source-c5f31231e7b66af980b8078c
-    resource: repo://.forgejo/issue_template/backlog-item.yaml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-cfc5a272113a96dbb839cafe
-    resource: repo://docs/runbooks/backlog.md
-  - id: openwiki-source-13a568ffa4d99e7c6a3420ca
-    resource: repo://scripts/__tests__/backlog.test.mjs
-  - id: openwiki-source-f427d95b17f165c773f59e07
-    resource: repo://scripts/__tests__/fixtures/backlog/blocked-close-412.json
-  - id: openwiki-source-914396ae309cbed351491c32
-    resource: repo://scripts/backlog.mjs
-  - id: openwiki-source-70875ab1853f42b7c7d4b78a
-    resource: repo://scripts/ci-status.mjs
-  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
-    resource: repo://scripts/preflight.mjs
-  - id: openwiki-source-56855be3e95cd764741c4bf2
-    resource: repo://specs/049-forgejo-issue-tracking/contracts/backlog-cli.md
-  - id: openwiki-source-cf5d8cfc93cf570b96cacafb
-    resource: repo://specs/049-forgejo-issue-tracking/data-model.md
-  - id: openwiki-source-89e71edf5b903065a91bc051
-    resource: repo://specs/049-forgejo-issue-tracking/research.md
 generated: { by: "openwiki/0.6.0", at: "2026-10-04T21:27:12.854Z" }
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-10-04T21:27:12.854Z
+timestamp: 2026-11-10T03:37:28.077Z
 ---
 
 # The agent-driven backlog (Forgejo Issues)

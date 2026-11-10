@@ -3,8 +3,10 @@ type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
 description: The derived summary of how the openwiki/ bundle is kept current since feature 098 — the coding session's duty to refresh a derived page in the same PR as its source, the source fingerprint and the V17 check that blocks a stale page, G14's single-human-written-file rule, the retired Claims bookkeeping and unattended machinery, and the generator's remaining role as a manual, dispatch-only rebuild of operator-named pages — with that rebuild's provider table and env-scoping rule, its locked install and release-age cooldown, its job deadline and exit codes, the per-page verification and restore machinery, the single long-lived proposal, the canonical-home rule, the provenance stamp, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
+resource-sha256: f7532841070938d73e95e3dd2aec2401d2e921d033927ba721e2dd71fdc5167d
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
+timestamp: 2026-11-10T03:36:21.050Z
 ---
 
 
@@ -351,13 +353,14 @@ two completed area-mates were thrown away with it. The area's `index.md` is not 
 lists the failed page and its landed area-mates alike. Left alone, and so still possible on a proposal:
 a failed page that was dirty **before** the invocation, and an **untracked** new page.
 
-**After a deadline stop, the slice keeps only what it named.** A generator stopped part-way (GNU
-`timeout` exit 124, or 137 after `--kill-after`) can leave a page it was never asked for half-written; on
-run 4606 (2026-10-04) that broke conformance on `projects/keycloak.md`, a whole-invocation failure, and
-the requested page's $0.96 regeneration was lost. `revertUnrequested` therefore restores every bundle
-path the run changed to its committed state (or deletes it if new), except the named pages and their
-areas' `index.md`. Paths dirty before the run are left alone. It applies **only** to a deadline stop: a
-generator that exits on its own is judged on everything it wrote.
+**A slice keeps only what it named.** A generator stopped part-way (GNU `timeout` exit 124, or 137
+after `--kill-after`) can leave a page it was never asked for half-written; on run 4606 (2026-10-04) that
+broke conformance on `projects/keycloak.md`, a whole-invocation failure, and the requested page's $0.96
+regeneration was lost. After a **deadline stop**, `revertUnrequested` restores every bundle path the run
+changed (or deletes it if new), except the named pages and their areas' `index.md`. After a run that
+exits **on its own**, it puts back only unrequested concept pages the policy lets the generator write, and
+leaves a forbidden write in place so verification still fails on it. Paths dirty before the run are left
+alone either way.
 
 ### The job deadline, and how big a rebuild should be
 

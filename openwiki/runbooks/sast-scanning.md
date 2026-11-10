@@ -3,96 +3,10 @@ type: Runbook
 title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
+resource-sha256: 06da82d4a8932f56b45a6b8e6434236ddf534c6c667bb10a06c2416b1dcf297b
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-sources:
-  - id: openwiki-source-0efadc7633f45e85ee45a617
-    resource: repo://.devcontainer/egress-allowlist.json
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-7bd434a17ed7c27916b1d2ae
-    resource: repo://.forgejo/workflows/infra-image-scan.yml
-  - id: openwiki-source-ea70eb6c045047448e446296
-    resource: repo://.gitignore
-  - id: openwiki-source-f003db5a1a23dba30ccf3b03
-    resource: repo://docs/runbooks/ci-evidence-pipeline.md
-  - id: openwiki-source-7b223ba4df7203eeb5667fa8
-    resource: repo://docs/runbooks/devcontainer-sandbox.md
-  - id: openwiki-source-7c76000f237dd683a4fb0536
-    resource: repo://docs/runbooks/infra-image-scanning.md
-  - id: openwiki-source-045a0d186e0b60056b359b2e
-    resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-ae915b1b987b44cca82fc6bf
-    resource: repo://docs/runbooks/sast-scanning.md
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-fd968ab79d3d5126e91933cf
-    resource: repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx
-  - id: openwiki-source-250f22b469fdcf4c2326980d
-    resource: repo://frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts
-  - id: openwiki-source-31ef72c79f00ba748f6ce16b
-    resource: repo://frontend/mcm-app/src/utils/zod-jitless.ts
-  - id: openwiki-source-885237f04e1aa048fda26663
-    resource: repo://frontend/mcm-app/src/utils/zod-jitless.web.ts
-  - id: openwiki-source-bbf78f164062a1cfdec73a0a
-    resource: repo://frontend/mcm-app/web-security-headers.js
-  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
-    resource: repo://infrastructure-as-code/project.json
-  - id: openwiki-source-40275cb92c3610938f16ade3
-    resource: repo://pnpm-workspace.yaml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
-    resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
-  - id: openwiki-source-c4b92dabf869c989f00aa0e8
-    resource: repo://scripts/__tests__/check-dependency-downgrade.test.mjs
-  - id: openwiki-source-cf7a80239370178114067d03
-    resource: repo://scripts/__tests__/check-override-consistency.test.mjs
-  - id: openwiki-source-77ddbc35c89ae8b3053caaaf
-    resource: repo://scripts/__tests__/check-sast-findings.test.mjs
-  - id: openwiki-source-08ab4a1d1f3934b68be3d4ae
-    resource: repo://scripts/__tests__/sast-scan-retry.guard.test.mjs
-  - id: openwiki-source-b24a848c671edad8616a78b0
-    resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
-  - id: openwiki-source-2500897f79f457d05a1f0bd2
-    resource: repo://scripts/__tests__/single-zod-engine.guard.test.mjs
-  - id: openwiki-source-52c33ce59ba156d00cf24a1d
-    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
-  - id: openwiki-source-60011cd55e5b787da8893ea3
-    resource: repo://scripts/allowlist-expiry.mjs
-  - id: openwiki-source-6515c9bbb2befe56115dab03
-    resource: repo://scripts/check-dependency-downgrade.mjs
-  - id: openwiki-source-be4449db5d1cd6939f816b1e
-    resource: repo://scripts/check-override-consistency.mjs
-  - id: openwiki-source-3597b8f7b798d708bd7e75a1
-    resource: repo://scripts/check-sast-findings.mjs
-  - id: openwiki-source-478a776ff0b75f2af5dc3190
-    resource: repo://scripts/ci-failure-digest.mjs
-  - id: openwiki-source-1edeb18757a8f02d496d8f2b
-    resource: repo://scripts/ci-log-step.sh
-  - id: openwiki-source-70875ab1853f42b7c7d4b78a
-    resource: repo://scripts/ci-status.mjs
-  - id: openwiki-source-b202cb0e9ae4a5b1b46e466a
-    resource: repo://scripts/lib/scanner-retry.mjs
-  - id: openwiki-source-302b6b882f29dba1e61bfa9e
-    resource: repo://scripts/override-lever.mjs
-  - id: openwiki-source-bd64475e04b69688a7d80d8d
-    resource: repo://scripts/sast-scan.mjs
-  - id: openwiki-source-dc4b183eb81f4bf37332aff8
-    resource: repo://security/sast/README.md
-  - id: openwiki-source-a19234abfb32b98f346a6d4f
-    resource: repo://security/sast/rules/mcm-auth-before-authz.yaml
-  - id: openwiki-source-9372ce7270e3121a73a61934
-    resource: repo://security/sast/semgrep.yaml
-  - id: openwiki-source-4256f85b16adb450a2d592c1
-    resource: repo://specs/080-minio-to-rustfs/plan.md
-  - id: openwiki-source-2ffebe6972c17fbcc2a83423
-    resource: repo://specs/081-major-dependency-upgrades/research.md
-  - id: openwiki-source-2d2c0b2144040a5afd40c348
-    resource: repo://specs/089-single-zod-jitless/plan.md
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T19:55:04.696Z
+timestamp: 2026-11-10T03:37:28.112Z
 ---
 
 # SAST & SCA static scanning

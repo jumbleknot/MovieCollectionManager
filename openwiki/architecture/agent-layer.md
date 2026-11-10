@@ -3,69 +3,9 @@ type: Architecture
 title: AI Agents layer architecture (features 012/014/018/040/047/059/085)
 description: The end-to-end call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and Agent Gateway to mc-service without the agent ever holding the member's session token, plus the flow-continuation and generative-UI gotchas that have cost real sessions.
 resource: docs/runbooks/agent-layer.md
+resource-sha256: c91a4e5f1e5bcb84d75605438ccc7536510f369f952002c3635ba553817a036b
 tags: [architecture, agents, langgraph, ag-ui, token-exchange]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-09T05:00:50.179Z
-sources:
-  - id: openwiki-source-bdd810ca95fc763a63b0c693
-    resource: repo://agents/movie-assistant/src/agui_identity.py
-  - id: openwiki-source-1253fe00a93b377564b445b1
-    resource: repo://agents/movie-assistant/src/circuit_breaker.py
-  - id: openwiki-source-3f4dad889fae278d8fd6fa45
-    resource: repo://agents/movie-assistant/src/eval/token_leak_scan.py
-  - id: openwiki-source-62887021c9e67115f17eede6
-    resource: repo://agents/movie-assistant/src/graph.py
-  - id: openwiki-source-21ee7e795dfa2a07194c131c
-    resource: repo://agents/movie-assistant/src/nodes/curator.py
-  - id: openwiki-source-3cdb8ccfce0872644932072c
-    resource: repo://agents/movie-assistant/src/nodes/search.py
-  - id: openwiki-source-35511191cab03f67f1e380bd
-    resource: repo://agents/movie-assistant/src/ollama_guard.py
-  - id: openwiki-source-3fc5549b13bc483353fd287b
-    resource: repo://agents/movie-assistant/src/proposals.py
-  - id: openwiki-source-7c52b9ffc6d19a53eefbf06a
-    resource: repo://agents/movie-assistant/src/runtime_context.py
-  - id: openwiki-source-f6c222b8d4581ebb02aff7cb
-    resource: repo://agents/movie-assistant/src/runtime_nodes.py
-  - id: openwiki-source-511494eb31ad0aa3dafdbf7f
-    resource: repo://agents/movie-assistant/src/state.py
-  - id: openwiki-source-93f0f494daf0ed75bcb4d48e
-    resource: repo://agents/movie-assistant/src/tools/generative_ui_tools.py
-  - id: openwiki-source-3ddebc53b24db170b9fb8289
-    resource: repo://agents/movie-assistant/src/tools/identity.py
-  - id: openwiki-source-0bc082213ea2b05aafac8afe
-    resource: repo://agents/movie-assistant/src/tools/mcp_tools.py
-  - id: openwiki-source-8ed1a4d9fa9d36c2908dd51e
-    resource: repo://agents/movie-assistant/src/tools/opa.py
-  - id: openwiki-source-3886664bef2237616f46c07e
-    resource: repo://agents/movie-assistant/src/tools/token_exchange.py
-  - id: openwiki-source-1a62960aea6eaeac90c89af6
-    resource: repo://agents/movie-assistant/tests/integration/conftest.py
-  - id: openwiki-source-541e2287bdfb42c605c78f3f
-    resource: repo://docs/MCM-Architecture.md
-  - id: openwiki-source-b14f80515626024d557f0448
-    resource: repo://docs/runbooks/agent-layer.md
-  - id: openwiki-source-7df7f43c44fa89f0d6fae431
-    resource: repo://frontend/mcm-app/src/app/bff-api/agent/resume%2Bapi.ts
-  - id: openwiki-source-66fbf00ecfdc8552ac5fa0fd
-    resource: repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts
-  - id: openwiki-source-c4ea756edd0b8ee900bc61df
-    resource: repo://frontend/mcm-app/src/bff-server/agent-gateway-client.ts
-  - id: openwiki-source-5af82e72acd9c41bb4da6a00
-    resource: repo://frontend/mcm-app/src/bff-server/agent-rate-limiter.ts
-  - id: openwiki-source-03fac6b82cbc7d4d7738a1af
-    resource: repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts
-  - id: openwiki-source-8e04aa30eb8b3df34b4d8b7f
-    resource: repo://frontend/mcm-app/src/bff-server/agent-thread-owner.ts
-  - id: openwiki-source-d79145b1e76e45f44a146d13
-    resource: repo://frontend/mcm-app/src/bff-server/session-tokens.ts
-  - id: openwiki-source-e82c0cb5a60e4fe452915917
-    resource: repo://mcp-servers/spreadsheet-mcp/src/store.py
-  - id: openwiki-source-4029b24de1f1e285cc450a93
-    resource: repo://mcp-servers/web-api-mcp/src/tools.py
-  - id: openwiki-source-65a175671088ef67cc203837
-    resource: repo://specs/085-bff-auth-fail-closed/contracts/bff-auth.md
+timestamp: 2026-11-10T03:37:28.027Z
 ---
 
 # AI Agents layer architecture (features 012/014/018/040/047/059/085)
