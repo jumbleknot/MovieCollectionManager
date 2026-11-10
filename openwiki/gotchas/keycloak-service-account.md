@@ -3,64 +3,10 @@ type: Gotcha
 title: Service account vs admin credentials — Keycloak Admin API calls
 description: Keycloak Admin API calls (user lookup, creation, role assignment, forced logout, email verification, redirect-URI registration) authenticate as a dedicated service account via the client-credentials grant, never the realm admin password — with the realm-side requirements that service account needs, a per-call admin token, a duplicated minter in email-service.ts, an administrator-equivalent credential because manage-users lets it grant mc-admin, and the failure paths the BFF re-maps, warns about, or swallows outright instead of passing through.
 resource: frontend/mcm-app/src/bff-server/keycloak.ts
+resource-sha256: 56d2695eb20324ee65919963f6b15ab1acbcda11c8819b3305f7dbf5796c5dfc
 tags: [auth, keycloak, bff, security]
-sources:
-  - id: openwiki-source-dc9c673c8dc973e1e621fa45
-    resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
-  - id: openwiki-source-3962f527ba083cef06c1e6a6
-    resource: repo://frontend/mcm-app/src/app/bff-api/auth/register%2Bapi.ts
-  - id: openwiki-source-990dbb7c25cfde4ba1d8330a
-    resource: repo://frontend/mcm-app/src/app/bff-api/auth/resend-verification%2Bapi.ts
-  - id: openwiki-source-8b28b8f7ca849a6400dddf6f
-    resource: repo://frontend/mcm-app/src/bff-server/account-deletion.ts
-  - id: openwiki-source-28b3de7a863c75f0b1b6b62c
-    resource: repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts
-  - id: openwiki-source-0ff64644c3a9837917af5e5d
-    resource: repo://frontend/mcm-app/src/bff-server/email-service.ts
-  - id: openwiki-source-d58b64a5afcc9df80ea92152
-    resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
-  - id: openwiki-source-7ee24640f6ecf841a7ce2b17
-    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/email-service.test.ts
-  - id: openwiki-source-55f923b9a396dd1fa39d5777
-    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/keycloak-assign-role.test.ts
-  - id: openwiki-source-7f78c834443744c0dcf8d134
-    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/keycloak-delete-user.test.ts
-  - id: openwiki-source-a5bf09947adc24a8d59ab587
-    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts
-  - id: openwiki-source-e69fe30016fa84209ae5e815
-    resource: repo://frontend/mcm-app/src/config/env.ts
-  - id: openwiki-source-52d190f1e55c59a4ccd67d7c
-    resource: repo://frontend/mcm-app/tests/app/bff-api/auth/register%2Bapi.test.ts
-  - id: openwiki-source-b84c2ebda1fa9702c5fd6055
-    resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
-  - id: openwiki-source-60cf9a830f0ca275ffed94d7
-    resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
-  - id: openwiki-source-16f23fb13b0e88082b534458
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml
-  - id: openwiki-source-3574b605c1922bedacc8f2fa
-    resource: repo://infrastructure-as-code/docker/keycloak/dev-realm.json
-  - id: openwiki-source-4af9b1718a0206bbe016cb00
-    resource: repo://infrastructure-as-code/docker/keycloak/prod-realm.json
-  - id: openwiki-source-4953a197c77e1a3e7a0fd632
-    resource: repo://infrastructure-as-code/docker/keycloak/README.md
-  - id: openwiki-source-f6b7a61bf48156b2722b6a7f
-    resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
-  - id: openwiki-source-100352d0b8b84569e79b6c28
-    resource: repo://infrastructure-as-code/docker/keycloak/scripts/ensure-admin-api-scope.mjs
-  - id: openwiki-source-6f82ff35957c317878203b8f
-    resource: repo://scripts/__tests__/keycloak-admin-api-scope.guard.test.mjs
-  - id: openwiki-source-e1fdca7abfc27f03b9de0dbd
-    resource: repo://scripts/__tests__/keycloak-service-account-roles.guard.test.mjs
-  - id: openwiki-source-d332b78944bf7820230a82f2
-    resource: repo://scripts/export-ci-realm.mjs
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-210be746e72ce9b5abe32746
-    resource: repo://specs/092-prod-service-account-roles/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T19:02:58.048Z
+timestamp: 2026-11-10T03:13:57.342Z
 ---
 
 # Service account vs admin credentials — Keycloak Admin API calls

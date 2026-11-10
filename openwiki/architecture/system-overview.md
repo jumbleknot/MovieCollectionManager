@@ -3,92 +3,10 @@ type: Architecture
 title: System overview (MCM)
 description: The whole-system map of MovieCollectionManager — the core components (mcm-app/BFF, mc-service, mc-db, mcm-bff-db, Keycloak), the additive AI Agents layer and its boundary, the RBAC/DAC access-control split, and the load-bearing gotchas around them — distilled from the canonical architecture document.
 resource: docs/MCM-Architecture.md
+resource-sha256: 915b72d554f775b291b29e2bd32e43efdcde70faf1fc0ad5ff82793077580269
 tags: [architecture, overview, rbac, dac, agents, docker-compose]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-511494eb31ad0aa3dafdbf7f
-    resource: repo://agents/movie-assistant/src/state.py
-  - id: openwiki-source-3ddebc53b24db170b9fb8289
-    resource: repo://agents/movie-assistant/src/tools/identity.py
-  - id: openwiki-source-0bc082213ea2b05aafac8afe
-    resource: repo://agents/movie-assistant/src/tools/mcp_tools.py
-  - id: openwiki-source-8ed1a4d9fa9d36c2908dd51e
-    resource: repo://agents/movie-assistant/src/tools/opa.py
-  - id: openwiki-source-3886664bef2237616f46c07e
-    resource: repo://agents/movie-assistant/src/tools/token_exchange.py
-  - id: openwiki-source-4cc090993970bb2253a628ba
-    resource: repo://backend/mc-service/src/api/middleware/auth.rs
-  - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
-    resource: repo://backend/mc-service/src/api/router.rs
-  - id: openwiki-source-c24ab349f92ee5be03f5048a
-    resource: repo://backend/mc-service/src/application/access_control.rs
-  - id: openwiki-source-16c2f372398849e8eff53877
-    resource: repo://backend/mc-service/tests/integration/common/mod.rs
-  - id: openwiki-source-f98f56169006fd5a5bdf85b9
-    resource: repo://backend/mc-service/tests/integration/health_test.rs
-  - id: openwiki-source-e201e686a785f09b6d899f0b
-    resource: repo://compose.yaml
-  - id: openwiki-source-c1146bc275906084150591a5
-    resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
-  - id: openwiki-source-a32b06ef0f76afb80af4d88a
-    resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
-  - id: openwiki-source-541e2287bdfb42c605c78f3f
-    resource: repo://docs/MCM-Architecture.md
-  - id: openwiki-source-95a7ed7500d24b0881fc3468
-    resource: repo://docs/runbooks/backups.md
-  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
-    resource: repo://frontend/mcm-app/server.js
-  - id: openwiki-source-03fac6b82cbc7d4d7738a1af
-    resource: repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts
-  - id: openwiki-source-653746d934ac6813d4981084
-    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
-  - id: openwiki-source-c22d81a0331031d61ad2c7e3
-    resource: repo://frontend/mcm-app/src/bff-server/backup-destination-url-guard.ts
-  - id: openwiki-source-1c2acc0a72ab64fd663510a9
-    resource: repo://frontend/mcm-app/src/bff-server/mongo-client.ts
-  - id: openwiki-source-d79145b1e76e45f44a146d13
-    resource: repo://frontend/mcm-app/src/bff-server/session-tokens.ts
-  - id: openwiki-source-e69fe30016fa84209ae5e815
-    resource: repo://frontend/mcm-app/src/config/env.ts
-  - id: openwiki-source-2d7a83a560ab6dec0daf8651
-    resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
-  - id: openwiki-source-fe13721a7608b6a93a9e93f2
-    resource: repo://frontend/mcm-app/tests/integration/backup-driver-s3.integration.test.ts
-  - id: openwiki-source-7459d01be6fee66a2e45ca1c
-    resource: repo://frontend/mcm-app/tests/integration/backup-driver-webdav.integration.test.ts
-  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
-    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
-  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
-    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
-  - id: openwiki-source-60cf9a830f0ca275ffed94d7
-    resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
-  - id: openwiki-source-d5b1faab58eeb909bb999298
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
-  - id: openwiki-source-4042a47526d6016cff835628
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
-  - id: openwiki-source-18dcf2373667222e1bc520c1
-    resource: repo://infrastructure-as-code/docker/stacks/audit.compose.yaml
-  - id: openwiki-source-164936b930a31e48cf0a65fc
-    resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
-  - id: openwiki-source-803bcd8d160132605ee08429
-    resource: repo://infrastructure-as-code/docker/stacks/observability.compose.yaml
-  - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
-    resource: repo://infrastructure-as-code/docker/stacks/README.md
-  - id: openwiki-source-9718a90a7733637f39e0b867
-    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
-  - id: openwiki-source-482173336861a06249bf1372
-    resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
-  - id: openwiki-source-864993a079e6e4df052ac4ea
-    resource: repo://scripts/gen-ci-env.mjs
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-c1c739d605caccb56fa33851
-    resource: repo://specs/073-scheduled-backups/spec.md
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-03T02:11:17.233Z
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T02:11:17.233Z" }
+timestamp: 2026-11-10T03:12:50.120Z
 ---
 
 # System overview (MCM)
@@ -254,7 +172,10 @@ Security Boundary* and *Token Custody & Propagation for Agent Runs* sections:
   when the member's own credential is the problem, a retryable `503` on an identity-provider
   outage, and the gateway is not called identity-less.
 - **The gateway re-exchanges per identity-bearing tool call.** Its single shared, in-process MCP
-  client consults an in-memory `(user, audience)` cache and, on a miss, authorises the exchange (OPA
+  client consults an in-memory cache keyed by `(user, audience, sha256(subject token))` — never by
+  `user` alone, because the gateway reads `sub` from the subject token without verifying its
+  signature and a cache hit skips OPA and the exchange, so a `sub`-only key would hand a cached token
+  to any JWT naming that user (spec 094) — and, on a miss, authorises the exchange (OPA
   — fail-closed once `OPA_URL` is set, and skipped with a warning while it is unset, per the Control
   Tower's no-op default) before minting a downscoped `aud=mc-service` token that is cached only for
   the token's own short TTL and delivered out-of-band as the MCP `Authorization: Bearer` header —

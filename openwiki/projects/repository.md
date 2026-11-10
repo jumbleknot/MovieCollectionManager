@@ -3,112 +3,10 @@ type: Reference
 title: MovieCollectionManager repository — structure and working conventions
 description: The MCM monorepo itself — its directory layout, the polyglot tech stack re-derived from the declaring manifests rather than from the README's tech-stack table (which still names Expo SDK 57 while both manifests are on SDK 58 / React Native 0.88 / React 19.3), the toolchain and lint conventions features 081 and 087 moved (Expo SDK 58 with Jest 30, ESLint 10 flat config, the single exact Tamagui 3 pin, pnpm/Nx exact pins, the Gradle 9.4.1 bake, the still-held babel / TypeScript / async-storage / JDK majors), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas — the `sbx` v0.51.0 pin and its upgrade ritual, `sbx run`'s false dockerd failure, the memory bounds, and why egress enforcement lives outside the VM.
 resource: README.md
+resource-sha256: 8592a59fb36152afa4ddf6f24090dc6fb5b67d1cb30bfa158b260a9845d1c546
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding, eslint, tamagui, dependencies, expo, react-native, jest]
-sources:
-  - id: openwiki-source-c765a50891cfc213a2fc94d1
-    resource: repo://.devcontainer/assert-egress-governed.sh
-  - id: openwiki-source-c7639ce8b1868ce09091cbc9
-    resource: repo://.devcontainer/devcontainer-lock.json
-  - id: openwiki-source-6da8a375957bf9b9f92e62dd
-    resource: repo://.devcontainer/Dockerfile
-  - id: openwiki-source-774d00b5d62cc6221b5968ea
-    resource: repo://.devcontainer/fix-workspace-ownership.sh
-  - id: openwiki-source-61f1a679973e2c37988cd802
-    resource: repo://.devcontainer/gen-container-secrets-env.sh
-  - id: openwiki-source-2385709088cc31988986f1d3
-    resource: repo://.devcontainer/sandbox/devcontainer-lock.json
-  - id: openwiki-source-a157c487923d65153283de40
-    resource: repo://.devcontainer/sandbox/devcontainer.json
-  - id: openwiki-source-7e1c4d46c53be9bf32311e06
-    resource: repo://.devcontainer/toolchain.Dockerfile
-  - id: openwiki-source-84525c5b1053cfa785b83c28
-    resource: repo://.devcontainer/verify/run-harness.sh
-  - id: openwiki-source-4811c78aebdb18972e0c3805
-    resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
-  - id: openwiki-source-81dfe425b1bf98f80dc07cd0
-    resource: repo://.devcontainer/verify/verify-sandbox-egress.sh
-  - id: openwiki-source-6e3646982d72c64cb5e2486d
-    resource: repo://.forgejo/workflows/renovate.yml
-  - id: openwiki-source-e1a892d57dc92d08a33c6172
-    resource: repo://agents/movie-assistant/Dockerfile
-  - id: openwiki-source-16a40c342913cfc265574e4d
-    resource: repo://agents/movie-assistant/pyproject.toml
-  - id: openwiki-source-727718aa0491359cbdbb97c7
-    resource: repo://agents/movie-assistant/uv.lock
-  - id: openwiki-source-d54b05966a54dbfbb9eb63bc
-    resource: repo://backend/mc-service/Cargo.toml
-  - id: openwiki-source-a2371d6362e5db4bc834ad03
-    resource: repo://CLAUDE.md
-  - id: openwiki-source-dbbd2a072603d7674a1530f2
-    resource: repo://docs/runbooks/android-emulator.md
-  - id: openwiki-source-f83bd1373e0f000fa5d548c0
-    resource: repo://docs/runbooks/ci-diagnostics.md
-  - id: openwiki-source-8cb0da307c90adb4287997a5
-    resource: repo://docs/runbooks/dev-environment-setup.md
-  - id: openwiki-source-3428fee3ac79873bee5650fc
-    resource: repo://docs/runbooks/devcontainer-sandbox-lifecycle.md
-  - id: openwiki-source-7b223ba4df7203eeb5667fa8
-    resource: repo://docs/runbooks/devcontainer-sandbox.md
-  - id: openwiki-source-a9fc7285078c8062777b3180
-    resource: repo://docs/runbooks/devcontainer.md
-  - id: openwiki-source-f8d87cfe0689163c27061841
-    resource: repo://docs/runbooks/e2e-testing.md
-  - id: openwiki-source-7c76000f237dd683a4fb0536
-    resource: repo://docs/runbooks/infra-image-scanning.md
-  - id: openwiki-source-f84ce669ebf8d13e89ba2f75
-    resource: repo://docs/runbooks/local-dev.md
-  - id: openwiki-source-045a0d186e0b60056b359b2e
-    resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-82e76cb56a030095b60d27cd
-    resource: repo://frontend/mcm-app/babel.config.js
-  - id: openwiki-source-8b39d08f4b5008470c9dd1c6
-    resource: repo://frontend/mcm-app/eslint.config.js
-  - id: openwiki-source-e9bcd4372a4632d555b861a6
-    resource: repo://frontend/mcm-app/package.json
-  - id: openwiki-source-1e9aa3ee99b35bd10ee52a6d
-    resource: repo://frontend/mcm-app/project.json
-  - id: openwiki-source-75c613635390ab18cc167ec1
-    resource: repo://frontend/mcm-app/README.md
-  - id: openwiki-source-d67eac1e98649691c637d9c0
-    resource: repo://frontend/mcm-app/tamagui.config.ts
-  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
-    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
-  - id: openwiki-source-6ba748254f38112b13d529da
-    resource: repo://nx.json
-  - id: openwiki-source-5b54a58d1b51cd490b0e7162
-    resource: repo://package.json
-  - id: openwiki-source-c2fc016d5fa9c9435755b27e
-    resource: repo://packages/design-system/eslint.config.js
-  - id: openwiki-source-f7e16ba323424b9790bca8b9
-    resource: repo://packages/design-system/package.json
-  - id: openwiki-source-23775c3de52f3ab95a13cb8b
-    resource: repo://README.md
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-b7793decf9d7c9ba48e57e0f
-    resource: repo://rust-toolchain.toml
-  - id: openwiki-source-96730ea8c345aed64b62a187
-    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
-  - id: openwiki-source-e1b32ed173a0f6b508f94a03
-    resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
-  - id: openwiki-source-238cf8b88f30f267614313be
-    resource: repo://scripts/check-toolchain-consistency.mjs
-  - id: openwiki-source-70875ab1853f42b7c7d4b78a
-    resource: repo://scripts/ci-status.mjs
-  - id: openwiki-source-38de5a41429287f01c1b5bfd
-    resource: repo://scripts/devcontainer-android.sh
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-08fc841d5e458f6987e87106
-    resource: repo://scripts/open-sandbox.ps1
-  - id: openwiki-source-4256f85b16adb450a2d592c1
-    resource: repo://specs/080-minio-to-rustfs/plan.md
-  - id: openwiki-source-f64018476db6cdad83959624
-    resource: repo://specs/081-major-dependency-upgrades/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-08T02:21:41.463Z
+timestamp: 2026-11-10T03:13:07.684Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -479,7 +377,7 @@ See [docs/runbooks/devcontainer.md](../../docs/runbooks/devcontainer.md) and the
 ### Expo/Metro limitation — native mobile stays off the sandbox
 
 The dev container covers backend/API development, compose-based test stacks, the **web target**, and
-the **Metro bundler** (watchman-backed, hot-reload at native speed). It never runs the **iOS
+the **Metro bundler** (Node file crawler, hot reload). It never runs the **iOS
 Simulator** (macOS-only), and whether it can run the **Android emulator** depends on the path:
 
 | Path | Android emulator |

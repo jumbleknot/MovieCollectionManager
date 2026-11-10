@@ -3,8 +3,9 @@ type: Gotcha
 title: External ID links open via a scheme-guarded openUrl helper — web vs native, and a second unguarded copy
 description: movie-detail.tsx's openUrl helper opens an external-identifier link with window.open(url, '_blank', 'noopener,noreferrer') on web and Linking.openURL on native, but only after isSafeHttpUrl() rejects non-http(s) schemes — a duplicate openUrl in render-movie-card.tsx skips that guard.
 resource: frontend/mcm-app/src/components/movie-detail.tsx
+resource-sha256: 08a86e19486dbffb4ef283369a1b2ced2ad8182116a5ac68f482a3c8dd48efcb
 tags: [frontend, security, expo-router, external-links, xss]
-timestamp: 2026-07-30T12:49:54-04:00
+timestamp: 2026-11-10T03:13:30.878Z
 ---
 
 # External ID links open via a scheme-guarded openUrl helper — web vs native, and a second unguarded copy
