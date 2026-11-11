@@ -233,9 +233,9 @@ jobs:
         run: bash scripts/ci-log-step.sh build-images bash scripts/cd/build-images.sh
 
       # Retag → scan (critical blocks) → login → push → capture digest into the run manifest AND the
-      # digest-by-git promotion file (.env.deploy body). repo→VAR: uppercase, '-'→'_', suffix _IMAGE
-      # (mcm-bff → MCM_BFF_IMAGE). Only MCM_BFF_IMAGE is consumed by a prod stack today; the rest are
-      # emitted forward-compatibly for the mc-service/agent stacks when they land.
+      # digest-by-git promotion file (.env.deploy body). repo→VAR: uppercase, '-'→'_', suffix _DIGEST
+      # (mcm-bff → MCM_BFF_DIGEST; scripts/cd/scan-push.sh). All six are consumed: MCM_BFF_DIGEST,
+      # MC_SERVICE_DIGEST and the four agent-stack digests, each by its stack's compose.prod.yaml.
       - name: Scan, push (by tag + digest), build manifest + promotion file
         id: publish
         env:

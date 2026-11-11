@@ -546,12 +546,11 @@ prod-strength policy and seeds a user with a plaintext `${E2E_TEST_PASSWORD}` ab
 Password strength is validated client-side in the suite. `prod-realm.json` keeps its policy — it seeds
 no user credential, so its import is unaffected.
 
-**`${BASE_DOMAIN}` in `prod-realm.json` is rendered by hand with `sed`, not `envsubst`.** Use
-`sed 's|${BASE_DOMAIN}|<domain>|g'` — `envsubst` would also expand Keycloak's own `${role_*}` /
-`${client_*}` i18n placeholders and corrupt the realm; the `sed` render leaves them intact. The rendered file is gitignored and pointed to by `PROD_REALM_FILE`; the
-committed template keeps the placeholder. (`compose.prod.yaml` and `.env.prod.example` still describe
-the restricted-`envsubst` form; the hand-run `sed` is what is actually used, and the two differ in
-exactly the way that matters.)
+**`${BASE_DOMAIN}` in `prod-realm.json` is rendered by hand, and ONLY that placeholder.** The
+operator uses `sed 's|${BASE_DOMAIN}|<domain>|g'`, which `compose.prod.yaml` and `.env.prod.example`
+now show; a *restricted* `envsubst '${BASE_DOMAIN}'` is equivalent, but a bare `envsubst` would also
+expand Keycloak's own `${role_*}` / `${client_*}` i18n placeholders and corrupt the realm. The rendered
+file is gitignored and pointed to by `PROD_REALM_FILE`; the committed template keeps the placeholder.
 
 **`keycloak-service` can lose `backend-network` on reboot (prod).** Confirmed on 2026-07-06: after a
 reboot the container came back attached only to `edge-network` and `keycloak-network`, missing

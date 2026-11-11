@@ -426,8 +426,9 @@ jobs:
       #
       # THE VALUE BELOW IS NO LONGER THE CEILING. It is the BACKSTOP: what bounds a wrapped step
       # that has no calibrated row, so a table miss can never fall through to unbounded and restore
-      # the defect above. Today exactly one step is on it — `app-e2e-collect-container-logs`, which
-      # runs only on the failure path and has n=2, too few observations to derive a bound from.
+      # the defect above. Which steps are on it is listed, not counted here, in the ON THE BACKSTOP
+      # block of scripts/ci-step-ceilings.tsv — steps too new or too rare (e.g. the failure-path-only
+      # `app-e2e-collect-container-logs`) to derive a bound from.
       #
       # WHY 2700 s, AND WHAT EACH FIGURE ACTUALLY MEASURED. The original value was calibrated by eye
       # against a number describing something else, and BOTH are named here so the mistake cannot be

@@ -4,9 +4,9 @@ title: OpenWiki quickstart — MovieCollectionManager
 description: The root entry point to this repository's OpenWiki bundle — what the bundle is and is not, how to query it by type, tag, resource or directory, a task-routing map to the major concept areas, and how the coverage rule and the derived-versus-authoritative split decide where a new learning belongs.
 tags: [openwiki, navigation, quickstart]
 resource: openwiki/INSTRUCTIONS.md
-resource-sha256: 6a1747c54fd47713d072bce19306d5445957171fcf0a5d7662f17497465f09ab
+resource-sha256: 0b3e1d175eccfd09cf2879a2ddb16b82c92fc635186a4ddc67b9f1c4a2350db0
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
-timestamp: 2026-11-10T11:26:50.302Z
+timestamp: 2026-11-11T00:49:25.250Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager

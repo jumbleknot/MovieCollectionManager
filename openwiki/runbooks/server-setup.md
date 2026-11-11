@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: dd5ad527beadaecf9a5eb98a357116a59a088944a9f47015793bbb44fd71ce4c
+resource-sha256: 20ed1e7b21aabefd574bf48bfa04c6271da527f1fa93280350c7ec55070d7a3f
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T11:59:39.650Z
+timestamp: 2026-11-11T00:49:08.167Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -339,9 +339,10 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   compose lives under the `prod` user's home like the other host-managed composes, which means
   Renovate never sees it: its image pin has to be copied by hand from the git-tracked RustFS instance
   in the observability stack whenever that moves — so check the pin against that file rather than
-  against the runbook's example, which lags (the Phase 8 snippet still carries `rustfs/rustfs:1.0.1`
-  while the tracked observability compose has moved to `1.0.4@sha256:ed9210d6…`; every git-tracked
-  RustFS service must share one digest-pinned Alpine tag). The store's volume and network names are host state
+  against the runbook's example, which can lag (the Phase 8 snippet was brought to the tracked
+  `1.0.4@sha256:ed9210d6…` on 2026-11-11 after trailing at `1.0.1`; every git-tracked RustFS service
+  must share one digest-pinned Alpine tag). Bumping the snippet does not upgrade the running store —
+  re-pull and `docker compose up -d` in `~/rustfs` on the host. The store's volume and network names are host state
   too, so confirm them by ownership *and* contents — and the backup script's path list has to name each
   store's config directory, which is why the live store's directory is on it.
   The guard that fails on any *live* reference to the retired object store — with a closed list of

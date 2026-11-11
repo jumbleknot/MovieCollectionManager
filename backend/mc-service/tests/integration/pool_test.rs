@@ -134,10 +134,11 @@ async fn a_stale_lease_is_reclaimable_and_a_fresh_one_is_not() {
     common::release_lease(&client, slot).await;
 }
 
-/// A lease belongs to a RUNNING process. The three integration binaries run one after another, so
-/// by the time the second starts, the first's leases are held by a dead pid — if those are not
-/// reclaimable the slot space is exhausted within a single run (measured: 64 leases held by 3 dead
-/// pids, after which the pool fell back to unique names and its own test failed).
+/// A lease belongs to a RUNNING process. The integration binaries (one per `[[test]]` target in
+/// Cargo.toml) run one after another, so by the time the second starts, the first's leases are held
+/// by a dead pid — if those are not reclaimable the slot space is exhausted within a single run
+/// (measured when there were three binaries: 64 leases held by 3 dead pids, after which the pool fell
+/// back to unique names and its own test failed).
 #[tokio::test]
 async fn a_lease_held_by_a_dead_process_is_reclaimable_immediately() {
     let client = common::pool_client().await;

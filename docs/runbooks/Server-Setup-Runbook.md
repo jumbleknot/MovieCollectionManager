@@ -752,7 +752,7 @@ prod$ chmod 600 .env
 # compose.yaml
 services:
   rustfs:
-    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
     restart: always
     environment:
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?set in .env}
@@ -768,7 +768,7 @@ services:
       retries: 10
       start_period: 20s
   createbucket:                      # same image (it ships curl); PUT of an existing bucket is 200
-    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
     depends_on:
       rustfs: {condition: service_healthy}
     restart: "no"

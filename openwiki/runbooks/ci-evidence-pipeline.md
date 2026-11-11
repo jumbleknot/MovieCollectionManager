@@ -287,9 +287,9 @@ defect. It stays at 2700 s because an uncalibrated step's legitimate duration is
 and the asymmetry still holds: a fast **false** red costs a ~35-40 min re-run on this capacity-1 runner;
 a slow **true** failure costs only the difference between that bound and the job's ceiling.
 
-The table's commented `ON THE BACKSTOP` block currently lists **twenty-one** steps, while the `app-e2e`
-workflow's own comment still claims "exactly one step is on it" — read that line as stale rather than as
-the inventory.
+The table's commented `ON THE BACKSTOP` block is the inventory of which steps are on it (twenty-one at
+the 2026-11-10 review); the `app-e2e` workflow's comment points there rather than keeping a count of its
+own, which is how it once went stale at "exactly one step".
 
 **Twelve rows are the spec 084 US3 image-scanning family**: `app-e2e-tag-scan-images` (which tags the
 six images inside `app-e2e`) plus the eleven `app-image-scan-*` steps of the `app-image-scan` job. They

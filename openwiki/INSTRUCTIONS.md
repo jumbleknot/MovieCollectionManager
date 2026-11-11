@@ -23,7 +23,9 @@ The failure mode to avoid is a drifting paraphrase of those documents.
 - Carry a **distilled summary** — what this subject is, in a few sentences.
 - Carry the **load-bearing gotchas** — the non-obvious constraints, the traps, the things that cost a
   developer a session when they get them wrong. This is the highest-value content in the page.
-- Carry a `resource` link to the **authoritative source**, and defer to it for full detail.
+- Carry a `resource` link to the **authoritative source**, and defer to it for full detail — unless the
+  page *is* the authoritative source (§4c): then it carries **no** `resource` and is listed under
+  `authoritative:` in `openwiki/protected.yaml`. Every page is exactly one of the two (governance G11).
 
 **Every concept page MUST NOT:**
 

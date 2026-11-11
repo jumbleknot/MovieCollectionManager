@@ -368,13 +368,10 @@ as "nothing but HEAD to protect", and the script refuses one rather than reporti
 set. The retention posture itself, and the two keys that gate an actual delete, belong to
 [CI diagnostics](../runbooks/ci-diagnostics.md).
 
-The one place this naming has drifted is the workflow comment, not the compose. `cd-deploy`'s
-`Scan, push (by tag + digest), build manifest + promotion file` step still describes the promoted
-variable as `<REPO>_IMAGE` (`mcm-bff → MCM_BFF_IMAGE`) and says only `MCM_BFF_IMAGE` "is consumed by
-a prod stack today". Neither half holds any more: `scan-push.sh` emits `<REPO_UPPER>_DIGEST`, and all
-six values are consumed by the three CI-built stacks. The workflow's own `ENV_DEPLOY_PATHS` comment —
-naming `MCM_BFF_DIGEST`, `MC_SERVICE_DIGEST` and the four agent digests — is the accurate one, and a
-compose line copied from the stale comment references a variable nothing writes.
+`scan-push.sh` names each promoted variable `<REPO_UPPER>_DIGEST` (`mcm-bff → MCM_BFF_DIGEST`), and
+all six — `MCM_BFF_DIGEST`, `MC_SERVICE_DIGEST` and the four agent digests — are consumed by the three
+CI-built stacks. (Until 2026-11-11 a `cd-deploy` comment still called them `<REPO>_IMAGE` with only
+the BFF's consumed; a compose line copied from it would reference a variable nothing writes.)
 
 ## Side artifacts and the static gates over every compose file
 
