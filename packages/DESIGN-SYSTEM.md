@@ -726,7 +726,9 @@ This design system implements the following MD3 components from the M3 specifica
 - ✅ Shape system (MD3 shape roles → Tamagui radius tokens)
 - ✅ State layers (hover 12%, focus 14%, press 18% — `stateLayer`)
 - ✅ Minimum touch target 48x48dp enforcement
-- ✅ Accessibility (accessibilityRole, accessibilityLabel, accessibilityState)
+- ✅ Accessibility (accessibilityRole, accessibilityLabel, accessibilityState on native; on web Tamagui
+  drops those props, so interactive primitives such as `Button` and `Chip` also set an explicit `role`,
+  `aria-*` state and `tabIndex`; see `frontend/mcm-app/README.md` → Docked panels)
 
 Not yet implemented (future):
 - ⏳ Bottom Sheet

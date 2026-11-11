@@ -3,10 +3,10 @@ type: Service
 title: Expo/React Native universal app
 description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 58 with React Native 0.88 and React 19.3), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the SDK 58 static web output whose pages are prerendered at build time while the 38 API routes keep running in the same Node process, the settings destination and its area registry, the client network layer that never holds a token, the expo-server express hosting layer this process serves (the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the BFF image's pruned runtime closure with the bare-specifier build gate that keeps it honest, the five feature-087 failure modes that each look healthy but now have their own gate (a second copy of the styling library, a split bundle over budget, an unlisted inline script, a browser CSP violation, a release APK that does not launch), the cold-load web bundle budget's four assertions, the Jest worker/memory bounds and the Jest 30 / RNTL 14 client test traps, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
-resource-sha256: 6775ff03b235fb2e73bba77c470662ce199a9e4b1c3dbd896c6a14d911101f1f
+resource-sha256: 28a0896995f7a4e4822d0fb995a5869435c4e240d0c9e610a9c319cf130d7698
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T23:36:11.840Z" }
-timestamp: 2026-11-10T11:32:33.639Z
+timestamp: 2026-11-11T00:45:01.463Z
 ---
 
 # Expo/React Native universal app
@@ -320,6 +320,36 @@ already does not (record it as `unresolvable` in `KNOWN_DYNAMIC_SPECIFIERS`). Do
 — its whole purpose is to stop a pruned package from becoming a 500 on one route in production. The
 measured image figures, the traced evidence the closure rests on and the two decision lists belong to
 [BFF](./bff.md); what this page records is the app-side build contract that produces them.
+
+## Docked panels: view options and the assistant
+
+Feature 098's docked-filters work (`specs/098-docked-filters-keyboard/`) moved the collection screen's
+column, sort and filter controls behind one compact bar, `ViewOptionsDock`
+(`src/components/view-options-dock.tsx`, toggle `view-options-toggle` with the active-filter count).
+The controls exist only while its `ViewOptionsPanel` (`view-options-panel`) is open, and the panel
+drops down **over** the count row and the list rather than pushing them, so opening it never
+re-scrolls the list. Three consequences matter to anyone changing this screen or its tests:
+
+- **Tests must open the panel first, and close it before reading the list.** Web specs use
+  `openViewOptions(page)` from `tests/e2e/web/movies.spec.ts`; Maestro flows `tapOn` `view-options-toggle`
+  and later `view-options-close`. An assertion made on a row while the panel is open tests the panel.
+- **One panel at a time, from the web entry chunk.** `OpenPanelProvider` (`src/hooks/use-open-panel.tsx`)
+  wraps the stack and the assistant dock in `src/app/(app)/_layout.tsx`, so opening the view options
+  re-docks the assistant and the reverse. Because that module is in the entry chunk it must import
+  nothing from `@copilotkit/*`, `@ag-ui/*` or `use-assistant` — a guard test and `bundle-budget` fail
+  if it does.
+- **The assistant dock rides above the on-screen keyboard.** SDK 58 / RN 0.88 Android is edge-to-edge,
+  so the window is not resized for the IME; the dock adds `useKeyboardInset()`
+  (`src/hooks/use-keyboard-inset.ts`) to its `bottom` and caps the deferred panel's height, passing
+  `{ height, keyboardInset }` as props typed in `assistant-runtime-loader.ts` so nothing eager imports
+  the panel. On web the inset is always 0. The Android proof is the `assistant-keyboard` Maestro flow
+  in the agent half of `app-e2e`.
+
+**On web, Tamagui drops `accessibilityRole`, `accessibilityState` and `accessible`**, so a Tamagui
+control renders as a bare `<div>` the keyboard cannot reach unless it sets an explicit `role`,
+`aria-*` state and `tabIndex` — as the design system's `Button` and `Chip` now do. Unit tests on native
+assert `accessibilityState` (RN folds `aria-*` into it); the web DOM is proven by the axe scan in
+`tests/e2e/web/a11y.spec.ts`.
 
 ## Gotchas
 

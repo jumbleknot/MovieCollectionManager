@@ -3,10 +3,10 @@ type: Service
 title: MCM Cinema design system
 description: The Material Design 3 token set and Tamagui 3 component library (@mcm/design-system) shared by the Expo app's web and native builds — its theme-split colour roles, dark default, runtime-only Tamagui wiring and MD3 state layers, the exact-version plus single-instance Tamagui lockstep guard, the R1-R7 compliance scan that keeps the app from drifting off it, the Jest preset/resolver and worker-memory bound its suite shares with the app, and the repo-wide Renovate locks that keep its framework versions owned by the Expo SDK.
 resource: packages/DESIGN-SYSTEM.md
-resource-sha256: d0411a464fdd4b2c338e0698cec688119574b77544fec202922cbaa9b83e6fc6
+resource-sha256: 37fe7a5d64ba9b8800c4bfa1192f72e8e7173b2d1de46531ae8d8581c1498f8c
 tags: [design-system, tamagui, ui, tokens, md3]
 generated: { by: "openwiki/0.7.1", at: "2026-10-19T00:33:25.175Z" }
-timestamp: 2026-11-10T11:30:33.191Z
+timestamp: 2026-11-11T00:45:01.672Z
 ---
 
 # MCM Cinema design system

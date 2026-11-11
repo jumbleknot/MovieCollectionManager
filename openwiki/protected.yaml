@@ -260,7 +260,8 @@ passages:
     relocatedAt: "2026-07-30"
   - concept: "process/feature-test-scope.md"
     anchor: "Gotchas"
-    fingerprint: "sha256:f0b11c115f5cc6a1c9828dbf8f265a258514e821ad83c8e7b904203a3ae89d7f"
+    # Re-fingerprinted 2026-11-11 (feature 098 baseline review, after #983 merged) — passage-corrected: the table now carries the docked-filters stories, and the quoted "native layout, no column toggle" N/A reason was false (mobile flows toggle columns). Previous: sha256:f0b11c115f5cc6a1c9828dbf8f265a258514e821ad83c8e7b904203a3ae89d7f
+    fingerprint: "sha256:f1b26b4bfaea0da05428b56f2694483166e91020ae745ba8862c17d8bfd1a5fc"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "process/pull-request-batching.md"
