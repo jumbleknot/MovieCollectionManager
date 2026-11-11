@@ -25,23 +25,54 @@ appId: com.grumpyrobot.mcmapp
       id: "movie-search-input"
     timeout: 8000
 
+# 098 US1: the column, sort and filter controls are docked behind the view-options bar, and the
+# open panel drops down OVER the list. So the panel is opened for each sort action and CLOSED before
+# every list assertion: a row asserted while the panel covers it would test the panel, not the sort.
+# (CI run 7268 failed this flow with the row assertions made under the open panel — cause unresolved
+# between that and item #972, so the two are now separated.)
+- tapOn:
+    id: "view-options-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "view-options-panel"
+    timeout: 5000
+
 # --- US1-AC1: sort control is present with the default Title field ---
 - assertVisible:
     id: "movie-sort-control"
 - assertVisible:
     id: "sort-field-title"
+# Item #972: on a phone with the default columns this toggle can sit past the sort row's right edge.
 - assertVisible:
     id: "sort-dir-toggle"
-
-# Movie list rendered under the default sort (title ascending).
+- tapOn:
+    id: "view-options-close"
+- extendedWaitUntil:
+    notVisible:
+      id: "view-options-panel"
+    timeout: 5000
 - waitForAnimationToEnd:
     timeout: 2000
+
+# Movie list rendered under the default sort (title ascending).
 - assertVisible:
     id: "movie-list-item-row"
 
 # --- US1-AC2: toggle direction to descending → list re-renders, no crash ---
 - tapOn:
+    id: "view-options-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "view-options-panel"
+    timeout: 5000
+- tapOn:
     id: "sort-dir-toggle"
+- tapOn:
+    id: "view-options-close"
+- extendedWaitUntil:
+    notVisible:
+      id: "view-options-panel"
+    timeout: 5000
 - waitForAnimationToEnd:
     timeout: 2000
 - assertVisible:
@@ -49,7 +80,19 @@ appId: com.grumpyrobot.mcmapp
 
 # --- US1-AC2: change the sort field (Year is always-on / visible) → re-renders ---
 - tapOn:
+    id: "view-options-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "view-options-panel"
+    timeout: 5000
+- tapOn:
     id: "sort-field-year"
+- tapOn:
+    id: "view-options-close"
+- extendedWaitUntil:
+    notVisible:
+      id: "view-options-panel"
+    timeout: 5000
 - waitForAnimationToEnd:
     timeout: 2000
 - assertVisible:
@@ -57,8 +100,22 @@ appId: com.grumpyrobot.mcmapp
 
 # Toggle back to ascending — control remains interactive after a field change.
 - tapOn:
+    id: "view-options-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "view-options-panel"
+    timeout: 5000
+- tapOn:
     id: "sort-dir-toggle"
 - waitForAnimationToEnd:
     timeout: 1500
 - assertVisible:
     id: "movie-sort-control"
+- tapOn:
+    id: "view-options-close"
+- extendedWaitUntil:
+    notVisible:
+      id: "view-options-panel"
+    timeout: 5000
+- waitForAnimationToEnd:
+    timeout: 2000

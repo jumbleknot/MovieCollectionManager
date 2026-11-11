@@ -68,6 +68,37 @@ Outfit headings / Inter body, Cinematic-Blue primary, restrained orange accent).
   aligned cell (see [movie-list.tsx](src/components/movie-list.tsx) /
   [movie-list-item.tsx](src/components/movie-list-item.tsx)).
 
+## Docked panels: collection view options and the assistant (feature 098)
+
+- **The collection screen's column, sort and filter controls are docked.** They sit behind one
+  compact bar, `ViewOptionsDock` (`view-options-toggle`, showing the active-filter count), and appear
+  only while its drop-down `ViewOptionsPanel` (`view-options-panel`) is open. The panel overlays the
+  count row and the list from their container's top edge, so opening or closing it never moves or
+  re-scrolls the list. It starts docked on every visit. See
+  [view-options-dock.tsx](src/components/view-options-dock.tsx).
+  **A test that touches a column, sort or filter control must open the panel first**:
+  - web: `openViewOptions(page)` in `tests/e2e/web/movies.spec.ts`;
+  - Maestro: `tapOn: id: "view-options-toggle"`.
+
+  The open panel covers the list, so close it (`view-options-close`) before clicking a movie row.
+- **One panel open at a time.** `OpenPanelProvider` ([use-open-panel.tsx](src/hooks/use-open-panel.tsx))
+  is mounted in `src/app/(app)/_layout.tsx` around the stack and the assistant dock. Opening the view
+  options re-docks the assistant, and the reverse. That module is in the web entry chunk, so it must
+  import nothing from `@copilotkit/*`, `@ag-ui/*` or `use-assistant`: a guard test and
+  `bundle-budget` both fail if it does.
+- **The assistant dock follows the on-screen keyboard.** On SDK 58 / RN 0.88, Android is
+  edge-to-edge, so the window is not resized for the IME, and a view pinned to the bottom edge sits
+  behind the keyboard. The dock therefore adds `useKeyboardInset()`
+  ([use-keyboard-inset.ts](src/hooks/use-keyboard-inset.ts)) to its `bottom`. It also caps the
+  deferred panel's height to what fits below the top safe inset, and passes `{ height, keyboardInset }`
+  to the panel. The props type lives in `assistant-runtime-loader.ts`, so nothing eager imports the
+  panel. On web the inset is always 0.
+- **On web, Tamagui drops `accessibilityRole`, `accessibilityState` and `accessible`.** A Tamagui
+  control therefore needs an explicit `role`, `aria-*` state and `tabIndex`, as the DS `Button` and
+  `Chip` now set; otherwise it renders as a bare `<div>` that the keyboard cannot reach. On native,
+  RN folds `aria-*` into `accessibilityState`, so unit tests assert `accessibilityState`, and the web
+  DOM is proven by the axe scan in `tests/e2e/web/a11y.spec.ts`.
+
 ## Design-system compliance & sanctioned deviations (feature 017)
 
 A static Jest scan — [`tests/unit/design-system-compliance.test.ts`](tests/unit/design-system-compliance.test.ts)

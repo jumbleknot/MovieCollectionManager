@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { render, fireEvent } from '@/test-support/render';
+import { render, fireEvent, isHiddenFromAccessibility } from '@/test-support/render';
 import { ColumnSelector } from '@/components/column-selector';
 import type { ColumnKey, ColumnVisibility } from '@/types/collection';
 
@@ -113,5 +113,44 @@ describe('ColumnSelector', () => {
     );
     await fireEvent.press(getByTestId('column-toggle-genres'));
     expect(onToggle).toHaveBeenCalledWith('genres');
+  });
+
+  // 098 T011b (WCAG 4.1.2 / 2.5.8): the T010 panel-open axe scan found each toggle exposed TWO
+  // controls — the Pressable (role=switch, but no aria-checked on web: RNW does not reflect
+  // accessibilityState.checked) and a nested RN Switch rendering an unlabeled, focusable 40×20
+  // input. The Pressable is now the single, labelled switch; the visual switch is hidden from AT.
+  describe('one accessible switch per column (098 T011b)', () => {
+    it('each toggle is role=switch with aria-checked and a label', async () => {
+      const { getByTestId } = await render(
+        <ColumnSelector visibleColumns={SOME_VISIBLE} onToggle={() => {}} />,
+      );
+      // On native RN folds `aria-checked` into accessibilityState, so the host shows the state there;
+      // the web DOM's aria-checked is asserted by the panel-open axe scan (a11y.spec.ts).
+      const owned = getByTestId('column-toggle-owned');
+      expect(owned.props.role).toBe('switch');
+      expect(owned.props.accessibilityState).toEqual(expect.objectContaining({ checked: true }));
+      expect(owned.props.accessibilityLabel).toBe('Owned');
+      expect(getByTestId('column-toggle-language').props.accessibilityState).toEqual(
+        expect.objectContaining({ checked: false }),
+      );
+    });
+
+    it('exposes exactly one switch per toggleable column — no nested control', async () => {
+      const { getAllByRole } = await render(
+        <ColumnSelector visibleColumns={ALL_HIDDEN} onToggle={() => {}} />,
+      );
+      expect(getAllByRole('switch')).toHaveLength(TOGGLEABLE_COLUMN_KEYS.length);
+    });
+
+    it('the visual switch is hidden from assistive tech', async () => {
+      const { getByTestId } = await render(
+        <ColumnSelector visibleColumns={SOME_VISIBLE} onToggle={() => {}} />,
+      );
+      const indicator = getByTestId('column-toggle-owned-indicator', {
+        includeHiddenElements: true,
+      });
+      expect(isHiddenFromAccessibility(indicator)).toBe(true);
+      expect(indicator.props.importantForAccessibility).toBe('no-hide-descendants');
+    });
   });
 });

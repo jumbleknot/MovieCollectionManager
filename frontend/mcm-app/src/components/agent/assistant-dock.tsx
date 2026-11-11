@@ -20,9 +20,16 @@
  *
  * The prefetch is what keeps the deferral from costing the user anything: by the time they reach for
  * the toggle the chunk is usually already warm. See `@/hooks/use-assistant-runtime`.
+ *
+ * ABOVE THE KEYBOARD (098 US2). Android edge-to-edge does not resize the window for the IME, so a
+ * dock pinned 16 pt above the window's bottom edge sat behind the keyboard and the user could not
+ * see what they typed. The dock adds the keyboard inset to its `bottom`, and caps the panel's height
+ * to what is left between the keyboard and the top safe inset (FR-011..FR-014). Open/closed lives in
+ * the shared OpenPanel context, so opening the assistant re-docks the view options (FR-015).
  */
 import React, { useCallback, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View, type LayoutChangeEvent } from 'react-native';
+import { useSafeAreaFrame, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@tamagui/core';
 import { AssistantAvatar } from '@mcm/design-system';
 
@@ -31,6 +38,8 @@ import {
   AssistantPanelLoading,
 } from '@/components/agent/assistant-panel-fallback';
 import { useAssistantRuntimePrefetch } from '@/hooks/use-assistant-runtime';
+import { useKeyboardInset } from '@/hooks/use-keyboard-inset';
+import { useOpenPanel } from '@/hooks/use-open-panel';
 import {
   loadAssistantRuntime,
   type AssistantRuntimeModule,
@@ -38,13 +47,54 @@ import {
 
 type PanelComponent = AssistantRuntimeModule['default'];
 
+const DOCK_MARGIN = 16; // dock's resting offset from the bottom edge
+const TOGGLE_MIN_HEIGHT = 44; // WCAG 2.2 AA touch target (FR-016)
+const PANEL_GAP = 8; // the panel's marginTop above the toggle
+const TOP_MARGIN = 16; // breathing room below the top safe inset
+const PANEL_MAX_HEIGHT = 420;
+
+/**
+ * The panel's height: its usual 420, or whatever fits between the keyboard and the top safe inset
+ * on a short window — so the panel shrinks rather than running off the top (FR-013). Never negative.
+ */
+export function assistantPanelHeight({
+  frameHeight,
+  keyboardInset,
+  topInset,
+  toggleHeight,
+}: {
+  frameHeight: number;
+  keyboardInset: number;
+  topInset: number;
+  toggleHeight: number;
+}): number {
+  const room =
+    frameHeight - keyboardInset - topInset - DOCK_MARGIN - toggleHeight - PANEL_GAP - TOP_MARGIN;
+  return Math.max(0, Math.min(PANEL_MAX_HEIGHT, room));
+}
+
 export function AssistantDock() {
-  const [open, setOpen] = useState(false);
+  const { openPanel, toggle } = useOpenPanel();
+  const open = openPanel === 'assistant';
   const [Panel, setPanel] = useState<PanelComponent | null>(null);
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(false);
   const theme = useTheme();
   const styles = makeStyles(theme);
+  const keyboardInset = useKeyboardInset();
+  const frame = useSafeAreaFrame();
+  const { top: topInset } = useSafeAreaInsets();
+  const [toggleHeight, setToggleHeight] = useState(TOGGLE_MIN_HEIGHT);
+  const onToggleLayout = useCallback(
+    (e: LayoutChangeEvent) => setToggleHeight(e.nativeEvent.layout.height),
+    [],
+  );
+  const panelHeight = assistantPanelHeight({
+    frameHeight: frame.height,
+    keyboardInset,
+    topInset,
+    toggleHeight,
+  });
 
   // Warm the chunk on idle, after this route is interactive. Never during render — see the hook.
   useAssistantRuntimePrefetch();
@@ -65,23 +115,27 @@ export function AssistantDock() {
   }, []);
 
   const onToggle = useCallback(() => {
-    setOpen((wasOpen) => {
-      const nowOpen = !wasOpen;
-      // Fetch on the transition to open, and only when we do not already hold the panel. `loading`
-      // is checked so a flurry of presses mid-flight does not stack requests — the loader is
-      // single-flight anyway, but not re-entering keeps the state transitions honest.
-      if (nowOpen && !Panel && !loading) fetchPanel();
-      return nowOpen;
-    });
-  }, [Panel, loading, fetchPanel]);
+    const nowOpen = !open;
+    toggle('assistant');
+    // Fetch on the transition to open, and only when we do not already hold the panel. `loading`
+    // is checked so a flurry of presses mid-flight does not stack requests — the loader is
+    // single-flight anyway, but not re-entering keeps the state transitions honest.
+    if (nowOpen && !Panel && !loading) fetchPanel();
+  }, [open, toggle, Panel, loading, fetchPanel]);
 
   return (
-    <View testID="assistant-dock" style={styles.dock} pointerEvents="box-none">
+    <View
+      testID="assistant-dock"
+      style={[styles.dock, { bottom: DOCK_MARGIN + keyboardInset }]}
+      pointerEvents="box-none"
+    >
       <TouchableOpacity
         testID="assistant-dock-toggle"
         accessibilityRole="button"
         accessibilityLabel="Toggle movie assistant"
+        accessibilityState={{ expanded: open }}
         onPress={onToggle}
+        onLayout={onToggleLayout}
         style={styles.toggle}
       >
         {/* The Grumpy Robot avatar is the assistant's identity + one of the sanctioned
@@ -89,7 +143,7 @@ export function AssistantDock() {
         <AssistantAvatar size="xs" />
         <Text style={styles.toggleText}>{open ? 'Close assistant' : 'Assistant'}</Text>
       </TouchableOpacity>
-      {open && Panel ? <Panel /> : null}
+      {open && Panel ? <Panel height={panelHeight} keyboardInset={keyboardInset} /> : null}
       {open && !Panel && failed ? <AssistantPanelError onRetry={fetchPanel} /> : null}
       {open && !Panel && !failed ? <AssistantPanelLoading /> : null}
     </View>
@@ -106,7 +160,8 @@ const makeStyles = (theme: Theme) => ({
   // confirmed by a movies.spec.ts mass failure when the dock was moved right). Bottom-left is
   // unoccupied app-wide. The container is pointerEvents="box-none" so only the toggle/panel
   // themselves capture events.
-  dock: { position: 'absolute' as const, left: 16, bottom: 16, alignItems: 'flex-start' as const },
+  // `bottom` is set inline: DOCK_MARGIN plus the on-screen keyboard's height (098 FR-011).
+  dock: { position: 'absolute' as const, left: 16, alignItems: 'flex-start' as const },
   toggle: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
@@ -115,6 +170,7 @@ const makeStyles = (theme: Theme) => ({
     borderRadius: 24,
     paddingHorizontal: 16,
     paddingVertical: 10,
+    minHeight: TOGGLE_MIN_HEIGHT,
     borderWidth: 1,
     borderColor: theme.outlineVariant?.val,
   },

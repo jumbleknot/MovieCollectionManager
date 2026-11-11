@@ -3,8 +3,15 @@
  *
  * Composes the movie browse/search/filter UI for a single collection:
  *   - MovieSearchBar    — search by title (debounced in useMovies)
- *   - ColumnSelector    — show/hide optional columns
- *   - MovieFilterPanel  — filter by genre, contentType, language, etc.
+ *   - ViewOptionsDock   — ONE compact docked bar (098 US1) in place of the inline column, sort and
+ *                         filter controls, which filled most of a phone's first screen. It shows the
+ *                         active-filter count; pressing it drops ViewOptionsPanel down over the count
+ *                         row and the list, holding the three controls unchanged:
+ *       - ColumnSelector    — show/hide optional columns
+ *       - MovieSortControl  — sort field + direction
+ *       - MovieFilterPanel  — filter by genre, contentType, language, etc.
+ *     The panel is an overlay inside the flex:1 container below the bar, so opening or closing it
+ *     never re-lays-out or re-scrolls the list (FR-005a). It starts docked on every visit (FR-004).
  *   - MovieList         — infinite scroll list of movies
  *   - "Add Movie" button — navigate to new-movie screen
  *
@@ -39,6 +46,8 @@ import { MovieFilterPanel } from '@/components/movie-filter-panel';
 import { MovieSortControl } from '@/components/movie-sort-control';
 import { MovieCountLine } from '@/components/movie-count-line';
 import { ColumnSelector } from '@/components/column-selector';
+import { ViewOptionsDock, ViewOptionsPanel } from '@/components/view-options-dock';
+import { countActiveFilters } from '@/utils/active-filters';
 import type { ColumnKey, MovieListFilters } from '@/types/collection';
 
 interface CollectionScreenProps {
@@ -140,73 +149,83 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
       {/* Search bar */}
       <MovieSearchBar value={search} onSearch={setSearch} />
 
-      {/* Column selector */}
-      <ColumnSelector
-        visibleColumns={visibleColumns}
-        onToggle={(col: ColumnKey) => toggleColumn(col)}
-      />
+      {/* View options (098 US1) — the docked bar, in normal layout flow; the panel is below. */}
+      <ViewOptionsDock activeFilterCount={countActiveFilters(filters)} />
 
-      {/* Sort control (013 US1) — scalar columns currently shown + direction toggle */}
-      <MovieSortControl
-        sortBy={sortBy}
-        sortDir={sortDir}
-        visibleColumns={visibleColumns}
-        onChange={(field, dir) => {
-          void setSort(field, dir);
-        }}
-      />
+      {/* Count row + list share one flex:1 container that the view-options panel overlays from
+          its top edge (098 FR-005a): the list does not move when the panel opens or closes. */}
+      <View style={styles.listArea}>
+        {/* Count info line (013 US2) + Add Movie action, sharing one bar above the grid.
+            The count sits left; the "+" is right-justified in the same row.
+            The button stays in normal layout flow (not absolutely positioned) so Maestro's
+            performAction(ACTION_CLICK) reaches it — RN Fabric on Android does not dispatch
+            ACTION_CLICK to absolutely-positioned views. */}
+        <View style={[styles.countRow, { backgroundColor: theme.background?.val }]}>
+          {/* Count info line — total, or filtered/total when a filter is active */}
+          <MovieCountLine count={count} />
+          {/* The single sanctioned orange (tertiary) call-to-action on this screen (FR-006) —
+              the shared DS PillButton, in normal layout flow for RN-Fabric ACTION_CLICK. */}
+          <PillButton
+            testID="collection-screen-add-movie"
+            accessibilityLabel="Add movie"
+            label="+ Add movie"
+            onPress={handleAddMovie}
+          />
+        </View>
 
-      {/* Filter panel — always rendered; passes empty options while loading */}
-      <MovieFilterPanel
-        filterOptions={
-          filterOptions ?? {
-            genres: [],
-            contentTypes: [],
-            rated: [],
-            languages: [],
-            decades: [],
-            ownedMedia: [],
-            ripQuality: [],
-          }
-        }
-        isLoading={isLoadingFilterOptions}
-        activeFilters={filters}
-        onFilterChange={handleFilterChange}
-        onClearFilters={() => {
-          void clearFilters();
-        }}
-      />
+        {/* Movie list */}
+        <View style={styles.listContainer}>
+          <MovieList
+            items={movies}
+            visibleColumns={visibleColumns}
+            hasMore={hasMore}
+            isLoadingMore={isLoadingList}
+            onLoadMore={() => {
+              void loadMore();
+            }}
+            onMoviePress={handleMoviePress}
+          />
+        </View>
 
-      {/* Count info line (013 US2) + Add Movie action, sharing one bar above the grid.
-          The count sits left; the "+" is right-justified in the same row.
-          The button stays in normal layout flow (not absolutely positioned) so Maestro's
-          performAction(ACTION_CLICK) reaches it — RN Fabric on Android does not dispatch
-          ACTION_CLICK to absolutely-positioned views. */}
-      <View style={[styles.countRow, { backgroundColor: theme.background?.val }]}>
-        {/* Count info line — total, or filtered/total when a filter is active */}
-        <MovieCountLine count={count} />
-        {/* The single sanctioned orange (tertiary) call-to-action on this screen (FR-006) —
-            the shared DS PillButton, in normal layout flow for RN-Fabric ACTION_CLICK. */}
-        <PillButton
-          testID="collection-screen-add-movie"
-          accessibilityLabel="Add movie"
-          label="+ Add movie"
-          onPress={handleAddMovie}
-        />
-      </View>
+        {/* The three controls, unchanged — rendered only while the panel is open. */}
+        <ViewOptionsPanel>
+          {/* Column selector */}
+          <ColumnSelector
+            visibleColumns={visibleColumns}
+            onToggle={(col: ColumnKey) => toggleColumn(col)}
+          />
 
-      {/* Movie list */}
-      <View style={styles.listContainer}>
-        <MovieList
-          items={movies}
-          visibleColumns={visibleColumns}
-          hasMore={hasMore}
-          isLoadingMore={isLoadingList}
-          onLoadMore={() => {
-            void loadMore();
-          }}
-          onMoviePress={handleMoviePress}
-        />
+          {/* Sort control (013 US1) — scalar columns currently shown + direction toggle */}
+          <MovieSortControl
+            sortBy={sortBy}
+            sortDir={sortDir}
+            visibleColumns={visibleColumns}
+            onChange={(field, dir) => {
+              void setSort(field, dir);
+            }}
+          />
+
+          {/* Filter panel — passes empty options while the options load */}
+          <MovieFilterPanel
+            filterOptions={
+              filterOptions ?? {
+                genres: [],
+                contentTypes: [],
+                rated: [],
+                languages: [],
+                decades: [],
+                ownedMedia: [],
+                ripQuality: [],
+              }
+            }
+            isLoading={isLoadingFilterOptions}
+            activeFilters={filters}
+            onFilterChange={handleFilterChange}
+            onClearFilters={() => {
+              void clearFilters();
+            }}
+          />
+        </ViewOptionsPanel>
       </View>
     </SafeAreaView>
   );
@@ -225,6 +244,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 4,
+  },
+  listArea: {
+    flex: 1,
   },
   listContainer: {
     flex: 1,

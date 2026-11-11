@@ -35,6 +35,7 @@ import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-nat
 import { useTheme } from '@tamagui/core';
 import { Button, Chip } from '@mcm/design-system';
 import type { FilterOptionsData, MovieListFilters } from '@/types/collection';
+import { countActiveFilters } from '@/utils/active-filters';
 
 interface MovieFilterPanelProps {
   filterOptions: FilterOptionsData;
@@ -94,7 +95,7 @@ export function MovieFilterPanel({
 }: MovieFilterPanelProps) {
   const theme = useTheme();
   const styles = makeStyles(theme);
-  const hasActiveFilters = Object.values(activeFilters).some((v) => v !== undefined && v !== '');
+  const hasActiveFilters = countActiveFilters(activeFilters) > 0;
 
   return (
     <View testID="movie-filter-panel" style={styles.container}>

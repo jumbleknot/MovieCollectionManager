@@ -33,15 +33,30 @@ appId: com.grumpyrobot.mcmapp
 - assertVisible:
     id: "collection-screen-add-movie"
 
+# Verify column header row is visible (always shown above movie list, even when empty).
+# Asserted before the view-options panel opens, because the open panel overlays the list.
+- assertVisible:
+    id: "movie-list-header"
+
+# 098 US1: the column, sort and filter controls are docked behind the view-options bar.
+- tapOn:
+    id: "view-options-toggle"
+- extendedWaitUntil:
+    visible:
+      id: "view-options-panel"
+    timeout: 5000
+
 # Verify column toggles are visible. year/contentType are always-on and no longer
 # toggleable (FR-019b); assert the leftmost toggleable column (Language) instead.
 - assertVisible:
     id: "column-toggle-language"
 
-# Verify column header row is visible (always shown above movie list, even when empty)
-- assertVisible:
-    id: "movie-list-header"
-
 # Verify filter panel is present
 - assertVisible:
     id: "movie-filter-panel"
+
+# 098 US1: re-dock the panel so the list it overlays is uncovered again.
+- tapOn:
+    id: "view-options-close"
+- waitForAnimationToEnd:
+    timeout: 1000

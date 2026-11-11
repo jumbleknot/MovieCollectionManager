@@ -9,11 +9,16 @@
  * - Renders "Add Movie" button
  * - Tapping a movie row navigates to movie detail screen
  * - Delegates search, filter, column, and load-more to useMovies hook
+ *
+ * 098 (US1): the column selector, sort control and filter panel are DOCKED behind the
+ * `view-options-toggle` bar. They are absent until the bar is pressed, and every choice made in the
+ * open panel applies without closing it (US1-AC1/3/6, FR-001/006/008/009).
  */
 
 import React from 'react';
 import { render, fireEvent, waitFor } from '@/test-support/render';
 import { CollectionScreen } from '@/screens/collections/collection-screen';
+import { OpenPanelProvider } from '@/hooks/use-open-panel';
 import type {
   Movie,
   ColumnVisibility,
@@ -30,6 +35,9 @@ const mockSetFilter = jest.fn().mockResolvedValue(undefined);
 const mockClearFilters = jest.fn().mockResolvedValue(undefined);
 const mockToggleColumn = jest.fn();
 const mockFetchFilterOptions = jest.fn().mockResolvedValue(undefined);
+const mockSetSort = jest.fn().mockResolvedValue(undefined);
+// Mutable so a test can render with active filters (the badge) and model "Clear".
+let mockFilters: MovieListFilters = {};
 
 const VISIBLE_COLS: ColumnVisibility = {
   year: true,
@@ -106,8 +114,12 @@ jest.mock('@/hooks/use-movies', () => ({
     // Search
     search: '',
     setSearch: mockSetSearch,
+    // Sort
+    sortBy: 'title',
+    sortDir: 'asc',
+    setSort: mockSetSort,
     // Filters
-    filters: {} as MovieListFilters,
+    filters: mockFilters,
     setFilter: mockSetFilter,
     clearFilters: mockClearFilters,
     // Filter options
@@ -175,38 +187,134 @@ jest.mock('@/utils/api-client', () => ({
 
 // ─── Tests ─────────────────────────────────────────────────────────────────────
 
+// The screen reads the OpenPanel context (provided by the (app) layout in the app).
+async function renderScreen(): Promise<Awaited<ReturnType<typeof render>>> {
+  return render(
+    <OpenPanelProvider>
+      <CollectionScreen collectionId="col-1" />
+    </OpenPanelProvider>,
+  );
+}
+
+async function openViewOptions(utils: Awaited<ReturnType<typeof render>>): Promise<void> {
+  await fireEvent.press(utils.getByTestId('view-options-toggle'));
+  expect(utils.getByTestId('view-options-panel')).toBeTruthy();
+}
+
+/** Host testIDs in render (document) order — RNTL queries walk the tree depth-first. */
+function testIdOrder(utils: Awaited<ReturnType<typeof render>>): string[] {
+  return utils.queryAllByTestId(/.+/).map((n) => n.props.testID as string);
+}
+
 describe('CollectionScreen', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockFilters = {};
+  });
 
   it('renders the movie list', async () => {
-    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
+    const { getByTestId } = await renderScreen();
     expect(getByTestId('movie-list-container')).toBeTruthy();
   });
 
   it('renders the search bar', async () => {
-    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
+    const { getByTestId } = await renderScreen();
     expect(getByTestId('movie-search-input')).toBeTruthy();
   });
 
-  it('renders the filter panel', async () => {
-    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
-    expect(getByTestId('movie-filter-panel')).toBeTruthy();
-  });
-
-  it('renders the column selector', async () => {
-    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
-    // year/contentType are always visible and no longer toggleable (FR-019b);
-    // assert on a still-toggleable column instead.
-    expect(getByTestId('column-toggle-language')).toBeTruthy();
-  });
-
   it('renders an "Add Movie" button', async () => {
-    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
+    const { getByTestId } = await renderScreen();
     expect(getByTestId('collection-screen-add-movie')).toBeTruthy();
   });
 
+  describe('docked view options (098 US1)', () => {
+    it('docks the column selector, sort control and filter panel on first render (US1-AC1, FR-001/004)', async () => {
+      const { queryByTestId, getByTestId } = await renderScreen();
+      expect(getByTestId('view-options-toggle')).toBeTruthy();
+      expect(queryByTestId('column-toggle-language')).toBeNull();
+      expect(queryByTestId('movie-sort-control')).toBeNull();
+      expect(queryByTestId('movie-filter-panel')).toBeNull();
+      expect(queryByTestId('view-options-panel')).toBeNull();
+    });
+
+    it('places the bar between the search bar and the count row (FR-002)', async () => {
+      const order = testIdOrder(await renderScreen());
+      const search = order.indexOf('movie-search-input');
+      const toggle = order.indexOf('view-options-toggle');
+      const count = order.indexOf('movie-count-line');
+      expect(search).toBeGreaterThanOrEqual(0);
+      expect(toggle).toBeGreaterThan(search);
+      expect(count).toBeGreaterThan(toggle);
+    });
+
+    it('shows all three controls once opened (US1-AC2)', async () => {
+      const utils = await renderScreen();
+      await openViewOptions(utils);
+      expect(utils.getByTestId('column-toggle-language')).toBeTruthy();
+      expect(utils.getByTestId('movie-sort-control')).toBeTruthy();
+      expect(utils.getByTestId('movie-filter-panel')).toBeTruthy();
+    });
+
+    it('a filter chip calls setFilter and leaves the panel open (US1-AC3, FR-006)', async () => {
+      const utils = await renderScreen();
+      await openViewOptions(utils);
+      await fireEvent.press(utils.getByTestId('filter-chip-genre-Action'));
+      expect(mockSetFilter).toHaveBeenCalledWith('genre', 'Action');
+      expect(utils.getByTestId('view-options-panel')).toBeTruthy();
+    });
+
+    it('a column toggle calls toggleColumn and leaves the panel open (US1-AC3, FR-006)', async () => {
+      const utils = await renderScreen();
+      await openViewOptions(utils);
+      await fireEvent.press(utils.getByTestId('column-toggle-language'));
+      expect(mockToggleColumn).toHaveBeenCalledWith('language');
+      expect(utils.getByTestId('view-options-panel')).toBeTruthy();
+    });
+
+    it('a sort choice calls setSort and leaves the panel open (US1-AC3, FR-006)', async () => {
+      const utils = await renderScreen();
+      await openViewOptions(utils);
+      await fireEvent.press(utils.getByTestId('sort-field-year'));
+      expect(mockSetSort).toHaveBeenCalledWith('year', 'asc');
+      await fireEvent.press(utils.getByTestId('sort-dir-toggle'));
+      expect(mockSetSort).toHaveBeenCalledWith('title', 'desc');
+      expect(utils.getByTestId('view-options-panel')).toBeTruthy();
+    });
+
+    it('docking and undocking do not touch columns, sort or filters (FR-009)', async () => {
+      const utils = await renderScreen();
+      await openViewOptions(utils);
+      await fireEvent.press(utils.getByTestId('view-options-close'));
+      await openViewOptions(utils);
+      expect(mockSetFilter).not.toHaveBeenCalled();
+      expect(mockClearFilters).not.toHaveBeenCalled();
+      expect(mockSetSort).not.toHaveBeenCalled();
+      expect(mockToggleColumn).not.toHaveBeenCalled();
+    });
+
+    it('the docked bar shows the active-filter count, and Clear removes it (US1-AC5/6, FR-008)', async () => {
+      mockFilters = { genre: 'Action', owned: false };
+      mockClearFilters.mockImplementationOnce(async () => {
+        mockFilters = {};
+      });
+      const utils = await renderScreen();
+      expect(utils.getByTestId('view-options-active-count')).toHaveTextContent('2');
+
+      await openViewOptions(utils);
+      await fireEvent.press(utils.getByTestId('filter-clear-button'));
+      expect(mockClearFilters).toHaveBeenCalledTimes(1);
+      await fireEvent.press(utils.getByTestId('view-options-close'));
+      await utils.rerender(
+        <OpenPanelProvider>
+          <CollectionScreen collectionId="col-1" />
+        </OpenPanelProvider>,
+      );
+      expect(utils.queryByTestId('view-options-active-count')).toBeNull();
+    });
+  });
+
   it('calls listMovies and fetchFilterOptions on screen focus (initial mount)', async () => {
-    await render(<CollectionScreen collectionId="col-1" />);
+    await renderScreen();
     await waitFor(() => {
       expect(mockListMovies).toHaveBeenCalledTimes(1);
       expect(mockFetchFilterOptions).toHaveBeenCalledTimes(1);
@@ -214,26 +322,14 @@ describe('CollectionScreen', () => {
   });
 
   it('tapping a movie row navigates to movie detail screen', async () => {
-    const { getAllByTestId } = await render(<CollectionScreen collectionId="col-1" />);
+    const { getAllByTestId } = await renderScreen();
     await fireEvent.press(getAllByTestId('movie-list-item-row')[0]);
     expect(mockPush).toHaveBeenCalledWith(expect.stringContaining('mov-1'));
   });
 
   it('delegates setSearch to useMovies hook when search changes', async () => {
-    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
+    const { getByTestId } = await renderScreen();
     await fireEvent.changeText(getByTestId('movie-search-input'), 'batman');
     expect(mockSetSearch).toHaveBeenCalledWith('batman');
-  });
-
-  it('delegates setFilter to useMovies hook when filter chip is pressed', async () => {
-    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
-    await fireEvent.press(getByTestId('filter-chip-genre-Action'));
-    expect(mockSetFilter).toHaveBeenCalledWith('genre', 'Action');
-  });
-
-  it('delegates toggleColumn to useMovies hook when column toggle is pressed', async () => {
-    const { getByTestId } = await render(<CollectionScreen collectionId="col-1" />);
-    await fireEvent.press(getByTestId('column-toggle-language'));
-    expect(mockToggleColumn).toHaveBeenCalledWith('language');
   });
 });
