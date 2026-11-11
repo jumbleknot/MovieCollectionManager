@@ -9,7 +9,7 @@ timestamp: 2026-07-30T13:49:05-04:00
 # Feature branch test scope
 
 Run only the suites for areas touched on the current branch during iteration; defer the rest to
-final validation. This mapping (from `CLAUDE.md`'s "Feature Branch Test Scope" section) is the
+final validation. This mapping (relocated from `CLAUDE.md`'s former "Feature Branch Test Scope" section) is the
 lookup table for which Playwright spec file and which Maestro mobile flow(s) correspond to each
 user story, so the correct narrow suite can be run instead of the full regression while iterating.
 The full-suite requirement belongs to the final validation checklist, not here — see
@@ -31,19 +31,24 @@ these web/mobile suites live in.
 | 002-US2: Manage movies | movies.spec.ts | movie-add.yaml, movie-edit.yaml, movie-delete.yaml |
 | 002: Search / filter movies | movies.spec.ts | movie-browse.yaml, movie-search-filter.yaml |
 | 002-US3: Default collection | movies.spec.ts | N/A (web routing behavior) |
-| 002-US4: Column visibility | movies.spec.ts | N/A (native layout, no column toggle) |
+| 002-US4: Column visibility | movies.spec.ts | movie-browse.yaml, movie-search-filter.yaml (`column-toggle-*`) |
+| 098-US1: Docked view options (docked filters) | collection-view-options.spec.ts, movies.spec.ts, a11y.spec.ts | movie-browse.yaml, movie-count.yaml, movie-search-filter.yaml, movie-sort.yaml |
+| 098-US2: Keyboard-safe assistant (docked filters) | N/A (native-only: mobile browsers resize their own viewport) | assistant-keyboard.yaml (agent half of `app-e2e`) |
+| 098-US3: View options and assistant never collide (docked filters) | collection-view-options.spec.ts | N/A (geometry and one-panel-open exclusivity are platform-independent; unit tests) |
 
 ## Gotchas
 
-- **This table only covers the two user stories present when the rule was written (001, 002).**
-  It is not exhaustive across every feature in the repository — later features that need this same
-  scoping discipline should extend the table with their own story-to-suite rows rather than
-  assuming the rule doesn't apply.
+- **This table covers the two user stories present when the rule was written (001, 002) plus the
+  docked-filters feature (`specs/098-docked-filters-keyboard/`).** It is not exhaustive across every
+  feature in the repository — later features that need this same scoping discipline should extend
+  the table with their own story-to-suite rows rather than assuming the rule doesn't apply.
 - **The rule is about iteration, not completion.** Running only the touched story's suites is
   correct while a feature is in progress; every feature must still run the full final validation
   checklist (`pnpm nx e2e mcm-app`, `pnpm nx e2e:mobile mcm-app`, etc.) before being marked
   complete, including backend-only changes, because only the full E2E run proves the change works
   end-to-end through the BFF from the client's perspective.
-- **`N/A` rows still need a justification, not a blank cell** — "web routing behavior" and "native
-  layout, no column toggle" are the recorded reasons those stories have no mobile equivalent; a new
-  `N/A` row without a stated reason is a gap, not a covered case.
+- **`N/A` rows still need a justification, not a blank cell** — "web routing behavior", "native-only"
+  and "platform-independent; unit tests" are the recorded reasons those stories lack a web or mobile
+  suite; a new `N/A` row without a stated reason is a gap, not a covered case. (002-US4's former
+  "native layout, no column toggle" reason was false — the mobile flows toggle `column-toggle-*` — and
+  was replaced by those flows.)

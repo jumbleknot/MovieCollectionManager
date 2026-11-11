@@ -1,0 +1,4 @@
+# Fixture source
+
+A stable file for the OKF gate fixtures to cite. Its bytes are fingerprinted (V17) by the
+concepts that name it, so editing it means re-recording them.

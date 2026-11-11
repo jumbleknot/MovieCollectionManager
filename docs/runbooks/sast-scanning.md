@@ -14,7 +14,7 @@ blocking `sast` CI gate. Config tree: [security/sast/](../../security/sast/).
 
 ## Run it locally
 
-Prereqs (no app stack needed — this is a static scan): Node ≥ 20, `uv`/`uvx`, a Rust toolchain with
+Prereqs (no app stack needed — this is a static scan): Node ≥ 22.13 (the root `engines.node` floor), `uv`/`uvx`, a Rust toolchain with
 `cargo-audit` (`cargo install cargo-audit --locked`), pnpm, and **all four Python venvs synced**
 (`uv sync` in `agents/movie-assistant` and in each `mcp-servers/*` — pip-audit audits the installed
 env, per surface). An unsynced surface **fails** the scan; it is never silently skipped.
@@ -64,16 +64,18 @@ iteration. `--emit-allowlist` writes `reports/allowlist.proposed.yaml` (baseline
 
 The blocking **`sast`** job in [.forgejo/workflows/guardrails.yml](../../.forgejo/workflows/guardrails.yml)
 runs on every pull request and on every push to `main` (the `push:` trigger is branch-scoped; the
-required contexts come from `pull_request`, auto-covered by the `guardrails*` branch-protection glob). Keyless — no
-`${{ secrets }}`. Steps: install uv + Rust/cargo-audit fresh + `pnpm install` + `uv sync` the agent
-venv → `check-sast-findings.mjs --selftest` → `sast-scan.mjs` (`--scope changed` on PRs, `--scope full`
+required contexts come from `pull_request`, auto-covered by the `guardrails*` branch-protection glob). Keyless — no scanner uses a
+`${{ secrets }}` value (the only one in the job is the shared failure-digest step's). Steps: install uv + Rust/cargo-audit fresh + `pnpm install` + `uv sync` each of the
+four Python venvs → `check-sast-findings.mjs --selftest` → `sast-scan.mjs --test-rules` → `sast-scan.mjs` (`--scope changed` on PRs, `--scope full`
 on push; **SCA always full**) → `check-sast-findings.mjs` (the gate) → on PRs,
 `check-dependency-downgrade.mjs` (the downgrade gate, below) → upload the `sast-report` artifact
 (always, for triage). **No `paths:` filter** — a newly-published advisory can hit an unchanged dep, so
 SCA must run regardless of what changed (FR-013).
 
-Forgejo shows no per-step logs; if the `sast` job fails, reproduce locally and read the `sast-report`
-artifact (`findings.json` + `summary.txt`). This is how 031's DAST CI was debugged.
+Forgejo exposes no per-step logs through its API; if the `sast` job fails, read its failure digest
+(`node scripts/ci-status.mjs failure --pr <n> --job sast`, or `--sha <sha>` after a push) — every step
+is wrapped in `scripts/ci-log-step.sh`, so the digest names the failing step and carries its output
+tail. The `sast-report` artifact (`findings.json` + `summary.txt`) is reachable from the web UI only.
 
 ### The downgrade gate — a PR must not move a package INTO an advisory, in any scope (item #776)
 
@@ -109,7 +111,7 @@ remote-cache token, for example) block like a runtime one? **No. The dev/runtime
 - **Blocking standing dev advisories would block PRs that changed nothing.** A newly published advisory
   in build tooling would turn every PR red until someone allowlisted it. That is the advisory-churn shape
   in "When `main` goes red on SAST you didn't change" below, multiplied across the whole dev tree. Most of
-  those packages have no patched release either (braces, node-forge), so the allowlist would grow with
+  those packages have no patched release either (braces, for one), so the allowlist would grow with
   entries that carry no decision.
 - **"Runs in a credentialed job" is not something the scan can see.** The audit knows dev from runtime.
   It does not know which jobs a package executes in, or which secrets those jobs hold. A rule keyed on it
@@ -284,9 +286,9 @@ touched. This is the gate working, not a defect — and it recurs. The playbook 
      it is what restores blocking if 11.x ever returns. The tombstone comment in
      `security/sast/allowlist.yaml` records it.
 
-5. **Note the local limit.** semgrep + cargo-audit + pip-audit aren't on the Windows dev box or the
-   dev container, so the *full* gate is CI-authoritative; `pnpm audit` locally confirms only the
-   pnpm-SCA portion. Push and let CI confirm.
+5. **Note the local limit.** Semgrep's registry (`semgrep.dev`) may be unreachable from a dev
+   environment (see the gotcha below), so the *full* gate is CI-authoritative; `--only pnpm-audit`
+   (or the other SCA scanners) confirms the SCA portion locally. Push and let CI confirm.
 
 **Structural fix — no longer just "worth considering" (feature 058, 2026-08-13).** This was a
 recurring manual tax and two thirds of it is now automated. Renovate's `lockFileMaintenance` runs in

@@ -3,46 +3,10 @@ type: Runbook
 title: Prod reboot resilience
 description: Why a rootless-Docker production homelab did not come back clean after a host reboot, the two rounds of fixes — bind address, keyfile idempotency, reserved-range ports, restart policy and periphery root — that made recovery hands-off, why prod's one-shot inits idle on `sleep infinity` behind a readiness marker, plus the validation reboot on record and the host-operation rules that keep it that way.
 resource: docs/runbooks/prod-reboot-resilience.md
+resource-sha256: adb389f4b7b968aad804f5f060e3bb8e018dc8b074ceb4dc6090d26b743f01fd
 tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
-sources:
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
-  - id: openwiki-source-d5b1faab58eeb909bb999298
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
-  - id: openwiki-source-4042a47526d6016cff835628
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
-  - id: openwiki-source-852cc196002c1a675baddf5c
-    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
-  - id: openwiki-source-b6d5c062815f2af4f3aec768
-    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-5c295e2a3945cc4a649c1abc
-    resource: repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
-    resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
-  - id: openwiki-source-482173336861a06249bf1372
-    resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-b182ec4cb28667debd4684ff
-    resource: repo://scripts/check-prod-restart-policy.mjs
-  - id: openwiki-source-bf15c8e3067ce028059a1350
-    resource: repo://scripts/check-resource-naming.mjs
-  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
-    resource: repo://scripts/preflight.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T15:45:38.591Z
+timestamp: 2026-11-10T11:59:39.645Z
 ---
 
 # Prod reboot resilience
@@ -152,8 +116,8 @@ The two variables that used to scope those publishes are gone, and the reason ge
   but dead config. The admin **URL** was always the separate `KC_HOSTNAME_ADMIN`.
 - **`TS_ADMIN_IP` followed the same course to completion.** It was only the prefix of the two
   observability operator-UI binds; feature 028 made those binds `0.0.0.0`, and the stack config stopped
-  passing the variable on 2026-10-13 (item #727). No stack or compose file reads it now, so the Komodo
-  Variable can be retired.
+  passing the variable on 2026-10-13 (item #727). No stack or compose file reads it now, and the operator has
+  removed the Komodo Variable (item #727).
 
 Retire the stack `environment` line and the Komodo Variable together. Nothing detects a supplied variable
 nobody reads, and because nothing references the name, leaving it seeded cannot fail a deploy — the only

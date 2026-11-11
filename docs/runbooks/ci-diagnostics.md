@@ -1140,7 +1140,7 @@ Two branches you should **not** delete:
 - **An open PR's head.** It is hand-closing by another route, with the same consequence — for a
   `lockFileMaintenance` branch it marks the channel rejected.
 - **A branch an automation owns and recreates**, e.g. `openwiki-maintenance`. Its workflow re-creates
-  it each scheduled run, so a lingering ref there is its normal working state rather than debris.
+  it on each run, so a lingering ref there is its normal working state rather than debris.
 
 ### "Is it merged?" — `merged: true` is not the answer
 

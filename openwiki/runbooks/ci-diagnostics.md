@@ -3,106 +3,10 @@ type: Runbook
 title: CI self-serve diagnostics
 description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the one pinned Trivy installer all three scanning workflows share, and the labelled container holds that stop another run's prune deleting the scan tags, the event-versus-trigger_event split (including which run posted a check) and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
+resource-sha256: 3eef42b7a6419ba31e8d77021ea904e4eea293369febdf4c5c2fa1059b2636ab
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-7884f328b4348e296cee1257
-    resource: repo://.forgejo/workflows/branch-reaper.yml
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-7bd434a17ed7c27916b1d2ae
-    resource: repo://.forgejo/workflows/infra-image-scan.yml
-  - id: openwiki-source-ceecf221f842ba07ba6a91b2
-    resource: repo://.forgejo/workflows/registry-retention.yml
-  - id: openwiki-source-96c32d20fcdefc48cf9ec296
-    resource: repo://backend/mc-service/src/api/collections/create.rs
-  - id: openwiki-source-c3e333457ea705ec015d1cbd
-    resource: repo://backend/mc-service/src/api/collections/delete.rs
-  - id: openwiki-source-12999abcc7373e8376b400bb
-    resource: repo://backend/mc-service/src/api/collections/list.rs
-  - id: openwiki-source-4ed96763667f13cac6dcc6ce
-    resource: repo://backend/mc-service/src/api/middleware/logging.rs
-  - id: openwiki-source-f83bd1373e0f000fa5d548c0
-    resource: repo://docs/runbooks/ci-diagnostics.md
-  - id: openwiki-source-f003db5a1a23dba30ccf3b03
-    resource: repo://docs/runbooks/ci-evidence-pipeline.md
-  - id: openwiki-source-7b223ba4df7203eeb5667fa8
-    resource: repo://docs/runbooks/devcontainer-sandbox.md
-  - id: openwiki-source-045a0d186e0b60056b359b2e
-    resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-3adf769c2d4e02405ca6896b
-    resource: repo://frontend/mcm-app/tests/e2e/web/setup/assistant-add-flow.ts
-  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
-    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-c138086948681bd36101354f
-    resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
-  - id: openwiki-source-fa3a87df52d837aa49b86894
-    resource: repo://scripts/__tests__/app-ci-trigger-cd.guard.test.mjs
-  - id: openwiki-source-0a51228742c9892eef223b4e
-    resource: repo://scripts/__tests__/app-image-scan.test.mjs
-  - id: openwiki-source-afea6a4b73f1abee8610bd58
-    resource: repo://scripts/__tests__/cd-dispatch-gate.test.mjs
-  - id: openwiki-source-583e0d299d9b65d403bcd328
-    resource: repo://scripts/__tests__/ci-failure-digest.test.mjs
-  - id: openwiki-source-27bdf2533d99346470f527d9
-    resource: repo://scripts/__tests__/ci-install-trivy.test.mjs
-  - id: openwiki-source-85fc21a7b778685b168d8d3b
-    resource: repo://scripts/__tests__/ci-status.test.mjs
-  - id: openwiki-source-02881b4039babfbc8f305d7c
-    resource: repo://scripts/__tests__/e2e-contention-tally.test.mjs
-  - id: openwiki-source-b50d19f23836b85abeaed26d
-    resource: repo://scripts/__tests__/fixtures/ci-status/dispatched-failed.json
-  - id: openwiki-source-f2acfc0bf32b6ad4708d5aed
-    resource: repo://scripts/__tests__/fixtures/ci/branch-protections.json
-  - id: openwiki-source-9f5bde5553deb853de9f4a9f
-    resource: repo://scripts/__tests__/fixtures/ci/runs-cron-shares-push-sha.json
-  - id: openwiki-source-c84c5149aa3c4f5090fd8fae
-    resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
-  - id: openwiki-source-2c2f0032bb5935673fca7b18
-    resource: repo://scripts/__tests__/reap-merged-branches.test.mjs
-  - id: openwiki-source-2be83b0d6ba5dbf9949f2cf2
-    resource: repo://scripts/__tests__/registry-retention.test.mjs
-  - id: openwiki-source-083be07d2570a758cc6c0b74
-    resource: repo://scripts/__tests__/renovate-health.test.mjs
-  - id: openwiki-source-6a31387312db2b158048d4d9
-    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
-  - id: openwiki-source-f8f2427f127614b5db674fca
-    resource: repo://scripts/cd-dispatch-gate.mjs
-  - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
-    resource: repo://scripts/cd/publish-apk.mjs
-  - id: openwiki-source-b86ccae465a7267495c319ec
-    resource: repo://scripts/cd/scan-app-image.sh
-  - id: openwiki-source-fe6babf23c099d13c73c6b6f
-    resource: repo://scripts/cd/scan-push.sh
-  - id: openwiki-source-478a776ff0b75f2af5dc3190
-    resource: repo://scripts/ci-failure-digest.mjs
-  - id: openwiki-source-daf4f583f7313d88c7671f4b
-    resource: repo://scripts/ci-install-trivy.sh
-  - id: openwiki-source-1edeb18757a8f02d496d8f2b
-    resource: repo://scripts/ci-log-step.sh
-  - id: openwiki-source-70875ab1853f42b7c7d4b78a
-    resource: repo://scripts/ci-status.mjs
-  - id: openwiki-source-7183777a95d300ed54250302
-    resource: repo://scripts/ci-step-ceilings.tsv
-  - id: openwiki-source-48dc88a52302b6581d98158e
-    resource: repo://scripts/e2e-failure-set.mjs
-  - id: openwiki-source-aa94e9cc08dccbe003436cfb
-    resource: repo://scripts/reap-merged-branches.mjs
-  - id: openwiki-source-45caf09b059605daac0b6db2
-    resource: repo://scripts/registry-retention.mjs
-  - id: openwiki-source-4708763005c35901b04f5740
-    resource: repo://security/infra-images/allowlist.yaml
-  - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
-    resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T19:55:04.696Z
+timestamp: 2026-11-10T11:46:33.760Z
 ---
 
 # CI self-serve diagnostics
@@ -770,7 +674,7 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   **Two branches not to delete, and the reaper enforces both:** an open PR's head (deleting it is
   hand-closing by another route, with the same consequence — for a `lockFileMaintenance` branch it marks
   the channel rejected) and an automation-owned branch such as `openwiki-maintenance`, whose workflow
-  re-creates it each scheduled run, so a lingering ref there is its normal working state rather than
+  re-creates it on each run, so a lingering ref there is its normal working state rather than
   debris. `scripts/__tests__/reap-merged-branches.test.mjs` pins each keep-reason with a mutation test,
   so deleting any one check turns the suite red.
 - **`durations` — per-step timing exists now, but three traps prevent a naive reading from being

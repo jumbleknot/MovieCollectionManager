@@ -3,148 +3,10 @@ type: Service
 title: Keycloak (Identity and Access Management)
 description: The Keycloak IAM instance that fronts the whole MCM platform — realm grumpyrobot and its clients and client roles, the digest-pinned keycloak-service service head and its Postgres 18 realm store whose volume must mount the parent /var/lib/postgresql, the three realm variants (dev/CI/prod) and why their token lifespans differ, the three separate realm-import paths, the kc-admin-api client scope Keycloak 26.8.2 requires on mcm-bff-service together with the service-account roles and the six redirect addresses production must list by hand, the 2026-11-07 console correction of production's running realm versus what the committed file guarantees for a rebuild, RFC 8693 token exchange, the dedicated backup-consent client that keeps grant revocation from ending a member's session, and the realm guards plus service/network topology rules that keep auth reachable.
 resource: infrastructure-as-code/docker/keycloak/README.md
+resource-sha256: 7220c320d5f5e6472d91ea1d703ef542444cf897ad58bf529d7e879a1ab01088
 tags: [auth, keycloak, iam, docker, realm, jwt]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-4cc090993970bb2253a628ba
-    resource: repo://backend/mc-service/src/api/middleware/auth.rs
-  - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
-    resource: repo://backend/mc-service/src/api/router.rs
-  - id: openwiki-source-f98f56169006fd5a5bdf85b9
-    resource: repo://backend/mc-service/tests/integration/health_test.rs
-  - id: openwiki-source-541e2287bdfb42c605c78f3f
-    resource: repo://docs/MCM-Architecture.md
-  - id: openwiki-source-95a7ed7500d24b0881fc3468
-    resource: repo://docs/runbooks/backups.md
-  - id: openwiki-source-f8d87cfe0689163c27061841
-    resource: repo://docs/runbooks/e2e-testing.md
-  - id: openwiki-source-7c76000f237dd683a4fb0536
-    resource: repo://docs/runbooks/infra-image-scanning.md
-  - id: openwiki-source-f84ce669ebf8d13e89ba2f75
-    resource: repo://docs/runbooks/local-dev.md
-  - id: openwiki-source-318b395038e1943bc8a10f72
-    resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-045a0d186e0b60056b359b2e
-    resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-dc9c673c8dc973e1e621fa45
-    resource: repo://frontend/mcm-app/src/app/bff-api/auth/init%2Bapi.ts
-  - id: openwiki-source-04ddeebeb466c7a075e05fbf
-    resource: repo://frontend/mcm-app/src/app/bff-api/auth/refresh%2Bapi.ts
-  - id: openwiki-source-653746d934ac6813d4981084
-    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
-  - id: openwiki-source-28b3de7a863c75f0b1b6b62c
-    resource: repo://frontend/mcm-app/src/bff-server/backup-offline-token.ts
-  - id: openwiki-source-d58b64a5afcc9df80ea92152
-    resource: repo://frontend/mcm-app/src/bff-server/keycloak.ts
-  - id: openwiki-source-d79145b1e76e45f44a146d13
-    resource: repo://frontend/mcm-app/src/bff-server/session-tokens.ts
-  - id: openwiki-source-d637881fca08f33aeaf4b141
-    resource: repo://frontend/mcm-app/src/bff-server/token-service.ts
-  - id: openwiki-source-a5bf09947adc24a8d59ab587
-    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/redirect-uri-registration.test.ts
-  - id: openwiki-source-e69fe30016fa84209ae5e815
-    resource: repo://frontend/mcm-app/src/config/env.ts
-  - id: openwiki-source-4bb9aed3e8acb9d5ea822f53
-    resource: repo://frontend/mcm-app/src/config/keycloak.ts
-  - id: openwiki-source-632789ffafe5c334f1dbdfba
-    resource: repo://frontend/mcm-app/src/hooks/use-keycloak-auth.ts
-  - id: openwiki-source-b95aa0cad6a90f846312a9a6
-    resource: repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts
-  - id: openwiki-source-e1083958c70f9ec3bcb8faec
-    resource: repo://frontend/mcm-app/tests/e2e/web/setup/bff-session-store.ts
-  - id: openwiki-source-b84c2ebda1fa9702c5fd6055
-    resource: repo://frontend/mcm-app/tests/integration/backup-consent-redirect-uri.integration.test.ts
-  - id: openwiki-source-34854463fd23e29b106dcb63
-    resource: repo://infrastructure-as-code/docker/keycloak/.env.prod.example
-  - id: openwiki-source-60cf9a830f0ca275ffed94d7
-    resource: repo://infrastructure-as-code/docker/keycloak/ci-realm.json
-  - id: openwiki-source-238b72d34ab2ca60f36f4783
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.ci.yaml
-  - id: openwiki-source-16f23fb13b0e88082b534458
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml
-  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
-  - id: openwiki-source-73ccac5c4c3b2e02cb1b3ec1
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.yaml
-  - id: openwiki-source-3574b605c1922bedacc8f2fa
-    resource: repo://infrastructure-as-code/docker/keycloak/dev-realm.json
-  - id: openwiki-source-4af9b1718a0206bbe016cb00
-    resource: repo://infrastructure-as-code/docker/keycloak/prod-realm.json
-  - id: openwiki-source-4953a197c77e1a3e7a0fd632
-    resource: repo://infrastructure-as-code/docker/keycloak/README.md
-  - id: openwiki-source-f6b7a61bf48156b2722b6a7f
-    resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
-  - id: openwiki-source-6bbbd430d1641897fad87ccd
-    resource: repo://infrastructure-as-code/docker/keycloak/scripts/configure-token-exchange.mjs
-  - id: openwiki-source-100352d0b8b84569e79b6c28
-    resource: repo://infrastructure-as-code/docker/keycloak/scripts/ensure-admin-api-scope.mjs
-  - id: openwiki-source-4042a47526d6016cff835628
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-79878dc2da65b6b5c71034f7
-    resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
-  - id: openwiki-source-f71a8c09fa1dfc3547dbcf23
-    resource: repo://infrastructure-as-code/docker/stacks/auth.env.example
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
-    resource: repo://infrastructure-as-code/project.json
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-b2ca74a715a45afd3a6741ef
-    resource: repo://scripts/__tests__/e2e-worker-session.test.mjs
-  - id: openwiki-source-6f82ff35957c317878203b8f
-    resource: repo://scripts/__tests__/keycloak-admin-api-scope.guard.test.mjs
-  - id: openwiki-source-18c29c2650068d3600a02d5a
-    resource: repo://scripts/__tests__/keycloak-realm-schema.test.mjs
-  - id: openwiki-source-e1fdca7abfc27f03b9de0dbd
-    resource: repo://scripts/__tests__/keycloak-service-account-roles.guard.test.mjs
-  - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
-    resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
-  - id: openwiki-source-6a31387312db2b158048d4d9
-    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
-  - id: openwiki-source-214c4d8d22f6d46c2e78f3b4
-    resource: repo://scripts/check-infra-image-findings.mjs
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-b182ec4cb28667debd4684ff
-    resource: repo://scripts/check-prod-restart-policy.mjs
-  - id: openwiki-source-8859745870982587154fcc8e
-    resource: repo://scripts/check-realm-consistency.mjs
-  - id: openwiki-source-d332b78944bf7820230a82f2
-    resource: repo://scripts/export-ci-realm.mjs
-  - id: openwiki-source-864993a079e6e4df052ac4ea
-    resource: repo://scripts/gen-ci-env.mjs
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-921299f3e17b7f9cb4a1254c
-    resource: repo://specs/054-app-e2e-reliability-cluster/tasks.md
-  - id: openwiki-source-511cf70d08e685e1be0170b8
-    resource: repo://specs/083-backup-consent-session-isolation/spec.md
-  - id: openwiki-source-9cf3b6bdb4f757d661e84469
-    resource: repo://specs/090-keycloak-admin-api-scope/spec.md
-  - id: openwiki-source-862ff389727016f069a59d93
-    resource: repo://specs/090-keycloak-admin-api-scope/tasks.md
-  - id: openwiki-source-ee756b2622ea0014c565c9dc
-    resource: repo://specs/092-prod-service-account-roles/plan.md
-  - id: openwiki-source-210be746e72ce9b5abe32746
-    resource: repo://specs/092-prod-service-account-roles/spec.md
-  - id: openwiki-source-7dcc04357ee7099bb248cb4d
-    resource: repo://specs/092-prod-service-account-roles/tasks.md
-  - id: openwiki-source-aa8b20a71f803c01384f8201
-    resource: repo://verify/verify-fresh-realm-seed.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T19:02:58.048Z
+timestamp: 2026-11-10T11:40:29.747Z
 ---
 
 # Keycloak (Identity and Access Management)
@@ -189,7 +51,7 @@ carries five facts worth reading directly, because none of them is visible in a 
 
 - **The image is pinned by tag *and* digest** — `quay.io/keycloak/keycloak:26.8.2@sha256:3879c623…`, the
   identical pin in `compose.prod.yaml`, so dev and prod cannot drift apart. A bump is a change to both
-  compose files *and* to the README's import-proof snippet, which still invokes the 26.8.1 image (see
+  compose files *and* to the README's import-proof snippet, which must invoke the same image (see
   the gotchas). The digest matters separately from the tag: an infra-image CVE allowlist entry suppresses
   a finding only while its `image` regex still matches the scanned `repo:tag`, its `id` regex matches the
   advisory and the entry has not expired — so keying a suppression to a pinned version makes a tag bump
@@ -471,10 +333,7 @@ server-held expiry moved forward; and `POST /bff-api/auth/refresh` — still the
 succeeds on the session cookie alone and re-sets nothing but `mcm_session_id`. The cookie jar is
 checked for the two retired token cookies at baseline too. So the spec still proves the refresh path
 independently of the realm's `accessTokenLifespan`, but it now proves the *server* half of the chain;
-the client-side 401 → refresh → retry orchestration over a real refused run is not covered here. The
-keycloak README's own sentence about this spec ("clears the access cookie explicitly") is pre-085 text
-that survived the re-scoping — the surrounding claims (dev and CI at 5400 s, prod at 300 s, local dev
-therefore not seeing realistic expiry) are unaffected.
+the client-side 401 → refresh → retry orchestration over a real refused run is not covered here.
 
 ## RFC 8693 token exchange
 
@@ -654,9 +513,8 @@ command is in the keycloak README's realm-import proof section
 ([`infrastructure-as-code/docker/keycloak/README.md`](../../infrastructure-as-code/docker/keycloak/README.md)).
 That proof is meant to run the *same* image the compose files pin, which makes it a genuine
 version-parity check as well as a schema/deserialisation one — and that is exactly why a version bump
-is not finished when the two compose files agree: the README's snippet still invokes
-`quay.io/keycloak/keycloak:26.8.1` while both compose files now pin `26.8.2`, so today's proof is a
-minor version behind the deployed pin and has silently downgraded to schema-only. It stays a check of
+is not finished when the two compose files agree: a snippet left on the old tag silently downgrades the
+proof to schema-only. It stays a check of
 the realm *against* the image either way, not of the image's own behaviour: the same class of change
 that made Keycloak 26.6+ enforce the realm password policy against imported user credentials was a
 *server* behaviour change that no realm edit would have revealed. Keep the proof image and the compose
@@ -664,8 +522,8 @@ pins in step deliberately. Read the env-var names in the command against the rea
 them: placeholder replacement is on by default since Keycloak 26.0.0, and an unresolved `${...}` is left
 intact rather than failing the import (that is why the realm's own `${role_*}` / `${client_*}` i18n
 keys survive an import), so a name that no longer matches the realm can still import "successfully"
-while leaving the literal placeholder where a secret belongs. The ROPC client's placeholder is
-`${E2E_ROPC_CLIENT_SECRET}`.
+while leaving the literal placeholder where a secret belongs (the ROPC client's placeholder is
+`${E2E_ROPC_CLIENT_SECRET}`, not the client's own name).
 
 **The CI runner is persistent, so `app-ci` deletes the realm volume on every run.** `IGNORE_EXISTING`
 means a stale realm would *never* pick up a `ci-realm.json` change, and stale Mongo/Redis data breaks
@@ -688,13 +546,11 @@ prod-strength policy and seeds a user with a plaintext `${E2E_TEST_PASSWORD}` ab
 Password strength is validated client-side in the suite. `prod-realm.json` keeps its policy — it seeds
 no user credential, so its import is unaffected.
 
-**`${BASE_DOMAIN}` in `prod-realm.json` is rendered by hand with `sed`, not `envsubst`.** Use
-`sed 's|${BASE_DOMAIN}|<domain>|g'` — `envsubst` would also expand Keycloak's own `${role_*}` /
-`${client_*}` i18n placeholders and corrupt the realm. Verified: 32 such placeholders survive the
-`sed` render intact. The rendered file is gitignored and pointed to by `PROD_REALM_FILE`; the
-committed template keeps the placeholder. (`compose.prod.yaml` and `.env.prod.example` still describe
-the restricted-`envsubst` form; the hand-run `sed` is what is actually used, and the two differ in
-exactly the way that matters.)
+**`${BASE_DOMAIN}` in `prod-realm.json` is rendered by hand, and ONLY that placeholder.** The
+operator uses `sed 's|${BASE_DOMAIN}|<domain>|g'`, which `compose.prod.yaml` and `.env.prod.example`
+now show; a *restricted* `envsubst '${BASE_DOMAIN}'` is equivalent, but a bare `envsubst` would also
+expand Keycloak's own `${role_*}` / `${client_*}` i18n placeholders and corrupt the realm. The rendered
+file is gitignored and pointed to by `PROD_REALM_FILE`; the committed template keeps the placeholder.
 
 **`keycloak-service` can lose `backend-network` on reboot (prod).** Confirmed on 2026-07-06: after a
 reboot the container came back attached only to `edge-network` and `keycloak-network`, missing

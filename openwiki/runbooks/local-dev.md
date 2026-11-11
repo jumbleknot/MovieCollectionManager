@@ -3,82 +3,10 @@ type: Runbook
 title: Local dev infrastructure & environment variables
 description: How the four independently operable Compose stacks (auth, mcm, audit, observability) are bootstrapped, credentialed, and brought up/down through their Nx lifecycle targets for local development — the mcm stack's unprofiled stores, their replica-set and MongoDB 9.0 data-ownership rules, and the movie store's dev-only cache/nofile pins — plus the leased test-database pool and the load-bearing ordering, credential-rotation, missing-.env.local and stale-credential gotchas that break a fresh box or a test run if skipped.
 resource: docs/runbooks/local-dev.md
+resource-sha256: 5d044f1350da1fd9f9454fbd0d416f25ac81b2c7dca9bcc72eead8097458e0bb
 tags: [docker-compose, local-dev, secrets, keycloak, mongodb, runbook]
-sources:
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-ea70eb6c045047448e446296
-    resource: repo://.gitignore
-  - id: openwiki-source-19a939e3a38241d7960054fe
-    resource: repo://backend/mc-service/src/main.rs
-  - id: openwiki-source-16c2f372398849e8eff53877
-    resource: repo://backend/mc-service/tests/integration/common/mod.rs
-  - id: openwiki-source-f98f56169006fd5a5bdf85b9
-    resource: repo://backend/mc-service/tests/integration/health_test.rs
-  - id: openwiki-source-1acbc1141c6fb60b1c86c33a
-    resource: repo://backend/mc-service/tests/integration/pool_test.rs
-  - id: openwiki-source-e201e686a785f09b6d899f0b
-    resource: repo://compose.yaml
-  - id: openwiki-source-f84ce669ebf8d13e89ba2f75
-    resource: repo://docs/runbooks/local-dev.md
-  - id: openwiki-source-abe552d5bae5c5ce75a9c776
-    resource: repo://frontend/mcm-app/src/bff-server/rate-limiter.ts
-  - id: openwiki-source-7a0ce0b0b1a10dd515633969
-    resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
-  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
-    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
-  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
-    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
-  - id: openwiki-source-16f23fb13b0e88082b534458
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.dev.yaml
-  - id: openwiki-source-73ccac5c4c3b2e02cb1b3ec1
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.yaml
-  - id: openwiki-source-d5b1faab58eeb909bb999298
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
-  - id: openwiki-source-4042a47526d6016cff835628
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
-  - id: openwiki-source-0ff61f596da1302e58282fa2
-    resource: repo://infrastructure-as-code/docker/observability/compose.yaml
-  - id: openwiki-source-7ad99116ef3a9756b7c06307
-    resource: repo://infrastructure-as-code/docker/opensearch/compose.yaml
-  - id: openwiki-source-79878dc2da65b6b5c71034f7
-    resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
-  - id: openwiki-source-164936b930a31e48cf0a65fc
-    resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
-  - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
-    resource: repo://infrastructure-as-code/docker/stacks/README.md
-  - id: openwiki-source-819b0a18008c0f90a7eaf2b3
-    resource: repo://infrastructure-as-code/docker/vault/compose.yaml
-  - id: openwiki-source-d951526f31e9f2cb4d68995b
-    resource: repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml
-  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
-    resource: repo://infrastructure-as-code/project.json
-  - id: openwiki-source-44335116b1e1ad90d0eaa667
-    resource: repo://scripts/__tests__/gen-dev-env.guard.test.mjs
-  - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
-    resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
-  - id: openwiki-source-9718a90a7733637f39e0b867
-    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
-  - id: openwiki-source-85a6abb4f828129c0cce9653
-    resource: repo://scripts/check-no-inline-secrets.mjs
-  - id: openwiki-source-6f10e821d1ec074deb438a3e
-    resource: repo://scripts/check-topology-scrub.mjs
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-1dabdb308579a8f9d6d49612
-    resource: repo://scripts/gen-dev-secrets.mjs
-  - id: openwiki-source-ac2000cc53be6b0ffb997de7
-    resource: repo://scripts/up-mcm-agents.mjs
-  - id: openwiki-source-2e80450c72b5a1cbf460cfc1
-    resource: repo://specs/080-minio-to-rustfs/research.md
-  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
-    resource: repo://specs/080-minio-to-rustfs/tasks.md
-  - id: openwiki-source-aa8b20a71f803c01384f8201
-    resource: repo://verify/verify-fresh-realm-seed.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-04T13:09:42.610Z
+timestamp: 2026-11-10T11:51:44.495Z
 ---
 
 # Local dev infrastructure & environment variables

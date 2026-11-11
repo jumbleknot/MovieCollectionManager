@@ -46,7 +46,7 @@ node scripts/gen-dev-secrets.mjs --force --stack=auth   # rotate one stack
 
 - **Idempotent, and back-filling**: in a stack whose `.env` already exists, every key it already defines keeps its value (your running stacks keep working). Keys the template has gained since are seeded into it, so a new key never needs `--force`, which rotates everything.
 - **Fixtures stay fixed**: `LANGFUSE_INIT_PROJECT_PUBLIC_KEY` / `LANGFUSE_INIT_PROJECT_SECRET_KEY` are copied verbatim even under `--force` — the agent gateway + feature-012 SC-008 verify test authenticate against those exact values.
-- **Generation kinds** (`research.md` R4): `b62-32` / `b62-48` (URL- & shell-safe base62), `hex-64` (32-byte hex), `complex-16` (upper+lower+digit+special, URL/shell-safe charset), `unleash-admin` (`*:*.`+b62-40), `unleash-client` (`default:development.`+b62-40).
+- **Generation kinds** (`research.md` R4): `b62-32` / `b62-48` (URL- & shell-safe base62), `hex-64` (32-byte hex), `complex-16` (upper+lower+digit+special, URL/shell-safe charset), `unleash-admin` (`*:*.`+b62-40), `unleash-client` (`default:development.`+b62-40), `mongo-keyfile` (base64 replica-set keyfile content).
 
 ## Fail-fast
 
@@ -61,6 +61,6 @@ required variable KC_BOOTSTRAP_ADMIN_PASSWORD is missing a value: set in stacks/
 - `.gitignore` ignores `*.env` and `*.env.*`, and carves out `!infrastructure-as-code/docker/stacks/*.env.example` so these templates stay tracked. The carve-out is scoped to this directory, so other deliberately ignored `*.env.example` files stay ignored.
 - `scripts/check-no-inline-secrets.mjs` (CI: the `naming` job in `guardrails.yml`) fails the build if any literal credential is re-inlined into a tracked compose file. Run locally: `node scripts/check-no-inline-secrets.mjs` (and `--selftest`).
 
-See [`docs/runbooks/local-dev.md`](../../../../docs/runbooks/local-dev.md) and `specs/021-externalize-compose-secrets/` for the full design.
+See [`docs/runbooks/local-dev.md`](../../../docs/runbooks/local-dev.md) and `specs/021-externalize-compose-secrets/` for the full design.
 
 <!-- spec 081 US1 PR 1b (T010): this comment exists so a CI-actions PR touches the infra paths-filter area and proves the gated scan RUNS. Safe to delete. -->

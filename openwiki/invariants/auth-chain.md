@@ -134,4 +134,4 @@ Source: `specs/085-bff-auth-fail-closed/` (spec, plan, research R1–R11, data m
 
 See [Secrets management](./secrets-management.md) for how the credentials this
 chain depends on (Keycloak client secrets, cookie signing/encryption keys) are sourced and rotated,
-and `CLAUDE.md`'s Architecture and Non-Obvious Design Decisions sections for the full narrative.
+and `docs/MCM-Architecture.md` for the full narrative.

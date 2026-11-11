@@ -8,7 +8,8 @@
 # gitignored .env.prod / Komodo). Registry host never enters git.
 #
 # Models: #PROD MODEL_PROVIDER=anthropic (Claude), NOT Ollama. Model ids are CODE defaults — supervisor
-# claude-haiku-4-5, specialists claude-sonnet-4-6, escalation claude-opus-5 — so SUPERVISOR_MODEL/
+# claude-haiku-4-5, specialists claude-sonnet-5, escalation claude-opus-5 (agents/movie-assistant/
+# src/models.py) — so SUPERVISOR_MODEL/
 # SPECIALIST_MODEL are deliberately NOT set.
 #
 # THE ABSENCE IS THE DESIGN, not an oversight, and feature 075 made it load-bearing. CI's app-e2e job

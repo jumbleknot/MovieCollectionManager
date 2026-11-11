@@ -3,86 +3,10 @@ type: Gotcha
 title: Expo Router server export and agent-transport traps
 description: Four related runtime traps in the Expo/React Native app's server-side hosting and agent transport — the exported server bundle's missing import.meta.url registry, the express 5 catch-all and static-serving behaviours in server.js, the absolute-URL rewrite plus TRUSTED_PROXY-gated trust proxy that let the expo-server adapter see the public scheme behind the TLS-terminating proxy, and the CopilotKit React Native streaming-fetch path that bypasses the axios token-refresh interceptor — plus the Jest environment override that silently broke both hosting suites.
 resource: frontend/mcm-app/server.js
+resource-sha256: 2bc1424cbe11397589453f8ca867aabb16f164839154875cc578511db7ce67ab
 tags: [expo-router, react-native, copilotkit, express, transport, jest, frontend]
-sources:
-  - id: openwiki-source-f8d87cfe0689163c27061841
-    resource: repo://docs/runbooks/e2e-testing.md
-  - id: openwiki-source-6af9a79d18f77a9b86839849
-    resource: repo://frontend/mcm-app/Dockerfile
-  - id: openwiki-source-e9bcd4372a4632d555b861a6
-    resource: repo://frontend/mcm-app/package.json
-  - id: openwiki-source-75c613635390ab18cc167ec1
-    resource: repo://frontend/mcm-app/README.md
-  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
-    resource: repo://frontend/mcm-app/server.js
-  - id: openwiki-source-6a3e5dbad8bc4145f0341cf9
-    resource: repo://frontend/mcm-app/src/app/_layout.tsx
-  - id: openwiki-source-66fbf00ecfdc8552ac5fa0fd
-    resource: repo://frontend/mcm-app/src/app/bff-api/agent/run%2Bapi.ts
-  - id: openwiki-source-a344c8ab57b1d157819a0fd2
-    resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
-  - id: openwiki-source-cd9c9ac84bbb2c845f70e90d
-    resource: repo://frontend/mcm-app/src/assistant-polyfills.native.ts
-  - id: openwiki-source-ef52217f9f29eb3b427148ac
-    resource: repo://frontend/mcm-app/src/assistant-polyfills.ts
-  - id: openwiki-source-74f39153b978241c50c7addd
-    resource: repo://frontend/mcm-app/src/bff-server/account-route-support.ts
-  - id: openwiki-source-03fac6b82cbc7d4d7738a1af
-    resource: repo://frontend/mcm-app/src/bff-server/agent-subject-token.ts
-  - id: openwiki-source-653746d934ac6813d4981084
-    resource: repo://frontend/mcm-app/src/bff-server/auth.ts
-  - id: openwiki-source-abe552d5bae5c5ce75a9c776
-    resource: repo://frontend/mcm-app/src/bff-server/rate-limiter.ts
-  - id: openwiki-source-fd968ab79d3d5126e91933cf
-    resource: repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx
-  - id: openwiki-source-899b4c37240ac1b7b57cee52
-    resource: repo://frontend/mcm-app/src/components/agent/assistant-run-failure.test.ts
-  - id: openwiki-source-a864e7e3b109550c7018e359
-    resource: repo://frontend/mcm-app/src/components/agent/assistant-run-failure.ts
-  - id: openwiki-source-e69fe30016fa84209ae5e815
-    resource: repo://frontend/mcm-app/src/config/env.ts
-  - id: openwiki-source-0b95b2665c338088eef0db7e
-    resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
-  - id: openwiki-source-7d847d9fc555e071868ecb1d
-    resource: repo://frontend/mcm-app/src/utils/api-client.ts
-  - id: openwiki-source-503103081c79db2ef99e2b27
-    resource: repo://frontend/mcm-app/src/utils/token-refresh.ts
-  - id: openwiki-source-19609c73bc9a3a34e47ab18d
-    resource: repo://frontend/mcm-app/src/utils/unit-tests/agent-fetch-refresh.test.ts
-  - id: openwiki-source-b95aa0cad6a90f846312a9a6
-    resource: repo://frontend/mcm-app/tests/e2e/web/agent-session-refresh.spec.ts
-  - id: openwiki-source-d61b9a5c48e21c0856d75a2d
-    resource: repo://frontend/mcm-app/tests/e2e/web/font-fallback.spec.ts
-  - id: openwiki-source-e1083958c70f9ec3bcb8faec
-    resource: repo://frontend/mcm-app/tests/e2e/web/setup/bff-session-store.ts
-  - id: openwiki-source-5ee35374d6ab0e61934498cd
-    resource: repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts
-  - id: openwiki-source-6815e02bc96aebf5b9adb612
-    resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
-  - id: openwiki-source-0df6a785e730381b7aee77a1
-    resource: repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs
-  - id: openwiki-source-138e83bb9f94e2d23a3b0c5a
-    resource: repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/functions/bff-api/echo-url%2Bapi.js
-  - id: openwiki-source-d63e7534cd44e87f67938d1a
-    resource: repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/routes.json
-  - id: openwiki-source-03de7146fd7e33f2e3019d9d
-    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
-  - id: openwiki-source-4afc03401961c543ccdef7be
-    resource: repo://scripts/prune-bff-runtime-modules.mjs
-  - id: openwiki-source-83771c9aeecb9de0bd4deaf4
-    resource: repo://specs/083-backup-consent-session-isolation/tasks.md
-  - id: openwiki-source-85eb0b9c1a482735eec69a61
-    resource: repo://specs/085-bff-auth-fail-closed/research.md
-  - id: openwiki-source-b1756c204f11fe3da51d14a7
-    resource: repo://specs/087-expo-sdk-58/contracts/hosting.md
-  - id: openwiki-source-acc6f4231f060062a015dbd3
-    resource: repo://specs/087-expo-sdk-58/research.md
-  - id: openwiki-source-93b6202dca9e48a643d50488
-    resource: repo://specs/087-expo-sdk-58/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-25T18:33:06.357Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-08T02:21:41.463Z
+timestamp: 2026-11-10T03:13:41.909Z
 ---
 
 # Expo Router server export and agent-transport traps

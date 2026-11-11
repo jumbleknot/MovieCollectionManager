@@ -84,13 +84,14 @@ services:
       KC_DB_PASSWORD: "${KC_DB_PASSWORD:?set in keycloak/.env.prod}"
     volumes:
       # #PROD sanitized realm import (T005/T006/T013). The committed prod-realm.json keeps the
-      # ${BASE_DOMAIN} placeholder; at deploy render it to a GITIGNORED concrete file with envsubst
-      # RESTRICTED to that one var (the realm JSON is full of Keycloak ${role_*}/${client_*} i18n
-      # placeholders that must NOT be touched), then point PROD_REALM_FILE at the rendered file:
-      #   envsubst '${BASE_DOMAIN}' < prod-realm.json > prod-realm.rendered.json
+      # ${BASE_DOMAIN} placeholder; at deploy render ONLY that placeholder to a GITIGNORED concrete
+      # file (the realm JSON is full of Keycloak ${role_*}/${client_*} i18n placeholders that must
+      # NOT be touched), then point PROD_REALM_FILE at the rendered file. The operator uses sed:
+      #   sed 's|${BASE_DOMAIN}|<your-domain>|g' prod-realm.json > prod-realm.rendered.json
+      # (a RESTRICTED `envsubst '${BASE_DOMAIN}'` is equivalent; a bare `envsubst` corrupts the realm)
       #   PROD_REALM_FILE=$(pwd)/prod-realm.rendered.json   # in .env.prod (gitignored)
       # Target MUST be <realm>-realm.json or --import-realm aborts on "File name / realm name mismatch".
-      - "${PROD_REALM_FILE:?render prod-realm.json via envsubst and set its absolute path in .env.prod}:/opt/keycloak/data/import/grumpyrobot-realm.json:ro"
+      - "${PROD_REALM_FILE:?render prod-realm.json (sed, see above) and set its absolute path in .env.prod}:/opt/keycloak/data/import/grumpyrobot-realm.json:ro"
     command:
       - start            # #PROD production mode (was start-dev)
       - --import-realm   # #PROD import the sanitized grumpyrobot realm from data/import/ on first boot

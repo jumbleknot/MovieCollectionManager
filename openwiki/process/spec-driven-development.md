@@ -2,7 +2,6 @@
 type: Process
 title: Proposal → spec → plan → tasks → implementation lifecycle
 description: How an idea becomes shipped work in this repository — from an unstructured proposal document through GitHub Spec Kit's spec/plan/tasks artifacts to implementation — and why proposals themselves are excluded from this wiki.
-resource: specs/
 tags: [process, spec-kit, sdd, governance]
 timestamp: 2026-08-11T00:00:00+00:00
 ---
@@ -82,11 +81,12 @@ flowchart LR
   spec files in isolation; the regression only appeared under the full suite's concurrency. For a change
   to code every spec loads (a shared hook, a shared utility, a shared auth flow), the full suite in CI
   is the only valid instrument.
-- **PowerShell is not installed in the devcontainer — Spec Kit setup scripts will not run there.**
+- **Spec Kit's setup scripts are PowerShell only — the dev container bakes `pwsh` for exactly that.**
   Every Specify CLI script under `.specify/scripts/powershell/` is a `.ps1` file; there is no bash
-  equivalent. If you are inside the devcontainer when a `/speckit-plan` or `/speckit-tasks` step
-  would normally run a setup script, resolve the feature directory from `.specify/feature.json`
-  directly instead of trying to execute the script. (Measured on feature 047.)
+  equivalent. On feature 047 the dev container had no PowerShell, so a `/speckit-plan` or
+  `/speckit-tasks` step had to resolve the feature directory from `.specify/feature.json` by hand;
+  item #221 added `pwsh` to `.devcontainer/toolchain.Dockerfile`, so the scripts now run there. An
+  environment without `pwsh` is back to the hand-resolution fallback.
 - **RTK filters bash output.** Ad-hoc `python -c "print(...)"` output was silently rewritten to
   `ok` mid-session. For anything whose exact output matters, **write to the scratchpad and `Read`
   the file**. (Measured on feature 048.)

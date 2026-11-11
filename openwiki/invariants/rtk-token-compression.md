@@ -23,15 +23,15 @@ reaches the assistant.
   rtk gain            # verify >80% compression after the first test run
   ```
 
-  Pin a specific version (current: `rtk 0.42.4`). The binary lives at `~/.claude/tools/bin/rtk` and is
-  provisioned with the dev container — it is **not** a cargo install, and `~/.cargo/bin/rtk` does not
-  exist. Verify with `rtk --version`; a session must not begin without RTK active.
+  Pin a specific version (no repository file pins it; `rtk --version` reports the one in use). The binary
+  lives at `~/.claude/tools/bin/rtk` and is provisioned with the dev container — it is **not** a cargo
+  install, and `~/.cargo/bin/rtk` does not exist. Verify with `rtk --version`; a session must not begin without RTK active.
 
 ## Gotchas
 
 - **A session must not begin without RTK active.** This is a hard prerequisite, not a suggestion —
   the binary ships with the dev container at `~/.claude/tools/bin/rtk`, pin the version currently in use
-  (`rtk 0.42.4`), and run `rtk init --global` to activate it in the shell before any test command is run.
+  (`rtk --version`), and run `rtk init --global` to activate it in the shell before any test command is run.
 - **`rtk gain` is the verification step, not a one-time install check.** Run it after the first test
   run of a session to confirm compression is actually happening (>80% required) — installed-but-inactive
   is indistinguishable from not-installed until this is checked.

@@ -16,7 +16,7 @@ pre-provisioned; on the host, install it once with the steps below.
 | Node.js | 24 (LTS) — floor in root `package.json` `engines.node` | Frontend + BFF runtime |
 | pnpm | via Corepack — the version pinned by root `package.json` `packageManager` | JavaScript/TypeScript package manager |
 | Nx | workspace (via `pnpm nx`) | Task runner (JS/TS + Rust + Python) |
-| Rust | stable toolchain | mc-service |
+| Rust | stable channel, exact release pinned by root `rust-toolchain.toml` (rustup applies it inside the repo) | mc-service |
 | Python | 3.13 + `uv` | Agent layer, Specify CLI |
 | Docker Desktop | 24+ | Infrastructure / test stacks |
 | Open JDK | 17 | Android builds (mobile only) |
@@ -103,7 +103,7 @@ toolchain image.
 version skew between the two workspaces can produce structurally different bundles:
 
 ```powershell
-pnpm add -g openwiki@0.5.2 mermaid jsdom
+pnpm add -g openwiki@0.7.1 mermaid jsdom
 ```
 
 `mermaid` and `jsdom` are the generator's **optional** peer dependencies, and leaving them out fails

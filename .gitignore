@@ -538,3 +538,10 @@ security/sast/reports/*
 # The tree (severity-map.yaml, allowlist.yaml) stays tracked; only reports ignored.
 security/infra-images/reports/*
 !security/infra-images/reports/.gitkeep
+
+# openwiki's own bookkeeping, retired by feature 098 (ADR-0004). A manual rebuild may still write
+# these; they are never committed again.
+openwiki/.claims/
+openwiki/.page-manifest.json
+openwiki/.last-update.json
+openwiki/.maintenance-state.json

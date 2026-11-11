@@ -3,74 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
+resource-sha256: 20ed1e7b21aabefd574bf48bfa04c6271da527f1fa93280350c7ec55070d7a3f
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-6186a866b56089a82cce5c62
-    resource: repo://.forgejo/workflows/devcontainer-image.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-ceecf221f842ba07ba6a91b2
-    resource: repo://.forgejo/workflows/registry-retention.yml
-  - id: openwiki-source-23175e1d10427daa3344d3ec
-    resource: repo://docs/runbooks/prod-control-tower.md
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-c56aca4c7fefae967d931edd
-    resource: repo://infrastructure-as-code/backup/backup-staleness.sh
-  - id: openwiki-source-78ec32b51a25a8fb66d5b292
-    resource: repo://infrastructure-as-code/backup/backup.sh
-  - id: openwiki-source-1be01bc0222d08bf89a6ee08
-    resource: repo://infrastructure-as-code/backup/homelab-backup.service
-  - id: openwiki-source-5f9c91a5ef0e61e1e3b45cef
-    resource: repo://infrastructure-as-code/backup/komodo-cron-retention.sql
-  - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
-    resource: repo://infrastructure-as-code/backup/README.md
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
-    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-62d227af87c6a9ae6df49e2f
-    resource: repo://scripts/__tests__/backup-install-manifest.test.mjs
-  - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
-    resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
-  - id: openwiki-source-482173336861a06249bf1372
-    resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
-  - id: openwiki-source-c84c5149aa3c4f5090fd8fae
-    resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
-  - id: openwiki-source-2be83b0d6ba5dbf9949f2cf2
-    resource: repo://scripts/__tests__/registry-retention.test.mjs
-  - id: openwiki-source-52c33ce59ba156d00cf24a1d
-    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
-  - id: openwiki-source-1bce6b78afa7160b5f9a9d66
-    resource: repo://scripts/backup-install-manifest.mjs
-  - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
-    resource: repo://scripts/cd/publish-apk.mjs
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-b182ec4cb28667debd4684ff
-    resource: repo://scripts/check-prod-restart-policy.mjs
-  - id: openwiki-source-6f10e821d1ec074deb438a3e
-    resource: repo://scripts/check-topology-scrub.mjs
-  - id: openwiki-source-45caf09b059605daac0b6db2
-    resource: repo://scripts/registry-retention.mjs
-  - id: openwiki-source-2470b658ec43d754a7fc16c1
-    resource: repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md
-  - id: openwiki-source-8e1cfc141032a9d913893039
-    resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
-  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
-    resource: repo://specs/080-minio-to-rustfs/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T15:45:38.591Z
+timestamp: 2026-11-11T00:49:08.167Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -144,10 +80,9 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   host-type `kvm:host` (referenced as `runs-on: kvm`, the label *name*), on which jobs execute directly
   on the host as the unprivileged `ci` user with no job container — the emulator job, which needs
   `/dev/kvm` plus a single-host view of `localhost:8082` / `10.0.2.2:8082`, and the
-  Docker-image-building jobs, which need a reachable `ci` rootless daemon. The runbook's Phase 7 block
-  still names only three tenants — `app-e2e`, `dast` and `build-deploy`; the tracked workflows have
-  grown since, and the *complete* set today is `app-e2e` and `dast` and `app-image-scan` (`app-ci`),
-  `build-deploy` (`cd-deploy`) and `build-publish` (`devcontainer-image`).
+  Docker-image-building jobs, which need a reachable `ci` rootless daemon. The complete set today is
+  `app-e2e`, `dast` and `app-image-scan` (`app-ci`), `build-deploy` (`cd-deploy`) and `build-publish`
+  (`devcontainer-image`).
 - **8 — Self-hosted Nx remote cache, RustFS-backed (feature 080).** The open-source Rust
   `nx-cache-server` binary runs as a `prod`-user systemd-user service implementing Nx's built-in
   custom remote-cache-server API (Nx ≥ 20.8) — the first-party `@nx/s3-cache` / `@nx/shared-fs-cache`
@@ -385,8 +320,7 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   - **KVM is the emulator job's requirement, not the label's.** Five jobs share the label today —
     `app-e2e` and `dast` and `app-image-scan` in `app-ci`, `build-deploy` in `cd-deploy`, and
     `build-publish` in `devcontainer-image` — and only `app-e2e` needs `/dev/kvm`; the rest need the
-    Docker CLI and the `ci` daemon, which is why the runbook's Phase 7 note still enumerates a shorter
-    set (emulator, DAST, image build) and the tracked workflows have grown past it.
+    Docker CLI and the `ci` daemon.
   - **One host job's own error text still describes the pre-`235f2f4c` container setup.**
     `cd-deploy`'s Docker guard tells the operator to "mount `/run/user/1001/docker.sock` into the kvm
     job (runner `config.yaml` `container.options`)" — advice for a job container that no longer exists;
@@ -405,9 +339,10 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   compose lives under the `prod` user's home like the other host-managed composes, which means
   Renovate never sees it: its image pin has to be copied by hand from the git-tracked RustFS instance
   in the observability stack whenever that moves — so check the pin against that file rather than
-  against the runbook's example, which lags (the Phase 8 snippet still carries `rustfs/rustfs:1.0.1`
-  while the tracked observability compose has moved to `1.0.4@sha256:ed9210d6…`; every git-tracked
-  RustFS service must share one digest-pinned Alpine tag). The store's volume and network names are host state
+  against the runbook's example, which can lag (the Phase 8 snippet was brought to the tracked
+  `1.0.4@sha256:ed9210d6…` on 2026-11-11 after trailing at `1.0.1`; every git-tracked RustFS service
+  must share one digest-pinned Alpine tag). Bumping the snippet does not upgrade the running store —
+  re-pull and `docker compose up -d` in `~/rustfs` on the host. The store's volume and network names are host state
   too, so confirm them by ownership *and* contents — and the backup script's path list has to name each
   store's config directory, which is why the live store's directory is on it.
   The guard that fails on any *live* reference to the retired object store — with a closed list of

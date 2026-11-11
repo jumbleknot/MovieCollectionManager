@@ -172,9 +172,11 @@ flowchart LR
   `true`.** A dispatched run that succeeds and produces no PR therefore looks exactly like a gate
   blocking the work. That misreading is what put a wrong conclusion into item #184 — "the schedule
   beats a dashboard tick", inferred from a run that was simply told to create nothing. This forge
-  exposes no log endpoint, so the mode is not readable from the run page: read
-  `event_payload.inputs` from `GET /repos/{owner}/{repo}/actions/runs/{index_in_repo + 1}`, or read
-  the step name, which now carries `MODE DRY RUN` / `MODE LIVE`.
+  exposes no log endpoint, renders step names' `${{ }}` raw, and `event_payload.inputs` echoes what
+  was *sent* rather than what resolved, so none of those show the mode: read the `renovate/mode`
+  commit status the run's 'Publish dispatch mode' step posts on the dispatched sha
+  (`GET /repos/{owner}/{repo}/commits/{sha}/status`), and confirm empirically from branch heads
+  moving and dashboard ticks being consumed.
 - **A version lock scoped to ONE manifest is not a lock, and this repo has paid for it twice.**
   `renovate.json` locks React Native because Expo SDK upgrades must go through `expo install`, not a
   raw bump — but the rule was `matchFileNames`-scoped to `frontend/mcm-app/package.json`, and
@@ -244,7 +246,6 @@ flowchart LR
   script that regresses silently is the same failure class this pipeline exists to prevent elsewhere.
 
 See [Infrastructure-as-code stacks](./infrastructure-stacks.md) for what `cd-deploy`
-actually deploys to and the dependency order Komodo reconciles in, and CLAUDE.md's "Commands" →
-"CI/CD lives on the homelab forge" section plus
+actually deploys to and the dependency order Komodo reconciles in, and
 [CI self-serve diagnostics](../runbooks/ci-diagnostics.md) for the full operator loop
 (driving a PR to green, merging, and verifying a deploy).

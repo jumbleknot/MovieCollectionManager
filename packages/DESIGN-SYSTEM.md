@@ -31,7 +31,7 @@ The dark theme background (`#0F1117`) is intentionally deeper than MD3's standar
 | Scale | Font | Use in MCM |
 |---|---|---|
 | Display / Headline / Title | **Outfit** (400–700) | Screen titles, collection names, movie titles |
-| Body / Label | **Inter** (400–500) | Metadata, descriptions, UI labels, chat |
+| Body / Label | **Inter** (400–700) | Metadata, descriptions, UI labels, chat |
 
 Outfit's geometric character gives MCM a modern, slightly cinematic feel without being stylized. Inter ensures everything at small sizes (metadata, labels) stays perfectly legible on both screen types.
 
@@ -142,24 +142,26 @@ motion.transitions.assistantOpen // { duration: 450, easing: emphasizedDecelerat
 export { default } from '@mcm/design-system/tamagui.config'
 ```
 
-Then in `app/_layout.tsx`:
+Then in `src/app/_layout.tsx`:
 ```tsx
-import { TamaguiProvider } from 'tamagui'
-import config from '../tamagui.config'
+import { TamaguiProvider } from '@tamagui/core'
+import config from '../../tamagui.config'
 import { useFonts } from 'expo-font'
-import { Outfit_400Regular, Outfit_500Medium, Outfit_700Bold } from '@expo-google-fonts/outfit'
-import { Inter_400Regular, Inter_500Medium } from '@expo-google-fonts/inter'
+import { Outfit_400Regular, Outfit_500Medium, Outfit_600SemiBold, Outfit_700Bold } from '@expo-google-fonts/outfit'
+import { Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter'
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  // Non-blocking: the font families fall back to `system-ui, sans-serif` until these load.
+  useFonts({
     'Outfit': Outfit_400Regular,
     'Outfit-Medium': Outfit_500Medium,
+    'Outfit-SemiBold': Outfit_600SemiBold,
     'Outfit-Bold': Outfit_700Bold,
     'Inter': Inter_400Regular,
     'Inter-Medium': Inter_500Medium,
+    'Inter-SemiBold': Inter_600SemiBold,
+    'Inter-Bold': Inter_700Bold,
   })
-
-  if (!fontsLoaded) return null
 
   return (
     <TamaguiProvider config={config} defaultTheme="dark">
@@ -676,7 +678,7 @@ design-system/
    `createTamagui({ defaultProps })`, so the body font and `onBackground` colour live on
    `components/primitives/Text.tsx`.
 
-5. **Wrap your app** in `app/_layout.tsx` (see configuration section above).
+5. **Wrap your app** in `src/app/_layout.tsx` (see configuration section above).
 
 ---
 
@@ -692,7 +694,7 @@ design-system/
 
 5. **The robot has personality** — the Grumpy Robot avatar uses orange prominently and intentionally. It's the exception that proves the rule: a character can be expressive; the UI framework around it stays restrained.
 
-6. **State layers, not opacity hacks** — hover, press, and focus states use MD3 state layers (8%, 12%, 12% tint) rather than `opacity` changes, which avoids parent transparency bleed.
+6. **State layers, not opacity hacks** — hover, press, and focus states use MD3 state layers (`stateLayer` in `tokens/with-alpha.ts`: hover 12%, focus 14%, press 18% tint, raised from MD3's 8/12/12 so they read on `#0F1117`) rather than `opacity` changes, which avoids parent transparency bleed.
 
 7. **Motion is purposeful** — use emphasized easing for elements traversing large areas (page transitions, bottom sheet open); standard easing for component-level changes (button press, chip toggle).
 
@@ -722,9 +724,11 @@ This design system implements the following MD3 components from the M3 specifica
 - ✅ Elevation system (5 levels, shadow + surface tint)
 - ✅ Motion system (duration tokens, easing curves, transition presets)
 - ✅ Shape system (MD3 shape roles → Tamagui radius tokens)
-- ✅ State layers (hover 8%, press 12%, focus 12%)
+- ✅ State layers (hover 12%, focus 14%, press 18% — `stateLayer`)
 - ✅ Minimum touch target 48x48dp enforcement
-- ✅ Accessibility (accessibilityRole, accessibilityLabel, accessibilityState)
+- ✅ Accessibility (accessibilityRole, accessibilityLabel, accessibilityState on native; on web Tamagui
+  drops those props, so interactive primitives such as `Button` and `Chip` also set an explicit `role`,
+  `aria-*` state and `tabIndex`; see `frontend/mcm-app/README.md` → Docked panels)
 
 Not yet implemented (future):
 - ⏳ Bottom Sheet

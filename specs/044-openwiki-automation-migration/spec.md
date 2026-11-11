@@ -4,6 +4,8 @@
 
 **Created**: 2026-07-28
 
+> **Superseded in part by [feature 098](../098-session-maintained-wiki/spec.md) (2026-11-10, ADR-0004).** The automated-maintenance requirements are superseded: FR-007 (outstanding work persists across invocations), FR-009 to FR-012 (automatic triggering, change-driven planning, run budgets and the run marker) and FR-016b (closed-proposal roll-back). Summaries are now refreshed by the coding session that changes their source, and the generator runs only as a manual rebuild of operator-named pages. Slice verification, the regeneration policy, the protection manifest and the relocation requirements remain in force.
+
 **Status**: Draft
 
 **Input**: User description: "Feature 044: OpenWiki follow-ups from feature 043. Three scoped areas: (1) bounded-slice generation — generate/publish OpenWiki content in bounded slices rather than whole-repo passes; (2) scheduled staleness handling — detect and act on stale wiki content on a schedule; (3) move content INTO OpenWiki instead of only linking to it — e.g. relocate sections of CLAUDE.md into OpenWiki pages and replace them with links in CLAUDE.md."

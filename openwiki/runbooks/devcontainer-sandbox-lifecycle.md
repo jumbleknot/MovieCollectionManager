@@ -3,44 +3,10 @@ type: Runbook
 title: Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
 description: "The lifecycle half of the Docker Sandbox dev-container runbook, pinned to sbx v0.51.0 — template recreate-from-nothing and why it is fast but cold, the three creation-time-resizable volumes and how a full disk disguises itself, the six gaps a cold recreate must fill, the memory bound that keeps an OOM kill off Keycloak (Jest workers capped at 4, a 10 GiB dev container), the destructive verification harness with its three vantage points and one vacuous pass, and the ritual before upgrading the sbx binary."
 resource: docs/runbooks/devcontainer-sandbox-lifecycle.md
+resource-sha256: 200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270
 tags: [devcontainer, sandbox, docker, lifecycle, disk, verification, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-06T07:34:17.095Z
-sources:
-  - id: openwiki-source-a157c487923d65153283de40
-    resource: repo://.devcontainer/sandbox/devcontainer.json
-  - id: openwiki-source-84525c5b1053cfa785b83c28
-    resource: repo://.devcontainer/verify/run-harness.sh
-  - id: openwiki-source-bb137082cf3520d82638807c
-    resource: repo://.devcontainer/verify/verify-engine-seam.sh
-  - id: openwiki-source-4811c78aebdb18972e0c3805
-    resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
-  - id: openwiki-source-0bf43f66860dc2b44b7bcb6e
-    resource: repo://.devcontainer/verify/verify-personal-layer.sh
-  - id: openwiki-source-4c6183820ca489953cbd3d7f
-    resource: repo://.devcontainer/verify/verify-portable-runner.sh
-  - id: openwiki-source-abefa09d4b781de4f540ae9a
-    resource: repo://.devcontainer/verify/verify-reboot-survival.sh
-  - id: openwiki-source-c8899d2e41f6938e97009071
-    resource: repo://.devcontainer/verify/verify-reproducible-recreate.sh
-  - id: openwiki-source-3428fee3ac79873bee5650fc
-    resource: repo://docs/runbooks/devcontainer-sandbox-lifecycle.md
-  - id: openwiki-source-7b223ba4df7203eeb5667fa8
-    resource: repo://docs/runbooks/devcontainer-sandbox.md
-  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
-    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
-  - id: openwiki-source-96730ea8c345aed64b62a187
-    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
-  - id: openwiki-source-0b13188628bc70e422253f37
-    resource: repo://scripts/gen-egress-policy.mjs
-  - id: openwiki-source-08fc841d5e458f6987e87106
-    resource: repo://scripts/open-sandbox.ps1
-  - id: openwiki-source-c477b92ec3cc5b8ead412bac
-    resource: repo://specs/086-dev-memory-bounds/plan.md
-  - id: openwiki-source-104e1b5d4af5f78ca3e3f767
-    resource: repo://specs/086-dev-memory-bounds/spec.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
+timestamp: 2026-11-10T03:37:28.090Z
 ---
 
 # Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)

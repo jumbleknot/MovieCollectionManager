@@ -3,10 +3,9 @@ type: Gotcha
 title: mc-service errors are RFC 9457 Problem Details, never a stack trace
 description: mc-service maps every DomainError to an application/problem+json RFC 9457 body via problem_response(), with a non-resolvable .example type URI and no panic or backtrace path, plus the error paths that bypass it — axum's own extractor rejections, require_app_role's 403 and the auth layer's 401, which since axum-keycloak-auth 0.8.4 also covers a credential that is not a JWT — and the problem media type the BFF loses on the hop to a client.
 resource: backend/mc-service/src/api/middleware/error_handler.rs
+resource-sha256: 4ddd02a7830f6788da3da0ebede5a5ae50a8c1ba6c5aec64bf155e1a57a97fa4
 tags: [mc-service, rust, axum, error-handling, api, rfc-9457, bff]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-08T02:21:41.463Z
+timestamp: 2026-11-10T03:37:28.036Z
 ---
 
 # mc-service errors are RFC 9457 Problem Details, never a stack trace

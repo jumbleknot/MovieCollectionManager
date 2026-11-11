@@ -3,32 +3,10 @@ type: Runbook
 title: Dev container on Docker Sandbox microVM (primary environment)
 description: "The primary AI-assisted development environment since feature 060 — a dev container running inside a Docker Sandbox microVM, pinned to sbx v0.51.0, whose shell agent is the published Docker Hardened Images Debian 13 kit. Covers the credential rule, the ~30 s idle-stop, the false docker-daemon start failure the launcher works around by trusting SSH over the exit code, the sandbox path not running init-firewall.sh, the host-side per-FQDN egress allowlist with the approval-queue refusal body, the socat engine seam and VM-side bind-mount source resolution, git inside the container, credential injection, and the 127.0.0.1 port space shared with VS Code and Docker Desktop; recreate, disk, harness and sbx-upgrade material routes to the lifecycle companion."
 resource: docs/runbooks/devcontainer-sandbox.md
+resource-sha256: 6fc9822639198b34057bba8ae1056e975e96d6a2cc3c7171c1ff0d1b7680c9a6
 tags: [devcontainer, sandbox, docker, security, isolation, runbook]
-sources:
-  - id: openwiki-source-61f1a679973e2c37988cd802
-    resource: repo://.devcontainer/gen-container-secrets-env.sh
-  - id: openwiki-source-a157c487923d65153283de40
-    resource: repo://.devcontainer/sandbox/devcontainer.json
-  - id: openwiki-source-7e1c4d46c53be9bf32311e06
-    resource: repo://.devcontainer/toolchain.Dockerfile
-  - id: openwiki-source-84525c5b1053cfa785b83c28
-    resource: repo://.devcontainer/verify/run-harness.sh
-  - id: openwiki-source-81dfe425b1bf98f80dc07cd0
-    resource: repo://.devcontainer/verify/verify-sandbox-egress.sh
-  - id: openwiki-source-3428fee3ac79873bee5650fc
-    resource: repo://docs/runbooks/devcontainer-sandbox-lifecycle.md
-  - id: openwiki-source-7b223ba4df7203eeb5667fa8
-    resource: repo://docs/runbooks/devcontainer-sandbox.md
-  - id: openwiki-source-a9fc7285078c8062777b3180
-    resource: repo://docs/runbooks/devcontainer.md
-  - id: openwiki-source-96730ea8c345aed64b62a187
-    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
-  - id: openwiki-source-08fc841d5e458f6987e87106
-    resource: repo://scripts/open-sandbox.ps1
 generated: { by: "openwiki/0.7.1", at: "2026-10-12T00:08:34.364Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-05T00:41:49.325Z
+timestamp: 2026-11-10T03:37:28.092Z
 ---
 
 # Dev container on Docker Sandbox microVM (primary environment)
@@ -123,7 +101,7 @@ Channels, per-user stores and the gates that enforce the no-clear-text rule: [Se
 
 - **The socat relay truncates output — exit 0 with no stdout (D-19).** The dev container reaches the VM engine through `docker-outside-of-docker`, fronted by a socat relay (`/var/run/docker.sock`). socat's half-close timeout defaults to 0.5 s; `docker exec` half-closes stdin immediately, so socat tears the relay down mid-response. Fast commands work, so the seam looks healthy under quick probes; only real work fails. Fix already applied in `.devcontainer/sandbox/devcontainer.json`: `"DOCKER_HOST": "unix:///var/run/docker-host.sock"`. If you invoke Docker from a context that does not inherit `containerEnv`, pass it explicitly: `docker exec -e DOCKER_HOST=unix:///var/run/docker-host.sock …`.
 
-- **A `-v` mount SOURCE is resolved by the daemon, on the VM — not in this container (measured 2026-09-07, item #382).** The `docker` CLI does not open the source path; it sends the mount spec to the engine, which resolves it against **its own** filesystem. Only `/workspaces/mcm` is genuinely shared between the dev container and the VM daemon — write a file here and it appears inside a container. The VM has its own `/tmp` and `/home/coder`, so a path under either is a different directory that merely looks right.
+- **A `-v` mount SOURCE is resolved by the daemon, on the VM — not in this container (measured 2026-09-07, item #249).** The `docker` CLI does not open the source path; it sends the mount spec to the engine, which resolves it against **its own** filesystem. Only `/workspaces/mcm` is genuinely shared between the dev container and the VM daemon — write a file here and it appears inside a container. The VM has its own `/tmp` and `/home/coder`, so a path under either is a different directory that merely looks right.
 
   **A missing source is not an error — the daemon CREATES it as an empty directory.** This is why both failure modes below point away from the actual cause:
 

@@ -2,52 +2,7 @@
 type: Architecture
 title: mc-service domain data model
 description: The Domain-layer entities of mc-service — MovieCollection, Movie, ExternalIdentifier, DomainError — and the cross-field invariants and Specification-pattern rules that guard them before persistence.
-resource: backend/mc-service/src/domain/
 tags: [architecture, data-model, rust, domain-driven-design]
-verified:
-  - by: openwiki/0.6.0
-    at: 2026-09-29T10:29:14.990Z
-sources:
-  - id: openwiki-source-516a6ef821315a5c2297ba89
-    resource: repo://backend/mc-service/src/api/movies/movie_metadata.rs
-  - id: openwiki-source-c24ab349f92ee5be03f5048a
-    resource: repo://backend/mc-service/src/application/access_control.rs
-  - id: openwiki-source-42b2a6dab98afbde19b59e90
-    resource: repo://backend/mc-service/src/application/commands/create_collection.rs
-  - id: openwiki-source-cbd73c95b6c45a653448508d
-    resource: repo://backend/mc-service/src/application/commands/create_movie.rs
-  - id: openwiki-source-c3b6ca4b9ee9817a784f482e
-    resource: repo://backend/mc-service/src/application/commands/update_movie.rs
-  - id: openwiki-source-067125f1da430249d5f1fd0d
-    resource: repo://backend/mc-service/src/application/dtos/movie_dto.rs
-  - id: openwiki-source-0c6d78e91fee226445b26f34
-    resource: repo://backend/mc-service/src/domain/collection.rs
-  - id: openwiki-source-e7c775a958bbcf3eef93d65c
-    resource: repo://backend/mc-service/src/domain/errors.rs
-  - id: openwiki-source-aabea447e232126840da855f
-    resource: repo://backend/mc-service/src/domain/external_id.rs
-  - id: openwiki-source-48aee1b6e73650c2995b7861
-    resource: repo://backend/mc-service/src/domain/mod.rs
-  - id: openwiki-source-fdeff1d9e1d9eac94dd6a685
-    resource: repo://backend/mc-service/src/domain/movie.rs
-  - id: openwiki-source-f31245487fa1d77ecc78fdd1
-    resource: repo://backend/mc-service/src/domain/specifications/collection_name.rs
-  - id: openwiki-source-c348cdf9269f5faf52c4146e
-    resource: repo://backend/mc-service/src/domain/specifications/content_type.rs
-  - id: openwiki-source-2d2e03b56fa8adcce491829b
-    resource: repo://backend/mc-service/src/domain/specifications/http_url.rs
-  - id: openwiki-source-d561d7b5459832aca95bbef5
-    resource: repo://backend/mc-service/src/domain/specifications/media_format.rs
-  - id: openwiki-source-e4b6edce969d88b3538d322b
-    resource: repo://backend/mc-service/src/domain/specifications/movie_unique.rs
-  - id: openwiki-source-167451645f4234a719327286
-    resource: repo://backend/mc-service/src/domain/specifications/owned_media.rs
-  - id: openwiki-source-32a298d0320a3bc994f7efbd
-    resource: repo://backend/mc-service/src/domain/specifications/required_string.rs
-  - id: openwiki-source-e9898a8fe907ce53bbbfaad7
-    resource: repo://backend/mc-service/src/domain/specifications/rip_quality.rs
-  - id: openwiki-source-100cc47666cbe45bc9d2f0cb
-    resource: repo://backend/mc-service/src/domain/specifications/spec.rs
 generated: { by: "openwiki/0.6.0", at: "2026-09-29T10:29:14.990Z" }
 ---
 

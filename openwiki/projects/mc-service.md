@@ -3,106 +3,10 @@ type: Service
 title: mc-service (Rust/Axum movie-collection service)
 description: The Rust/Axum microservice that owns all movie-collection domain logic — CRUD, business-rule validation, and RBAC/DAC enforcement — for MovieCollectionManager, built as four Clean Architecture layers with CQRS, repository, and specification patterns over its own replica-set MongoDB.
 resource: docs/MCM-Architecture.md
+resource-sha256: 8f7b3e4c87b355ae290db90980f89910f72a50675e43ccfe492d833d06c83033
 tags: [rust, axum, clean-architecture, cqrs, mongodb]
-sources:
-  - id: openwiki-source-d54b05966a54dbfbb9eb63bc
-    resource: repo://backend/mc-service/Cargo.toml
-  - id: openwiki-source-03a1e42798659780585d5bc4
-    resource: repo://backend/mc-service/Dockerfile
-  - id: openwiki-source-c6223eac9ceb011ea18f5837
-    resource: repo://backend/mc-service/project.json
-  - id: openwiki-source-3840443bcc6bd24e2f5999cc
-    resource: repo://backend/mc-service/src/adapters/mongodb/client.rs
-  - id: openwiki-source-b6252ff5a95766690893a6aa
-    resource: repo://backend/mc-service/src/adapters/mongodb/collection_repository.rs
-  - id: openwiki-source-04ccb2bb5098f0be24c14e21
-    resource: repo://backend/mc-service/src/adapters/mongodb/indexes.rs
-  - id: openwiki-source-b5925b87f787aa6f7bfee515
-    resource: repo://backend/mc-service/src/adapters/mongodb/movie_repository.rs
-  - id: openwiki-source-91cc0ecf904f9c8e607bc378
-    resource: repo://backend/mc-service/src/api/collections/update.rs
-  - id: openwiki-source-d3150884ffc04d8e527b2f0f
-    resource: repo://backend/mc-service/src/api/health.rs
-  - id: openwiki-source-52835d29054a1ae999a4d92c
-    resource: repo://backend/mc-service/src/api/metrics.rs
-  - id: openwiki-source-4cc090993970bb2253a628ba
-    resource: repo://backend/mc-service/src/api/middleware/auth.rs
-  - id: openwiki-source-ab390bc7debabac317c9e258
-    resource: repo://backend/mc-service/src/api/middleware/error_handler.rs
-  - id: openwiki-source-4ed96763667f13cac6dcc6ce
-    resource: repo://backend/mc-service/src/api/middleware/logging.rs
-  - id: openwiki-source-d76bcb081b6de758341f433b
-    resource: repo://backend/mc-service/src/api/movies/count.rs
-  - id: openwiki-source-9ddf6f66b8efd15b40cbfc9f
-    resource: repo://backend/mc-service/src/api/movies/list.rs
-  - id: openwiki-source-516a6ef821315a5c2297ba89
-    resource: repo://backend/mc-service/src/api/movies/movie_metadata.rs
-  - id: openwiki-source-ddd3d9b2aa4ea89705a97e50
-    resource: repo://backend/mc-service/src/api/router.rs
-  - id: openwiki-source-d32240b086dabe58cbbfb721
-    resource: repo://backend/mc-service/src/api/state.rs
-  - id: openwiki-source-c24ab349f92ee5be03f5048a
-    resource: repo://backend/mc-service/src/application/access_control.rs
-  - id: openwiki-source-42b2a6dab98afbde19b59e90
-    resource: repo://backend/mc-service/src/application/commands/create_collection.rs
-  - id: openwiki-source-cbd73c95b6c45a653448508d
-    resource: repo://backend/mc-service/src/application/commands/create_movie.rs
-  - id: openwiki-source-1cad77b6b14d7ab3322be0e2
-    resource: repo://backend/mc-service/src/application/mod.rs
-  - id: openwiki-source-1f191bf9f539949e27e34518
-    resource: repo://backend/mc-service/src/application/ports/collection_repository.rs
-  - id: openwiki-source-f1efcf3527980e1de9719972
-    resource: repo://backend/mc-service/src/application/queries/list_movies.rs
-  - id: openwiki-source-c17559b31790cded1c8c6ef1
-    resource: repo://backend/mc-service/src/config.rs
-  - id: openwiki-source-0c6d78e91fee226445b26f34
-    resource: repo://backend/mc-service/src/domain/collection.rs
-  - id: openwiki-source-e7c775a958bbcf3eef93d65c
-    resource: repo://backend/mc-service/src/domain/errors.rs
-  - id: openwiki-source-48aee1b6e73650c2995b7861
-    resource: repo://backend/mc-service/src/domain/mod.rs
-  - id: openwiki-source-fdeff1d9e1d9eac94dd6a685
-    resource: repo://backend/mc-service/src/domain/movie.rs
-  - id: openwiki-source-100cc47666cbe45bc9d2f0cb
-    resource: repo://backend/mc-service/src/domain/specifications/spec.rs
-  - id: openwiki-source-dd879f09a5a135a8daaa43b6
-    resource: repo://backend/mc-service/src/lib.rs
-  - id: openwiki-source-19a939e3a38241d7960054fe
-    resource: repo://backend/mc-service/src/main.rs
-  - id: openwiki-source-647ddcd68235aa7d8df6a2c8
-    resource: repo://backend/mc-service/tests/integration/common/auth.rs
-  - id: openwiki-source-16c2f372398849e8eff53877
-    resource: repo://backend/mc-service/tests/integration/common/mod.rs
-  - id: openwiki-source-f98f56169006fd5a5bdf85b9
-    resource: repo://backend/mc-service/tests/integration/health_test.rs
-  - id: openwiki-source-1acbc1141c6fb60b1c86c33a
-    resource: repo://backend/mc-service/tests/integration/pool_test.rs
-  - id: openwiki-source-541e2287bdfb42c605c78f3f
-    resource: repo://docs/MCM-Architecture.md
-  - id: openwiki-source-8cb0da307c90adb4287997a5
-    resource: repo://docs/runbooks/dev-environment-setup.md
-  - id: openwiki-source-a679e2e5a49381a72df446c5
-    resource: repo://docs/runbooks/prod-data-tier-auth.md
-  - id: openwiki-source-d5b1faab58eeb909bb999298
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
-  - id: openwiki-source-4042a47526d6016cff835628
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
-  - id: openwiki-source-852cc196002c1a675baddf5c
-    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
-  - id: openwiki-source-94eec9a3262aa7855d62efcc
-    resource: repo://scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs
-  - id: openwiki-source-9718a90a7733637f39e0b867
-    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-072f6ea660585ea2cb7a706c
-    resource: repo://scripts/mc-service-integration-guard.mjs
-  - id: openwiki-source-227e2a7bba71e73939b765c7
-    resource: repo://specs/041-integration-test-ci-enforcement/IMPLEMENTATION-STATUS.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
+timestamp: 2026-11-10T11:40:29.748Z
 ---
 
 # mc-service (Rust/Axum movie-collection service)
@@ -251,11 +155,7 @@ case-insensitive `$regex` `$or` over `title`, `originalTitle`, `directors`, `act
 literally; a NUL byte is rewritten to the `\x00` escape because a BSON regex pattern is a NUL-free
 `CString`, which keeps the pattern a total function of the input rather than a 500.
 `GET /collections` is a flat `find({ ownerId })` returning every collection for the caller, with no
-cursor at all; the `owner_id_list` index exists but the query does not page through it. One
-divergence to know when reading the architecture doc: its pagination bullet still describes the
-cursor as "a base64-encoded MongoDB ObjectId", which was true before the compound cursor landed —
-`docs/MCM-Architecture.md` is authoritative for the layer table and index tables, but not for the
-cursor payload.
+cursor at all; the `owner_id_list` index exists but the query does not page through it.
 
 ## Packaging and operations
 
@@ -369,7 +269,7 @@ cursor payload.
   churn to come straight back.
 - **`nx test mc-service` and `nx test:integration mc-service` must run the integration binaries the same way — and they now do.** Before 2026-09-16 the developer-facing `nx test` invoked cargo at default parallelism while the CI gate (`test:integration`) always ran through `mc-service-integration-guard.mjs` at `--test-threads=1`. The two tiers disagreed about the one setting that changes the result: a test failing ~2 runs in 3 locally was green in CI for months. The reconciliation: `nx test mc-service` now delegates via `dependsOn` to `test:unit` and `test:integration` rather than running cargo itself, so `--test-threads=1` is decided in exactly one place (`cargoArgs.push('--', '--test-threads=1', ...)` in the guard — a second copy anywhere else is a second thing to drift). Do NOT flip to parallel without fixing the underlying contention first — measured 2 failures in 29 runs at default parallelism from a clean MongoDB after item #462 was resolved, always in `movies::large_collection_test` (an index-creation failure or a `MovieNotFound` read-your-own-writes miss); serial over the same period was 180/180.
 - **The guard is also the tier's no-false-green gate, and Rust has no "skip" primitive.** A missing Mongo or Keycloak already *fails* a test (`.expect()`/`.unwrap()` in the body), so skips are not the concern; the two false-green vectors are an undocumented `#[ignore]` silently disabling a test, and a wholesale-disabled suite executing zero tests yet exiting 0. So the guard does two things: it forbids a **bare** `#[ignore]` anywhere under `tests/integration/` (a documented `#[ignore = "reason"]` is *permitted*), and it requires every binary declared as a `[[test]]` target to emit a `test result:` line with at least one executed test. The permitted branch is currently unexercised — the guard's module header still explains the ban by saying "~24 full-stack HTTP tests are legitimately ignored", but the tree now contains **zero** `#[ignore]` attributes, so the ban is what does the work. Do not replace the explicit binary list with a blanket `--tests` invocation: the guard runs the integration binaries *explicitly* so the parsed result lines stay integration-only, since the crate's inline unit tests belong to `test:unit`.
-- **The guard discovers its binaries from `Cargo.toml`, and there are four of them — one more than one harness comment still says.** The `[[test]]` targets `health_test`, `collections_test`, `movies_test` and `pool_test` are each one integration binary; the guard parses those declarations rather than a hardcoded list, so a fifth added target is covered automatically — and one whose `path` stops pointing into `tests/integration/` is silently dropped from the executed-count assertion, which is the failure mode to watch when moving test files. `tests/integration/pool_test.rs` still says "the three integration binaries run one after another", written before `pool_test` itself was added, so do not take the count from that comment.
+- **The guard discovers its binaries from `Cargo.toml`, and there are four of them.** The `[[test]]` targets `health_test`, `collections_test`, `movies_test` and `pool_test` are each one integration binary; the guard parses those declarations rather than a hardcoded list, so a fifth added target is covered automatically — and one whose `path` stops pointing into `tests/integration/` is silently dropped from the executed-count assertion, which is the failure mode to watch when moving test files. Take the count from `Cargo.toml`, not from a comment: `tests/integration/pool_test.rs` once said "the three integration binaries", written before `pool_test` itself was added.
 - **The integration tier needs a live Keycloak *and* four ROPC credentials, not just a Mongo.** `tests/integration/common/auth.rs` mints a real bearer token by the OAuth2 Resource Owner Password Credentials grant against `KEYCLOAK_URL`/`KEYCLOAK_REALM`, reading `E2E_ROPC_CLIENT_ID`, `E2E_ROPC_CLIENT_SECRET`, `E2E_TEST_USER` and `E2E_TEST_PASSWORD`; every failure path panics naming the *variable* or the token endpoint's status and deliberately never echoes the response body, which can carry credential material. The token is cached once per test binary (the suite finishes well inside its lifetime, so there is no refresh path), and the identity's `sub` is read from the token's own payload rather than from the service's response — comparing a response to itself would pass even if the service stamped a constant subject. So a realm-import regression (a missing client, mapper or user) fails here with a named cause instead of surfacing later as an opaque 401 in the E2E legs. Run it through `node scripts/gen-dev-env.mjs`, which writes `backend/mc-service/.env.local`.
 - **The fast Rust gate compiles the tests, not just the library.** `nx lint mc-service` runs clippy
   with `--all-targets -- -D warnings`, and the flag must stay *before* the bare `--`; without it the
@@ -385,5 +285,5 @@ cursor payload.
 See [Auth chain](../invariants/auth-chain.md) for how mc-service fits into the end-to-end
 authorization sequence, [data model](../architecture/data-model.md) for the domain entities, and
 `docs/MCM-Architecture.md` — whose `## mc-service Architecture` section is the authoritative source
-for the layer table and CQRS description, with its MongoDB collection/index tables immediately
+for the layer table and CQRS description, with its MongoDB collection table immediately
 below — for the full diagrammed description.

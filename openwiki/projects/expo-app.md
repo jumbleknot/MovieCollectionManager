@@ -3,216 +3,10 @@ type: Service
 title: Expo/React Native universal app
 description: The universal (web + Android) client for MovieCollectionManager, built on Expo Router (Expo SDK 58 with React Native 0.88 and React 19.3), a runtime-only Tamagui 3 and an ESLint 10 flat-config lint setup. Covers the client-side app shape, the SDK 58 static web output whose pages are prerendered at build time while the 38 API routes keep running in the same Node process, the settings destination and its area registry, the client network layer that never holds a token, the expo-server express hosting layer this process serves (the trusted-proxy scheme fix, the strict web security headers whose one-zod-engine arrangement removed the blocked eval probe, and the two-surface container healthcheck), the BFF image's pruned runtime closure with the bare-specifier build gate that keeps it honest, the five feature-087 failure modes that each look healthy but now have their own gate (a second copy of the styling library, a split bundle over budget, an unlisted inline script, a browser CSP violation, a release APK that does not launch), the cold-load web bundle budget's four assertions, the Jest worker/memory bounds and the Jest 30 / RNTL 14 client test traps, and the other client-facing build and test traps.
 resource: frontend/mcm-app/README.md
+resource-sha256: 28a0896995f7a4e4822d0fb995a5869435c4e240d0c9e610a9c319cf130d7698
 tags: [expo, react-native, tamagui, eslint, jest, frontend, metro, csp]
-sources:
-  - id: openwiki-source-a157c487923d65153283de40
-    resource: repo://.devcontainer/sandbox/devcontainer.json
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-bff475d8fa855e3592cfedc2
-    resource: repo://.specify/memory/constitution.md
-  - id: openwiki-source-30d3dc827bae5c1cb657fa31
-    resource: repo://frontend/mcm-app/app.json
-  - id: openwiki-source-82e76cb56a030095b60d27cd
-    resource: repo://frontend/mcm-app/babel.config.js
-  - id: openwiki-source-6af9a79d18f77a9b86839849
-    resource: repo://frontend/mcm-app/Dockerfile
-  - id: openwiki-source-8b39d08f4b5008470c9dd1c6
-    resource: repo://frontend/mcm-app/eslint.config.js
-  - id: openwiki-source-23ebb6a3dfd75d37b2feaef1
-    resource: repo://frontend/mcm-app/metro-env-blocklist.js
-  - id: openwiki-source-50f6865ba7ac6d348318b9e3
-    resource: repo://frontend/mcm-app/metro-env-blocklist.test.js
-  - id: openwiki-source-b50092c46ef6bf8b0f9ce07f
-    resource: repo://frontend/mcm-app/metro-shims/segment-analytics-node.js
-  - id: openwiki-source-b0bf8870ff837f354a6292bb
-    resource: repo://frontend/mcm-app/metro.config.js
-  - id: openwiki-source-e9bcd4372a4632d555b861a6
-    resource: repo://frontend/mcm-app/package.json
-  - id: openwiki-source-d3d6462458271e37e692275f
-    resource: repo://frontend/mcm-app/playwright.config.ts
-  - id: openwiki-source-a4c39fcf1686803a0f1b3a45
-    resource: repo://frontend/mcm-app/plugins/with-dev-cleartext.js
-  - id: openwiki-source-1e9aa3ee99b35bd10ee52a6d
-    resource: repo://frontend/mcm-app/project.json
-  - id: openwiki-source-75c613635390ab18cc167ec1
-    resource: repo://frontend/mcm-app/README.md
-  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
-    resource: repo://frontend/mcm-app/server.js
-  - id: openwiki-source-c8e81d294ad2807a33f05f9b
-    resource: repo://frontend/mcm-app/src/app/(app)/settings/_layout.tsx
-  - id: openwiki-source-270d6bd7fa29a88c9a2cfdc4
-    resource: repo://frontend/mcm-app/src/app/(app)/settings/account.tsx
-  - id: openwiki-source-fa9ffadc9c0f6cf6a84dd5ff
-    resource: repo://frontend/mcm-app/src/app/(app)/settings/backups.tsx
-  - id: openwiki-source-c80309c52a299fc12aeafd42
-    resource: repo://frontend/mcm-app/src/app/(app)/settings/index.tsx
-  - id: openwiki-source-a344c8ab57b1d157819a0fd2
-    resource: repo://frontend/mcm-app/src/app/bff-api/backups/consent%2Bapi.ts
-  - id: openwiki-source-74f39153b978241c50c7addd
-    resource: repo://frontend/mcm-app/src/bff-server/account-route-support.ts
-  - id: openwiki-source-a5c6a4d72986b97be03d6e9d
-    resource: repo://frontend/mcm-app/src/bff-server/ui-state-sanitizer.ts
-  - id: openwiki-source-0657d2ae17def9d557f75db7
-    resource: repo://frontend/mcm-app/src/bff-server/unit-tests/ui-state-sanitizer.test.ts
-  - id: openwiki-source-8407640b2cb0f7b864657883
-    resource: repo://frontend/mcm-app/src/components/agent/approval-request.test.tsx
-  - id: openwiki-source-fd968ab79d3d5126e91933cf
-    resource: repo://frontend/mcm-app/src/components/agent/assistant-panel.tsx
-  - id: openwiki-source-1ee0ca5607fd919ecc13d256
-    resource: repo://frontend/mcm-app/src/components/backups/destination-form.tsx
-  - id: openwiki-source-d0e32cc95cdea263ea08fe08
-    resource: repo://frontend/mcm-app/src/components/backups/job-form.tsx
-  - id: openwiki-source-c71f50fd5ec6b430e2f80b42
-    resource: repo://frontend/mcm-app/src/components/backups/run-history.tsx
-  - id: openwiki-source-b42495b0da0a5f6a616900af
-    resource: repo://frontend/mcm-app/src/components/backups/version-list.tsx
-  - id: openwiki-source-d53ec28679ddaca47c22d5ba
-    resource: repo://frontend/mcm-app/src/components/movie-count-line.test.tsx
-  - id: openwiki-source-edbbf2f1de81041ebb56adf3
-    resource: repo://frontend/mcm-app/src/components/no-autofill-input.tsx
-  - id: openwiki-source-38f4558bc6918770e5be2fc2
-    resource: repo://frontend/mcm-app/src/components/register-form.tsx
-  - id: openwiki-source-820baf1f5bc3988fd0753bfe
-    resource: repo://frontend/mcm-app/src/components/settings/settings-nav.tsx
-  - id: openwiki-source-db49b0576db93627f34d500f
-    resource: repo://frontend/mcm-app/src/config/bff-url.ts
-  - id: openwiki-source-ef24b6b5e3c8860863d47d11
-    resource: repo://frontend/mcm-app/src/hooks/backup-error-message.ts
-  - id: openwiki-source-570a958599bcf5038114a6fc
-    resource: repo://frontend/mcm-app/src/hooks/use-account-deletion.ts
-  - id: openwiki-source-52a212df899e84c2a3454295
-    resource: repo://frontend/mcm-app/src/hooks/use-assistant-runtime.ts
-  - id: openwiki-source-3470392bd8be4b3899ff3adb
-    resource: repo://frontend/mcm-app/src/hooks/use-backup-consent.ts
-  - id: openwiki-source-2bc02f78645afcdb5307ca15
-    resource: repo://frontend/mcm-app/src/hooks/use-backup-destinations.ts
-  - id: openwiki-source-efdc9f208512d58f170a0e44
-    resource: repo://frontend/mcm-app/src/hooks/use-backup-jobs.ts
-  - id: openwiki-source-f2f814b694fbf226c91ce910
-    resource: repo://frontend/mcm-app/src/hooks/use-ui-state.tsx
-  - id: openwiki-source-245b2f99a75861724c4026de
-    resource: repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.test.tsx
-  - id: openwiki-source-a2cf9da271335518572da652
-    resource: repo://frontend/mcm-app/src/screens/settings/backups-settings-screen.tsx
-  - id: openwiki-source-9542968841d15eaafd16ac7b
-    resource: repo://frontend/mcm-app/src/test-support/render.tsx
-  - id: openwiki-source-0b95b2665c338088eef0db7e
-    resource: repo://frontend/mcm-app/src/utils/agent-fetch-refresh.ts
-  - id: openwiki-source-7d847d9fc555e071868ecb1d
-    resource: repo://frontend/mcm-app/src/utils/api-client.ts
-  - id: openwiki-source-dcfc434ab00b77e71a8575f0
-    resource: repo://frontend/mcm-app/src/utils/assistant-runtime-loader.ts
-  - id: openwiki-source-4e2d6488af045e50c1eb17f0
-    resource: repo://frontend/mcm-app/src/utils/backup-run-summary.ts
-  - id: openwiki-source-ed2df48ea080e434190abed3
-    resource: repo://frontend/mcm-app/src/utils/session-storage.ts
-  - id: openwiki-source-503103081c79db2ef99e2b27
-    resource: repo://frontend/mcm-app/src/utils/token-refresh.ts
-  - id: openwiki-source-fc2cee35aa6e7b9a5079a6e9
-    resource: repo://frontend/mcm-app/src/utils/unit-tests/api-client.test.ts
-  - id: openwiki-source-5839329bfe7fc2f4898102b5
-    resource: repo://frontend/mcm-app/src/utils/unit-tests/token-refresh.test.ts
-  - id: openwiki-source-250f22b469fdcf4c2326980d
-    resource: repo://frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts
-  - id: openwiki-source-31ef72c79f00ba748f6ce16b
-    resource: repo://frontend/mcm-app/src/utils/zod-jitless.ts
-  - id: openwiki-source-885237f04e1aa048fda26663
-    resource: repo://frontend/mcm-app/src/utils/zod-jitless.web.ts
-  - id: openwiki-source-d67eac1e98649691c637d9c0
-    resource: repo://frontend/mcm-app/tamagui.config.ts
-  - id: openwiki-source-2d7a83a560ab6dec0daf8651
-    resource: repo://frontend/mcm-app/tests/e2e/web/backups.spec.ts
-  - id: openwiki-source-c723e348f34e858500a3ce16
-    resource: repo://frontend/mcm-app/tests/e2e/web/fixtures/security-policy-watch.ts
-  - id: openwiki-source-5f49d32c246932bc307d9d17
-    resource: repo://frontend/mcm-app/tests/e2e/web/page-security-policy-walk.spec.ts
-  - id: openwiki-source-b5b17657abfab732746dd707
-    resource: repo://frontend/mcm-app/tests/e2e/web/security-headers.spec.ts
-  - id: openwiki-source-5ee35374d6ab0e61934498cd
-    resource: repo://frontend/mcm-app/tests/unit/bff-server-adapter.test.ts
-  - id: openwiki-source-6815e02bc96aebf5b9adb612
-    resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
-  - id: openwiki-source-0df6a785e730381b7aee77a1
-    resource: repo://frontend/mcm-app/tests/unit/fixtures/expo-adapter-stub.cjs
-  - id: openwiki-source-bbf78f164062a1cfdec73a0a
-    resource: repo://frontend/mcm-app/web-security-headers.js
-  - id: openwiki-source-5ff55bdfe886d66b6f07a01e
-    resource: repo://frontend/mcm-app/web-security-headers.test.js
-  - id: openwiki-source-03de7146fd7e33f2e3019d9d
-    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
-  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
-    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
-  - id: openwiki-source-6230a2d05eadba772d30d66a
-    resource: repo://packages/design-system/components/controls.test.tsx
-  - id: openwiki-source-a9f8640b2ea19387ecec6be5
-    resource: repo://packages/design-system/components/navigation/NavList.tsx
-  - id: openwiki-source-e3cf144619c81072e7ba6980
-    resource: repo://packages/design-system/components/navigation/Tabs.tsx
-  - id: openwiki-source-c2fc016d5fa9c9435755b27e
-    resource: repo://packages/design-system/eslint.config.js
-  - id: openwiki-source-9315324d9a0185179ef416f8
-    resource: repo://packages/design-system/jest.config.js
-  - id: openwiki-source-95aa559e7d1634eddb9fc64d
-    resource: repo://packages/design-system/jest/tamagui-cjs-resolver.js
-  - id: openwiki-source-f7e16ba323424b9790bca8b9
-    resource: repo://packages/design-system/package.json
-  - id: openwiki-source-61c8793ba5e804cee6c99b20
-    resource: repo://packages/design-system/project.json
-  - id: openwiki-source-7c01a8501da7bfee76f8ed12
-    resource: repo://packages/design-system/tamagui.config.ts
-  - id: openwiki-source-40275cb92c3610938f16ade3
-    resource: repo://pnpm-workspace.yaml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-856fe57cb2b44e0e87aa00fa
-    resource: repo://scripts/__tests__/android-launch-smoke.test.mjs
-  - id: openwiki-source-f6c12ce9ca055174ab7f392c
-    resource: repo://scripts/__tests__/bff-healthcheck-pages.guard.test.mjs
-  - id: openwiki-source-96730ea8c345aed64b62a187
-    resource: repo://scripts/__tests__/dev-memory-bounds.guard.test.mjs
-  - id: openwiki-source-79afb4088c29acb82fe62e5a
-    resource: repo://scripts/__tests__/expo-router-tree-purity.test.mjs
-  - id: openwiki-source-2500897f79f457d05a1f0bd2
-    resource: repo://scripts/__tests__/single-zod-engine.guard.test.mjs
-  - id: openwiki-source-e1b32ed173a0f6b508f94a03
-    resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
-  - id: openwiki-source-7a41c9f0b28d43e5a1c6f204
-    resource: repo://scripts/__tests__/android-release-shrinking.guard.test.mjs
-  - id: openwiki-source-3d5c81b7e9a04f26c8b1d0e7
-    resource: repo://scripts/__tests__/prod-apk-gradle-heap.guard.test.mjs
-  - id: openwiki-source-3672bd476fb3e523ec6e9ad6
-    resource: repo://scripts/android-launch-smoke.sh
-  - id: openwiki-source-a3e2c14b6305b3709de7fcd4
-    resource: repo://scripts/check-no-server-imports.mjs
-  - id: openwiki-source-3a1de6aca3cad41ffa6cd873
-    resource: repo://scripts/check-web-bundle-budget.mjs
-  - id: openwiki-source-4afc03401961c543ccdef7be
-    resource: repo://scripts/prune-bff-runtime-modules.mjs
-  - id: openwiki-source-11ba1741c25b3030e34f4dd8
-    resource: repo://scripts/publish-android-launch.mjs
-  - id: openwiki-source-2ffebe6972c17fbcc2a83423
-    resource: repo://specs/081-major-dependency-upgrades/research.md
-  - id: openwiki-source-f189c162dcfb48c90c5f23be
-    resource: repo://specs/087-expo-sdk-58/contracts/android.md
-  - id: openwiki-source-16870c3ee3399a868ae59956
-    resource: repo://specs/087-expo-sdk-58/contracts/web-gates.md
-  - id: openwiki-source-cbc86a7a3a87453e949a2389
-    resource: repo://specs/087-expo-sdk-58/spec.md
-  - id: openwiki-source-2e58b7a04c9d41f3b6a0d517
-    resource: repo://specs/087-expo-sdk-58/research.md
-  - id: openwiki-source-93b6202dca9e48a643d50488
-    resource: repo://specs/087-expo-sdk-58/tasks.md
-  - id: openwiki-source-5c651a2e85869320925d0597
-    resource: repo://specs/089-single-zod-jitless/spec.md
-  - id: openwiki-source-b1bbf22fc6d5be70b62d6d45
-    resource: repo://specs/089-single-zod-jitless/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T23:36:11.840Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-08T02:21:41.463Z
+timestamp: 2026-11-11T00:45:01.463Z
 ---
 
 # Expo/React Native universal app
@@ -527,6 +321,36 @@ already does not (record it as `unresolvable` in `KNOWN_DYNAMIC_SPECIFIERS`). Do
 measured image figures, the traced evidence the closure rests on and the two decision lists belong to
 [BFF](./bff.md); what this page records is the app-side build contract that produces them.
 
+## Docked panels: view options and the assistant
+
+Feature 098's docked-filters work (`specs/098-docked-filters-keyboard/`) moved the collection screen's
+column, sort and filter controls behind one compact bar, `ViewOptionsDock`
+(`src/components/view-options-dock.tsx`, toggle `view-options-toggle` with the active-filter count).
+The controls exist only while its `ViewOptionsPanel` (`view-options-panel`) is open, and the panel
+drops down **over** the count row and the list rather than pushing them, so opening it never
+re-scrolls the list. Three consequences matter to anyone changing this screen or its tests:
+
+- **Tests must open the panel first, and close it before reading the list.** Web specs use
+  `openViewOptions(page)` from `tests/e2e/web/movies.spec.ts`; Maestro flows `tapOn` `view-options-toggle`
+  and later `view-options-close`. An assertion made on a row while the panel is open tests the panel.
+- **One panel at a time, from the web entry chunk.** `OpenPanelProvider` (`src/hooks/use-open-panel.tsx`)
+  wraps the stack and the assistant dock in `src/app/(app)/_layout.tsx`, so opening the view options
+  re-docks the assistant and the reverse. Because that module is in the entry chunk it must import
+  nothing from `@copilotkit/*`, `@ag-ui/*` or `use-assistant` — a guard test and `bundle-budget` fail
+  if it does.
+- **The assistant dock rides above the on-screen keyboard.** SDK 58 / RN 0.88 Android is edge-to-edge,
+  so the window is not resized for the IME; the dock adds `useKeyboardInset()`
+  (`src/hooks/use-keyboard-inset.ts`) to its `bottom` and caps the deferred panel's height, passing
+  `{ height, keyboardInset }` as props typed in `assistant-runtime-loader.ts` so nothing eager imports
+  the panel. On web the inset is always 0. The Android proof is the `assistant-keyboard` Maestro flow
+  in the agent half of `app-e2e`.
+
+**On web, Tamagui drops `accessibilityRole`, `accessibilityState` and `accessible`**, so a Tamagui
+control renders as a bare `<div>` the keyboard cannot reach unless it sets an explicit `role`,
+`aria-*` state and `tabIndex` — as the design system's `Button` and `Chip` now do. Unit tests on native
+assert `accessibilityState` (RN folds `aria-*` into it); the web DOM is proven by the axe scan in
+`tests/e2e/web/a11y.spec.ts`.
+
 ## Gotchas
 
 - **`import.meta.url` crashes the exported server bundle in production only.** Metro rewrites
@@ -579,8 +403,8 @@ measured image figures, the traced evidence the closure rests on and the two dec
 - **Lint is an ESLint 10 flat config now, and the config file is the whole migration.** ESLint 10
   removed `.eslintrc.*` support and the `--ext` flag, so feature 081 US5b replaced
   `frontend/mcm-app/.eslintrc.json` and `packages/design-system/.eslintrc.json` with
-  `eslint.config.js` in each project, and the Nx `lint` targets changed with them: both are now bare
-  `eslint src` (mcm-app) / `eslint .` (design-system) run through `nx:run-commands`, with the old
+  `eslint.config.js` in each project, and the Nx `lint` targets changed with them: both are now
+  `eslint .` (followed by a `prettier --check`) run through `nx:run-commands`, with the old
   `--ext .ts,.tsx` gone. Three details are
   load-bearing. First, **`eslint-config-expo`'s flat preset is not its legacy preset re-expressed** —
   it takes `eslint-plugin-react`'s `flat.recommended` (a dozen `react/*` rules move warn → error, plus

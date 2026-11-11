@@ -4,67 +4,9 @@ title: Prod host backup (restic) and its failure alerting
 description: The nightly restic snapshot of the prod host — eight per-service dumps (the forge split into a database dump and an uncompressed data tar, plus the release APKs), per-dump format/minimum/shrink checks, the on-disk staging requirement, Komodo's scheduler-history purge, tag-grouped retention, the two independent alerting paths (OnFailure on a failed or hung run, and a separate 6-hourly staleness check that reads the newest snapshot from the repository itself) that make a silent failure visible, and the quarterly restore drill that is the only proof a backup can be restored — with the 2026-10-31 drill's passing row against the post-spec-084 forge format.
 tags: [backups, restic, systemd, disaster-recovery, alerting, forgejo, homelab]
 resource: infrastructure-as-code/backup/README.md
-sources:
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-ceecf221f842ba07ba6a91b2
-    resource: repo://.forgejo/workflows/registry-retention.yml
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-22fe053486b82dac6259f473
-    resource: repo://infrastructure-as-code/backup/backup-alert.sh
-  - id: openwiki-source-c56aca4c7fefae967d931edd
-    resource: repo://infrastructure-as-code/backup/backup-staleness.sh
-  - id: openwiki-source-78ec32b51a25a8fb66d5b292
-    resource: repo://infrastructure-as-code/backup/backup.sh
-  - id: openwiki-source-21be9cebbe365fe55ab381fd
-    resource: repo://infrastructure-as-code/backup/homelab-backup-alert%40.service
-  - id: openwiki-source-cc66fcd22d8bffc3f973b0ae
-    resource: repo://infrastructure-as-code/backup/homelab-backup-staleness.timer
-  - id: openwiki-source-1be01bc0222d08bf89a6ee08
-    resource: repo://infrastructure-as-code/backup/homelab-backup.service
-  - id: openwiki-source-5f9c91a5ef0e61e1e3b45cef
-    resource: repo://infrastructure-as-code/backup/komodo-cron-retention.sql
-  - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
-    resource: repo://infrastructure-as-code/backup/README.md
-  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
-    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
-  - id: openwiki-source-5560229e88c2aa91002a3238
-    resource: repo://scripts/__tests__/backup-alert.test.mjs
-  - id: openwiki-source-62d227af87c6a9ae6df49e2f
-    resource: repo://scripts/__tests__/backup-install-manifest.test.mjs
-  - id: openwiki-source-e7f0e8dc4c3a226a7016ac70
-    resource: repo://scripts/__tests__/backup-script.test.mjs
-  - id: openwiki-source-846dbf0390c104f672d08dfc
-    resource: repo://scripts/__tests__/backup-staleness.test.mjs
-  - id: openwiki-source-df39e2c4cf5113ffc6347c6f
-    resource: repo://scripts/__tests__/backup-units.test.mjs
-  - id: openwiki-source-52b88a36070958af2c52bb72
-    resource: repo://scripts/__tests__/host-shims-cleanup.test.mjs
-  - id: openwiki-source-95bfea7e625c030a4806299d
-    resource: repo://scripts/__tests__/host-shims.mjs
-  - id: openwiki-source-114e2014f61c24ac4ed68005
-    resource: repo://scripts/__tests__/host-shims.test.mjs
-  - id: openwiki-source-715432c2fa445bfbb51b85ee
-    resource: repo://scripts/__tests__/komodo-cron-retention.test.mjs
-  - id: openwiki-source-1bce6b78afa7160b5f9a9d66
-    resource: repo://scripts/backup-install-manifest.mjs
-  - id: openwiki-source-45caf09b059605daac0b6db2
-    resource: repo://scripts/registry-retention.mjs
-  - id: openwiki-source-d7d2cddf4ddb5ba9b5d29860
-    resource: repo://specs/084-silent-failure-visibility/contracts/cli-contracts.md
-  - id: openwiki-source-75f8add1789d37f1c762c383
-    resource: repo://specs/084-silent-failure-visibility/quickstart.md
-  - id: openwiki-source-e9740ee34eee91e33cfb77d0
-    resource: repo://specs/084-silent-failure-visibility/research.md
-  - id: openwiki-source-e4b41dde0467ae4ba999bc66
-    resource: repo://specs/084-silent-failure-visibility/spec.md
-  - id: openwiki-source-5159dca913823c87d5dcf112
-    resource: repo://specs/084-silent-failure-visibility/tasks.md
+resource-sha256: 16afc46930f33a637218991530b68b2fcb852df8029a2209229b2c4e6c25c094
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T05:05:27.957Z
+timestamp: 2026-11-10T03:37:28.044Z
 ---
 
 # Prod host backup (restic) and its failure alerting

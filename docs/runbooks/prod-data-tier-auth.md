@@ -353,8 +353,8 @@ is a grep for the marker, not a `tail`.) Copy `~/mongo-upgrade-081` off the host
 
 **P6 — pre-pull the 9.0 image and check its user**
 > **Digest moved 2026-11-01.** The upgrade itself ran on `9.0-ubi9@sha256:2cb58a8d…` (the 2026-10-23
-> build). The compose pin is now `@sha256:3d40c6fa…`, the 2026-10-28 rebuild of the same mongod 9.0.4 on
-> a patched UBI 9 base (PR #896). Every command below names the current pin, so a re-run or a rollback
+> build). The compose pin is now `@sha256:3d40c6fa…`, upstream's `9.0.4-ubi9-20261031T064800Z` rebuild of the
+> same mongod 9.0.4 on a patched UBI 9 base (PR #896). Every command below names the current pin, so a re-run or a rollback
 > uses the image production actually runs; the expected outputs are unchanged.
 
 ```bash

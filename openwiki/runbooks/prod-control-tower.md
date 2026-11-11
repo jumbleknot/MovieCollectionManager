@@ -3,76 +3,10 @@ type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
 description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the six one-time stateful cutovers they have carried — the completed and closed-out RustFS object-store swap on the shipped 1.0.4 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move, and the two schema-carrying Langfuse minors (4.56.0 → 4.68.0, item 839, and 4.68.0 → 4.72.0, item 895) whose merge is the migration — with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
+resource-sha256: eb8819035c5594a8f6a4f64145fc1dd425682b7e345c10355838294125fbba7e
 tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, clickhouse, cutover, runbook]
-sources:
-  - id: openwiki-source-921eaf51fe28eda4db17e960
-    resource: repo://agents/movie-assistant/tests/integration/test_observability_sc008.py
-  - id: openwiki-source-c1146bc275906084150591a5
-    resource: repo://docs/decisions/ADR-0001-prod-secrets-management.md
-  - id: openwiki-source-a32b06ef0f76afb80af4d88a
-    resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
-  - id: openwiki-source-23175e1d10427daa3344d3ec
-    resource: repo://docs/runbooks/prod-control-tower.md
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-045a0d186e0b60056b359b2e
-    resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-5cff57d66fb9a3d88a18a36e
-    resource: repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml
-  - id: openwiki-source-34479801b303c2005c7d1de1
-    resource: repo://infrastructure-as-code/docker/agents/compose.prod.yaml
-  - id: openwiki-source-03de7146fd7e33f2e3019d9d
-    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-5c295e2a3945cc4a649c1abc
-    resource: repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml
-  - id: openwiki-source-d089459054b959415f3fd18e
-    resource: repo://infrastructure-as-code/docker/opensearch/init-audit-user.sh
-  - id: openwiki-source-3b86829117dd0577834407fc
-    resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
-  - id: openwiki-source-8ada931f45dbc32482cecf9f
-    resource: repo://infrastructure-as-code/docker/vault/config/vault.hcl
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-a6996cae4bd83db81e823602
-    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
-  - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
-    resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
-  - id: openwiki-source-12b683eb33d44031555ec7f2
-    resource: repo://scripts/__tests__/langfuse-v4-read-path.guard.test.mjs
-  - id: openwiki-source-ff0e1ec996f6a1fc5b3d0ba8
-    resource: repo://scripts/__tests__/no-minio-references.guard.test.mjs
-  - id: openwiki-source-482173336861a06249bf1372
-    resource: repo://scripts/__tests__/object-store-service.guard.test.mjs
-  - id: openwiki-source-6a31387312db2b158048d4d9
-    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-b182ec4cb28667debd4684ff
-    resource: repo://scripts/check-prod-restart-policy.mjs
-  - id: openwiki-source-bf15c8e3067ce028059a1350
-    resource: repo://scripts/check-resource-naming.mjs
-  - id: openwiki-source-4708763005c35901b04f5740
-    resource: repo://security/infra-images/allowlist.yaml
-  - id: openwiki-source-2470b658ec43d754a7fc16c1
-    resource: repo://specs/080-minio-to-rustfs/contracts/migration-procedure.md
-  - id: openwiki-source-8e1cfc141032a9d913893039
-    resource: repo://specs/080-minio-to-rustfs/contracts/object-store-service.md
-  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
-    resource: repo://specs/080-minio-to-rustfs/tasks.md
-  - id: openwiki-source-db3aa5ac2ffb577a529916ad
-    resource: repo://specs/081-major-dependency-upgrades/plan.md
-  - id: openwiki-source-2ffebe6972c17fbcc2a83423
-    resource: repo://specs/081-major-dependency-upgrades/research.md
-  - id: openwiki-source-2e26935bed37e1316dc175a0
-    resource: repo://specs/081-major-dependency-upgrades/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T15:45:38.591Z
+timestamp: 2026-11-10T11:59:39.640Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)
@@ -683,11 +617,7 @@ state they care about does the dump → pre-seed steps too. The shared pin also 
 `allowedVersions: "<17"` hold: a Postgres major now rides the stateful-datastore
 `dependencyDashboardApproval` tick like every other database image here (see
 [the Renovate runbook](./renovate.md) for what ticking it means, and
-[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it). One line of that
-runbook now trails this change: its "database MAJOR waits in Pending Approval" paragraph still says the
-observability postgres is "held below 17 outright … so it never reaches this list". That was true before
-US8b; the ceiling is discharged, and `renovate.json`'s stateful-datastore rule plus
-`renovate-workflow.guard.test.mjs` are the current reading.
+[ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) for the policy behind it).
 
 ## Langfuse 4.56.0 → 4.68.0, the schema-carrying minor (spec 081 US8 PR 8d, item 839) — done in production
 

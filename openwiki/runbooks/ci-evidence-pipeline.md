@@ -3,62 +3,10 @@ type: Runbook
 title: CI evidence pipeline (producing the evidence)
 description: How CI produces the evidence a session reads back — the per-job failure digest with its three channels (PR comment, digest inside the bundle, and the green-run counts bundle), the 5 MB ci-failures bundle with its recursive packing and trimming rules, per-step durations and the generated ceiling table with the guard that makes a row agree with its own basis, and the coverage, wrapper and CRLF gates that stop the machinery eroding. The producing half of the CI-diagnostics pair; ci-diagnostics.md covers reading it.
 resource: docs/runbooks/ci-evidence-pipeline.md
+resource-sha256: 8f9c08b85753ca6cf229299c755f7882f15302c67aa816619431ae2676dbcdfc
 tags: [ci, forgejo, evidence, diagnostics, tooling, runbook]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-ceecf221f842ba07ba6a91b2
-    resource: repo://.forgejo/workflows/registry-retention.yml
-  - id: openwiki-source-3c099d9af7cba6b30d6eaf07
-    resource: repo://.gitattributes
-  - id: openwiki-source-c3e333457ea705ec015d1cbd
-    resource: repo://backend/mc-service/src/api/collections/delete.rs
-  - id: openwiki-source-12999abcc7373e8376b400bb
-    resource: repo://backend/mc-service/src/api/collections/list.rs
-  - id: openwiki-source-4ed96763667f13cac6dcc6ce
-    resource: repo://backend/mc-service/src/api/middleware/logging.rs
-  - id: openwiki-source-f003db5a1a23dba30ccf3b03
-    resource: repo://docs/runbooks/ci-evidence-pipeline.md
-  - id: openwiki-source-900e4fa48a3671f4d583c11d
-    resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
-  - id: openwiki-source-0a51228742c9892eef223b4e
-    resource: repo://scripts/__tests__/app-image-scan.test.mjs
-  - id: openwiki-source-c87b16f17fb0c4f5c8105cae
-    resource: repo://scripts/__tests__/check-ci-digest-coverage.test.mjs
-  - id: openwiki-source-583e0d299d9b65d403bcd328
-    resource: repo://scripts/__tests__/ci-failure-digest.test.mjs
-  - id: openwiki-source-2c4ab3ecf382cf5390cc484c
-    resource: repo://scripts/__tests__/ci-log-step.test.mjs
-  - id: openwiki-source-85895d0ff4bd77f9e7c359df
-    resource: repo://scripts/__tests__/ci-maestro-debug.test.mjs
-  - id: openwiki-source-c84c5149aa3c4f5090fd8fae
-    resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
-  - id: openwiki-source-0bed00f693d972828ff1210e
-    resource: repo://scripts/__tests__/publish-android-launch.test.mjs
-  - id: openwiki-source-3672bd476fb3e523ec6e9ad6
-    resource: repo://scripts/android-launch-smoke.sh
-  - id: openwiki-source-bba8fcebaba450eb74159c23
-    resource: repo://scripts/check-ci-digest-coverage.mjs
-  - id: openwiki-source-27ab715525d8fb5ce461266d
-    resource: repo://scripts/ci-digest-redact.mjs
-  - id: openwiki-source-478a776ff0b75f2af5dc3190
-    resource: repo://scripts/ci-failure-digest.mjs
-  - id: openwiki-source-1edeb18757a8f02d496d8f2b
-    resource: repo://scripts/ci-log-step.sh
-  - id: openwiki-source-13872023ae5e43aa417073f0
-    resource: repo://scripts/ci-maestro-debug.sh
-  - id: openwiki-source-70875ab1853f42b7c7d4b78a
-    resource: repo://scripts/ci-status.mjs
-  - id: openwiki-source-7183777a95d300ed54250302
-    resource: repo://scripts/ci-step-ceilings.tsv
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T19:55:04.696Z
+timestamp: 2026-11-10T11:46:33.762Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -339,9 +287,9 @@ defect. It stays at 2700 s because an uncalibrated step's legitimate duration is
 and the asymmetry still holds: a fast **false** red costs a ~35-40 min re-run on this capacity-1 runner;
 a slow **true** failure costs only the difference between that bound and the job's ceiling.
 
-The table's commented `ON THE BACKSTOP` block currently lists **twenty** steps, while the `app-e2e`
-workflow's own comment still claims "exactly one step is on it" — read that line as stale rather than as
-the inventory.
+The table's commented `ON THE BACKSTOP` block is the inventory of which steps are on it (twenty-one at
+the 2026-11-10 review); the `app-e2e` workflow's comment points there rather than keeping a count of its
+own, which is how it once went stale at "exactly one step".
 
 **Twelve rows are the spec 084 US3 image-scanning family**: `app-e2e-tag-scan-images` (which tags the
 six images inside `app-e2e`) plus the eleven `app-image-scan-*` steps of the `app-image-scan` job. They
@@ -371,6 +319,10 @@ The other **eight** are `app-e2e`'s own, all bounded by the 2700 s backstop:
   a *pass* has no other channel on this forge. The first is a bounded launch plus a bounded wait for the
   login screen (120 s) and a logcat read; the second is one bounded POST. Being wrapped inside `app-e2e`,
   both fall under `#338n`, so neither can go unrecorded.
+
+The twenty-first, **`affected-expo-doctor`** (feature 087), is not an `app-e2e` step at all: it runs in the
+`affected` job as a non-blocking (`continue-on-error`) audit, bounded by a `timeout 300` on its own
+command.
 
 None of the eight has the 10 observed samples a calibration needs, so all eight are bounded by the 2700 s
 backstop — which is exactly why the `app-e2e` job ceiling is raised from 75 to 110 minutes in full mode:
@@ -706,5 +658,5 @@ claim.
 - [E2E testing](./e2e-testing.md), [DAST scanning](./dast-scanning.md),
   [SAST & SCA scanning](./sast-scanning.md), [Infra-image CVE scanning](./infra-image-scanning.md) — the
   jobs whose steps are wrapped, and the failure classes they emit.
-- [OpenWiki bundle maintenance](../process/wiki-maintenance.md) — the scheduled job whose dispatch
-  inputs are one of the wrapped blocks.
+- [OpenWiki bundle maintenance](../process/wiki-maintenance.md) — the manually dispatched job whose
+  dispatch inputs are one of the wrapped blocks.

@@ -3439,7 +3439,8 @@ test('(081) the CI-action holds do NOT leak onto the actions US1 moves — the c
 //     how a genuine FLOOR raise arrives and must stay open; check-override-consistency.mjs's cap rule is
 //     the second line if a widening is ever proposed by another route.
 //
-//   jest/babel-jest/@types/jest, @babel/core/@babel/runtime, typescript, async-storage MAJORS →
+//   @babel/core/@babel/runtime, typescript, async-storage MAJORS (jest/babel-jest/@types/jest were held
+//     here too until SDK 58 lifted them, feature 087 — see the '(087) the jest 30 hold is LIFTED' test) →
 //     `dependencyDashboardApproval`, each in its OWN group. Not `allowedVersions`: a ceiling's meaning
 //     depends on the dep's versioning (US4 measured `'<18'` admitting ONLY 18.0 under semver-partial), and
 //     an approval gate has no version semantics to get wrong. Their own group is load-bearing:

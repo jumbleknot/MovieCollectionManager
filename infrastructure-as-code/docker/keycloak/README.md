@@ -2,7 +2,7 @@
 
 ## Setup Instructions
 
-The compose file is configured to pull a postgres image and create a container for keycloak-db, and pull a keycloak image and create a container for keycloak-service, and pull a mailpit image and create a container for keycloak-mailpit.
+The compose file is configured to pull a postgres image and create a container for keycloak-store-postgres, and pull a keycloak image and create a container for keycloak-service, and pull a mailpit image and create a container for keycloak-mailpit.
 
 ### Prerequisites
 
@@ -11,10 +11,11 @@ The compose file is configured to pull a postgres image and create a container f
 
 ### Network
 
-Docker Compose file expects an external docker network named `backend-network` to have already been created.  If this docker network does not exist in your docker environment, you must run the below command:
+Docker Compose file expects two external docker networks, `backend-network` and `keycloak-network`, to have already been created.  If either does not exist in your docker environment, you must run the below commands:
 
 ```bash
 docker network create backend-network
+docker network create keycloak-network
 ```
 
 Other compose files that have services running on the same docker network (`backend-network`) can connect to this keycloak container by referencing `keycloak-service:8080` (feature 020 unified the service key and container_name to `keycloak-service`; the old bare `keycloak` name no longer resolves).
@@ -62,7 +63,7 @@ Once the container is running, access the Keycloak admin console at:
 
 - **URL:** <http://localhost:8099>
 - **Username:** admin
-- **Password:** change_me (use only on first login, change password in Keycloak, then use whatever you changed it to in subsequent logins)
+- **Password:** the `KC_BOOTSTRAP_ADMIN_PASSWORD` value in `stacks/auth.env` (it creates the `admin` user only on a database that has no admin yet; after that, use whatever password that user now has)
 
 ### Cleaning Up
 
@@ -154,7 +155,7 @@ Feature 054 (3f30c456, item #168) extended it to `dev-realm.json`, because a loc
 hit the same refresh-limit bounce: dev and CI both use 5400 s, and only `prod-realm.json` keeps 300 s.
 Production is untouched — no security control is relaxed. Local development therefore does **not** see
 realistic expiry; exercise it deliberately. The refresh path keeps deliberate coverage:
-`agent-session-refresh.spec.ts` clears the access cookie explicitly rather than waiting for expiry.
+`agent-session-refresh.spec.ts` ages the session's server-held access token rather than waiting for expiry.
 
 ### Proving a realm edit actually imports (one minute, no CI)
 
@@ -166,9 +167,10 @@ mkdir -p /tmp/kcimport && cp ci-realm.json /tmp/kcimport/grumpyrobot-realm.json 
 docker run --rm \
   -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin \
   -e KEYCLOAK_CLIENT_SECRET=x -e KEYCLOAK_SERVICE_CLIENT_SECRET=x \
-  -e AGENT_SUBJECT_TOKEN_CLIENT_SECRET=x -e E2E_TEST_PASSWORD=x -e MCM_BFF_TEST_CLIENT_SECRET=x \
+  -e AGENT_SUBJECT_TOKEN_CLIENT_SECRET=x -e AGENT_GATEWAY_CLIENT_SECRET=x -e MC_SERVICE_CLIENT_SECRET=x \
+  -e E2E_TEST_PASSWORD=x -e E2E_ROPC_CLIENT_SECRET=x \
   -v /tmp/kcimport:/opt/keycloak/data/import:ro \
-  quay.io/keycloak/keycloak:26.8.1 import --dir /opt/keycloak/data/import
+  quay.io/keycloak/keycloak:26.8.2 import --dir /opt/keycloak/data/import
 # want: "Realm 'grumpyrobot' imported"
 ```
 

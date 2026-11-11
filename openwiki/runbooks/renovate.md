@@ -3,72 +3,10 @@ type: Runbook
 title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0) that allocates the five in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
 resource: docs/runbooks/renovate.md
+resource-sha256: 454b37256e384084c4b4dfe9103c671c2d832e8eca291a4fbb7fb1f5c4babbb5
 tags: [renovate, ci, dependencies, runbook]
-sources:
-  - id: openwiki-source-7884f328b4348e296cee1257
-    resource: repo://.forgejo/workflows/branch-reaper.yml
-  - id: openwiki-source-6186a866b56089a82cce5c62
-    resource: repo://.forgejo/workflows/devcontainer-image.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-7bd434a17ed7c27916b1d2ae
-    resource: repo://.forgejo/workflows/infra-image-scan.yml
-  - id: openwiki-source-6e16973a4e3f6a5a2bd2e44c
-    resource: repo://.forgejo/workflows/lockfile-refresh-check.yml
-  - id: openwiki-source-eca7c5325f14a686c18a7c8a
-    resource: repo://.forgejo/workflows/renovate-health.yml
-  - id: openwiki-source-6e3646982d72c64cb5e2486d
-    resource: repo://.forgejo/workflows/renovate.yml
-  - id: openwiki-source-e5d6f72def2648b4025ee519
-    resource: repo://agents/movie-assistant/.python-version
-  - id: openwiki-source-03a1e42798659780585d5bc4
-    resource: repo://backend/mc-service/Dockerfile
-  - id: openwiki-source-045a0d186e0b60056b359b2e
-    resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-82e76cb56a030095b60d27cd
-    resource: repo://frontend/mcm-app/babel.config.js
-  - id: openwiki-source-e9bcd4372a4632d555b861a6
-    resource: repo://frontend/mcm-app/package.json
-  - id: openwiki-source-75c613635390ab18cc167ec1
-    resource: repo://frontend/mcm-app/README.md
-  - id: openwiki-source-4042a47526d6016cff835628
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.yaml
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-3b86829117dd0577834407fc
-    resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
-  - id: openwiki-source-f7e16ba323424b9790bca8b9
-    resource: repo://packages/design-system/package.json
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-b7793decf9d7c9ba48e57e0f
-    resource: repo://rust-toolchain.toml
-  - id: openwiki-source-9718a90a7733637f39e0b867
-    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
-  - id: openwiki-source-6a31387312db2b158048d4d9
-    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
-  - id: openwiki-source-e1b32ed173a0f6b508f94a03
-    resource: repo://scripts/__tests__/tamagui-version-lockstep.guard.test.mjs
-  - id: openwiki-source-914396ae309cbed351491c32
-    resource: repo://scripts/backlog.mjs
-  - id: openwiki-source-8a0f1bda8bd15d4b15217f58
-    resource: repo://scripts/check-lockfile-refresh.mjs
-  - id: openwiki-source-be4449db5d1cd6939f816b1e
-    resource: repo://scripts/check-override-consistency.mjs
-  - id: openwiki-source-238cf8b88f30f267614313be
-    resource: repo://scripts/check-toolchain-consistency.mjs
-  - id: openwiki-source-e1a7063386de1c5b8a2e79a9
-    resource: repo://scripts/lib/renovate-package-rules.mjs
-  - id: openwiki-source-aa94e9cc08dccbe003436cfb
-    resource: repo://scripts/reap-merged-branches.mjs
-  - id: openwiki-source-3b90cb16e95306cae75aac45
-    resource: repo://scripts/renovate-health.mjs
-  - id: openwiki-source-bd64475e04b69688a7d80d8d
-    resource: repo://scripts/sast-scan.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T19:55:04.696Z
+timestamp: 2026-11-10T11:59:39.646Z
 ---
 
 # Renovate dependency bot
@@ -436,11 +374,10 @@ a ceiling blocks only the version move and leaves the dep in its group. What a h
 | `openpolicyagent/opa` | permit-list `/^\d+\.\d+\.\d+(-debug)?$/` | OPA publishes thousands of tags including `-dev`, `-rootless` and `-static`; a denylist goes stale the moment upstream invents a fourth, so the list of what IS allowed is closed |
 | `postgres`, `mongodb/mongodb-community-server`, `redis`, `clickhouse/clickhouse-server` | major only, `dependencyDashboardApproval` | added 2026-10-09: PR #698 merged clickhouse 25.12 → 26.6 and redis 7 → 8 on a green CI that never starts the observability stack, so a database major became a tick. The observability postgres, once hard-held below 17, now rides this rule like keycloak's and agent-db's; MongoDB's one-day `<9` hold (added 2026-10-23, item #819) was discharged into this gate by spec 081 US8a. Patches, minors and digest refreshes stay automatic |
 | `opensearchproject/opensearch`, `langfuse/langfuse`, `langfuse/langfuse-worker` | major only, `dependencyDashboardApproval` | the ceilings were lifted (features 071/072) once the gate cleared, and what replaced them is a tick — see [ADR-0002](../decisions/adr-0002-stateful-major-upgrades.md) |
-| `jest`/`babel-jest`/`@types/jest`, `@babel/core`/`@babel/runtime`, `typescript`, `@react-native-async-storage/async-storage` | major only, `dependencyDashboardApproval`, **one group per hold** | feature 081 US5: each major is pinned by something outside its own ecosystem — the Expo SDK's test and transpiler presets, the lint parser's `typescript` peer range, and `bundledNativeModules.json` for the native module. A branch's approval is `upgrades.some(...)`, so a held major left inside `js majors` would put every js major behind one tick and release them all together |
+| `@babel/core`/`@babel/runtime`, `typescript`, `@react-native-async-storage/async-storage` | major only, `dependencyDashboardApproval`, **one group per hold** | feature 081 US5: each major is pinned by something outside its own ecosystem — the Expo SDK's transpiler preset, the lint parser's `typescript` peer range, and `bundledNativeModules.json` for the native module (the `jest`/`babel-jest`/`@types/jest` hold of the same shape was lifted at the SDK 58 move, feature 087). A branch's approval is `upgrades.some(...)`, so a held major left inside `js majors` would put every js major behind one tick and release them all together |
 | majors of the keyed `pnpm-workspace.yaml` overrides | `enabled: false` | a keyed security override's value is a floor **capped at its own major**; Renovate reads that value as a direct range and widens the cap to the newest major, handing a dependent a major it never declared. A rejection, not a hold: patches and minors stay open, and `check-override-consistency.mjs` fails any value cap past `<key major + 1>` as the second line |
 | `actions/upload-artifact` | `<4` (item #912) | this forge's runner refuses v4+ before it uploads anything (`GHESNotSupportedError`), measured on both runner labels — the fourth measurement of the same fact |
-| `java-jdk` (from `actions/setup-java`) | `/^17\./` (item #913) | an Android toolchain decision: the JDK must match the Expo SDK's Gradle/AGP template, and SDK 57's plugin still builds with `jvmToolchain(17)` |
-| `test-renderer` | `/^1\.[0-2]\./` | feature 081 US5c: 1.3.x pulls `react-reconciler` 0.34, which peers on `react ^19.3`, and the workspace runs 19.2.3 (Expo-pinned); in its own group so the held member does not gate every routine npm bump batched with it |
+| `java-jdk` (from `actions/setup-java`) | `/^17\./` (item #913) | an Android toolchain decision: the JDK must match the Expo SDK's Gradle/AGP template, and SDK 58's React Native gradle plugin still builds with `jvmToolchain(17)` (re-checked 2026-11-07) |
 | `@copilotkit/*` (minor + major) and 0.x Cargo minors | `dependencyDashboardApproval` | a breaking upgrade cannot be made green by config, so without approval it arrives red every week and crowds out routine work; **patch stays routine** so a security patch is never gated behind a human tick |
 
 **A hold can be discharged, and a discharged hold is replaced rather than deleted.** Five ceilings have

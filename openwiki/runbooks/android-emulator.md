@@ -3,81 +3,9 @@ type: Runbook
 title: Android emulator & APK builds (mobile E2E)
 description: The decision rule for where each mobile E2E flow runs — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone release APK with its in-bundle localhost guard and explicit Gradle heap, the launch check that must pass before any flow and the app-ci / android-launch commit status that reports it, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
+resource-sha256: b607f1c299d3f4157ef5e4a283ce61832f7f14f8eef8726a9ae8200650435441
 tags: [android, mobile, emulator, apk, ci, runbook]
-sources:
-  - id: openwiki-source-7e1c4d46c53be9bf32311e06
-    resource: repo://.devcontainer/toolchain.Dockerfile
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-dbbd2a072603d7674a1530f2
-    resource: repo://docs/runbooks/android-emulator.md
-  - id: openwiki-source-0bf17bd5484fe4c2f5eafbab
-    resource: repo://docs/runbooks/Server-Setup-Runbook.md
-  - id: openwiki-source-30d3dc827bae5c1cb657fa31
-    resource: repo://frontend/mcm-app/app.json
-  - id: openwiki-source-a4c39fcf1686803a0f1b3a45
-    resource: repo://frontend/mcm-app/plugins/with-dev-cleartext.js
-  - id: openwiki-source-57b4f1588cb74332de8a1a9a
-    resource: repo://frontend/mcm-app/scripts/build-apk.mjs
-  - id: openwiki-source-9b6d0e4c85a72f13d0be4831
-    resource: repo://frontend/mcm-app/scripts/maestro-e2e.mjs
-  - id: openwiki-source-23775c3de52f3ab95a13cb8b
-    resource: repo://README.md
-  - id: openwiki-source-856fe57cb2b44e0e87aa00fa
-    resource: repo://scripts/__tests__/android-launch-smoke.test.mjs
-  - id: openwiki-source-c138086948681bd36101354f
-    resource: repo://scripts/__tests__/app-ci-lockfile-filter.guard.test.mjs
-  - id: openwiki-source-900e4fa48a3671f4d583c11d
-    resource: repo://scripts/__tests__/app-ci-mobile-full.guard.test.mjs
-  - id: openwiki-source-0a51228742c9892eef223b4e
-    resource: repo://scripts/__tests__/app-image-scan.test.mjs
-  - id: openwiki-source-2c4ab3ecf382cf5390cc484c
-    resource: repo://scripts/__tests__/ci-log-step.test.mjs
-  - id: openwiki-source-85895d0ff4bd77f9e7c359df
-    resource: repo://scripts/__tests__/ci-maestro-debug.test.mjs
-  - id: openwiki-source-c84c5149aa3c4f5090fd8fae
-    resource: repo://scripts/__tests__/prod-apk-disk-step.guard.test.mjs
-  - id: openwiki-source-0bed00f693d972828ff1210e
-    resource: repo://scripts/__tests__/publish-android-launch.test.mjs
-  - id: openwiki-source-6a31387312db2b158048d4d9
-    resource: repo://scripts/__tests__/renovate-workflow.guard.test.mjs
-  - id: openwiki-source-3672bd476fb3e523ec6e9ad6
-    resource: repo://scripts/android-launch-smoke.sh
-  - id: openwiki-source-2d569134a872251a7d87c36a
-    resource: repo://scripts/build-apk-short-path.ps1
-  - id: openwiki-source-9f8c81d3ba3b64fe38ae7e7d
-    resource: repo://scripts/cd/publish-apk.mjs
-  - id: openwiki-source-478a776ff0b75f2af5dc3190
-    resource: repo://scripts/ci-failure-digest.mjs
-  - id: openwiki-source-1edeb18757a8f02d496d8f2b
-    resource: repo://scripts/ci-log-step.sh
-  - id: openwiki-source-13872023ae5e43aa417073f0
-    resource: repo://scripts/ci-maestro-debug.sh
-  - id: openwiki-source-b6eb0909d8d068c6d6d9dab4
-    resource: repo://scripts/ci-mobile-agent-flows.sh
-  - id: openwiki-source-8f0b3b9c2764324c22056c4b
-    resource: repo://scripts/ci-mobile-full-flows.sh
-  - id: openwiki-source-5b730a5e86c359beda7597f1
-    resource: repo://scripts/ci-mobile-lib.sh
-  - id: openwiki-source-70875ab1853f42b7c7d4b78a
-    resource: repo://scripts/ci-status.mjs
-  - id: openwiki-source-7183777a95d300ed54250302
-    resource: repo://scripts/ci-step-ceilings.tsv
-  - id: openwiki-source-38de5a41429287f01c1b5bfd
-    resource: repo://scripts/devcontainer-android.sh
-  - id: openwiki-source-33d177ccb5008acd450b4d41
-    resource: repo://scripts/maestro-run.sh
-  - id: openwiki-source-d8fc1eae797f8f8bb62cb70f
-    resource: repo://scripts/mobile-flows.mjs
-  - id: openwiki-source-11ba1741c25b3030e34f4dd8
-    resource: repo://scripts/publish-android-launch.mjs
-  - id: openwiki-source-4f2a91c7de6b3085a1c74e29
-    resource: repo://scripts/__tests__/prod-apk-gradle-heap.guard.test.mjs
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-08T02:21:41.463Z
+timestamp: 2026-11-10T11:46:33.753Z
 ---
 
 # Android emulator & APK builds (mobile E2E)

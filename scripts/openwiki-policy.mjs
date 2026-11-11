@@ -32,6 +32,16 @@ export const COVERAGE_POLICIES = Object.freeze(['regenerate', 'event-driven']);
 
 export const ACTORS = Object.freeze(['agent', 'generator']);
 
+/**
+ * The members of an entry's `actor`, which may be one name or a list (feature 098, ADR-0004):
+ * `openwiki/**` is written both by coding sessions (`agent`) and by a manual rebuild (`generator`).
+ * Absent is `[]`. A non-string member is returned as-is so G2 can name it.
+ */
+export function actorMembers(actor) {
+  if (actor === undefined || actor === null) return [];
+  return Array.isArray(actor) ? actor : [actor];
+}
+
 /** The one place `actor: generator` is permitted (FR-026c). */
 export const GENERATOR_SCOPE_PREFIX = 'openwiki/';
 
@@ -183,8 +193,9 @@ export function mayWrite(policy, path, actor = 'generator') {
   if (entry.policy === 'excluded') return { allowed: false, reason: 'policy: excluded — never analyzed, never written', entry };
   if (entry.policy === 'never-written') return { allowed: false, reason: 'policy: never-written', entry };
   if (entry.policy === 'analyzable-not-covered') return { allowed: false, reason: 'policy: analyzable-not-covered — read for context, not a write target', entry };
-  if (entry.actor !== actor) {
-    return { allowed: false, reason: `policy governs actor \`${entry.actor ?? 'unset'}\`, not \`${actor}\``, entry };
+  const members = actorMembers(entry.actor);
+  if (!members.includes(actor)) {
+    return { allowed: false, reason: `policy governs actor \`${members.join(', ') || 'unset'}\`, not \`${actor}\``, entry };
   }
   return { allowed: true, reason: null, entry };
 }

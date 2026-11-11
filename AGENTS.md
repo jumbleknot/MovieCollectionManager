@@ -56,30 +56,35 @@ Coverage is complete for the canonical documentation — every runbook, architec
 and architecture document has at least one concept citing it. So a missing concept means the document
 does not exist, not that it is not yet covered.
 
-Two corrections to the generated block above, which describes OpenWiki's defaults rather than this
+Three corrections to the generated block above, which describes OpenWiki's defaults rather than this
 repository:
 
-- **The wiki is NOT refreshed automatically (paused 2026-11-10), and not the way that block says.**
-  The generator lives on a self-hosted **Forgejo** instance under `.forgejo/workflows/wiki-maintain.yml`,
-  not GitHub Actions, and since 2026-11-10 it runs **only on manual dispatch**: the daily schedule
-  (feature 078 US7) cost ~$1.50 a day while landing almost nothing. Summaries are moving to coding
-  sessions — see [docs/proposals/PRD-SessionMaintainedWiki.md](docs/proposals/PRD-SessionMaintainedWiki.md).
-  Each run plans bounded slices, verifies every slice by the pages that actually landed in the
-  working tree, and opens **one** always-current pull request for review. It is **never** auto-merged.
-  See [docs/runbooks/wiki-maintenance.md](docs/runbooks/wiki-maintenance.md).
-- **Always regenerate through the Nx target, never the bare `openwiki` CLI** — the target sets
-  `OPENWIKI_TELEMETRY_DISABLED=1` and a raised Node heap, and the bare CLI OOMs. Use
-  `pnpm nx wiki-plan infrastructure-as-code` first: planning is offline, keyless and free.
+- **The no-hand-edit line inside the block does not apply here.** "Do not hand-edit generated
+  OpenWiki pages" is OpenWiki's default, and a rebuild rewrites that block, so it is corrected here
+  rather than edited in place. In this repository the **coding session** keeps the summaries
+  current, by hand, in the same PR as the source change (ADR-0004,
+  [docs/decisions/ADR-0004-session-maintained-wiki.md](docs/decisions/ADR-0004-session-maintained-wiki.md)).
+- **There is no scheduled refresh, and not the way that block says.** The generator lives on a
+  self-hosted **Forgejo** instance under `.forgejo/workflows/wiki-maintain.yml`, not GitHub Actions,
+  and it runs **only on manual dispatch**, as a rebuild of the pages the operator names (`pages`
+  input). The daily schedule and its unattended machinery are retired (feature 098). A rebuild opens
+  **one** pull request for review and is **never** auto-merged. See
+  [docs/runbooks/wiki-maintenance.md](docs/runbooks/wiki-maintenance.md).
+- **Always run the generator through the Nx target, never the bare `openwiki` CLI** — the target sets
+  `OPENWIKI_TELEMETRY_DISABLED=1` and a raised Node heap, and the bare CLI OOMs.
 
 **Where a new learning goes** is decided by the concept covering the subject: if it cites a
-`resource`, that source is canonical and the learning goes **there**; if it is listed in
-[openwiki/protected.yaml](openwiki/protected.yaml) it is canonical itself and the learning goes
-**into the concept**. Never into [CLAUDE.md](CLAUDE.md), which is an index — a gate fails on prose
-beyond it.
+`resource`, it is a derived summary — the learning goes into that source **and** the summary is
+refreshed in the same PR; if it is listed in [openwiki/protected.yaml](openwiki/protected.yaml) it is
+canonical itself and the learning goes **into the concept**. Never into [CLAUDE.md](CLAUDE.md), which
+is an index — a gate fails on prose beyond it.
 
-Do not hand-edit pages under `openwiki/` that carry a `resource`: they are derived summaries and are
-regenerated. Fix the source document, or the generation brief at
-[openwiki/INSTRUCTIONS.md](openwiki/INSTRUCTIONS.md), and regenerate. A page rejected by the
-conformance gate (`pnpm nx okf-lint infrastructure-as-code`), by the governance gate
-(`pnpm nx okf-governance infrastructure-as-code`) or by a leak scan is fixed in that brief — never by
-adding an allowlist entry.
+**Refreshing a derived page is part of the change to its source.** Each derived page records its
+source's fingerprint (`resource-sha256`), and the required `okf` check (rule V17) fails a PR whose
+summary no longer matches. Run `node scripts/wiki-refresh.mjs --stale`, then for each page `--diff`,
+edit only what the diff invalidates (following [openwiki/INSTRUCTIONS.md](openwiki/INSTRUCTIONS.md)),
+and `--record`. The procedure is the
+[wiki-refresh skill](.claude/skills/wiki-refresh/SKILL.md). Never hand-type a hash. A page rejected by
+the conformance gate (`pnpm nx okf-lint infrastructure-as-code`), by the governance gate
+(`pnpm nx okf-governance infrastructure-as-code`) or by a leak scan is fixed in the page or in that
+brief — never by adding an allowlist entry.

@@ -3,50 +3,10 @@ type: Runbook
 title: Containerized dev environment (devcontainer — Docker Desktop / DinD path)
 description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the thin Dockerfile layer and its measured ~13 GB copy-up cost, the canonical egress allowlist behind the in-container firewall (its schema, exclusions and fatal-precondition design), the in-container dev-ollama helper, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
 resource: docs/runbooks/devcontainer.md
+resource-sha256: ef1a46a27b3d9aa7879c8af256b911c554bfed4e6d39b0485eaad7c68304ee67
 tags: [devcontainer, docker, security, isolation, runbook, android]
-sources:
-  - id: openwiki-source-f7c89635dfc6efb0ecec007f
-    resource: repo://.devcontainer/devcontainer.json
-  - id: openwiki-source-6da8a375957bf9b9f92e62dd
-    resource: repo://.devcontainer/Dockerfile
-  - id: openwiki-source-0efadc7633f45e85ee45a617
-    resource: repo://.devcontainer/egress-allowlist.json
-  - id: openwiki-source-774d00b5d62cc6221b5968ea
-    resource: repo://.devcontainer/fix-workspace-ownership.sh
-  - id: openwiki-source-61f1a679973e2c37988cd802
-    resource: repo://.devcontainer/gen-container-secrets-env.sh
-  - id: openwiki-source-2f905dfaa401c44dac71649b
-    resource: repo://.devcontainer/init-firewall.sh
-  - id: openwiki-source-a157c487923d65153283de40
-    resource: repo://.devcontainer/sandbox/devcontainer.json
-  - id: openwiki-source-7e1c4d46c53be9bf32311e06
-    resource: repo://.devcontainer/toolchain.Dockerfile
-  - id: openwiki-source-84525c5b1053cfa785b83c28
-    resource: repo://.devcontainer/verify/run-harness.sh
-  - id: openwiki-source-5b1388e1d8c716d3fe2a3cdb
-    resource: repo://.devcontainer/verify/verify-egress-allowlist-contract.sh
-  - id: openwiki-source-4811c78aebdb18972e0c3805
-    resource: repo://.devcontainer/verify/verify-firewall-allowlist.sh
-  - id: openwiki-source-7b223ba4df7203eeb5667fa8
-    resource: repo://docs/runbooks/devcontainer-sandbox.md
-  - id: openwiki-source-a9fc7285078c8062777b3180
-    resource: repo://docs/runbooks/devcontainer.md
-  - id: openwiki-source-ff035ef3df6eca36fc791d1d
-    resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
-    resource: repo://scripts/__tests__/infra-image-scan.test.mjs
-  - id: openwiki-source-c3ef9454981554d2b5a20dec
-    resource: repo://scripts/devcontainer-ollama.sh
-  - id: openwiki-source-0b13188628bc70e422253f37
-    resource: repo://scripts/gen-egress-policy.mjs
-  - id: openwiki-source-238c6bb3246fc134ab159b1e
-    resource: repo://scripts/wiki-provider.mjs
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-07T15:45:38.591Z
+timestamp: 2026-11-10T11:51:44.487Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)

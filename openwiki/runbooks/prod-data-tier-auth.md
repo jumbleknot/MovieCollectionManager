@@ -3,54 +3,10 @@ type: Runbook
 title: Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade
 description: Enabling SCRAM authentication on the two production MongoDB stores without data loss — replica-set keyfile auth for the movie store, standalone SCRAM-only for the BFF store, pre-creating users to avoid an unhealthy window — plus feature 081 US8a's in-place 8.0.8 → 9.0 upgrade, deployed in production on 2026-10-24 and completed by the post-soak FCV raise to 9.0 on 2026-11-01.
 resource: docs/runbooks/prod-data-tier-auth.md
+resource-sha256: 19592a7fc6530deca41acc920f0460e2984496aac6ee8e54888ad264ce54404a
 tags: [production, mongodb, auth, security, upgrade, runbook]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-06T07:34:17.095Z
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-a32b06ef0f76afb80af4d88a
-    resource: repo://docs/decisions/ADR-0002-stateful-major-upgrades.md
-  - id: openwiki-source-a679e2e5a49381a72df446c5
-    resource: repo://docs/runbooks/prod-data-tier-auth.md
-  - id: openwiki-source-03de7146fd7e33f2e3019d9d
-    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
-  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
-    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
-  - id: openwiki-source-d5b1faab58eeb909bb999298
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
-  - id: openwiki-source-852cc196002c1a675baddf5c
-    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh
-  - id: openwiki-source-b6d5c062815f2af4f3aec768
-    resource: repo://infrastructure-as-code/docker/mc-service/mongo-entrypoint.test.sh
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-fa3a87df52d837aa49b86894
-    resource: repo://scripts/__tests__/app-ci-trigger-cd.guard.test.mjs
-  - id: openwiki-source-a6996cae4bd83db81e823602
-    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
-  - id: openwiki-source-9718a90a7733637f39e0b867
-    resource: repo://scripts/__tests__/mongo-data-owner.guard.test.mjs
-  - id: openwiki-source-f8f2427f127614b5db674fca
-    resource: repo://scripts/cd-dispatch-gate.mjs
-  - id: openwiki-source-91fe8d515f906bfe802750e0
-    resource: repo://scripts/cd/health-probe.sh
-  - id: openwiki-source-3e6437aecf987ee671b546b4
-    resource: repo://scripts/cd/rollback.sh
-  - id: openwiki-source-4708763005c35901b04f5740
-    resource: repo://security/infra-images/allowlist.yaml
-  - id: openwiki-source-f7c18c5bafd858a90cb17c5d
-    resource: repo://specs/026-prod-data-auth-vault/contracts/mongo-auth-contract.md
-  - id: openwiki-source-2d334ad195e0817c343e894d
-    resource: repo://specs/026-prod-data-auth-vault/tasks.md
-  - id: openwiki-source-2ffebe6972c17fbcc2a83423
-    resource: repo://specs/081-major-dependency-upgrades/research.md
-  - id: openwiki-source-2e26935bed37e1316dc175a0
-    resource: repo://specs/081-major-dependency-upgrades/tasks.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
+timestamp: 2026-11-10T11:59:39.643Z
 ---
 
 # Production data-tier authentication (MongoDB SCRAM) and the 8.0.8 → 9.0 in-place upgrade

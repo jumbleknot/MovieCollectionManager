@@ -1,6 +1,6 @@
 # Runbook: Local Dev Infrastructure & Environment Variables
 
-> Setup and operational reference, loaded on demand — referenced from CLAUDE.md. The load-bearing gotchas (Redis-or-500, replica-set MongoDB, Keycloak-before-app) and the config *rules* (`.env` no-inline-comments, `TRUSTED_PROXY`, `@/*` alias) stay inline in CLAUDE.md; this runbook holds the full procedures and the env-var tables.
+> Setup and operational reference, loaded on demand — indexed from CLAUDE.md. The load-bearing gotchas (Redis-or-500, replica-set MongoDB, Keycloak-before-app) are stated below, with the replica-set rule also in [openwiki/gotchas/cascade-delete-and-replica-set.md](../../openwiki/gotchas/cascade-delete-and-replica-set.md); of the config *rules*, `.env` no-inline-comments is [openwiki/gotchas/env-file-inline-comments.md](../../openwiki/gotchas/env-file-inline-comments.md), `TRUSTED_PROXY` is under *Environment Variables* below, and the `@/*` alias is `frontend/mcm-app/tsconfig.json`'s `paths` (`@/*` → `src/*`). This runbook holds the full procedures and the env-var tables.
 
 ## Local Dev Infrastructure
 
@@ -107,7 +107,7 @@ Without the secret the gateway runs but tool calls fail-closed (chat works, add/
 | MongoDB | `mongodb://localhost:27017` |
 | Redis | `redis://localhost:6379` |
 | mc-service | `http://localhost:3001` |
-| Keycloak Admin UI | `http://localhost:8099` (admin / change_me) |
+| Keycloak Admin UI | `http://localhost:8099` (`admin` / `KC_BOOTSTRAP_ADMIN_PASSWORD` from `stacks/auth.env`) |
 | Mailpit | `http://localhost:8025` |
 
 **Volume architecture**: Each stack aggregator uses `include:` to incorporate individual service compose files. Persistent data volumes are declared `external: true` with explicit names in each service's compose file so they keep their names after `include:` merges them (Docker Compose would otherwise prefix them with the project name):
@@ -198,8 +198,9 @@ message, and it is indistinguishable from a genuine environment limit until some
 repo the credential skips now name the variable, the file they are read from, and the command that
 fixes them — if you meet one that does not, that message is itself the bug (048 FR-024).
 
-**Which absences are still legitimate.** `--profile observability` (LangFuse, Vault, otel-lgtm,
-Unleash), `--profile audit` (OpenSearch) and OPA are not brought up by `app-e2e` either; those skips
+**Which absences are still legitimate.** `--profile observability` (LangFuse, otel-lgtm, Unleash,
+OPA), `--profile audit` (OpenSearch) and `--profile vault` (Vault, in the `auth` stack) are not brought
+up by `app-e2e` either; those skips
 are expected and allow-listed. A healthy local run of the agent integration suite is **51 passed,
 11 skipped, 0 failed**.
 
@@ -327,7 +328,7 @@ Host-port mappings are unchanged (`localhost:8099/8082/27017/27018/6379/5433`) �
 
 ## Environment Variables
 
-> The config *rules* — `.env` no-inline-comments, `TRUSTED_PROXY` semantics, the `@/*` path alias — live in CLAUDE.md's Configuration section. These tables are the reference values.
+> The config *rules* — `.env` no-inline-comments ([openwiki/gotchas/env-file-inline-comments.md](../../openwiki/gotchas/env-file-inline-comments.md)), `TRUSTED_PROXY` semantics (below), the `@/*` path alias (`frontend/mcm-app/tsconfig.json`) — are stated where linked. These tables are the reference values.
 
 ### BFF server-side env vars (BFF only, never exposed to client)
 
@@ -414,8 +415,11 @@ with CI about how the suite is run.
 > `cleanup_db`), not a cause. Do not flip it to parallel for speed — at ~7% per run it would make a
 > required gate flaky. Tracked as item #468, which owns the fix and the re-measurement.
 
-> **Stale test databases.** A failed or interrupted run leaves its `mc_test_<uuid>` databases behind;
-> one crash during that investigation left 31. They are harmless but accumulate. To clear them:
+> **Stale test databases.** `common::test_db()` now leases a bounded pool of `mc_test_s<slot>`
+> databases (`MAX_SLOTS = 64`, cleaned on acquire — `backend/mc-service/tests/integration/common/mod.rs`,
+> pinned by `pool_test.rs`), so a panicking test no longer leaks one. Only the fallback taken when every
+> slot is held by a live process, and runs predating the pool, leave `mc_test_<uuid>` databases behind
+> (one crash before the pool left 31). They are harmless but accumulate. To clear them:
 > ```bash
 > docker exec mc-service-store-mongo mongosh --quiet --eval '
 >   db.adminCommand({listDatabases:1,nameOnly:true}).databases

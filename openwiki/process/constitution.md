@@ -3,10 +3,9 @@ type: Decision
 title: The governing constitution
 description: The repository's ratified, versioned constitution — currently v2.8.0, ratified 2026-03-08 and last amended 2026-11-07, its Expo SDK 58 amendment approved by the operator on 2026-11-08 — the core principles every spec and plan must comply with, the amendment process and its same-pull-request rule, the per-feature Constitution Check gate, and the bundle-budget gate that enforces its sole accepted exception.
 resource: .specify/memory/constitution.md
+resource-sha256: e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f
 tags: [governance, security, tdd, constitution]
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-08T02:21:41.463Z
+timestamp: 2026-11-10T03:37:28.041Z
 ---
 
 # The governing constitution

@@ -439,7 +439,8 @@ cannot protect it. Refresh your pin from the newest `devcontainer-image` run wit
    and all 72 children of the 36 protected indexes were kept.
 2. Review it. No `delete` row's `digest` may appear in any `.env.deploy` of the last 6 promotions.
 3. Open a one-line PR flipping `mode: report` → `mode: apply`, and link the report. After it merges,
-   dispatch `registry-retention` with `apply: true`. The schedule never passes `--apply`, and the script
+   dispatch `registry-retention` with `apply: true`. (Done: the config reads `mode: apply` since the
+   first report, run 6350, reviewed on item #863 — so a delete today is the dispatch alone.) The schedule never passes `--apply`, and the script
    refuses it while the config says `report`.
 4. Storage is freed only by the forge's own package-cleanup cron, which removes unreferenced blobs. Check
    `du -sh` of the package store after it has run.
@@ -673,9 +674,10 @@ The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once con
 > **The `kvm` label — host execution for the emulator and image-building jobs (feature 023 `app-ci`).**
 > Besides `ubuntu-latest`, the runner must also register a **host-type** label defined as
 > **`kvm:host`** (`runs-on: kvm` uses the label *name*). Jobs on it execute **directly on the `ci`
-> host** as the `ci` user, with no job container: `app-ci`'s `app-e2e` and `dast`, and `cd-deploy`'s
-> `build-deploy` (every `nx build` there is a Docker *image* build plus a `docker push`, which the
-> `node:22-bookworm` container can't do — it has no Docker CLI/daemon). Why the emulator job can't run
+> host** as the `ci` user, with no job container: `app-ci`'s `app-e2e`, `dast` and `app-image-scan`,
+> `cd-deploy`'s `build-deploy` (every `nx build` there is a Docker *image* build plus a `docker push`,
+> which the `node:22-bookworm` container can't do — it has no Docker CLI/daemon), and
+> `devcontainer-image`'s `build-publish`. Why the emulator job can't run
 > in a container is in Phase 5.4. Requirements on the host: (a) `ci` in the `kvm` group
 > (`sudo usermod -aG kvm ci`; `/dev/kvm` is group `kvm`, and on this host mode 666, measured 2026-10-12 as `crw-rw-rw- root kvm`, so 660 via a udev rule is the tighter option and the group membership is what keeps the job working if it is applied); (b) `ci`'s rootless daemon
 > reachable at `DOCKER_HOST=unix:///run/user/1001/docker.sock` (the jobs set it; adjust `1001` if
@@ -750,7 +752,7 @@ prod$ chmod 600 .env
 # compose.yaml
 services:
   rustfs:
-    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
     restart: always
     environment:
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?set in .env}
@@ -766,7 +768,7 @@ services:
       retries: 10
       start_period: 20s
   createbucket:                      # same image (it ships curl); PUT of an existing bucket is 200
-    image: rustfs/rustfs:1.0.1@sha256:1803faef57627e2d9c2e7d89d655d712ddded5389040054987163043fecb6a3c
+    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
     depends_on:
       rustfs: {condition: service_healthy}
     restart: "no"

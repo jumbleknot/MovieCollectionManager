@@ -12,8 +12,9 @@ Run all of the following before marking any feature complete. **The web E2E regr
 
 - [ ] `docs/templates/feature-test-tasks-template.md` format followed for all test tasks
 - [ ] Platform parity table updated for this feature
-- [ ] `pnpm nx test mc-service` — Rust unit tests pass
+- [ ] `pnpm nx test:unit mc-service` — Rust unit tests pass
 - [ ] `pnpm nx test:integration mc-service` — Rust integration tests pass
+      (`pnpm nx test mc-service` runs both: it delegates to these two targets)
 - [ ] `pnpm nx lint mcm-app` — no lint errors
 - [ ] `pnpm nx typecheck mcm-app` — `tsc --noEmit` clean (also run in CI by app-ci's `affected` job)
 - [ ] `pnpm nx test mcm-app` — unit tests pass (≥70% line coverage)
@@ -36,7 +37,7 @@ Run all of the following before marking any feature complete. **The web E2E regr
 - [ ] `pnpm nx e2e:mobile mcm-app` — mobile E2E passes
       (in the dev container: `scripts/devcontainer-android.sh boot` first;
       agent flows: `bash scripts/ci-mobile-agent-flows.sh`)
-- [ ] `pnpm nx wiki-update infrastructure-as-code` — refresh the OKF wiki, include the diff in the PR (a no-op is valid), then `pnpm nx okf-lint infrastructure-as-code` passes
+- [ ] `node scripts/wiki-refresh.mjs --stale` — refresh every derived wiki page it lists in this PR (`--diff`, edit, `--record`; an empty list is valid), then `pnpm nx okf-lint infrastructure-as-code` and `pnpm nx okf-governance infrastructure-as-code` pass
 - [ ] `rtk gain` — >80% token compression confirmed (run last; measures the runs above)
 
 ## Coverage thresholds
@@ -89,9 +90,11 @@ different tools per stack:
 - **`rtk gain` runs last, deliberately** — see
   [RTK token compression](./rtk-token-compression.md) — because it measures the
   token cost of every check that ran before it, not the checklist item itself.
-- **The wiki-update step is part of the checklist, not an optional add-on**: `pnpm nx wiki-update
-  infrastructure-as-code` must run and its diff (even a no-op) belongs in the PR, followed by
-  `pnpm nx okf-lint infrastructure-as-code` passing.
+- **The wiki-refresh step is part of the checklist, not an optional add-on**: since feature 098 a
+  derived page whose source this PR changed is refreshed in the same PR (`node scripts/wiki-refresh.mjs
+  --stale`, then `--diff`, edit, `--record`), and `okf-lint`'s V17 fails the PR otherwise. It is free
+  and offline; `pnpm nx wiki-update infrastructure-as-code` is now only the paid generator behind a
+  manual rebuild of operator-named pages, never a per-feature step.
 
 See [Testing tiers and what gates a merge](./testing-tiers.md) for how these same
 tiers map to what actually blocks CI versus what is exercised locally before a PR, and

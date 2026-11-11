@@ -4,73 +4,9 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
 tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-sources:
-  - id: openwiki-source-0efadc7633f45e85ee45a617
-    resource: repo://.devcontainer/egress-allowlist.json
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-7bd434a17ed7c27916b1d2ae
-    resource: repo://.forgejo/workflows/infra-image-scan.yml
-  - id: openwiki-source-045a0d186e0b60056b359b2e
-    resource: repo://docs/runbooks/renovate.md
-  - id: openwiki-source-ae915b1b987b44cca82fc6bf
-    resource: repo://docs/runbooks/sast-scanning.md
-  - id: openwiki-source-40275cb92c3610938f16ade3
-    resource: repo://pnpm-workspace.yaml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-b7793decf9d7c9ba48e57e0f
-    resource: repo://rust-toolchain.toml
-  - id: openwiki-source-ac5e6320dc9ac6ac80ffcd19
-    resource: repo://scripts/__tests__/allowlist-expiry-wiring.guard.test.mjs
-  - id: openwiki-source-c4b92dabf869c989f00aa0e8
-    resource: repo://scripts/__tests__/check-dependency-downgrade.test.mjs
-  - id: openwiki-source-cf7a80239370178114067d03
-    resource: repo://scripts/__tests__/check-override-consistency.test.mjs
-  - id: openwiki-source-1813b4b5c82e84caead4e177
-    resource: repo://scripts/__tests__/ci-curl-pipe-shell-rule.guard.test.mjs
-  - id: openwiki-source-08ab4a1d1f3934b68be3d4ae
-    resource: repo://scripts/__tests__/sast-scan-retry.guard.test.mjs
-  - id: openwiki-source-b24a848c671edad8616a78b0
-    resource: repo://scripts/__tests__/sast-scan.guard.test.mjs
-  - id: openwiki-source-52c33ce59ba156d00cf24a1d
-    resource: repo://scripts/__tests__/upload-artifact-retention.test.mjs
-  - id: openwiki-source-60011cd55e5b787da8893ea3
-    resource: repo://scripts/allowlist-expiry.mjs
-  - id: openwiki-source-6515c9bbb2befe56115dab03
-    resource: repo://scripts/check-dependency-downgrade.mjs
-  - id: openwiki-source-be4449db5d1cd6939f816b1e
-    resource: repo://scripts/check-override-consistency.mjs
-  - id: openwiki-source-3597b8f7b798d708bd7e75a1
-    resource: repo://scripts/check-sast-findings.mjs
-  - id: openwiki-source-0b13188628bc70e422253f37
-    resource: repo://scripts/gen-egress-policy.mjs
-  - id: openwiki-source-b202cb0e9ae4a5b1b46e466a
-    resource: repo://scripts/lib/scanner-retry.mjs
-  - id: openwiki-source-302b6b882f29dba1e61bfa9e
-    resource: repo://scripts/override-lever.mjs
-  - id: openwiki-source-bd64475e04b69688a7d80d8d
-    resource: repo://scripts/sast-scan.mjs
-  - id: openwiki-source-dc4b183eb81f4bf37332aff8
-    resource: repo://security/sast/README.md
-  - id: openwiki-source-a19234abfb32b98f346a6d4f
-    resource: repo://security/sast/rules/mcm-auth-before-authz.yaml
-  - id: openwiki-source-d7ba5b8b7daf5b7b6fcb0f5a
-    resource: repo://security/sast/rules/mcm-ci-curl-pipe-shell.yaml
-  - id: openwiki-source-5bfacc731db8fdb56be7df9d
-    resource: repo://security/sast/rules/mcm-no-token-logging.yaml
-  - id: openwiki-source-9372ce7270e3121a73a61934
-    resource: repo://security/sast/semgrep.yaml
-  - id: openwiki-source-8462fd09d611de231506af9b
-    resource: repo://security/sast/severity-map.yaml
-  - id: openwiki-source-4256f85b16adb450a2d592c1
-    resource: repo://specs/080-minio-to-rustfs/plan.md
-  - id: openwiki-source-648eaf5879418af1871aac66
-    resource: repo://specs/080-minio-to-rustfs/spec.md
+resource-sha256: d47f5e845ae1f01d5abf73e50853ff7c5c86235bbebd47f2c183d48393edf649
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-01T18:13:07.622Z
+timestamp: 2026-11-10T11:59:39.638Z
 ---
 
 # SAST & SCA static security scanning
@@ -693,60 +629,41 @@ a scan that happened to pass.
   above), and deleting it means a regression re-blocks — which
   is the convention this file follows everywhere.
 
-  **A no-fix acceptance has a shape, and the committed file currently shows it three times.** An
-  advisory whose affected range has no fix at all (`node-forge <= 1.4.0`, `braces <= 3.0.3` — the
-  latter still `latest` on npm) cannot be remediated by bumping, so the entry is **pinned to the exact
-  vulnerable version** (`^node-forge@1\.4\.0$`, not `node-forge@.*`) and **short-dated**. The pin means
-  a *different* version of the package re-blocks for a fresh assessment rather than inheriting an
-  acceptance written for the old one; the short expiry means it stops suppressing on its own. The three
-  are the node-forge entry, the root `braces` entry, and a **second** `braces` entry anchored to
-  `tools/openwiki-generator:` (item #721) — the nested workspace's tree needed its own entry because
-  the root one, anchored at `^braces@`, correctly never reaches a `<workspace>:pkg@version` location,
-  and because the reachability answer there is the opposite one (below). The first two state
-  reachability **checked rather than assumed**: the audit classifies them as runtime only because
-  `expo` lists its CLI as a production dependency, while the code paths involved are build/test tooling
-  that ships in neither bundle and, in root `braces`' case, expand globs from repository configuration
-  rather than from a request. The two `braces` expiries were renewed together on 2026-10-10 to the same
-  2026-12-01 date as the infra-image cohorts (items #633/#648), so all of them are re-triaged in one
-  sitting. Removal is tracked on the backlog (a patched release, or the dependency leaving the tree) —
-  each entry is a dated holding position, not a fix.
+  **An acceptance has a shape: pinned to the exact vulnerable version, short-dated, reachability
+  written into the justification.** The pin (`^graphql-scalars@1\.26\.0$`, not `graphql-scalars@.*`)
+  means a *different* version re-blocks for a fresh assessment rather than inheriting an acceptance
+  written for the old one; the short expiry means it stops suppressing on its own. The two pnpm-audit
+  entries in the committed file today are both the **second** exception — a fix exists only outside the
+  range the consumers declare — and share the 2026-12-01 expiry: `zod` 3.25.75/3.25.76 (fixed only in
+  zod 4, which CopilotKit / ag-ui still exclude) and `graphql-scalars` 1.26.0 (fixed only in 2.0.1,
+  outside its dependents' `^1` ranges). Each was renewed once on re-measurement, with the re-check
+  written into the entry, and each is a dated holding position, not a fix.
 
-  The generator's `braces` entry is the case where the reachability answer is **yes**: `braces@3.0.3`
-  arrives via `openwiki > deepagents > micromatch` (and via `fast-glob`), and deepagents' `glob`/`grep`
-  tools pass the **model's** tool-call arguments to micromatch, so the pattern is model-chosen and the
-  model reads repository content. Measured against the installed tree: a ~20 KB nested-brace pattern
-  takes 0.4 s, and at ~40 KB the V8 regexp compiler aborts the whole process (uncatchable OOM, exit
-  134). It is accepted anyway as **availability-only** impact on one unattended, non-required,
-  non-production job — the `wiki-maintain` generator dies, the run fails, the next merge re-triggers
-  it, and nothing is read or written. Triggering it needs prompt injection through content already
-  merged to `main`, which is reviewed, and there is no lockfile lever because deepagents pins
-  micromatch `^4`.
-
-  The **second** exception — a fix exists, but only outside the range the package's consumers declare —
-  took the same shape (pinned to the exact vulnerable version, short-dated, reachability written into
-  the justification), and its one instance is now **discharged rather than renewed**. The
-  `@graphql-tools/utils@11.2.2` entry existed because the fix (12.0.1) sat outside the `^11.2.0` range
-  `graphql-yoga` and `@graphql-yoga/plugin-defer-stream` declared, so the only bump would have crossed a
-  major they did not support. It was deleted on 2026-10-09 (item #674) because the first acceptance
-  route the backlog item named actually happened: graphql-yoga 5.24.4 and the defer-stream plugin
-  3.24.4 declare `@graphql-tools/utils: ^12.0.3`, and the lock refresh that resolved both removed the
-  vulnerable 11.2.2 from `pnpm-lock.yaml`, leaving only the patched 12.0.3. Deletion rather than
-  expiry-extension is the direction that restores blocking if 11.x ever returns.
+  Earlier acceptances show the ways an entry leaves. `@graphql-tools/utils@11.2.2` (the same second
+  exception) was deleted on 2026-10-09 (item #674) when upstream widened its range and a lock refresh
+  resolved the patched 12.0.3. The `node-forge` entry was deleted on 2026-11-04 (item #633) once a lock
+  refresh moved the tree to the fixed 1.4.2 — keyed to 1.4.0, it had suppressed nothing since. The two
+  `braces` entries — root, and one anchored to `tools/openwiki-generator:` because a root `^braces@`
+  entry never reaches a `<workspace>:pkg@version` location — were deleted the same day (item #648)
+  because GitHub **withdrew** the advisory, not because a fix shipped: braces 3.0.3 is still the latest
+  release. The generator's measured behaviour outlives the withdrawal: there `braces` arrives via
+  `openwiki > deepagents > micromatch`, deepagents' `glob`/`grep` tools pass the **model's** tool-call
+  arguments to micromatch, and a ~40 KB nested-brace pattern aborts the whole process (V8 regexp
+  compiler OOM, exit 134). The allowlist's tombstone comment records that, so a wiki run that dies with
+  exit 134 has a first place to look. In every case deletion rather than expiry-extension is the
+  direction that restores blocking if the vulnerable version returns.
 
 - **…but the `runtime` tag is the AUDIT's scoping, not a reachability finding — do not read it as one
   when writing a justification.** The tag answers "does the whole-workspace `--prod` audit see this
-  package", which is a different question from "is the vulnerable code path exercised". The node-forge
-  and root `braces` acceptances are tagged runtime purely because `expo` lists `@expo/cli` as a
-  production dependency: node-forge arrives only through Expo CLI / code-signing tooling and braces only
-  through micromatch in Metro's file watcher and Jest (re-measured 2026-10-10, which added `fast-glob`
-  via `@tamagui/static`/`globby` and `http-proxy-middleware` via Nx to the dependent list — all build or
-  dev tooling). Neither is imported by first-party code, neither ships in the web or server bundle, and
-  the glob patterns those tools expand come from repository configuration rather than a request. The
-  same distinction applied to the now-deleted `@graphql-tools/utils` entry, which was tagged runtime
-  through `@copilotkit/runtime` while being only listed as a dependency, never reached on a request
-  path. That reasoning has to be **checked and written into the justification**, because the tag alone
-  would have said the opposite — and the generator's `braces` entry is the proof that the tag is not a
-  verdict either way: it carries the same runtime tag, and there the code path *is* reachable.
+  package", which is a different question from "is the vulnerable code path exercised". The
+  `graphql-scalars` acceptance is tagged runtime through `@copilotkit/runtime`, yet its ReDoS is in the
+  `GraphQLPhoneNumber` regex, which graphql-js runs only for a value of that scalar type — and the
+  shipped dist of the pinned versions imports no such type (measured 2026-10-29). The deleted
+  node-forge and root `braces` entries were the same case the other way round: tagged runtime only
+  because `expo` lists `@expo/cli` as a production dependency, while the code paths were build/test
+  tooling. That reasoning has to be **checked and written into the justification**, because the tag
+  alone would have said the opposite — and the generator's `braces` path is the proof that the tag is
+  not a verdict either way: it carried the same runtime tag, and there the code path *is* reachable.
 
 - **`mcm-auth-before-authz` firing on a service-layer function is a false positive you must NOT "fix"
   by adding the guard — the correct response is a file-pinned allowlist entry.** The rule's structural

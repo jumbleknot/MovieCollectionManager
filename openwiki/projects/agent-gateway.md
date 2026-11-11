@@ -3,60 +3,10 @@ type: Service
 title: Agent Gateway (LangGraph)
 description: The Python LangGraph supervisor graph that powers the MCM conversational assistant, served over AG-UI by a FastAPI app, reachable only from the BFF, orchestrating tool calls to three scoped MCP servers through one code-driven chokepoint, owning no domain data, authenticating no end user, and turning any escaping exception into a sanitised terminal RUN_ERROR event rather than an aborted stream.
 resource: docs/runbooks/agent-layer.md
+resource-sha256: c91a4e5f1e5bcb84d75605438ccc7536510f369f952002c3635ba553817a036b
 tags: [langgraph, python, mcp, agent, ai, ag-ui]
-sources:
-  - id: openwiki-source-bdd810ca95fc763a63b0c693
-    resource: repo://agents/movie-assistant/src/agui_identity.py
-  - id: openwiki-source-1253fe00a93b377564b445b1
-    resource: repo://agents/movie-assistant/src/circuit_breaker.py
-  - id: openwiki-source-b7773b64d2e9590558289417
-    resource: repo://agents/movie-assistant/src/gateway.py
-  - id: openwiki-source-62887021c9e67115f17eede6
-    resource: repo://agents/movie-assistant/src/graph.py
-  - id: openwiki-source-712d29ffd98b465b467ff106
-    resource: repo://agents/movie-assistant/src/models.py
-  - id: openwiki-source-21ee7e795dfa2a07194c131c
-    resource: repo://agents/movie-assistant/src/nodes/curator.py
-  - id: openwiki-source-82a55a92d3e3f78cb43115bf
-    resource: repo://agents/movie-assistant/src/nodes/organizer.py
-  - id: openwiki-source-3cdb8ccfce0872644932072c
-    resource: repo://agents/movie-assistant/src/nodes/search.py
-  - id: openwiki-source-97eef2085333c423b579923f
-    resource: repo://agents/movie-assistant/src/nodes/supervisor.py
-  - id: openwiki-source-35511191cab03f67f1e380bd
-    resource: repo://agents/movie-assistant/src/ollama_guard.py
-  - id: openwiki-source-3fc5549b13bc483353fd287b
-    resource: repo://agents/movie-assistant/src/proposals.py
-  - id: openwiki-source-21c2ae87ef5b0b573359a4e5
-    resource: repo://agents/movie-assistant/src/provider_errors.py
-  - id: openwiki-source-f6c222b8d4581ebb02aff7cb
-    resource: repo://agents/movie-assistant/src/runtime_nodes.py
-  - id: openwiki-source-511494eb31ad0aa3dafdbf7f
-    resource: repo://agents/movie-assistant/src/state.py
-  - id: openwiki-source-0bc082213ea2b05aafac8afe
-    resource: repo://agents/movie-assistant/src/tools/mcp_tools.py
-  - id: openwiki-source-1a62960aea6eaeac90c89af6
-    resource: repo://agents/movie-assistant/tests/integration/conftest.py
-  - id: openwiki-source-7a9e6e5054028412df41b01a
-    resource: repo://agents/movie-assistant/tests/integration/test_gateway_provider_error.py
-  - id: openwiki-source-9a152503fae111dd82baefd4
-    resource: repo://agents/movie-assistant/tests/unit/test_add_flow_graph.py
-  - id: openwiki-source-972c980a0d2b30dd23d46f8c
-    resource: repo://agents/movie-assistant/tests/unit/test_agui_identity.py
-  - id: openwiki-source-00fb8109e6ce263b6fed0621
-    resource: repo://agents/movie-assistant/tests/unit/test_stack_dump_signal.py
-  - id: openwiki-source-727718aa0491359cbdbb97c7
-    resource: repo://agents/movie-assistant/uv.lock
-  - id: openwiki-source-b14f80515626024d557f0448
-    resource: repo://docs/runbooks/agent-layer.md
-  - id: openwiki-source-50ecbcb468aa9333b7ffa0fe
-    resource: repo://mcp-servers/movie-mcp/src/server.py
-  - id: openwiki-source-8402614feddf4612babe005b
-    resource: repo://specs/079-run-error-sanitiser/plan.md
 generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-10-10T02:25:55.688Z
+timestamp: 2026-11-10T03:37:28.042Z
 ---
 
 # Agent Gateway (LangGraph)

@@ -3,150 +3,10 @@ type: Architecture
 title: Infrastructure-as-code stacks (local Compose + production Komodo)
 description: How the four named local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
+resource-sha256: c5d11493ce9778e7a002785b78d0fb4bcabdd8a8855cb13a61e339e091de241e
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-80b643ca97b6e7e300789088
-    resource: repo://.forgejo/workflows/cd-deploy.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-ceecf221f842ba07ba6a91b2
-    resource: repo://.forgejo/workflows/registry-retention.yml
-  - id: openwiki-source-ea70eb6c045047448e446296
-    resource: repo://.gitignore
-  - id: openwiki-source-f98f56169006fd5a5bdf85b9
-    resource: repo://backend/mc-service/tests/integration/health_test.rs
-  - id: openwiki-source-95a7ed7500d24b0881fc3468
-    resource: repo://docs/runbooks/backups.md
-  - id: openwiki-source-318b395038e1943bc8a10f72
-    resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
-  - id: openwiki-source-23175e1d10427daa3344d3ec
-    resource: repo://docs/runbooks/prod-control-tower.md
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-dbfd6ac37b4380e1b9ca4daa
-    resource: repo://frontend/mcm-app/server.js
-  - id: openwiki-source-e69fe30016fa84209ae5e815
-    resource: repo://frontend/mcm-app/src/config/env.ts
-  - id: openwiki-source-6815e02bc96aebf5b9adb612
-    resource: repo://frontend/mcm-app/tests/unit/bff-server-trust-proxy.test.ts
-  - id: openwiki-source-d63e7534cd44e87f67938d1a
-    resource: repo://frontend/mcm-app/tests/unit/fixtures/real-adapter-build/_expo/routes.json
-  - id: openwiki-source-78ec32b51a25a8fb66d5b292
-    resource: repo://infrastructure-as-code/backup/backup.sh
-  - id: openwiki-source-e984dbbbf12bd4ee3c4e7961
-    resource: repo://infrastructure-as-code/backup/README.md
-  - id: openwiki-source-5cff57d66fb9a3d88a18a36e
-    resource: repo://infrastructure-as-code/clickhouse/config.d/mcm-system-logs.xml
-  - id: openwiki-source-7a0ce0b0b1a10dd515633969
-    resource: repo://infrastructure-as-code/docker/agent-gateway/compose.yaml
-  - id: openwiki-source-34479801b303c2005c7d1de1
-    resource: repo://infrastructure-as-code/docker/agents/compose.prod.yaml
-  - id: openwiki-source-3e3aa9cad6614ff0bc5e5058
-    resource: repo://infrastructure-as-code/docker/backups/compose.yaml
-  - id: openwiki-source-f873d74e3a5ee524df98c4b4
-    resource: repo://infrastructure-as-code/docker/bff/.env.prod.example
-  - id: openwiki-source-f195180a736f33478d2817cf
-    resource: repo://infrastructure-as-code/docker/bff/Caddyfile
-  - id: openwiki-source-03de7146fd7e33f2e3019d9d
-    resource: repo://infrastructure-as-code/docker/bff/compose.prod.yaml
-  - id: openwiki-source-b30cd3204c4c8fc9cfcdd467
-    resource: repo://infrastructure-as-code/docker/bff/compose.yaml
-  - id: openwiki-source-ff035ef3df6eca36fc791d1d
-    resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
-  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
-  - id: openwiki-source-f6b7a61bf48156b2722b6a7f
-    resource: repo://infrastructure-as-code/docker/keycloak/scripts/add-container-redirect-uris.mjs
-  - id: openwiki-source-d5b1faab58eeb909bb999298
-    resource: repo://infrastructure-as-code/docker/mc-service/compose.prod.yaml
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-0ff61f596da1302e58282fa2
-    resource: repo://infrastructure-as-code/docker/observability/compose.yaml
-  - id: openwiki-source-5c295e2a3945cc4a649c1abc
-    resource: repo://infrastructure-as-code/docker/opensearch/compose.prod.yaml
-  - id: openwiki-source-79878dc2da65b6b5c71034f7
-    resource: repo://infrastructure-as-code/docker/stacks/auth.compose.yaml
-  - id: openwiki-source-164936b930a31e48cf0a65fc
-    resource: repo://infrastructure-as-code/docker/stacks/mcm.compose.yaml
-  - id: openwiki-source-90e20f6cb63d8bd67d0fd623
-    resource: repo://infrastructure-as-code/docker/stacks/mcm.env.example
-  - id: openwiki-source-3d0ce5a1df7b9900637ae21d
-    resource: repo://infrastructure-as-code/docker/stacks/observability.env.example
-  - id: openwiki-source-fdcb17fe6bc4f12ade7e61d0
-    resource: repo://infrastructure-as-code/docker/stacks/README.md
-  - id: openwiki-source-3b86829117dd0577834407fc
-    resource: repo://infrastructure-as-code/docker/vault/compose.prod.yaml
-  - id: openwiki-source-819b0a18008c0f90a7eaf2b3
-    resource: repo://infrastructure-as-code/docker/vault/compose.yaml
-  - id: openwiki-source-d951526f31e9f2cb4d68995b
-    resource: repo://infrastructure-as-code/docker/web-api-mcp/compose.yaml
-  - id: openwiki-source-cdc9caa86b2fdbb6d70f248d
-    resource: repo://infrastructure-as-code/forgejo/registry-retention.yaml
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-075e18482c7b2302ea6593a7
-    resource: repo://infrastructure-as-code/opa/policies/agent_ui_action.rego
-  - id: openwiki-source-5731c4a4c76f88db8cc6fb40
-    resource: repo://infrastructure-as-code/project.json
-  - id: openwiki-source-3878af0f305d1908abec5cb9
-    resource: repo://scripts/__tests__/agent-stack.guard.test.mjs
-  - id: openwiki-source-f6c12ce9ca055174ab7f392c
-    resource: repo://scripts/__tests__/bff-healthcheck-pages.guard.test.mjs
-  - id: openwiki-source-71f7bcd684b90eabd6ed3b4a
-    resource: repo://scripts/__tests__/gen-dev-secrets.guard.test.mjs
-  - id: openwiki-source-b6dd2f2ef27fe2526cd380f7
-    resource: repo://scripts/__tests__/infra-image-scan.test.mjs
-  - id: openwiki-source-a6996cae4bd83db81e823602
-    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
-  - id: openwiki-source-2b6c5e82a46d88fa81fd0dd7
-    resource: repo://scripts/__tests__/langfuse-postgres-shared-pin.guard.test.mjs
-  - id: openwiki-source-7efe877535a6dbac41dcc29c
-    resource: repo://scripts/agent-stack.mjs
-  - id: openwiki-source-0af8f352da052e268e893ea2
-    resource: repo://scripts/cd/promote-digest.sh
-  - id: openwiki-source-fe6babf23c099d13c73c6b6f
-    resource: repo://scripts/cd/scan-push.sh
-  - id: openwiki-source-7ed01c27b7f22a2815bd5d15
-    resource: repo://scripts/check-komodo-sync.mjs
-  - id: openwiki-source-85a6abb4f828129c0cce9653
-    resource: repo://scripts/check-no-inline-secrets.mjs
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-b182ec4cb28667debd4684ff
-    resource: repo://scripts/check-prod-restart-policy.mjs
-  - id: openwiki-source-bf15c8e3067ce028059a1350
-    resource: repo://scripts/check-resource-naming.mjs
-  - id: openwiki-source-6f10e821d1ec074deb438a3e
-    resource: repo://scripts/check-topology-scrub.mjs
-  - id: openwiki-source-d046d2ddea9d1d430ec2c0d2
-    resource: repo://scripts/gen-dev-env.mjs
-  - id: openwiki-source-1dabdb308579a8f9d6d49612
-    resource: repo://scripts/gen-dev-secrets.mjs
-  - id: openwiki-source-d1e0316ab362ff8dcec4fc0d
-    resource: repo://scripts/infra-image-scan.mjs
-  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
-    resource: repo://scripts/preflight.mjs
-  - id: openwiki-source-45caf09b059605daac0b6db2
-    resource: repo://scripts/registry-retention.mjs
-  - id: openwiki-source-ac2000cc53be6b0ffb997de7
-    resource: repo://scripts/up-mcm-agents.mjs
-  - id: openwiki-source-c5e086204a303667bdcd03f5
-    resource: repo://specs/025-observability-audit-vault-prod/tasks.md
-  - id: openwiki-source-cf3a1d9095dcbafe5f7daca4
-    resource: repo://specs/080-minio-to-rustfs/tasks.md
-  - id: openwiki-source-83771c9aeecb9de0bd4deaf4
-    resource: repo://specs/083-backup-consent-session-isolation/tasks.md
-  - id: openwiki-source-b1756c204f11fe3da51d14a7
-    resource: repo://specs/087-expo-sdk-58/contracts/hosting.md
-  - id: openwiki-source-acc6f4231f060062a015dbd3
-    resource: repo://specs/087-expo-sdk-58/research.md
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-08T02:21:41.463Z
+timestamp: 2026-11-10T03:37:28.061Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -241,7 +101,7 @@ values. A run prints key *names* only, never values.
 Generation kinds are minted by the script, not the README: `b62-32` / `b62-48` (URL- and shell-safe
 base62), `hex-64` (32-byte hex), `complex-16` (upper+lower+digit+special from a URL/shell-safe
 charset), `unleash-admin` / `unleash-client`, and `mongo-keyfile` — the base64 replica-set keyfile
-content behind `MONGO_MC_KEYFILE`, which the template list documents but the README's kind list omits.
+content behind `MONGO_MC_KEYFILE`.
 Full template table, rotation and fail-fast behaviour:
 [stacks README](../../infrastructure-as-code/docker/stacks/README.md).
 
@@ -484,10 +344,10 @@ never happened aborts the deploy rather than falling back to a floating tag.
 Only the three CI-built stacks receive it, and the fan-out is script-driven rather than an inline
 workflow step. `scripts/cd/scan-push.sh` mints one generated file — `env-deploy.generated`, one
 `<REPO_UPPER>_DIGEST=<bare sha256>` line per image it scanned and pushed, under a generated header —
-and `scripts/cd/promote-digest.sh` copies that single file into every directory named in the
-workflow's `ENV_DEPLOY_PATHS` (`infrastructure-as-code/docker/bff`, `mc-service`, `agents`), commits
-it and pushes. So every Komodo Stack reads a local `.env.deploy` rather than a fragile `../` path,
-and a new CI-built production stack is wired in by adding its run directory to `ENV_DEPLOY_PATHS`
+and `scripts/cd/promote-digest.sh` copies that single file to every `.env.deploy` path named in the
+workflow's `ENV_DEPLOY_PATHS` (under `infrastructure-as-code/docker/bff`, `mc-service`, `agents`),
+commits them and pushes. So every Komodo Stack reads a local `.env.deploy` rather than a fragile `../` path,
+and a new CI-built production stack is wired in by adding its `.env.deploy` path to `ENV_DEPLOY_PATHS`
 and its `additional_env_files` — nothing else in the promotion path is per-stack. All three files
 therefore carry all six `<REPO>_DIGEST` lines, and each stack consumes only the names its own images
 need — `MCM_BFF_DIGEST` for `bff`, `MC_SERVICE_DIGEST` for `mc-service`, and
@@ -508,13 +368,10 @@ as "nothing but HEAD to protect", and the script refuses one rather than reporti
 set. The retention posture itself, and the two keys that gate an actual delete, belong to
 [CI diagnostics](../runbooks/ci-diagnostics.md).
 
-The one place this naming has drifted is the workflow comment, not the compose. `cd-deploy`'s
-`Scan, push (by tag + digest), build manifest + promotion file` step still describes the promoted
-variable as `<REPO>_IMAGE` (`mcm-bff → MCM_BFF_IMAGE`) and says only `MCM_BFF_IMAGE` "is consumed by
-a prod stack today". Neither half holds any more: `scan-push.sh` emits `<REPO_UPPER>_DIGEST`, and all
-six values are consumed by the three CI-built stacks. The workflow's own `ENV_DEPLOY_PATHS` comment —
-naming `MCM_BFF_DIGEST`, `MC_SERVICE_DIGEST` and the four agent digests — is the accurate one, and a
-compose line copied from the stale comment references a variable nothing writes.
+`scan-push.sh` names each promoted variable `<REPO_UPPER>_DIGEST` (`mcm-bff → MCM_BFF_DIGEST`), and
+all six — `MCM_BFF_DIGEST`, `MC_SERVICE_DIGEST` and the four agent digests — are consumed by the three
+CI-built stacks. (Until 2026-11-11 a `cd-deploy` comment still called them `<REPO>_IMAGE` with only
+the BFF's consumed; a compose line copied from it would reference a variable nothing writes.)
 
 ## Side artifacts and the static gates over every compose file
 

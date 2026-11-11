@@ -3,8 +3,9 @@ type: Gotcha
 title: OTel span exception recording can leak a credential in the URL
 description: Why web-api-mcp explicitly disables OpenTelemetry's default exception-recording behavior on its tool spans — the default would embed the TMDB API key (carried as a URL query param) into the exported trace on any upstream HTTP error.
 resource: mcp-servers/web-api-mcp/src/observability.py
+resource-sha256: 043cbe30f1f8e7c760476804bf62f6961c04f185cae5def7053811c02f3024d4
 tags: [opentelemetry, security, mcp, observability]
-timestamp: 2026-06-09T08:12:41-04:00
+timestamp: 2026-11-10T03:37:28.035Z
 ---
 
 # OTel span exception recording can leak a credential in the URL

@@ -3,32 +3,10 @@ type: Runbook
 title: Developer environment setup (host toolchain)
 description: How to provision a host development machine for MovieCollectionManager — the toolchain versions the repository pins (Node floor, pnpm via Corepack, Rust, Python/uv, Android SDK) and the companion tools (RTK output compressor, OpenWiki) — as an alternative to the devcontainer, including how the OpenWiki generator's version is held in step across the toolchain image, CI and a host install.
 resource: docs/runbooks/dev-environment-setup.md
+resource-sha256: e1bf56b265e402bec10b128baf7da6cf9a448d11909a76dc33021a458c2d5899
 tags: [setup, toolchain, host, runbook, openwiki]
-sources:
-  - id: openwiki-source-7e1c4d46c53be9bf32311e06
-    resource: repo://.devcontainer/toolchain.Dockerfile
-  - id: openwiki-source-36295b95c290f53e6f6e79a7
-    resource: repo://.forgejo/workflows/wiki-maintain.yml
-  - id: openwiki-source-8cb0da307c90adb4287997a5
-    resource: repo://docs/runbooks/dev-environment-setup.md
-  - id: openwiki-source-5b54a58d1b51cd490b0e7162
-    resource: repo://package.json
-  - id: openwiki-source-40275cb92c3610938f16ade3
-    resource: repo://pnpm-workspace.yaml
-  - id: openwiki-source-cc2828785988d51226a4241e
-    resource: repo://renovate.json
-  - id: openwiki-source-ef3e1dc36da7e40bc6a337f5
-    resource: repo://scripts/__tests__/wiki-maintain.guard.test.mjs
-  - id: openwiki-source-238cf8b88f30f267614313be
-    resource: repo://scripts/check-toolchain-consistency.mjs
-  - id: openwiki-source-c8029c93bdccd81963968b22
-    resource: repo://tools/openwiki-generator/package.json
-  - id: openwiki-source-012d67e0a1df20ece216c0d0
-    resource: repo://tools/openwiki-generator/pnpm-workspace.yaml
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-03T01:23:06.490Z
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
+timestamp: 2026-11-10T11:46:33.764Z
 ---
 
 # Developer environment setup (host toolchain)
@@ -36,7 +14,8 @@ generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
 Covers provisioning a **host** machine with the toolchain MovieCollectionManager's AI-assisted
 workflow expects: Node.js (LTS, floor `>=22.13` set by root `package.json` `engines.node`), pnpm
 (via Corepack — the exact version pinned by root `package.json` `packageManager`, currently
-`pnpm@12.13.0`), Nx (workspace, via `pnpm nx`), Rust (stable), Python 3.13 + `uv`, Docker Desktop
+`pnpm@12.13.0`), Nx (workspace, via `pnpm nx`), Rust (stable channel, the exact release pinned by root
+`rust-toolchain.toml`), Python 3.13 + `uv`, Docker Desktop
 24+, OpenJDK 17, and the Android SDK (Platform 36 as the `compileSdk` the pinned React Native's
 Gradle version catalog sets, with Build Tools and an Emulator API 34 system image) for mobile
 builds. Everything here is pre-provisioned in the
@@ -72,10 +51,6 @@ higher floor, or the gate keeps passing pins that manager refuses to run on.
   between the host and container workspaces can produce structurally different wiki bundles for the
   same repository state — check `.devcontainer/toolchain.Dockerfile` for the pinned version before
   installing globally (currently `openwiki@0.7.1`, with `mermaid` and `jsdom` beside it).
-- **Do not copy the host-install snippet from `docs/runbooks/dev-environment-setup.md` §6a.** That
-  snippet still names `openwiki@0.5.2`, two minor versions behind what the container image and CI
-  install (`0.7.1`) — running it reproduces exactly the host/container skew the parity guard below
-  exists to prevent. The authoritative pin is `.devcontainer/toolchain.Dockerfile`.
 - **Never invoke the bare `openwiki` CLI on this repo — always go through the Nx target.** The bare
   CLI omits the telemetry opt-out and the raised Node heap size, and reliably OOMs; see
   [OpenWiki bundle generation and maintenance](../process/wiki-maintenance.md) and

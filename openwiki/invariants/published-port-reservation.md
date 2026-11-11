@@ -3,44 +3,10 @@ type: Convention
 title: Published-port reservation convention
 description: The prod-reserved 19000-19099 host-port range that keeps the three production admin/UI publishes (Keycloak admin 19099, LangFuse 19030, Grafana/otel-lgtm 19002) disjoint from the CI runner's ports on the same shared host, plus the gate that enforces it, the self-referencing URL vars a port move must update, the outage that motivates it, and why a grep for the retired bind-prefix variables finds gate selftest fixtures instead of live config.
 resource: docs/runbooks/prod-reboot-resilience.md
+resource-sha256: adb389f4b7b968aad804f5f060e3bb8e018dc8b074ceb4dc6090d26b743f01fd
 tags: [ports, ci, production, collision, komodo, homelab]
-sources:
-  - id: openwiki-source-810a3627633783500597ffc6
-    resource: repo://.forgejo/workflows/app-ci.yml
-  - id: openwiki-source-fd77a504cc309a02ead6fecf
-    resource: repo://.forgejo/workflows/guardrails.yml
-  - id: openwiki-source-a9fc7285078c8062777b3180
-    resource: repo://docs/runbooks/devcontainer.md
-  - id: openwiki-source-318b395038e1943bc8a10f72
-    resource: repo://docs/runbooks/Phase-15-Operator-Checklist.md
-  - id: openwiki-source-abae5c338f9f983f89ea77ad
-    resource: repo://docs/runbooks/prod-reboot-resilience.md
-  - id: openwiki-source-ff035ef3df6eca36fc791d1d
-    resource: repo://infrastructure-as-code/docker/dev-ollama.compose.yaml
-  - id: openwiki-source-34854463fd23e29b106dcb63
-    resource: repo://infrastructure-as-code/docker/keycloak/.env.prod.example
-  - id: openwiki-source-a0b1bc13000ad4c4c60ae88e
-    resource: repo://infrastructure-as-code/docker/keycloak/compose.prod.yaml
-  - id: openwiki-source-8e2135ee1e81e6877b010809
-    resource: repo://infrastructure-as-code/docker/observability/compose.prod.yaml
-  - id: openwiki-source-839571d2c51f49a930537d1b
-    resource: repo://infrastructure-as-code/komodo/stacks.toml
-  - id: openwiki-source-a6996cae4bd83db81e823602
-    resource: repo://scripts/__tests__/komodo-stack-env.guard.test.mjs
-  - id: openwiki-source-7ed01c27b7f22a2815bd5d15
-    resource: repo://scripts/check-komodo-sync.mjs
-  - id: openwiki-source-5a48ade99311698ed1a02a08
-    resource: repo://scripts/check-prod-ci-port-collision.mjs
-  - id: openwiki-source-6f10e821d1ec074deb438a3e
-    resource: repo://scripts/check-topology-scrub.mjs
-  - id: openwiki-source-750b2cbfd1a5b0c826bf579b
-    resource: repo://scripts/preflight.mjs
-  - id: openwiki-source-2b08f7b6b68dedecf129d61c
-    resource: repo://specs/029-prod-ci-port-isolation/research.md
-verified:
-  - by: openwiki/0.7.1
-    at: 2026-11-02T10:14:55.121Z
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
+timestamp: 2026-11-10T11:59:39.634Z
 ---
 
 # Published-port reservation convention
