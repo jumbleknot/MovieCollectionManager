@@ -161,7 +161,9 @@ pub async fn build_with_auth_handle(
                 .delete(delete_collection),
         )
         .route("/{id}/movies", get(list_movies).post(create_movie))
-        // filter-options + count must appear BEFORE /{movieId} to avoid route shadowing
+        // Registration order does not matter here: axum 0.8's matchit router prefers a static
+        // segment (filter-options, count) over `{movieId}` whatever the order. Pinned by
+        // tests::literal_movie_segments_win_over_movie_id_regardless_of_registration_order.
         .route("/{id}/movies/filter-options", get(get_filter_options))
         .route("/{id}/movies/count", get(count_movies))
         .route(
@@ -202,4 +204,46 @@ pub async fn build_with_auth_handle(
         .layer(middleware::from_fn(logging_middleware));
 
     Ok((app, keycloak_instance))
+}
+
+#[cfg(test)]
+mod tests {
+    use axum::{body::Body, http::Request, routing::get, Router};
+    use http_body_util::BodyExt;
+    use tower::ServiceExt;
+
+    /// Item #604: the collections table once carried "filter-options + count must appear BEFORE
+    /// /{movieId} to avoid route shadowing". axum 0.8 routes through matchit, which gives a static
+    /// segment priority over a parameter whatever the registration order. This registers the
+    /// parameterised route FIRST — the order the comment warned against — and checks that each
+    /// literal still reaches its own handler while any other segment still reaches `{movieId}`.
+    #[tokio::test]
+    async fn literal_movie_segments_win_over_movie_id_regardless_of_registration_order() {
+        let app = Router::new()
+            .route("/{id}/movies/{movieId}", get(|| async { "movie" }))
+            .route("/{id}/movies/count", get(|| async { "count" }))
+            .route(
+                "/{id}/movies/filter-options",
+                get(|| async { "filter-options" }),
+            );
+
+        for (path, expected) in [
+            ("/c1/movies/count", "count"),
+            ("/c1/movies/filter-options", "filter-options"),
+            ("/c1/movies/m1", "movie"),
+        ] {
+            let response = app
+                .clone()
+                .oneshot(Request::get(path).body(Body::empty()).unwrap())
+                .await
+                .unwrap();
+            assert_eq!(response.status(), 200, "{path}");
+            let body = response.into_body().collect().await.unwrap().to_bytes();
+            assert_eq!(
+                &body[..],
+                expected.as_bytes(),
+                "{path} reached the wrong handler"
+            );
+        }
+    }
 }

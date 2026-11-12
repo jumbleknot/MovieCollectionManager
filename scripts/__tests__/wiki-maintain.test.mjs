@@ -2142,3 +2142,67 @@ test('usage (#682): outside CI (no GITHUB_RUN_ID) nothing is written beside the 
     rmSync(logRoot, { recursive: true, force: true });
   }
 });
+
+// ── #516: an invocation whose telemetry record shows an event was sent stops the rebuild ──────────
+
+const SENT = '{"disabled":false,"sent":true}';
+const HELD = '{"disabled":true,"sent":false}';
+
+test('execute (#516): every invocation gets its own telemetry path, and a held opt-out changes nothing', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const paths = [];
+    const result = mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'),
+      slices: [sl('invariants', ['one.md'])],
+      invoke: (slice, ctx) => { paths.push(ctx.telemetryFile); writeFileSync(ctx.telemetryFile, HELD); return writingStub(root, 'invariants', ['one.md'])(); },
+    });
+    assert.equal(paths.length, 1);
+    assert.match(paths[0], /telemetry\.json$/);
+    assert.equal(result.outcome, 'completed');
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.telemetrySent, null);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#516): a SENT record fails the run even when the page landed, and says why', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    const { value: result, lines } = capturingErrors(() => mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'),
+      slices: [sl('invariants', ['one.md'])],
+      invoke: (slice, ctx) => { writeFileSync(ctx.telemetryFile, SENT); return writingStub(root, 'invariants', ['one.md'])(); },
+    }));
+    assert.equal(result.exitCode, 1);
+    assert.equal(result.outcome, 'failed');
+    assert.match(result.telemetrySent, /disabled=false sent=true/);
+    assert.ok(lines.some((l) => /TELEMETRY: .*#516/.test(l)), lines.join('\n'));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#516): a SENT record is never retried — each retry would send another event', () => {
+  const root = tmpGitRepo('conformant-bundle');
+  try {
+    let calls = 0;
+    const { value: result } = capturingErrors(() => mod.executeSlices({
+      root, bundleRoot: join(root, 'openwiki'),
+      slices: [sl('invariants', ['one.md'])],
+      attemptsPerSlice: 3,
+      invoke: (slice, ctx) => { calls++; writeFileSync(ctx.telemetryFile, SENT); return { status: 0 }; },
+    }));
+    assert.equal(calls, 1);
+    assert.equal(result.exitCode, 1);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('execute (#516): the env handed to the launcher names the telemetry path', () => {
+  const env = mod.generatorEnv('one safe line', {}, { telemetryFile: '/tmp/x/telemetry.json' });
+  assert.equal(env.WIKI_TELEMETRY_FILE, '/tmp/x/telemetry.json');
+  assert.equal(mod.generatorEnv('one safe line', {}).WIKI_TELEMETRY_FILE, undefined);
+});

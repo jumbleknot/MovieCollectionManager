@@ -143,11 +143,14 @@ All three are built the same way in `src/server.py`:
   copies in only the committed `pyproject.toml` + `uv.lock` and runs `uv sync --frozen --no-dev` (with `uv`
   copied from a digest-pinned `ghcr.io/astral-sh/uv:0.12.10` image), so the dependency layer is independent
   of source edits; then a `runtime` stage on the same pinned base that uninstalls the base's system `pip`,
-  creates the non-root `app` user, copies the resulting `/app` — virtualenv plus `src` — owned by that user,
+  creates the non-root `app` user, copies the resulting `/app` — virtualenv plus `src` — root-owned, so `app`
+  can read and run it but not modify it,
   prefixes `PATH` with `/app/.venv/bin`, and enters via `python -m src.server`. All three entries bind
-  `0.0.0.0` from their own `*_MCP_HOST` / `*_MCP_PORT` env vars and write nothing to disk. Nothing in the
-  Dockerfiles, the per-server compose files or the agent stack actually mounts the virtualenv or source
-  read-only — only the Dockerfile comment says so.
+  `0.0.0.0` from their own `*_MCP_HOST` / `*_MCP_PORT` env vars and write nothing to disk. The read-only
+  property comes from that ownership, not from a `read_only:` compose setting or a read-only mount (there
+  is neither). `scripts/__tests__/python-runtime-readonly-app.guard.test.mjs` fails any Python image that
+  hands `/app` to its runtime user; until item #604 they all did (`--chown=app:app`) while the comment said
+  read-only.
 - Two of those image details are held by their own guard tests, and both exist because cd-deploy's Trivy
   gate runs after merge and fails fast in a fixed order, naming one image while several are affected.
   `scripts/__tests__/python-runtime-no-pip.guard.test.mjs` fails any Python image whose final stage keeps

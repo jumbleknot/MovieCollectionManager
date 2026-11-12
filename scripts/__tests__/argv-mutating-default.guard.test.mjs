@@ -177,6 +177,7 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
     'check-openwiki-okf.mjs': 'rejects-already',        // same parser shape
     'wiki-maintain.mjs': 'rejects-already',             // parseArgs: partitionArgsWithValues (argv-contract.mjs) rejects, exit 2 (098)
     'wiki-refresh.mjs': 'rejects-already',              // partitionArgs (argv-contract.mjs) rejects before any write, exit 2 (098)
+    'wiki-generate.mjs': 'rejects-already',             // main(): anything but --preflight exits 2 before the run; its only rmSync clears its own stale telemetry record (#516)
 
     // FIXED in item #504, and the deferral's premise turned out to be wrong. FR-009's exit-0 rule
     // governs the DIGEST path, not argument-driven paths — `--selftest` has always hard-exited 1 on

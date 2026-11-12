@@ -3,10 +3,10 @@ type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
 description: The derived summary of how the openwiki/ bundle is kept current since feature 098 — the coding session's duty to refresh a derived page in the same PR as its source, the source fingerprint and the V17 check that blocks a stale page, G14's single-human-written-file rule, the retired Claims bookkeeping and unattended machinery, and the generator's remaining role as a manual, dispatch-only rebuild of operator-named pages — with that rebuild's provider table and env-scoping rule, its locked install and release-age cooldown, its job deadline and exit codes, the per-page verification and restore machinery, the single long-lived proposal, the canonical-home rule, the provenance stamp, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
-resource-sha256: f7532841070938d73e95e3dd2aec2401d2e921d033927ba721e2dd71fdc5167d
+resource-sha256: 84dcf962fd864d5f4441a3a14c1b6cf1338eb158e8e00f06b387a6fa0878c3e3
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
-timestamp: 2026-11-10T03:36:21.050Z
+timestamp: 2026-11-12T11:42:00.251Z
 ---
 
 
@@ -85,6 +85,12 @@ runs in 30 days for 39 distinct pages, and run 5104 paying about $1.44 for one l
 Claims-forced pages crowded out the 4 requested ones. `openwiki/policy.yaml`'s `openwiki/**` entry is
 now `actor: [agent, generator]`; G3 still confines `generator` to `openwiki/`.
 
+**Not adopted: openwiki's Claude Code integration** (`openwiki integrations install claude`, item #515).
+It would move wiki maintenance onto the subscription. After 098, routine refreshes already are
+subscription-side session edits. Only the rare dispatched rebuild is left, and a second execution path
+for it would break the `local parity` single-entry-point guard and write into the project's agent
+configuration for almost no saving.
+
 **Live state is read, never quoted.** A rebuild's report and `.run.json`, and whatever sidecars openwiki
 writes on a runner, are rewritten by the next run, so a page describes what their fields *mean*, never a
 current outcome, cost or call count (`openwiki/INSTRUCTIONS.md` §9). Proposal #737 published such a
@@ -123,6 +129,23 @@ stateDiagram-v2
 
 The states a rebuild moves through. Nothing is carried between rebuilds: a page that did not land is
 reported under `not landed:` and is simply dispatched again.
+
+**Telemetry is opted out, and the opt-out is checked on every invocation (item #516).** Unless
+`OPENWIKI_TELEMETRY_DISABLED` or `DO_NOT_TRACK` is truthy, openwiki sends one anonymous `openwiki_run`
+event per run to PostHog. The event carries run, build and failure-enum facts, and no repository
+content.
+
+- **The launcher.** `scripts/wiki-generate.mjs` forces both variables on, whatever the caller set, and
+  always passes `--telemetry-file`. It exits 3 unless the record reads `{disabled: true, sent: false}`.
+- **The orchestrator.** `wiki-maintain` gives each invocation its own record path
+  (`WIKI_TELEMETRY_FILE`), because it ignores the generator's exit status. On a bad record it stops
+  the rebuild without retrying and exits 1 with a `TELEMETRY:` line.
+- **What the record proves.** A run stopped before openwiki's telemetry boundary, such as one with a
+  missing credential, writes no record and is not judged.
+- **Why it is permanent.** It catches an openwiki upgrade that stops honouring the variables. The
+  runbook holds the dated $0 measurement on 0.7.1 (an invalid-key probe) and the full payload.
+  `--telemetry-file` records the send rather than preventing it, so never run it with the opt-out
+  unset to "see what is sent".
 
 ## The provider is configuration (feature 078)
 
@@ -297,7 +320,7 @@ Sonnet 5 rejects with a 400 — so it cannot fail for a reason a real run would 
 | Code | Meaning | Is something wrong? |
 |---|---|---|
 | `0` | Every named page landed and verified (or `--dry-run`, or a selftest that passed) | No |
-| `1` | A named page **did not land** — missing or left stale, the bundle became non-conformant or broke governance, a write landed where policy forbids it — or the proposal could not be published | **Yes** — `not landed:` says which |
+| `1` | A named page **did not land** — missing or left stale, the bundle became non-conformant or broke governance, a write landed where policy forbids it — or the proposal could not be published, or the generator's telemetry record shows an event was sent | **Yes** — `not landed:` says which; a `TELEMETRY:` line names the telemetry case |
 | `2` | Bad usage (an empty, unknown or canonical page included), a missing credential, a malformed `MCM_WIKI_*` value or `WIKI_JOB_DEADLINE`, a failed preflight, or a policy file that will not load. Nothing was spent | **Yes** |
 
 There is no exit 3 any more: it meant "stopped at the budget with work in the backlog", and there is no

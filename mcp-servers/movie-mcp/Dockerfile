@@ -13,10 +13,12 @@ FROM python:3.14-slim@sha256:a2b82f3c48559aa0a8446d9af49826b6e2b2016f4cd2afabfe6
 # agents/movie-assistant/Dockerfile.
 RUN python -m pip uninstall --yes --root-user-action=ignore pip
 
-# Non-root user (defense-in-depth; feature 034) — read-only .venv + source at runtime.
+# Non-root user (defense-in-depth; feature 034). /app (.venv + source) is copied ROOT-owned, so the
+# `app` user can read and run it but not modify it (item #604: the comment once claimed this while
+# --chown=app:app made it writable). Nothing here writes to disk at runtime.
 RUN groupadd --system app && useradd --system --gid app --no-create-home app
 WORKDIR /app
-COPY --from=build --chown=app:app /app /app
+COPY --from=build /app /app
 ENV PATH="/app/.venv/bin:$PATH"
 USER app
 CMD ["python", "-m", "src.server"]

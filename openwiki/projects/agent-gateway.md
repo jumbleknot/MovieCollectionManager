@@ -3,10 +3,10 @@ type: Service
 title: Agent Gateway (LangGraph)
 description: The Python LangGraph supervisor graph that powers the MCM conversational assistant, served over AG-UI by a FastAPI app, reachable only from the BFF, orchestrating tool calls to three scoped MCP servers through one code-driven chokepoint, owning no domain data, authenticating no end user, and turning any escaping exception into a sanitised terminal RUN_ERROR event rather than an aborted stream.
 resource: docs/runbooks/agent-layer.md
-resource-sha256: c91a4e5f1e5bcb84d75605438ccc7536510f369f952002c3635ba553817a036b
+resource-sha256: 3e92b8cfe6c2a5e5a31b0fb62d02383790d1b25c35a43b9bbc30d35c2a51a2e5
 tags: [langgraph, python, mcp, agent, ai, ag-ui]
 generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
-timestamp: 2026-11-10T03:37:28.042Z
+timestamp: 2026-11-12T11:37:47.175Z
 ---
 
 # Agent Gateway (LangGraph)
@@ -43,7 +43,9 @@ production, that would log `Authorization` headers), arms the stack-dump signal,
 metrics/tracing (no-op unless their env vars are set), and mounts
 `build_runtime_graph(os.environ)` at `/agent/movie-assistant` via
 `ag_ui_langgraph.add_langgraph_fastapi_endpoint` + `copilotkit.LangGraphAGUIAgent`. The BFF reaches
-it on the private network; `AGENT_GATEWAY_URL` is the BFF's only pointer to it.
+it on the private network through `AGENT_GATEWAY_URL`. When that is unset or blank, the BFF falls back
+to the Metro loopback `http://127.0.0.1:8123` (`resolveGatewayUrl()`) instead of failing, so a BFF
+missing the variable starts normally and fails only on its first assistant turn.
 
 Four ASGI middlewares capture the BFF-supplied per-request values into request-local ContextVars:
 `X-Agent-Config` (per-run provider/credentials), `X-Import-File` (`{handle, filename}`),

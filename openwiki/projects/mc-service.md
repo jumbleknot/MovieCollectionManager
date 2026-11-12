@@ -55,10 +55,10 @@ Two sub-routers, and the split is the security boundary:
 | public | `GET /health`, `GET /metrics` | none (liveness probe and Prometheus scrape) |
 | protected, nested at `/api/v1` | `/collections` (GET, POST), `/collections/{id}` (GET, PATCH, DELETE), `/collections/{id}/movies` (GET, POST), `/collections/{id}/movies/filter-options`, `/collections/{id}/movies/count`, `/collections/{id}/movies/{movieId}` (GET, PUT, DELETE), `/movie-metadata` | `KeycloakAuthLayer<Role>` + `require_app_role` |
 
-`/{id}/movies/filter-options` and `/{id}/movies/count` are registered **before**
-`/{id}/movies/{movieId}` deliberately — in the reversed order the literal segments are shadowed by
-the parameterised route. `AppState` holds one pre-constructed handler per operation and is injected
-as `State<Arc<AppState>>`; dispatch is a plain method call on that struct, so there is no mediator
+Registration order among `/{id}/movies/filter-options`, `/{id}/movies/count` and
+`/{id}/movies/{movieId}` does not matter: axum 0.8's matchit router prefers a static segment over a
+parameter whatever the order, which a unit test in `router.rs` pins by registering them in reverse.
+`AppState` holds one pre-constructed handler per operation and is injected as `State<Arc<AppState>>`; dispatch is a plain method call on that struct, so there is no mediator
 crate in the request path. `docs/MCM-Architecture.md` now states this the same way — its
 "**CQRS without a mediator**" decision records that the constitution still names `medi-rs` as the
 mediator library and that the divergence is tracked as a backlog item.

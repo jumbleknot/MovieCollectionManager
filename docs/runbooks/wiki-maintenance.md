@@ -76,6 +76,13 @@ backlog, low-effort escalation, refresh cooldowns, drift re-planning and parking
 $167.80 over 106 runs in 30 days for 39 distinct pages, and run 5104 paying ~$1.44 for one landed page
 — is ADR-0004 §2.
 
+**Not adopted: `openwiki integrations install claude`** (item #515, closed). It would run wiki
+maintenance inside Claude Code on the subscription instead of a paid provider. Feature 098 removed the
+case for it. Routine refreshes are already the session's own offline edits, made on the subscription
+with no generator involved. What is left is the rare operator-dispatched rebuild. A second execution
+path for that would break the `local parity` guard's single entry point and buy almost nothing. It
+also writes into the project's agent configuration. Revisit only if rebuilds become routine again.
+
 `openwiki/policy.yaml`'s `openwiki/**` entry is `actor: [agent, generator]`: sessions write the
 bundle routinely, and the generator writes on a manual rebuild. G3 still confines `generator` to
 `openwiki/`.
@@ -296,10 +303,61 @@ flaky generator.
 
 ### Why never the bare CLI
 
-Always go through the Nx target. `openwiki` invoked directly skips `OPENWIKI_TELEMETRY_DISABLED=1`
-and the raised Node heap, **and OOMs**. `wiki-maintain` shells out to `pnpm nx wiki-update
-infrastructure-as-code` for exactly this reason, and a unit test asserts no code path calls the CLI
-directly.
+Always go through the Nx target. `openwiki` invoked directly skips the launcher's telemetry opt-out
+and tripwire (below) and the raised Node heap, **and OOMs**. `wiki-maintain` shells out to `pnpm nx
+wiki-update infrastructure-as-code` for exactly this reason, and a unit test asserts no code path calls
+the CLI directly.
+
+### Telemetry: the opt-out is enforced and checked on every run (item #516)
+
+openwiki sends one `openwiki_run` event per `init`/`update` run to PostHog (`https://us.i.posthog.com`,
+with a key built into the package) **unless** `OPENWIKI_TELEMETRY_DISABLED` or `DO_NOT_TRACK` is truthy.
+"0", "false" and "" count as unset. The check (`isTelemetryDisabled`) is the first statement of
+`recordRun` in `dist/telemetry/senders.js` and returns before any network code. `recordRun`, called
+only from `withRunTelemetry`, is the package's only sender.
+
+**Measured, openwiki 0.7.1, 2026-11-12, at $0.** A keyless run stops at the credential check before the
+telemetry boundary and records nothing. An *invalid* key gets past that check and fails inside the
+boundary, so the run is still recorded. Each probe ran `openwiki code --update --print
+--telemetry-file=<f>` in a throwaway git repository with `ANTHROPIC_API_KEY=sk-ant-invalid-probe`:
+
+| Opt-out set | Record written |
+|---|---|
+| `OPENWIKI_TELEMETRY_DISABLED=1` and `DO_NOT_TRACK=1` | `{"disabled": true, "sent": false}` |
+| `OPENWIKI_TELEMETRY_DISABLED=1` only | `{"disabled": true, "sent": false}` |
+| `DO_NOT_TRACK=1` only | `{"disabled": true, "sent": false}` |
+
+**What would be sent without the opt-out.** This comes from the pure `buildRunEvent`, read rather than
+run. **`--telemetry-file` does not stop the send.** It writes the record *after* `capture()`, so
+running with the opt-out unset would perform the egress you are trying to inspect. The event is a
+`distinctId` and these properties:
+
+- **`distinctId`**: a random per-machine install UUID, or `ci-<provider>` in CI.
+- **Run facts**: `command`, `outcome`, `provider`, and on init only, `mode` and connector booleans.
+- **Failure diagnostics**, as closed-set enums: `error_class`, `error_detail`, `error_owner`,
+  `error_stage`, and the numeric `http_status`.
+- **Build facts**: `production`, `build_channel`, `app_version`, `ci`.
+- **`$process_person_profile: false`**, with geoip disabled.
+
+No repository content, path, message or credential is in the payload. The client IP still reaches
+PostHog, as with any HTTP request.
+
+**What enforces it.** Two layers:
+
+- **The launcher.** `scripts/wiki-generate.mjs` forces both variables to `1` in the generator's
+  environment, overriding the caller, so the opt-out no longer depends on the Nx target's `env`. It
+  also passes `--telemetry-file` on every run. A record other than `{disabled: true, sent: false}`
+  exits **3**, whatever the generator's own status, and so does a record that cannot be parsed. No
+  record means the run stopped before the boundary, and nothing is judged.
+- **The orchestrator.** `wiki-maintain` gives each invocation its own record path
+  (`WIKI_TELEMETRY_FILE`) and judges the record itself, because it ignores the generator's exit
+  status by design. On a bad record it **stops the rebuild without retrying**, since every further
+  invocation would send another event, and exits 1 with a `TELEMETRY:` line.
+
+**Decision: permanent, not one-off.** The tripwire is free, offline and already reads the
+record openwiki writes. What it guards against is an openwiki upgrade renaming or dropping the
+variables, which the 0.7.1 measurement above cannot rule out for 0.8. If it fires, stop using that
+openwiki version until the change is understood. Do not allowlist it.
 
 > **Nx `--args` is appended to a shell command line unquoted.** Measured: `--args="--x=one two"`
 > arrives as two separate arguments. That is why the generated run message is a single line with no
@@ -313,7 +371,7 @@ directly.
 | Code | Meaning | Is something wrong? |
 |---|---|---|
 | `0` | Every named page landed and verified (or `--dry-run`, or a selftest that passed) | No |
-| `1` | A named page **did not land** — missing or left stale, the bundle became non-conformant, a write landed where policy forbids it (§3), or the proposal could not be published | **Yes** — the report's `not landed:` list says which |
+| `1` | A named page **did not land** — missing or left stale, the bundle became non-conformant, a write landed where policy forbids it (§3), or the proposal could not be published — or the generator's **telemetry record shows an event was sent** (the run stops at once; see "Telemetry" above) | **Yes** — the report's `not landed:` list says which; a `TELEMETRY:` line names the telemetry case |
 | `2` | Bad usage (including an empty, unknown or canonical page), a missing credential, a malformed `MCM_WIKI_*` value, or a failed preflight. Nothing was spent | **Yes** |
 
 There is no exit 3 any more: it meant "stopped at the budget with work in the backlog", and there is no

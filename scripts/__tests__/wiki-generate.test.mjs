@@ -9,7 +9,9 @@
 //     `nx --args` quoting loss (2026-07-30) ran the generator unscoped;
 //   • with no message the refresh is unscoped, as the target always behaved;
 //   • the usage tap is loaded into the generator process;
-//   • a missing credential stops BEFORE the generator starts (FR-006).
+//   • a missing credential stops BEFORE the generator starts (FR-006);
+//   • item #516: both telemetry opt-outs are forced on, every run passes `--telemetry-file`, and a
+//     record showing the opt-out did not hold exits 3 whatever the generator's own status.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -27,6 +29,8 @@ function fakeGenerator() {
   const out = join(dir, 'invocation.json');
   const bin = join(dir, 'openwiki');
   writeFileSync(bin, `#!/usr/bin/env node
+const tf = process.argv.find((a) => a.startsWith('--telemetry-file='));
+if (tf && process.env.FAKE_TELEMETRY_RECORD) require('node:fs').writeFileSync(tf.slice('--telemetry-file='.length), process.env.FAKE_TELEMETRY_RECORD);
 require('node:fs').writeFileSync(${JSON.stringify(out)}, JSON.stringify({
   argv: process.argv.slice(2),
   env: {
@@ -38,8 +42,11 @@ require('node:fs').writeFileSync(${JSON.stringify(out)}, JSON.stringify({
     hasFireworksKey: Boolean(process.env.FIREWORKS_API_KEY),
     hasAnthropicKey: Boolean(process.env.ANTHROPIC_API_KEY),
     hasMcmAnthropicKey: Boolean(process.env.MCM_ANTHROPIC_API_KEY),
+    OPENWIKI_TELEMETRY_DISABLED: process.env.OPENWIKI_TELEMETRY_DISABLED,
+    DO_NOT_TRACK: process.env.DO_NOT_TRACK,
   },
 }));
+process.exit(Number(process.env.FAKE_EXIT ?? 0));
 `);
   chmodSync(bin, 0o755);
   return { dir, out };
@@ -60,14 +67,18 @@ test('the run message reaches the generator as exactly ONE argv element', () => 
   const message = 'Work on exactly one area: openwiki/runbooks/. Write "these" pages; and nothing $ELSE `here`.';
   const r = launch({ MCM_ANTHROPIC_API_KEY: 'k', WIKI_RUN_MESSAGE: message });
   assert.equal(r.status, 0, r.stderr);
-  assert.deepEqual(r.invocation.argv, ['code', '--update', '--print', message],
-    'no shell may split, expand or re-quote the message');
+  const [telemetryFlag, ...rest] = r.invocation.argv.slice(3);
+  assert.deepEqual(r.invocation.argv.slice(0, 3), ['code', '--update', '--print']);
+  assert.match(telemetryFlag, /^--telemetry-file=\S+$/);
+  assert.deepEqual(rest, [message], 'no shell may split, expand or re-quote the message');
 });
 
 test('with no message the refresh is unscoped, exactly as the target always behaved', () => {
   const r = launch({ MCM_ANTHROPIC_API_KEY: 'k' });
   assert.equal(r.status, 0, r.stderr);
-  assert.deepEqual(r.invocation.argv, ['code', '--update', '--print']);
+  assert.equal(r.invocation.argv.length, 4);
+  assert.deepEqual(r.invocation.argv.slice(0, 3), ['code', '--update', '--print']);
+  assert.match(r.invocation.argv[3], /^--telemetry-file=/, 'no message, so nothing follows the telemetry flag');
 });
 
 test('the generator runs with the resolved provider, the cap, and the usage tap loaded', () => {
@@ -116,4 +127,52 @@ test('an unknown argument is rejected, never ignored', () => {
   const r = launch({ MCM_ANTHROPIC_API_KEY: 'k' }, ['--dry-run']);
   assert.notEqual(r.status, 0);
   assert.equal(r.invocation, null);
+});
+
+// ── item #516: the telemetry tripwire ─────────────────────────────────────────────────────────────
+
+test('#516: both telemetry opt-outs reach the generator even when the caller sets neither', () => {
+  const r = launch({ MCM_ANTHROPIC_API_KEY: 'k' });
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.invocation.env.OPENWIKI_TELEMETRY_DISABLED, '1');
+  assert.equal(r.invocation.env.DO_NOT_TRACK, '1');
+});
+
+test('#516: a caller that sets an opt-out to "0" is overridden, not obeyed', () => {
+  const r = launch({ MCM_ANTHROPIC_API_KEY: 'k', OPENWIKI_TELEMETRY_DISABLED: '0', DO_NOT_TRACK: 'false' });
+  assert.equal(r.invocation.env.OPENWIKI_TELEMETRY_DISABLED, '1');
+  assert.equal(r.invocation.env.DO_NOT_TRACK, '1');
+});
+
+test('#516: a record showing the opt-out held passes, and the generator status is kept', () => {
+  const ok = launch({ MCM_ANTHROPIC_API_KEY: 'k', FAKE_TELEMETRY_RECORD: '{"disabled":true,"sent":false}' });
+  assert.equal(ok.status, 0, ok.stderr);
+  const failed = launch({ MCM_ANTHROPIC_API_KEY: 'k', FAKE_TELEMETRY_RECORD: '{"disabled":true,"sent":false}', FAKE_EXIT: '1' });
+  assert.equal(failed.status, 1);
+});
+
+test('#516: a record showing an event was SENT exits 3 and says so, even when the generator succeeded', () => {
+  const r = launch({ MCM_ANTHROPIC_API_KEY: 'k', FAKE_TELEMETRY_RECORD: '{"disabled":false,"sent":true,"host":"https://example.invalid"}' });
+  assert.equal(r.status, 3);
+  assert.match(r.stderr, /TELEMETRY: the opt-out did NOT hold: disabled=false sent=true/);
+});
+
+test('#516: an unreadable record fails rather than passing as "no record"', () => {
+  const r = launch({ MCM_ANTHROPIC_API_KEY: 'k', FAKE_TELEMETRY_RECORD: 'not json' });
+  assert.equal(r.status, 3);
+});
+
+test('#516: a run that never reached the telemetry boundary leaves no record and is not judged', () => {
+  const r = launch({ MCM_ANTHROPIC_API_KEY: 'k', FAKE_EXIT: '1' });
+  assert.equal(r.status, 1, 'the generator status, not the tripwire');
+});
+
+test('#516: WIKI_TELEMETRY_FILE chooses the record path, and a stale record there is removed first', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'wiki-tele-'));
+  const file = join(dir, 'telemetry.json');
+  writeFileSync(file, '{"disabled":false,"sent":true}');
+  const r = launch({ MCM_ANTHROPIC_API_KEY: 'k', WIKI_TELEMETRY_FILE: file });
+  assert.equal(r.status, 0, `a stale record from an earlier run must not be judged as this run's: ${r.stderr}`);
+  assert.equal(r.invocation.argv[3], `--telemetry-file=${file}`);
+  rmSync(dir, { recursive: true, force: true });
 });
