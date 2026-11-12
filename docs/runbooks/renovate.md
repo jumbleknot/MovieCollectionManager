@@ -50,8 +50,8 @@ single CI runner.
 
 ### The budget binds before the schedule does
 
-`prConcurrentLimit: 6`, `prHourlyLimit: 5` (raised from 5/4 on 2026-10-02 — see the end of the next
-section). Measured 2026-08-28: the window run created **exactly 4** PRs — the hourly limit at the
+`prConcurrentLimit: 7`, `prHourlyLimit: 6` (raised from 5/4 on 2026-10-02 and to 7/6 on 2026-11-12 —
+see the end of the next section). Measured 2026-08-28: the window run created **exactly 4** PRs — the hourly limit at the
 time, precisely. Everything else deferred a week.
 
 `handleConcurrentLimits()` checks the hourly PR limit for *every* key, so spending it also blocks
@@ -60,8 +60,9 @@ Renovate PRs unmerged caps the next window at one new PR. **Merging promptly is 
 
 ### How the weekly slots are allocated, and why docker outranks the rest (item #486)
 
-With one in-window run a week, `prHourlyLimit` **is** the weekly throughput: **5** since 2026-10-02,
-and 4 when the windows below were measured (the fifth slot is explained at the end of this section).
+With one in-window run a week, `prHourlyLimit` **is** the weekly throughput: **6** since 2026-11-12,
+5 from 2026-10-02, and 4 when the windows below were measured (the fifth and sixth slots are explained
+at the end of this section).
 There are **three** `lockFileMaintenance` channels (`pnpm`, `cargo-deps`, `python-deps`) and they
 carry `prPriority: 5` — so three of the slots are spoken for before anything else is considered,
 every week, by construction. Measured over three consecutive windows, each one exactly at the limit
@@ -98,6 +99,20 @@ and `docker digest pins` carries `prPriority: 2` — still below `docker base im
 `lockFileMaintenance` (5), so the ranking above is unchanged; the extra slot goes to the lowest-risk
 security fix there is (an upstream rebuild of a version already running) ahead of routine work. The
 cost is one more PR's CI per week on the capacity-1 runner.
+
+**A fourth lockfile channel, and a sixth slot, 2026-11-12.** The OpenWiki generator's standalone
+workspace (`tools/openwiki-generator/`, item #704) became a **fourth** `lockFileMaintenance` channel,
+inheriting `prPriority: 5`. The 2026-11-06 window spent its five slots on #946–#949 (four lock
+refreshes) and #950 (`docker base images`) — `docker digest pins` got none again, and no routine
+channel had had a slot since 2026-10-02. Two changes, together:
+
+- The generator's lock refresh is **demoted to `prPriority: -1`**, below every routine channel, by a rule
+  narrowed with `matchFileNames` to `tools/openwiki-generator/package.json`. It is the one lockfile
+  channel that can wait: since feature 098 the generator runs only on manual dispatch, so its refresh
+  keeps no gate green on a cadence. It stays **enabled** — the next rebuild installs from that lockfile.
+  Expect it to get a slot rarely; if a rebuild is due, tick its `unschedule-branch=` checkbox first.
+- `prHourlyLimit` 5 → **6** (`prConcurrentLimit` 6 → 7, kept above it). The allocation is now
+  **3 lockfile + `docker base images` + `docker digest pins` + 1 routine**.
 
 **Floating tags and the cooldown treadmill.** A pin on a floating tag (`langfuse/langfuse:4@sha256`,
 `node:24-bookworm`) can only be offered `:4`'s *current* digest, aged against `:4`'s own

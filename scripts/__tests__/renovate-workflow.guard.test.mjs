@@ -535,11 +535,15 @@ test('the Playwright grouping rule does NOT swallow @nx/playwright or unrelated 
 //     follow cannot resume it — they return "not-scheduled" (:244) before branch creation too.
 
 test('lockFileMaintenance carries a positive prPriority, or Renovate sorts it dead last', () => {
+  // UN-NARROWED rules only. A rule scoped by matchFileNames to ONE lockfile channel is a deliberate
+  // per-channel demotion (the OpenWiki generator's, 2026-11-12) and is pinned by its own test below;
+  // the invariant here is that the channel AS A WHOLE outranks routine work.
   const rules = packageRules.filter(
     (rule) =>
       rule.prPriority !== undefined &&
       Array.isArray(rule.matchUpdateTypes) &&
-      rule.matchUpdateTypes.includes('lockFileMaintenance'),
+      rule.matchUpdateTypes.includes('lockFileMaintenance') &&
+      rule.matchFileNames === undefined,
   );
 
   assert.equal(
@@ -576,6 +580,31 @@ test('lockFileMaintenance carries a positive prPriority, or Renovate sorts it de
       '  built by updates/flatten.js with NO dep attached, so matchPackageNames matches nothing and\n' +
       '  the rule never fires — the failure this whole item is about, in a new place.',
   );
+});
+
+test('the OpenWiki generator lock refresh is demoted BELOW routine work, narrowed to its own file', () => {
+  // 2026-11-12. A fourth lockFileMaintenance channel at 5 took four of five weekly slots and left
+  // `docker digest pins` none. The generator runs only on manual dispatch (feature 098), so its
+  // refresh is the one that can wait — but it must stay ENABLED (the next rebuild installs from it),
+  // and the demotion must be narrowed, or it would demote every lockfile channel with it.
+  const top = packageRules.findIndex(
+    (r) => (r.matchUpdateTypes ?? []).includes('lockFileMaintenance') && r.matchFileNames === undefined,
+  );
+  const demote = packageRules.findIndex(
+    (r) =>
+      (r.matchUpdateTypes ?? []).includes('lockFileMaintenance') &&
+      (r.matchFileNames ?? []).includes('tools/openwiki-generator/package.json'),
+  );
+  assert.ok(demote >= 0, 'no rule demotes the OpenWiki generator lock refresh');
+  const rule = packageRules[demote];
+  assert.deepEqual(rule.matchFileNames, ['tools/openwiki-generator/package.json'],
+    'the demotion is not narrowed to the generator manifest alone — it would demote other lockfile channels');
+  assert.equal(rule.matchPackageNames, undefined,
+    'matchPackageNames never matches a lockFileMaintenance upgrade (no dep attached), so the rule would never fire');
+  assert.ok(Number.isInteger(rule.prPriority) && rule.prPriority < 0,
+    `the generator refresh sits at ${rule.prPriority}; it must sort BELOW the routine channels (0)`);
+  assert.ok(demote > top, 'the demotion precedes the prPriority 5 rule, which would override it');
+  assert.notEqual(rule.enabled, false, 'the generator refresh was disabled rather than demoted');
 });
 
 test('the weekly PR budget reaches past the rolling groups that sort ahead of the tail', () => {
