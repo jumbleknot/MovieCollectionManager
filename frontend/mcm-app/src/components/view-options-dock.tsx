@@ -33,10 +33,12 @@ import { useOpenPanel } from '@/hooks/use-open-panel';
 import { moveFocus } from '@/utils/move-focus';
 
 const PANEL = 'view-options' as const;
+/** The visible name of the bar and the panel (099 FR-001) — it holds the filters too. */
+const LABEL = 'View & filter options';
 
 function dockLabel(count: number): string {
-  if (count <= 0) return 'View options';
-  return `View options, ${count} ${count === 1 ? 'filter' : 'filters'} active`;
+  if (count <= 0) return LABEL;
+  return `${LABEL}, ${count} ${count === 1 ? 'filter' : 'filters'} active`;
 }
 
 interface ViewOptionsDockProps {
@@ -77,7 +79,7 @@ export function ViewOptionsDock({ activeFilterCount }: ViewOptionsDockProps): Re
         },
       ]}
     >
-      <Text style={[styles.barLabel, { color: theme.onSurface?.val }]}>View options</Text>
+      <Text style={[styles.barLabel, { color: theme.onSurface?.val }]}>{LABEL}</Text>
       {activeFilterCount > 0 ? (
         <Badge
           testID="view-options-active-count"
@@ -96,15 +98,26 @@ export function ViewOptionsDock({ activeFilterCount }: ViewOptionsDockProps): Re
 
 interface ViewOptionsPanelProps {
   children: React.ReactNode;
+  /**
+   * Rendered in the fixed header beside Close, outside the scrolling body, so it stays reachable at
+   * any scroll position — the screen puts "Clear Filters" here (099 FR-004).
+   */
+  headerAction?: React.ReactNode;
 }
 
-export function ViewOptionsPanel({ children }: ViewOptionsPanelProps): React.JSX.Element | null {
+export function ViewOptionsPanel({
+  children,
+  headerAction,
+}: ViewOptionsPanelProps): React.JSX.Element | null {
   const { openPanel } = useOpenPanel();
   if (openPanel !== PANEL) return null;
-  return <OpenViewOptionsPanel>{children}</OpenViewOptionsPanel>;
+  return <OpenViewOptionsPanel headerAction={headerAction}>{children}</OpenViewOptionsPanel>;
 }
 
-function OpenViewOptionsPanel({ children }: { children: React.ReactNode }): React.JSX.Element {
+function OpenViewOptionsPanel({
+  children,
+  headerAction,
+}: ViewOptionsPanelProps): React.JSX.Element {
   const theme = useTheme();
   const headingRef = useRef<React.ComponentRef<typeof Text>>(null);
   // `close` is a stable callback from the provider, so this is stable too and the listeners below
@@ -155,25 +168,34 @@ function OpenViewOptionsPanel({ children }: { children: React.ReactNode }): Reac
         },
       ]}
     >
-      <View style={styles.header}>
+      <View testID="view-options-header" style={styles.header}>
         <Text
           ref={headingRef}
           accessibilityRole="header"
           style={[styles.heading, { color: theme.onSurface?.val }]}
           {...headingFocusProps}
         >
-          View options
+          {LABEL}
         </Text>
-        <Button
-          testID="view-options-close"
-          variant="text"
-          size="sm"
-          label="Close"
-          accessibilityLabel="Close view options"
-          onPress={onClose}
-        />
+        <View style={styles.headerActions}>
+          {headerAction}
+          <Button
+            testID="view-options-close"
+            variant="text"
+            size="sm"
+            label="Close"
+            accessibilityLabel={`Close ${LABEL.toLowerCase()}`}
+            onPress={onClose}
+          />
+        </View>
       </View>
-      <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+      {/* The ONLY vertical scroller in the panel (099 FR-002): the controls inside size to their
+          content, and the panel grows to the full height of the list area before this scrolls. */}
+      <ScrollView
+        testID="view-options-body"
+        style={styles.body}
+        keyboardShouldPersistTaps="handled"
+      >
         {children}
       </ScrollView>
     </View>
@@ -214,6 +236,7 @@ const styles = {
     paddingLeft: 16,
     paddingRight: 8,
   },
+  headerActions: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
   heading: { fontFamily: 'Inter', fontWeight: '600' as const, fontSize: 16 },
   body: { flexShrink: 1 },
 };

@@ -18,31 +18,34 @@
  *   onFilterChange  — called with (filterKey, value) when a chip is pressed;
  *                     called with (filterKey, undefined) when an active chip is
  *                     tapped to deselect it (FR-022c)
- *   onClearFilters  — called when the Clear button is pressed
+ *
+ * 099: the panel has no height cap and no vertical scroller of its own — it sits in the view-options
+ * pane, whose single body scroller owns vertical scrolling (FR-002). Chips WRAP rather than scroll
+ * sideways (FR-003). "Clear Filters" is exported as ClearFiltersButton and rendered by the screen in
+ * the pane header, so it stays visible at any scroll position (FR-004).
  *
  * testIDs:
  *   movie-filter-panel                   — root container
  *   filter-section-{filterKey}           — each filter section container
+ *   filter-chips-{filterKey}             — each section's (wrapping) chip container
  *   filter-chip-{filterKey}-{value}      — each filter chip
- *   filter-clear-button                  — the clear all filters button
+ *   filter-clear-button                  — ClearFiltersButton (rendered by the screen)
  *
  * Filter section order (FR-022b):
  *   contentType → owned → ownedMedia → ripped → ripQuality → genre → decade → language → rated
  */
 
 import React from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@tamagui/core';
 import { Button, Chip } from '@mcm/design-system';
 import type { FilterOptionsData, MovieListFilters } from '@/types/collection';
-import { countActiveFilters } from '@/utils/active-filters';
 
 interface MovieFilterPanelProps {
   filterOptions: FilterOptionsData;
   isLoading?: boolean;
   activeFilters: MovieListFilters;
   onFilterChange: (key: keyof MovieListFilters, value: string | number | undefined) => void;
-  onClearFilters: () => void;
 }
 
 interface FilterSectionProps {
@@ -60,11 +63,7 @@ function FilterSection({ filterKey, label, options, activeValue, onPress }: Filt
   return (
     <View testID={`filter-section-${filterKey}`} style={styles.section}>
       <Text style={styles.sectionLabel}>{label}</Text>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chips}
-      >
+      <View testID={`filter-chips-${filterKey}`} style={styles.chips}>
         {options.map((opt) => {
           const isActive = opt === activeValue;
           return (
@@ -79,8 +78,26 @@ function FilterSection({ filterKey, label, options, activeValue, onPress }: Filt
             />
           );
         })}
-      </ScrollView>
+      </View>
     </View>
+  );
+}
+
+/**
+ * "Clear Filters" — shown by the screen in the view-options pane header while a filter is active.
+ * A text button, matching the header's Close beside it: a filled-tonal background paints the full
+ * 48px touch-target minHeight and read as an outsized, mismatched pill there.
+ */
+export function ClearFiltersButton({ onPress }: { onPress: () => void }): React.JSX.Element {
+  return (
+    <Button
+      testID="filter-clear-button"
+      variant="text"
+      size="sm"
+      label="Clear Filters"
+      onPress={onPress}
+      accessibilityLabel="Clear all filters"
+    />
   );
 }
 
@@ -91,11 +108,9 @@ export function MovieFilterPanel({
   isLoading = false,
   activeFilters,
   onFilterChange,
-  onClearFilters,
 }: MovieFilterPanelProps) {
   const theme = useTheme();
   const styles = makeStyles(theme);
-  const hasActiveFilters = countActiveFilters(activeFilters) > 0;
 
   return (
     <View testID="movie-filter-panel" style={styles.container}>
@@ -104,96 +119,78 @@ export function MovieFilterPanel({
           <ActivityIndicator size="small" color={theme.primary?.val} />
         </View>
       )}
-      <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {/* Order: contentType, owned, ownedMedia, ripped, ripQuality, genre, decade, language, rated (FR-022b) */}
-        <FilterSection
-          filterKey="contentType"
-          label="Type"
-          options={filterOptions.contentTypes}
-          activeValue={activeFilters.contentType}
-          onPress={(v) => onFilterChange('contentType', v as string | undefined)}
-        />
-        <FilterSection
-          filterKey="owned"
-          label="Owned"
-          options={OWNED_RIPPED_OPTIONS}
-          activeValue={
-            activeFilters.owned === true ? 'Yes' : activeFilters.owned === false ? 'No' : undefined
-          }
-          onPress={(v) => onFilterChange('owned', v)}
-        />
-        <FilterSection
-          filterKey="ownedMedia"
-          label="Media"
-          options={filterOptions.ownedMedia}
-          activeValue={activeFilters.ownedMedia}
-          onPress={(v) => onFilterChange('ownedMedia', v)}
-        />
-        <FilterSection
-          filterKey="ripped"
-          label="Ripped"
-          options={OWNED_RIPPED_OPTIONS}
-          activeValue={
-            activeFilters.ripped === true
-              ? 'Yes'
-              : activeFilters.ripped === false
-                ? 'No'
-                : undefined
-          }
-          onPress={(v) => onFilterChange('ripped', v)}
-        />
-        <FilterSection
-          filterKey="ripQuality"
-          label="Rip Quality"
-          options={filterOptions.ripQuality}
-          activeValue={activeFilters.ripQuality}
-          onPress={(v) => onFilterChange('ripQuality', v)}
-        />
-        <FilterSection
-          filterKey="genre"
-          label="Genre"
-          options={filterOptions.genres}
-          activeValue={activeFilters.genre}
-          onPress={(v) => onFilterChange('genre', v)}
-        />
-        <FilterSection
-          filterKey="decade"
-          label="Decade"
-          options={filterOptions.decades}
-          activeValue={activeFilters.decade}
-          onPress={(v) =>
-            v === undefined
-              ? onFilterChange('decade', undefined)
-              : onFilterChange('decade', Number(v))
-          }
-        />
-        <FilterSection
-          filterKey="language"
-          label="Language"
-          options={filterOptions.languages}
-          activeValue={activeFilters.language}
-          onPress={(v) => onFilterChange('language', v)}
-        />
-        <FilterSection
-          filterKey="rated"
-          label="Rating"
-          options={filterOptions.rated}
-          activeValue={activeFilters.rated}
-          onPress={(v) => onFilterChange('rated', v)}
-        />
-      </ScrollView>
-
-      {hasActiveFilters && (
-        <Button
-          testID="filter-clear-button"
-          variant="filledTonal"
-          size="sm"
-          label="Clear Filters"
-          onPress={onClearFilters}
-          accessibilityLabel="Clear all filters"
-          margin={8}
-        />
-      )}
+      {/* Order: contentType, owned, ownedMedia, ripped, ripQuality, genre, decade, language, rated (FR-022b) */}
+      <FilterSection
+        filterKey="contentType"
+        label="Type"
+        options={filterOptions.contentTypes}
+        activeValue={activeFilters.contentType}
+        onPress={(v) => onFilterChange('contentType', v as string | undefined)}
+      />
+      <FilterSection
+        filterKey="owned"
+        label="Owned"
+        options={OWNED_RIPPED_OPTIONS}
+        activeValue={
+          activeFilters.owned === true ? 'Yes' : activeFilters.owned === false ? 'No' : undefined
+        }
+        onPress={(v) => onFilterChange('owned', v)}
+      />
+      <FilterSection
+        filterKey="ownedMedia"
+        label="Media"
+        options={filterOptions.ownedMedia}
+        activeValue={activeFilters.ownedMedia}
+        onPress={(v) => onFilterChange('ownedMedia', v)}
+      />
+      <FilterSection
+        filterKey="ripped"
+        label="Ripped"
+        options={OWNED_RIPPED_OPTIONS}
+        activeValue={
+          activeFilters.ripped === true ? 'Yes' : activeFilters.ripped === false ? 'No' : undefined
+        }
+        onPress={(v) => onFilterChange('ripped', v)}
+      />
+      <FilterSection
+        filterKey="ripQuality"
+        label="Rip Quality"
+        options={filterOptions.ripQuality}
+        activeValue={activeFilters.ripQuality}
+        onPress={(v) => onFilterChange('ripQuality', v)}
+      />
+      <FilterSection
+        filterKey="genre"
+        label="Genre"
+        options={filterOptions.genres}
+        activeValue={activeFilters.genre}
+        onPress={(v) => onFilterChange('genre', v)}
+      />
+      <FilterSection
+        filterKey="decade"
+        label="Decade"
+        options={filterOptions.decades}
+        activeValue={activeFilters.decade}
+        onPress={(v) =>
+          v === undefined
+            ? onFilterChange('decade', undefined)
+            : onFilterChange('decade', Number(v))
+        }
+      />
+      <FilterSection
+        filterKey="language"
+        label="Language"
+        options={filterOptions.languages}
+        activeValue={activeFilters.language}
+        onPress={(v) => onFilterChange('language', v)}
+      />
+      <FilterSection
+        filterKey="rated"
+        label="Rating"
+        options={filterOptions.rated}
+        activeValue={activeFilters.rated}
+        onPress={(v) => onFilterChange('rated', v)}
+      />
     </View>
   );
 }
@@ -206,16 +203,11 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.background?.val,
       borderBottomWidth: StyleSheet.hairlineWidth,
       borderBottomColor: theme.outlineVariant?.val,
-      minHeight: 36,
-      maxHeight: 220,
     },
     loadingRow: {
       height: 36,
       alignItems: 'center',
       justifyContent: 'center',
-    },
-    scroll: {
-      flex: 1,
     },
     section: {
       paddingHorizontal: 12,
@@ -232,6 +224,7 @@ const makeStyles = (theme: Theme) =>
     },
     chips: {
       flexDirection: 'row',
+      flexWrap: 'wrap',
       gap: 8,
       paddingBottom: 8,
     },
