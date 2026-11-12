@@ -30,7 +30,7 @@ const WORKFLOW = resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml');
 const workflow = parseYaml(readFileSync(WORKFLOW, 'utf8'));
 
 /** The E2E-style jobs that bring the compose stacks up on the persistent `kvm` runner. */
-const STACK_JOBS = ['app-e2e', 'dast'];
+const STACK_JOBS = ['app-e2e', 'dast', 'mc-service-checks-integration']; // the last: item #954
 
 const VOLUME = /\b([a-z0-9-]+-data)\b/g;
 

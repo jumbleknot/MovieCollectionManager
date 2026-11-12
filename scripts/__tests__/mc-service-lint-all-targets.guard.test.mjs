@@ -221,3 +221,90 @@ test('#462-followon: the serial pin carries its MEASURED reason, not just a valu
   assert.match(preamble, /2 runs in 29|2 failures in 29|2\/29/,
     'the comment must carry the measured failure rate, so the next person can re-measure it');
 });
+
+// ─── Item #954 — a Cargo-only change RUNS the integration tier, it does not just compile it ───────
+//
+// `--all-targets` (above) proves a dependency bump still BUILDS the test harness. It cannot prove the
+// dependency still BEHAVES. PR #946 moved axum-keycloak-auth 0.8.3 -> 0.8.4 (a non-JWT bearer now
+// answers 401, not 400): every required context green, app-e2e skipped, and the bump reached a
+// production promotion before `main` first ran the tier and failed. So a change to the root Cargo
+// files now selects `mc-service-checks-integration`, which runs the same step app-e2e runs.
+//
+// Mutation-checked: dropping `Cargo.lock` from the `cargo` filter, inverting the `app != 'true'`
+// arm, renaming the job out of the `mc-service-checks*` glob, editing one `-e` of the copied step,
+// and removing the job from trigger-cd's `needs` each fail a test below.
+
+/** The `changes` job's filter sets — a YAML document embedded as a STRING, so it needs a 2nd parse. */
+function filterSets() {
+  const step = (WORKFLOW?.jobs?.changes?.steps ?? []).find((s) => typeof s?.with?.filters === 'string');
+  assert.ok(step, 'the changes job has no dorny/paths-filter step with a `filters` input');
+  return parseYaml(step.with.filters);
+}
+
+/** The single step whose `run` invokes the integration guard, in `jobName`. */
+function integrationStep(jobName) {
+  const steps = (WORKFLOW?.jobs?.[jobName]?.steps ?? []).filter(
+    (s) => typeof s?.run === 'string' && s.run.includes('mc-service-integration-guard.mjs'),
+  );
+  assert.equal(steps.length, 1, `\`${jobName}\` should run the integration guard in exactly one step`);
+  return steps[0];
+}
+
+const IT_JOB = 'mc-service-checks-integration';
+
+test('#954: the `cargo` filter selects the root Cargo files, and `changes` exports it', () => {
+  const { cargo, app } = filterSets();
+  assert.ok(Array.isArray(cargo) && cargo.length > 0, 'the `cargo` filter is missing or empty');
+  for (const path of ['Cargo.lock', 'rust-toolchain.toml']) {
+    assert.ok(cargo.includes(path), `the \`cargo\` filter does not select ${path}`);
+  }
+  assert.ok(
+    cargo.includes('Cargo.toml') || cargo.includes('**/Cargo.toml'),
+    'the `cargo` filter does not select the workspace Cargo.toml',
+  );
+  assert.match(
+    String(WORKFLOW?.jobs?.changes?.outputs?.cargo ?? ''),
+    /steps\.filter\.outputs\.cargo/,
+    '`changes` does not export the `cargo` output — the integration job would gate on an empty string',
+  );
+  // The exclusion itself stands: a Cargo change buys the ~5-min tier, not the ~23-min app-e2e.
+  assert.ok(!app.includes('Cargo.lock'), 'Cargo.lock moved into `app` — the comment above `changes` explains why not');
+});
+
+test('#954: the integration job runs on a Cargo change only when app-e2e does not', () => {
+  const job = WORKFLOW?.jobs?.[IT_JOB];
+  assert.ok(job, `app-ci has no \`${IT_JOB}\` job`);
+  const gate = String(job.if ?? '');
+  assert.match(gate, /needs\.changes\.outputs\.cargo\s*==\s*'true'/, 'the job no longer gates on the `cargo` filter');
+  assert.match(
+    gate,
+    /needs\.changes\.outputs\.app\s*!=\s*'true'/,
+    'the job no longer defers to app-e2e — both would run the tier over the same containers on one host',
+  );
+  assert.ok(job.needs?.includes('changes'), 'the job does not need `changes`, so its outputs are always empty');
+  assert.ok(job.needs?.includes('mc-service-checks'), 'the job no longer waits for the fast compile gate');
+});
+
+test('#954: the job name sits under the branch-protection glob, so its failure blocks the merge', async () => {
+  const { REQUIRED_CONTEXT_GLOBS } = await import('../ci-status.mjs');
+  const glob = 'app-ci / mc-service-checks*';
+  assert.ok(REQUIRED_CONTEXT_GLOBS.includes(glob), `\`${glob}\` is no longer a required context glob`);
+  assert.ok(`app-ci / ${IT_JOB} (pull_request)`.startsWith(glob.slice(0, -1)), `\`${IT_JOB}\` is outside \`${glob}\``);
+});
+
+test('#954: the integration step is IDENTICAL to app-e2e\'s, step id and env included', () => {
+  const ours = integrationStep(IT_JOB);
+  const theirs = integrationStep('app-e2e');
+  assert.equal(ours.run, theirs.run, 'the two integration steps diverged — one tier, two definitions');
+  assert.match(ours.run, /ci-log-step\.sh mc-service-integration\b/, 'the step id changed, so it lost its calibrated ceiling');
+});
+
+test('#954: trigger-cd needs the integration job and refuses to deploy on its failure', () => {
+  const cd = WORKFLOW?.jobs?.['trigger-cd'];
+  assert.ok(cd?.needs?.includes(IT_JOB), `trigger-cd does not need \`${IT_JOB}\` — a red tier would still deploy`);
+  assert.match(
+    String(cd.if ?? ''),
+    new RegExp(`needs\\.${IT_JOB}\\.result == 'success' \\|\\| needs\\.${IT_JOB}\\.result == 'skipped'`),
+    'trigger-cd does not gate on the integration job\'s result',
+  );
+});

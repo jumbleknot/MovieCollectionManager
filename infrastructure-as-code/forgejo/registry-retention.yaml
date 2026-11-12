@@ -28,9 +28,10 @@ packages:
   # rebuild) or 21 days is what keeps a developer's pin alive. Refresh the pin from the newest run.
   - { name: mcm-devcontainer, type: container, keepNewest: 4, keepDays: 21 }
   # Evidence bundles. ci-failure-digest.mjs ALREADY prunes these at its RETENTION_DAYS (30) on every
-  # publish, so this rule is the floor `ci-status durations` needs, not the deleter: 25 runs × 23
-  # bundle-publishing jobs = 575, rounded up to 600. The script refuses anything below the product,
-  # so a new job that publishes a bundle fails the config until this is raised.
-  - { name: ci-failures, type: generic, keepNewest: 600, keepDays: 45 }
+  # publish, so this rule is the floor `ci-status durations` needs, not the deleter: 25 runs × 25
+  # bundle-publishing jobs = 625, rounded up to 650 (item #954 added `mc-service-checks-integration`).
+  # The script refuses anything below the product, so a new job that publishes a bundle fails the
+  # config until this is raised.
+  - { name: ci-failures, type: generic, keepNewest: 650, keepDays: 45 }
   # Release APKs are not rebuildable.
   - { name: mcm-app-android, type: generic, keepAll: true }
