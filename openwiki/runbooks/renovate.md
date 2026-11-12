@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0) that allocates the five in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
+description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0, and -1 for the OpenWiki generator's lock refresh) that allocates the six in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
 resource: docs/runbooks/renovate.md
-resource-sha256: 454b37256e384084c4b4dfe9103c671c2d832e8eca291a4fbb7fb1f5c4babbb5
+resource-sha256: c0a8f25279cdf51ced25a5d6d0e2e818c19bf7a3d477a61b7702fc9d2f87e223
 tags: [renovate, ci, dependencies, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T11:59:39.646Z
+timestamp: 2026-11-12T12:17:14.149Z
 ---
 
 # Renovate dependency bot
@@ -22,7 +22,7 @@ procedures, measured evidence, and code citations behind every claim below.
 | channel | trigger | cadence / rank |
 | --- | --- | --- |
 | **security** — `vulnerabilityAlerts` + OSV | nightly cron `0 3 * * *` | schedule-exempt, unbudgeted |
-| **lockfile refresh** — `lockFileMaintenance` (pnpm, cargo-deps, python-deps) | the window run | Friday, `prPriority: 5` |
+| **lockfile refresh** — `lockFileMaintenance` (pnpm, cargo-deps, python-deps; the OpenWiki generator's at -1) | the window run | Friday, `prPriority: 5` |
 | **docker base images** | the window run | Friday, `prPriority: 3` |
 | **docker digest pins** — `pinDigest` + `digest` updates | the window run | Friday, `prPriority: 2` |
 | **routine** — every other grouped package rule | the window run | Friday only, `prPriority` 0 (default) |
@@ -73,9 +73,9 @@ branch exists.
   upstream `rustfs/rustfs` object store and deleted the workflow, so 05:00 is now free. The
   capacity-1 runner may also already be inside a ~35-minute `app-e2e`, which is why the ordering
   rule budgets hours rather than minutes.
-- **The budget binds before the schedule.** `prHourlyLimit: 5` and `prConcurrentLimit: 6` in
-  `renovate.json` (raised from `prHourlyLimit` 4 / `prConcurrentLimit` 5 on 2026-10-02, when the
-  in-window budget grew to a fifth slot); the guard test requires `prConcurrentLimit` to stay above
+- **The budget binds before the schedule.** `prHourlyLimit: 6` and `prConcurrentLimit: 7` in
+  `renovate.json` (raised from 4/5 to 5/6 on 2026-10-02 for a fifth slot, and to 6/7 on 2026-11-12
+  for a sixth); the guard test requires `prConcurrentLimit` to stay above
   `prHourlyLimit` or it becomes the binding constraint instead. Measured 2026-08-28: a window run
   created exactly 4 PRs — the hourly limit at
   the time, precisely — and deferred everything else a week. `handleConcurrentLimits()` checks the
@@ -119,6 +119,14 @@ branch exists.
   explicit number, which is what still stops the last rule in the file (docker datasource,
   `pinDigest`/`digest`, no `groupName` and no `prPriority`) from carrying `docker base images`' 3
   through.
+- **A fourth lockfile channel demoted, and a sixth slot (2026-11-12).** The OpenWiki generator's
+  standalone workspace became a fourth `lockFileMaintenance` channel at 5, and the 2026-11-06 window
+  went 4 lockfile + 1 `docker base images`, leaving `docker digest pins` slotless again. Its refresh
+  now sits at `prPriority: -1`, below every routine channel, via a rule narrowed by `matchFileNames`
+  to `tools/openwiki-generator/package.json` (`matchPackageNames` cannot match a lock refresh). It stays
+  enabled, because a manual rebuild installs from that lockfile, but it will rarely get a slot: tick its
+  `unschedule-branch=` checkbox before a rebuild. `prHourlyLimit` went to 6, so the allocation is now
+  3 lockfile + `docker base images` + `docker digest pins` + 1 routine.
 - **A pin on a floating tag is on a cooldown treadmill — pin by full version.** Renovate can only
   offer the *current* digest of a floating tag (`langfuse/langfuse:4@sha256`, `node:24-bookworm`),
   aged against that tag's own `tag_last_pushed`. An upstream that repushes more often than
@@ -626,7 +634,7 @@ as a suspected defect:
   Renovate lookup can see Docker Hub timestamps at all
 - [CI/CD pipeline](../projects/ci-cd-pipeline.md) — where a Renovate PR's gates run once it exists
 - [Pull-request batching](../process/pull-request-batching.md) — why the three lockfile channels are
-  split rather than grouped into one PR, which is what leaves three of the five slots spoken for
+  split rather than grouped into one PR, which is what leaves three of the six slots spoken for
 - [Package-manager enforcement](../invariants/package-manager-enforcement.md) — why the pnpm version is
   declared exactly once in the root manifest, which is what keeps one Renovate dependency from becoming
   two on separate major tracks

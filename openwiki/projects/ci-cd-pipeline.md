@@ -135,6 +135,22 @@ flowchart LR
   Expect a one-off cost when adding it anywhere else: test code that has never been linted has
   findings (five here — an `unnecessary_map_or`, three `unnecessary_unwrap`, one
   `bool_assert_comparison`), and `-D warnings` makes them failures.
+- **Compiling is not running: a Cargo-only change now runs the mc-service integration tier (item
+  #954).** `--all-targets` proves a dependency bump still *builds*; it cannot prove the dependency still
+  *behaves*. PR #946 (a lock refresh) moved `axum-keycloak-auth` 0.8.3 → 0.8.4, which answers a non-JWT
+  bearer with 401 instead of 400. Every required context was green with `app-e2e` skipped, deploy run
+  6942 promoted the bump, and `main` first ran the tier at #949's merge (run 6947) and stayed red,
+  failing #947 and #952 too, until #953. The fix keeps `Cargo.lock` out of `app` and adds a `cargo`
+  filter (`Cargo.lock`, `**/Cargo.toml`, `rust-toolchain.toml`) that selects a separate
+  **`mc-service-checks-integration`** job. It brings up only Keycloak (ci-realm) and mc-service's
+  replica-set Mongo, then runs the step `app-e2e` runs, byte for byte (in ~5 minutes rather than ~23).
+  It runs only when `app` did not match, because `app-e2e` already runs the tier, and two jobs would
+  share container names on the one host. Its name falls under the protected `app-ci /
+  mc-service-checks*` glob, so it blocks a merge with no branch-protection change, and `trigger-cd`
+  needs it, so it blocks the deploy too. Pinned by the same guard test file. Adding a job that
+  publishes a failure digest also raises the `ci-failures` retention floor in
+  `infrastructure-as-code/forgejo/registry-retention.yaml` (runs × bundle-publishing jobs), and the
+  registry-retention test fails until it is raised.
 - **A filter entry that is in `mobile` but not in `app` can never fire.** `mobile` gates only *steps
   inside* `app-e2e`, and `app-e2e` itself runs only when `app` matched — so a path in the subset but
   not the superset sets `mobile=true`, `app=false`, and the whole job skips. `mobile`'s own comment

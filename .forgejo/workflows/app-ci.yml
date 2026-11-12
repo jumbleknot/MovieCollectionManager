@@ -115,9 +115,24 @@ jobs:
   # revision had broken all three integration test binaries — caught then only because it also
   # carried unrelated JS lockfile changes from a `main` merge. The mc-service `lint` target now
   # passes `--all-targets`, which compiles lib, bins and tests without running anything and without a
-  # database, so the sentence above is true by construction rather than by hope. It is what keeps
-  # this exclusion honest: pinned by scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs,
-  # because a never-attempted compile and a clean one look identical from a green tick.
+  # database, so the sentence above is true by construction rather than by hope.
+  #
+  # AND THAT WAS STILL ONLY HALF OF IT — ITEM #954 (2026-11-06). Compiling proves a bump BUILDS; it
+  # cannot prove the dependency still BEHAVES. PR #946 (Renovate lock maintenance) moved
+  # axum-keycloak-auth 0.8.3 -> 0.8.4, which answers a non-JWT bearer with 401 instead of 400. Every
+  # required context was green with `app-e2e` skipped; `main` first ran the integration tier at
+  # #949's merge and failed `movie_metadata_rejects_a_malformed_token` (run 6947) — after deploy run
+  # 6942 had already promoted the bump — and stayed red, failing #947 and #952 too, until #953.
+  #
+  # So a Cargo change now runs the mc-service INTEGRATION tier, through the `cargo` filter below and
+  # the `mc-service-checks-integration` job — NOT by adding Cargo.lock to `app`. The exclusion's
+  # original economics still hold for everything else app-e2e does: a Rust dependency cannot change
+  # what the web/mobile/agent legs exercise except THROUGH mc-service, and the integration tier is the
+  # one that drives mc-service against a live replica-set Mongo + Keycloak. ~5 min, not ~23. The
+  # new job is named under the `app-ci / mc-service-checks*` glob branch protection already requires,
+  # and `trigger-cd` needs it, so its failure blocks both the merge and the deploy. All of this is
+  # pinned by scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs, because a
+  # never-attempted run and a clean one look identical from a green tick.
   # ── Change detection (CI efficiency, 2026-07-03) ──────────────────────────────────────────────
   # The expensive app-e2e suite (~23 min: APK + emulator + web Playwright) used to run on EVERY app-ci
   # trigger — including infrastructure-as-code/komodo/*.toml and compose-comment changes that can't
@@ -131,6 +146,7 @@ jobs:
     outputs:
       app: ${{ steps.filter.outputs.app }}
       mobile: ${{ steps.filter.outputs.mobile }}
+      cargo: ${{ steps.filter.outputs.cargo }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
@@ -217,6 +233,16 @@ jobs:
               - 'scripts/ci-mobile-lib.sh'
               - 'scripts/ci-maestro-debug.sh'
               - 'scripts/mobile-flows.mjs'
+            # Item #954. The Rust dependency + toolchain files that live OUTSIDE `backend/**` (the
+            # workspace Cargo.toml + Cargo.lock sit at the repository root, as does
+            # rust-toolchain.toml). Selects `mc-service-checks-integration`, which runs the mc-service
+            # integration tier when `app` did not already select app-e2e (which runs the same tier).
+            # `**/Cargo.toml` keeps a future second crate's manifest in scope; under `backend/**` it is
+            # already `app` and the new job defers to app-e2e.
+            cargo:
+              - 'Cargo.lock'
+              - '**/Cargo.toml'
+              - 'rust-toolchain.toml'
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -379,6 +405,150 @@ jobs:
           # digest publishes a commit status with this run-provisioned token instead. Without this
           # line the fallback is DEAD CODE — it reads GITHUB_TOKEN from the step env, and nothing
           # else puts it there. Proven live in guardrails run #1628.
+          GITHUB_TOKEN: ${{ github.token }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
+
+  # ── mc-service integration tier on a Cargo-only change (item #954) ────────────────────────────
+  # See the comment above `changes`. Runs the SAME integration step app-e2e runs (same container,
+  # same guard, same env), against only what it needs: the auth stack (Keycloak + ci-realm, for JWKS
+  # discovery and the ROPC login) and mc-service's replica-set Mongo. No images are built — the tests
+  # build the router in-process — and no BFF, agent or backup stack comes up.
+  #
+  # `app != 'true'` is deliberate, not an optimisation: when `app` matched, app-e2e runs this tier
+  # itself on this same capacity-1 host, and running it twice would also run two jobs over the same
+  # container names and volumes. The name sits under branch protection's `app-ci / mc-service-checks*`
+  # glob, so this is REQUIRED without a protection change; a skipped run satisfies it the way a
+  # path-gated app-e2e does. `needs: mc-service-checks` so a crate that does not compile fails in the
+  # fast gate and this job never stands a stack up for it.
+  mc-service-checks-integration:
+    needs: [changes, mc-service-checks]
+    if: ${{ needs.changes.outputs.cargo == 'true' && needs.changes.outputs.app != 'true' }}
+    # Host execution for the same reason as app-e2e: the test container reaches Mongo and Keycloak on
+    # the rootless daemon's published loopback ports (`--network host`).
+    runs-on: kvm
+    timeout-minutes: 30
+    env:
+      # The backstop for steps with no row in scripts/ci-step-ceilings.tsv. The test step reuses
+      # app-e2e's step id `mc-service-integration`, so it keeps that row's calibrated bound (420 s).
+      # The other steps are bring-up and stay on this fallback until enough runs exist to measure:
+      #     node scripts/ci-status.mjs durations --job mc-service-checks-integration --runs 40
+      CI_STEP_TIMEOUT_SECONDS: '900'
+      DOCKER_HOST: unix:///run/user/1001/docker.sock
+      E2E_TEST_USER: ${{ secrets.E2E_TEST_USER }}
+      E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+      KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Docker CLI (host runner talks to the ci rootless daemon)
+        run: |
+          bash scripts/ci-log-step.sh mc-service-it-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
+          if ! command -v docker >/dev/null 2>&1; then
+            curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
+              | tar xz -C /usr/local/bin --strip-components=1 docker/docker
+          fi
+          if ! docker info >/dev/null 2>&1; then
+            echo "::error::the ci rootless daemon is not reachable at DOCKER_HOST=$DOCKER_HOST (see app-e2e's identical step)."
+            exit 1
+          fi
+          CI_LOG_STEP
+      - name: Install latest Docker Compose plugin
+        run: |
+          bash scripts/ci-log-step.sh mc-service-it-install-latest-docker bash -e /dev/stdin <<'CI_LOG_STEP'
+          mkdir -p ~/.docker/cli-plugins
+          curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+            -o ~/.docker/cli-plugins/docker-compose
+          chmod +x ~/.docker/cli-plugins/docker-compose
+          docker compose version
+          CI_LOG_STEP
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 24.19.0, cache: pnpm }
+      - name: Install dependencies
+        run: bash scripts/ci-log-step.sh mc-service-it-install-dependencies pnpm install --frozen-lockfile
+      # Same reset as app-e2e, scoped to what this job brings up: the runner is persistent, Keycloak's
+      # --import-realm is IGNORE_EXISTING, and a stale Mongo leaks state between runs.
+      - name: Reset stateful CI data (fresh realm + test data each run)
+        run: |
+          bash scripts/ci-log-step.sh mc-service-it-reset-stateful-ci-data bash -e /dev/stdin <<'CI_LOG_STEP'
+          docker rm -f keycloak-service keycloak-store-postgres keycloak-mailpit \
+            mc-service-store-mongo mc-service-store-mongo-rs-init 2>/dev/null || true
+          docker volume rm keycloak-store-postgres-data mc-service-store-mongo-data 2>/dev/null || true
+          CI_LOG_STEP
+      - name: First-time docker setup (networks + volumes)
+        run: |
+          bash scripts/ci-log-step.sh mc-service-it-first-time-docker-setup bash -e /dev/stdin <<'CI_LOG_STEP'
+          for n in backend-network keycloak-network; do docker network create "$n" || true; done
+          for v in mc-service-store-mongo-data keycloak-store-postgres-data; do docker volume create "$v" || true; done
+          CI_LOG_STEP
+      - name: Mint per-stack secrets (stacks/*.env)
+        run: bash scripts/ci-log-step.sh mc-service-it-mint-per-stack-secrets node scripts/gen-dev-secrets.mjs
+      # The mcm stack file includes every service's compose, and Compose interpolates all of them at
+      # parse time whatever is brought up — so the env files they read must exist even here.
+      - name: Write CI env/secret files (.env.docker + web-api-mcp/.env.local)
+        env:
+          KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+          COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
+          AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
+          AGENT_CONFIG_ENC_KEY: ${{ secrets.AGENT_CONFIG_ENC_KEY }}
+        run: bash scripts/ci-log-step.sh mc-service-it-write-ci-env-secret-files node scripts/gen-ci-env.mjs
+      - name: Bring up Keycloak (auth stack, ci-realm imported) + mc-service's replica-set Mongo
+        env:
+          KEYCLOAK_CLIENT_SECRET: ${{ secrets.KEYCLOAK_CLIENT_SECRET }}
+          AGENT_SUBJECT_TOKEN_CLIENT_SECRET: ${{ secrets.AGENT_SUBJECT_TOKEN_CLIENT_SECRET }}
+        run: |
+          bash scripts/ci-log-step.sh mc-service-it-bring-up bash -e /dev/stdin <<'CI_LOG_STEP'
+          # Per-run throwaway secrets, exactly as app-e2e mints them — see the comments there.
+          export AGENT_GATEWAY_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
+          export MC_SERVICE_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
+          export E2E_ROPC_CLIENT_SECRET="$(node -e 'process.stdout.write(require("crypto").randomBytes(32).toString("hex"))')"
+          echo "E2E_ROPC_CLIENT_SECRET=$E2E_ROPC_CLIENT_SECRET" >> "$GITHUB_ENV"
+          export CI_REALM_FILE="$PWD/infrastructure-as-code/docker/keycloak/ci-realm.json"
+          test -f "$CI_REALM_FILE" || { echo "::error::ci-realm.json missing at $CI_REALM_FILE"; exit 1; }
+          docker compose -p auth \
+            -f infrastructure-as-code/docker/stacks/auth.compose.yaml \
+            -f infrastructure-as-code/docker/keycloak/compose.ci.yaml up -d --wait
+          # Mongo + its one-shot rs-init ONLY. Neither carries a profile; naming them keeps the rest
+          # of the mcm stack (redis, BFF mongo, agent db, MCP servers) down.
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+            up -d --wait mc-service-store-mongo mc-service-store-mongo-rs-init
+          CI_LOG_STEP
+      # IDENTICAL to app-e2e's step, step id included (so it inherits that row's calibrated ceiling).
+      # scripts/__tests__/mc-service-lint-all-targets.guard.test.mjs asserts the two stay equal.
+      - name: mc-service integration tests (rust container → live replica-set Mongo + Keycloak)
+        run: |
+          bash scripts/ci-log-step.sh mc-service-integration \
+            docker run --rm --network host \
+            -v "$PWD":/work -w /work \
+            -e MC_DB_URL='mongodb://localhost:27017/mc_db?replicaSet=rs0&directConnection=true' \
+            -e KEYCLOAK_URL='http://localhost:8099' \
+            -e KEYCLOAK_REALM=grumpyrobot \
+            -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
+            -e MC_SERVICE_PORT=3001 \
+            -e MCM_REQUIRE_LIVE_STACK=1 \
+            -e E2E_ROPC_CLIENT_ID=mcm-bff-test \
+            -e E2E_ROPC_CLIENT_SECRET \
+            -e E2E_TEST_USER \
+            -e E2E_TEST_PASSWORD \
+            -e CARGO_TARGET_DIR=/tmp/mc-int-target \
+            rust:1-bookworm \
+            bash -c "set -e; apt-get update -qq && apt-get install -y -qq --no-install-recommends nodejs >/dev/null; node --version; node scripts/mc-service-integration-guard.mjs"
+      - name: Tear down Keycloak + Mongo (always)
+        if: ${{ always() }}
+        run: |
+          bash scripts/ci-log-step.sh mc-service-it-tear-down bash -e /dev/stdin <<'CI_LOG_STEP'
+          # Base files only, as in app-e2e (item #645): the ci overlay's secrets are gone by now.
+          docker compose -p auth \
+            -f infrastructure-as-code/docker/stacks/auth.compose.yaml down -v --remove-orphans || true
+          docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
+            down -v --remove-orphans || true
+          CI_LOG_STEP
+      # Feature 042 — see `mc-service-checks`' identical step.
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
           GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
@@ -1967,7 +2137,7 @@ jobs:
         run: node scripts/ci-failure-digest.mjs
 
   trigger-cd:
-    needs: [affected, mc-service-checks, app-e2e, dast, app-image-scan]
+    needs: [affected, mc-service-checks, mc-service-checks-integration, app-e2e, dast, app-image-scan]
     # `always()` so this still evaluates when app-e2e was SKIPPED (path-gated for a config-only change);
     # then gate explicitly: deploy on green main only when affected + mc-service-checks succeeded and
     # app-e2e did not FAIL (success OR skipped). A skipped needs-dependency would otherwise cascade-skip
@@ -1979,6 +2149,7 @@ jobs:
           && github.event_name == 'push' && github.ref == 'refs/heads/main'
           && needs.affected.result == 'success'
           && needs.mc-service-checks.result == 'success'
+          && (needs.mc-service-checks-integration.result == 'success' || needs.mc-service-checks-integration.result == 'skipped')
           && (needs.app-e2e.result == 'success' || needs.app-e2e.result == 'skipped')
           && (needs.dast.result == 'success' || needs.dast.result == 'skipped')
           && needs.app-image-scan.result == 'success' }}
