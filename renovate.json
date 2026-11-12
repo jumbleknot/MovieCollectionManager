@@ -618,13 +618,30 @@
         "merges packageRules in order and a later rule only overrides keys it SETS, so an unreset later",
         "docker rule would inherit 3 and compete with this channel for the very slot this change exists",
         "to secure. Today that is `python toolchain` and `langfuse` (explicit prPriority 0) and `docker",
-        "digest pins` (explicit 2, see that rule), each with a pointer back here.",
+        "digest pins` (explicit 2, see that rule) and `uv pin` (explicit 0), each with a pointer back here.",
+        "MAJORS ARE RESET TOO (2026-11-12, the rule directly below). The 3 exists to fast-track the",
+        "base-image SECURITY patch stream; a major tag move is a migration, not a patch. Separated into",
+        "its own `renovate/major-docker-base-images` branch it still inherited 3 — the 2026-11-12",
+        "dashboard had it carrying node 24 -> 26 — and would have taken a slot ahead of digest pins.",
         "`renovate-workflow.guard.test.mjs` asserts the ranking."
       ],
       "matchDatasources": ["docker"],
       "groupName": "docker base images",
       "prPriority": 3,
       "automerge": false
+    },
+    {
+      "description": [
+        "Docker MAJORS sort with routine work (prPriority 0), not with the base-image security stream.",
+        "See `docker base images` directly above: its 3 is for patch/minor/digest refreshes of images we",
+        "already run. A major still needs no tick unless a later held-major rule gates it; it simply waits",
+        "its turn. If a CVE fix ever exists ONLY in a new major, tick its `unschedule-branch=` checkbox on",
+        "the Dependency Dashboard (item #29). Placed immediately after the rule it overrides, and before",
+        "every rule that sets its own docker priority, so those still win for their own deps."
+      ],
+      "matchDatasources": ["docker"],
+      "matchUpdateTypes": ["major"],
+      "prPriority": 0
     },
     {
       "description": "Group Forgejo/GitHub Actions bumps.",
@@ -1329,10 +1346,16 @@
         "CI/build tool whose only merged output — the uv.lock files — still passes every gate, and the",
         "alternative (tracking the image tags via github-releases too) drops the image digests and is",
         "SDD-gated under agents/ and mcp-servers/. Same class as the keycloak (quay.io) and",
-        "`docker digest pins` stalls recorded in docs/runbooks/renovate.md §5 — they are NOT fixed here."
+        "`docker digest pins` stalls recorded in docs/runbooks/renovate.md §5 — they are NOT fixed here.",
+        "prPriority 0 (2026-11-12): this rule takes the image half away from `docker base images` and so",
+        "must reset the 3 it would otherwise inherit (see that rule). Today the branch happens to sort at",
+        "0 anyway — generateBranchConfig takes branch-level keys from upgrades[0] after sorting by",
+        "depName, and `astral-sh/uv` sorts before `ghcr.io/astral-sh/uv` — but a week in which only the",
+        "image half moves would carry 3. Explicit, so the priority does not depend on that sort."
       ],
       "matchPackageNames": ["astral-sh/uv", "/^ghcr\\.io/astral-sh/uv$/"],
       "groupName": "uv pin",
+      "prPriority": 0,
       "minimumReleaseAge": null,
       "automerge": false
     },

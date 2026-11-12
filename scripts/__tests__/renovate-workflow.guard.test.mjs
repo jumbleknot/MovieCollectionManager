@@ -3154,6 +3154,61 @@ test('(#486) the allocation decision is RECORDED, not just enacted', () => {
   assert.ok(rulesWithPriority().length >= 3, 'expected the lockfile rule plus the two explicit resets');
 });
 
+// 2026-11-12. The leak test above checks rules by their matchDatasources, so it missed two
+// inheritances: a rule that names docker packages WITHOUT a datasource (`uv pin`), and the major
+// branch, which keeps groupName `docker base images` and is only split off by separateMajorMinor.
+// These assert the RESOLVED priority per dependency instead, which is what Renovate acts on.
+// Renovate 44 sets a branch's prPriority from `upgrades[0]` after sorting by depName
+// (updates/generate.js generateBranchConfig) — NOT the highest of its upgrades — so every half of a
+// mixed group must resolve the same value, or the branch's rank depends on which half moved.
+const resolvedPriority = (dep) => {
+  let value;
+  for (const rule of packageRules) {
+    if (ruleMatches(rule, dep) && Object.hasOwn(rule, 'prPriority')) value = rule.prPriority;
+  }
+  return value ?? 0;
+};
+const priorityDep = (depName, updateType) => ({
+  manager: 'dockerfile',
+  datasource: 'docker',
+  depName,
+  packageName: depName,
+  packageFile: 'agents/movie-assistant/Dockerfile',
+  updateType,
+});
+
+test('(2026-11-12) a docker MAJOR sorts with routine work, not with the base-image security stream', () => {
+  const base = ruleFor('docker base images').prPriority;
+  for (const updateType of ['patch', 'minor']) {
+    assert.equal(resolvedPriority(priorityDep('node', updateType)), base, `a node ${updateType} must keep the base-images priority`);
+  }
+  assert.equal(
+    resolvedPriority(priorityDep('node', 'major')),
+    0,
+    'a docker major inherits the base-images priority and takes a weekly slot ahead of `docker digest\n' +
+      '  pins` (the 2026-11-12 dashboard: node 24 -> 26). Reset it to 0 in a rule after `docker base images`.',
+  );
+  assert.equal(
+    resolvedPriority(priorityDep('node', 'digest')),
+    ruleFor('docker digest pins').prPriority,
+    'the major reset must not reach digest refreshes',
+  );
+});
+
+test('(2026-11-12) both halves of `uv pin` resolve the SAME priority, and it is not the base-images one', () => {
+  const image = resolvedPriority(priorityDep('ghcr.io/astral-sh/uv', 'patch'));
+  const release = resolvedPriority({
+    manager: 'custom.regex',
+    datasource: 'github-releases',
+    depName: 'astral-sh/uv',
+    packageName: 'astral-sh/uv',
+    packageFile: '.forgejo/workflows/app-ci.yml',
+    updateType: 'patch',
+  });
+  assert.equal(image, release, `uv's image half resolves ${image} and its release half ${release}: the branch's rank then depends on which half sorts first`);
+  assert.equal(image, 0, 'uv pin must sort with routine work');
+});
+
 // ── 2026-10-09: stateful datastore majors (PR #698) ─────────────────────────────────────────────────
 // `docker base images (major)` merged clickhouse 25.12 -> 26.6 and redis 7 -> 8 for the production
 // Langfuse stack on a green CI that never starts that stack. Every database image now needs a tick on
