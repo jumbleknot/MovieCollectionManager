@@ -3,10 +3,10 @@ type: Runbook
 title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0, and -1 for the OpenWiki generator's lock refresh) that allocates the six in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
 resource: docs/runbooks/renovate.md
-resource-sha256: c0a8f25279cdf51ced25a5d6d0e2e818c19bf7a3d477a61b7702fc9d2f87e223
+resource-sha256: 77a8d2735310e0307be12b8ecafca49a46b8572859eae70a6388c4fe0500ea43
 tags: [renovate, ci, dependencies, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-12T12:17:14.149Z
+timestamp: 2026-11-12T18:56:30.063Z
 ---
 
 # Renovate dependency bot
@@ -127,6 +127,13 @@ branch exists.
   enabled, because a manual rebuild installs from that lockfile, but it will rarely get a slot: tick its
   `unschedule-branch=` checkbox before a rebuild. `prHourlyLimit` went to 6, so the allocation is now
   3 lockfile + `docker base images` + `docker digest pins` + 1 routine.
+- **Docker majors and `uv pin` reset to 0 as well (2026-11-12).** Both inherited `docker base images`'
+  3 without taking a `groupName` from it by datasource, so the guard missed them. The major branch keeps
+  the group name and is split off only by `separateMajorMinor`, and `uv pin` names the uv image by
+  package. Three branches at 3 would have pushed digest pins out of Friday's six. **Renovate ranks a
+  mixed branch by its FIRST upgrade, not its highest:** renovate@44's `generateBranchConfig` takes
+  `prPriority` from `upgrades[0]` after sorting by `depName`. Every half of a group must therefore
+  resolve the same priority, which the guard now checks for each dependency.
 - **A pin on a floating tag is on a cooldown treadmill — pin by full version.** Renovate can only
   offer the *current* digest of a floating tag (`langfuse/langfuse:4@sha256`, `node:24-bookworm`),
   aged against that tag's own `tag_last_pushed`. An upstream that repushes more often than

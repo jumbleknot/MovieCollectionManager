@@ -114,6 +114,19 @@ channel had had a slot since 2026-10-02. Two changes, together:
 - `prHourlyLimit` 5 → **6** (`prConcurrentLimit` 6 → 7, kept above it). The allocation is now
   **3 lockfile + `docker base images` + `docker digest pins` + 1 routine**.
 
+**Two priority leaks that would have broken that allocation, closed the same day.** `docker base
+images`' `prPriority: 3` matches the whole docker datasource, so two branches inherited it:
+`renovate/major-docker-base-images` (a major keeps the group name and is split off only by
+`separateMajorMinor`; on 2026-11-12 it carried node 24 → 26) and the image half of `uv pin`. With three
+branches at 3, Friday's six slots would have gone 3 lockfile + three at priority 3, and digest pins would
+have been left out again. Docker majors now resolve `prPriority: 0` (a rule directly after `docker base
+images`) and `uv pin` sets 0 explicitly. **How Renovate ranks a mixed branch:** renovate@44's
+`generateBranchConfig` copies branch-level keys, `prPriority` among them, from `upgrades[0]` after
+sorting the branch's upgrades by `depName`. It does **not** take the highest of them. So a group whose
+halves resolve different priorities ranks by whichever half sorts first. `uv pin` happened to land on 0
+(`astral-sh/uv` < `ghcr.io/astral-sh/uv`), but only for that reason, and a week in which only the image
+moved would have carried 3. The guard test now asserts the resolved priority per dependency, not per rule.
+
 **Floating tags and the cooldown treadmill.** A pin on a floating tag (`langfuse/langfuse:4@sha256`,
 `node:24-bookworm`) can only be offered `:4`'s *current* digest, aged against `:4`'s own
 `tag_last_pushed`. An upstream that repushes more often than every 3 days never clears
