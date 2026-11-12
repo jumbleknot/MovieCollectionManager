@@ -48,6 +48,7 @@ import { ArgvError, dieOnArgvError, partitionArgsWithValues, wantsHelp } from '.
 import { WIKI_PROVIDERS, resolveWikiProvider } from './wiki-provider.mjs';
 import { summarizeUsage, sumUsage, NOT_CAPTURED, pageTrails, formatPageTrail } from './wiki-usage.mjs';
 import { stepLogDir } from './ci-failure-digest.mjs';
+import { TELEMETRY_FILE_ENV, readTelemetryVerdict } from './wiki-generate.mjs';
 
 export const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -997,7 +998,7 @@ export function generatorCommand() {
  * touch. A value inside double quotes is not re-parsed for `$` or backticks either, so the message
  * arrives byte-for-byte as one argument.
  */
-export function generatorEnv(runMessage, env = process.env, { usageLog = null, reasoningEffort = null } = {}) {
+export function generatorEnv(runMessage, env = process.env, { usageLog = null, reasoningEffort = null, telemetryFile = null } = {}) {
   if (SHELL_UNSAFE.test(runMessage)) {
     throw new Error('run message contains a shell metacharacter — renderRunMessage must produce one safe line');
   }
@@ -1007,6 +1008,8 @@ export function generatorEnv(runMessage, env = process.env, { usageLog = null, r
     ...env,
     [RUN_MESSAGE_ENV]: runMessage,
     ...(usageLog ? { WIKI_USAGE_LOG: usageLog } : {}),
+    // Item #516: where the launcher has openwiki record what its telemetry did, judged after the call.
+    ...(telemetryFile ? { [TELEMETRY_FILE_ENV]: telemetryFile } : {}),
     ...(typeof reasoningEffort === 'string' ? { MCM_WIKI_REASONING_EFFORT: reasoningEffort } : {}),
   };
 }
@@ -1043,10 +1046,10 @@ export function jobDeadlineMs(env = process.env) {
   return Number(raw.trim()) * 1000;
 }
 
-function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null, reasoningEffort = null } = {}) {
+function defaultInvoke(slice, { root, usageLog = null, timeoutMs = null, reasoningEffort = null, telemetryFile = null } = {}) {
   const message = slice.runMessage ?? renderRunMessage(slice);
   const [cmd, ...args] = deadlineCommand(timeoutMs);
-  const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog, reasoningEffort }) });
+  const r = spawnSync(cmd, args, { cwd: root, stdio: 'inherit', encoding: 'utf8', env: generatorEnv(message, process.env, { usageLog, reasoningEffort, telemetryFile }) });
   if (timeoutMs !== null && (r.status === 124 || r.status === 137)) {
     console.error(`[wiki-maintain] ✗ the generator was stopped at the job deadline after ${Math.floor(timeoutMs / 1000)}s. openwiki prints nothing until it exits, so this alone does not say whether it was slow or hung — the usage line below counts the model calls it made (#613). The slice is judged on what landed — a stopped generator usually leaves a requested page stale, which fails it.`);
   }
@@ -1193,6 +1196,9 @@ export function executeSlices({
   let pagesWritten = 0;
   let stoppedAtDeadline = false;
   let stoppedAtFailureLimit = false;
+  // Item #516: set when an invocation's telemetry record shows the opt-out did not hold. The run stops
+  // at once: every further invocation would send another event.
+  let telemetrySent = null;
   let consecutive = 0;
 
   for (const slice of plan) {
@@ -1219,13 +1225,15 @@ export function executeSlices({
     // One usage log per invocation, shared by its retries — a retry's tokens are real spend too.
     const usageDir = mkdtempSync(join(tmpdir(), 'wiki-usage-'));
     const usageLog = join(usageDir, 'usage.jsonl');
+    const telemetryFile = join(usageDir, 'telemetry.json');
     for (let attempt = 1; attempt <= attemptsPerSlice; attempt++) {
       attempts = attempt;
       const logOffset = logSize(usageLog);
       try {
         const timeoutMs = generatorAllowance();
         if (timeoutMs !== null && timeoutMs < MIN_GENERATOR_MS) break;
-        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog, timeoutMs, reasoningEffort: effort });
+        rmSync(telemetryFile, { force: true });
+        invocation = invoke(slice, { root, bundleRoot: bundleDir, attempt, usageLog, timeoutMs, reasoningEffort: effort, telemetryFile });
         stopped = timeoutMs !== null && (invocation?.status === 124 || invocation?.status === 137);
         const reverted = revertUnrequested({ root, bundleRoot: bundleDir, slice, before, scope: stopped ? 'all' : 'unrequested-pages', policy });
         if (reverted.length > 0) {
@@ -1234,8 +1242,13 @@ export function executeSlices({
       } catch (err) {
         invocation = { error: err.message };
       }
+      const telemetry = readTelemetryVerdict(telemetryFile);
+      if (!telemetry.ok) {
+        telemetrySent = telemetry.detail;
+        console.error(`[wiki-maintain] ✗ TELEMETRY: ${telemetry.detail}. openwiki ignored OPENWIKI_TELEMETRY_DISABLED / DO_NOT_TRACK and reported this run to its analytics host (item #516). Stopping the rebuild so no further invocation sends another event.`);
+      }
       verdict = verifySlice({ root, bundleRoot: bundleDir, slice, policy, before, sourceRoot, now });
-      if (verdict.ok) break;
+      if (verdict.ok || telemetrySent) break;
       const tapped = rateLimitedCalls(usageLog, logOffset);
       const limited = isRateLimited(tapped) ? tapped.limited : 0;
       if (limited > 0) {
@@ -1285,6 +1298,7 @@ export function executeSlices({
       }
       const landedKeys = new Set((verdict.landedParts ?? []).flatMap((part) => (part.pages ?? []).map((page) => `${part.area}/${page}`)));
       pagesWritten += (verdict.pagesWritten ?? []).filter((p) => landedKeys.has(p.split('/').slice(-2).join('/'))).length;
+      if (telemetrySent) break;
       if (consecutive >= maxConsecutiveFailures) {
         stoppedAtFailureLimit = true;
         break;
@@ -1293,15 +1307,17 @@ export function executeSlices({
     }
     consecutive = 0;
     pagesWritten += verdict.pagesWritten.length;
+    if (telemetrySent) break;
   }
 
   const landedSet = new Set(landedPages({ results }));
   const landed = requested.filter((k) => landedSet.has(k));
   const notLanded = requested.filter((k) => !landedSet.has(k));
-  const outcome = slices.length === 0 ? 'nothing-to-do' : notLanded.length > 0 ? 'failed' : 'completed';
+  const outcome = slices.length === 0 ? 'nothing-to-do' : notLanded.length > 0 || telemetrySent ? 'failed' : 'completed';
   return {
     outcome,
-    exitCode: notLanded.length > 0 ? 1 : 0,
+    exitCode: notLanded.length > 0 || telemetrySent ? 1 : 0,
+    telemetrySent,
     results,
     landed,
     notLanded,

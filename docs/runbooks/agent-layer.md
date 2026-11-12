@@ -83,6 +83,13 @@ volume + **host Ollama** running with the models pulled — feature 019 removed 
 `ollama` service, so host Ollama is the only supported model-serving path). The gateway is
 private-network only (the BFF is the sole caller).
 
+**How the BFF finds the gateway.** `resolveGatewayUrl()` in
+`frontend/mcm-app/src/bff-server/agent-gateway-client.ts` reads `AGENT_GATEWAY_URL` (set in `.env.docker`
+for the container BFF and in the production stack). When it is unset or blank, the BFF **falls back to the
+Metro loopback `http://127.0.0.1:8123`**, the host gateway above, rather than failing. So a container or
+production BFF that is missing the variable does not fail at startup: it points at its own loopback, and
+the failure shows up on the first assistant turn as a connection error.
+
 ## Conversation stages + generative-UI components (feature 040)
 
 **Stage-continuation guards.** A multi-turn flow parks a `*_stage` on `GraphState` and `graph.py`

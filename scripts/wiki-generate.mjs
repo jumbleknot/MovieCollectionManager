@@ -12,6 +12,13 @@
 //      ONE argv element with no shell in between, so nothing can split or expand it.
 //   3. INSTRUMENT. The generator reports no usage and cannot send `service_tier`; wiki-usage-tap.mjs is
 //      loaded into its process for both (research R0/R6).
+//   4. TELEMETRY (item #516). openwiki sends one usage event per run to a third-party analytics host
+//      unless OPENWIKI_TELEMETRY_DISABLED or DO_NOT_TRACK is truthy. Both are forced on here, so the
+//      opt-out no longer depends on the Nx target's env. Every run also passes `--telemetry-file`,
+//      where openwiki records exactly what it did: `{disabled: true, sent: false}` when the opt-out
+//      held. Any other record means an event WAS sent. The launcher then exits 3, and wiki-maintain
+//      stops the rebuild. The file is written only once the run reaches openwiki's telemetry
+//      boundary, so a run refused earlier (e.g. a missing credential) leaves no file and is not judged.
 //
 // Usage:
 //   node scripts/wiki-generate.mjs              run the generator (WIKI_RUN_MESSAGE scopes it)
@@ -22,6 +29,8 @@
 // mean "start a paid run" (the --help / --dry-run lesson recorded in CLAUDE.md).
 
 import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
@@ -33,14 +42,42 @@ export const RUN_MESSAGE_ENV = 'WIKI_RUN_MESSAGE';
 
 const MIN_OUTPUT_TOKENS = 16_384;
 
+/** Where the generator's telemetry record goes; wiki-maintain sets it per invocation (item #516). */
+export const TELEMETRY_FILE_ENV = 'WIKI_TELEMETRY_FILE';
+/** The launcher's exit code when the generator's record shows the opt-out did not hold. */
+export const TELEMETRY_SENT_EXIT = 3;
+
 function fail(message, code = 2) {
   console.error(`[wiki-generate] ✗ ${message}`);
   process.exit(code);
 }
 
 /** The generator argv. The message, when present, is one element — never re-parsed by a shell. */
-export function generatorArgs(message) {
-  return message ? ['code', '--update', '--print', message] : ['code', '--update', '--print'];
+export function generatorArgs(message, telemetryFile = null) {
+  return [
+    'code', '--update', '--print',
+    ...(telemetryFile ? [`--telemetry-file=${telemetryFile}`] : []),
+    ...(message ? [message] : []),
+  ];
+}
+
+/**
+ * Judge openwiki's `--telemetry-file` record (item #516). `null` (no file) means the run never reached
+ * the telemetry boundary, so there is nothing to judge. Only `{disabled: true, sent: false}` passes.
+ * Anything else, including a record that cannot be parsed, fails: the opt-out is proved by the
+ * record, never assumed.
+ */
+export function judgeTelemetryRecord(text) {
+  if (text === null || text === undefined) return { ok: true, reached: false, detail: 'no telemetry record (the run stopped before openwiki\'s telemetry boundary)' };
+  let record;
+  try { record = JSON.parse(text); } catch { return { ok: false, reached: true, detail: 'the telemetry record is not JSON' }; }
+  if (record?.disabled === true && record?.sent === false) return { ok: true, reached: true, detail: 'opt-out held: disabled, nothing sent' };
+  return { ok: false, reached: true, detail: `the opt-out did NOT hold: disabled=${JSON.stringify(record?.disabled ?? null)} sent=${JSON.stringify(record?.sent ?? null)}${record?.host ? ` host=${record.host}` : ''}` };
+}
+
+/** Read and judge the record at `path`; a missing file is "not reached", never a failure. */
+export function readTelemetryVerdict(path) {
+  return judgeTelemetryRecord(path && existsSync(path) ? readFileSync(path, 'utf8') : null);
 }
 
 /** The child env: resolved provider + credential, the explicit cap checked, and the tap loaded. */
@@ -52,6 +89,9 @@ export function launchEnv(env = process.env) {
     throw new Error(`OPENWIKI_MAX_OUTPUT_TOKENS must be an integer >= ${MIN_OUTPUT_TOKENS} (got ${JSON.stringify(cap ?? null)}). Run through \`pnpm nx wiki-update infrastructure-as-code\`, which sets it.`);
   }
   const child = buildGeneratorEnv(env);
+  // Item #516: forced here, so a caller that bypasses the Nx target still cannot send telemetry.
+  child.OPENWIKI_TELEMETRY_DISABLED = '1';
+  child.DO_NOT_TRACK = '1';
   const tap = `--import=${pathToFileURL(USAGE_TAP).href}`;
   child.NODE_OPTIONS = [env.NODE_OPTIONS, tap].filter(Boolean).join(' ');
   return child;
@@ -107,8 +147,14 @@ async function main(argv) {
   try { child = launchEnv(process.env); } catch (error) { fail(error.message); }
   const resolved = resolveWikiProvider(process.env);
   console.log(`[wiki-generate] provider=${resolved.provider} model=${resolved.modelId} concurrency=${resolved.pageConcurrency}${resolved.tier ? ` tier=${resolved.tier}` : ''}${resolved.reasoningEffort ? ` effort=${resolved.reasoningEffort}` : ''}`);
-  const r = spawnSync('openwiki', generatorArgs(process.env[RUN_MESSAGE_ENV]), { stdio: 'inherit', env: child });
+  // A fresh path per run: openwiki replaces the file atomically, so a stale record from an earlier run
+  // could otherwise pass for this one.
+  const telemetryFile = process.env[TELEMETRY_FILE_ENV] || join(mkdtempSync(join(tmpdir(), 'wiki-telemetry-')), 'telemetry.json');
+  rmSync(telemetryFile, { force: true });
+  const r = spawnSync('openwiki', generatorArgs(process.env[RUN_MESSAGE_ENV], telemetryFile), { stdio: 'inherit', env: child });
   if (r.error) fail(`could not start openwiki: ${r.error.code ?? r.error.message}`);
+  const telemetry = readTelemetryVerdict(telemetryFile);
+  if (!telemetry.ok) fail(`TELEMETRY: ${telemetry.detail} — openwiki ignored the opt-out (item #516). Stop using this openwiki version until it is understood.`, TELEMETRY_SENT_EXIT);
   process.exit(r.status ?? 1);
 }
 

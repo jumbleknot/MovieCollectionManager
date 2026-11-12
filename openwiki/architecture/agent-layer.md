@@ -3,9 +3,9 @@ type: Architecture
 title: AI Agents layer architecture (features 012/014/018/040/047/059/085)
 description: The end-to-end call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and Agent Gateway to mc-service without the agent ever holding the member's session token, plus the flow-continuation and generative-UI gotchas that have cost real sessions.
 resource: docs/runbooks/agent-layer.md
-resource-sha256: c91a4e5f1e5bcb84d75605438ccc7536510f369f952002c3635ba553817a036b
+resource-sha256: 3e92b8cfe6c2a5e5a31b0fb62d02383790d1b25c35a43b9bbc30d35c2a51a2e5
 tags: [architecture, agents, langgraph, ag-ui, token-exchange]
-timestamp: 2026-11-10T03:37:28.027Z
+timestamp: 2026-11-12T11:37:47.270Z
 ---
 
 # AI Agents layer architecture (features 012/014/018/040/047/059/085)
