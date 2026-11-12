@@ -113,7 +113,7 @@ test.describe('Collection view options — docked (098 US1)', () => {
     await expect(page.getByTestId('view-options-active-count')).toHaveText('1');
     await expect(page.getByTestId('view-options-toggle')).toHaveAttribute(
       'aria-label',
-      'View options, 1 filter active',
+      'View & filter options, 1 filter active',
     );
 
     // Leave the read-only fixture view as found: clear the filter (persisted per user).
@@ -121,6 +121,53 @@ test.describe('Collection view options — docked (098 US1)', () => {
     await page.getByTestId('filter-clear-button').click();
     await page.getByTestId('view-options-close').click();
     await expect(page.getByTestId('view-options-active-count')).toHaveCount(0);
+  });
+
+  test('099: the open pane gives the filters the available height, and chips wrap (SC-001/SC-002)', async ({
+    page,
+  }) => {
+    await page.setViewportSize(PHONE);
+    await gotoBrowse(page);
+    await page.getByTestId('view-options-toggle').click();
+    await expect(page.getByTestId('view-options-panel')).toBeVisible();
+    await expect(page.locator('[data-testid^="filter-chip-"]').first()).toBeVisible();
+
+    const m = await page.evaluate(() => {
+      const q = (id: string): HTMLElement =>
+        document.querySelector(`[data-testid="${id}"]`) as HTMLElement;
+      const panel = q('view-options-panel');
+      const filters = q('movie-filter-panel');
+      // Any element inside the filter panel that scrolls vertically on its own (pre-099: a nested
+      // vertical ScrollView capped at 220px).
+      const nested = [filters, ...Array.from(filters.querySelectorAll<HTMLElement>('*'))].filter(
+        (el) => {
+          const oy = getComputedStyle(el).overflowY;
+          return el.scrollHeight > el.clientHeight + 1 && (oy === 'auto' || oy === 'scroll');
+        },
+      );
+      const pr = panel.getBoundingClientRect();
+      const chips = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-testid^="filter-chip-"]'),
+      );
+      const outside = chips
+        .filter((c) => {
+          const r = c.getBoundingClientRect();
+          return r.left < pr.left - 1 || r.right > pr.right + 1;
+        })
+        .map((c) => c.dataset.testid);
+      const body = q('view-options-body');
+      return {
+        nestedScrollers: nested.length,
+        outside,
+        panelHeight: Math.round(pr.height),
+        bodyOverflows: body ? body.scrollHeight > body.clientHeight + 1 : null,
+      };
+    });
+    test.info().annotations.push({ type: '099 pane metrics', description: JSON.stringify(m) });
+    expect(m.nestedScrollers, 'the filter panel must not scroll on its own (FR-002)').toBe(0);
+    expect(m.outside, 'every chip lies within the pane horizontally (FR-003)').toEqual([]);
+    // Either the pane shows everything, or it has grown past the old ~220px filter window.
+    if (m.bodyOverflows) expect(m.panelHeight).toBeGreaterThan(400);
   });
 
   test('Escape re-docks without navigating, and focus returns to the bar (FR-007, FR-016)', async ({

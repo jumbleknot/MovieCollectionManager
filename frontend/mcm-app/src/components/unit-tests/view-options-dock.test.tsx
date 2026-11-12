@@ -52,9 +52,11 @@ function CtxProbe(): null {
 function Harness({
   count = 0,
   screenMounted = true,
+  headerAction,
 }: {
   count?: number;
   screenMounted?: boolean;
+  headerAction?: React.ReactNode;
 }): React.JSX.Element {
   // The provider lives in the (app) layout and outlives the screen; `screenMounted=false` models
   // leaving the collection screen while the layout (and the context) stays.
@@ -64,7 +66,7 @@ function Harness({
       {screenMounted ? (
         <>
           <ViewOptionsDock activeFilterCount={count} />
-          <ViewOptionsPanel>
+          <ViewOptionsPanel headerAction={headerAction}>
             <Text testID="panel-child">controls</Text>
           </ViewOptionsPanel>
         </>
@@ -156,20 +158,44 @@ describe('ViewOptionsDock', () => {
     const utils = await render(<Harness count={2} />);
     expect(utils.getByTestId('view-options-active-count')).toHaveTextContent('2');
     expect(utils.getByTestId('view-options-toggle').props.accessibilityLabel).toBe(
-      'View options, 2 filters active',
+      'View & filter options, 2 filters active',
     );
   });
 
   it('shows no badge and the plain label when no filter is active', async () => {
     const utils = await render(<Harness count={0} />);
     expect(utils.queryByTestId('view-options-active-count')).toBeNull();
-    expect(utils.getByTestId('view-options-toggle').props.accessibilityLabel).toBe('View options');
+    expect(utils.getByTestId('view-options-toggle').props.accessibilityLabel).toBe(
+      'View & filter options',
+    );
   });
 
   it('uses the singular for one active filter', async () => {
     const utils = await render(<Harness count={1} />);
     expect(utils.getByTestId('view-options-toggle').props.accessibilityLabel).toBe(
-      'View options, 1 filter active',
+      'View & filter options, 1 filter active',
+    );
+  });
+
+  it('the bar and the panel heading read "View & filter options" (099 FR-001)', async () => {
+    const utils = await render(<Harness />);
+    expect(utils.getByTestId('view-options-toggle')).toHaveTextContent(/View & filter options/);
+    await openPanel(utils);
+    expect(utils.getByRole('header')).toHaveTextContent('View & filter options');
+    expect(utils.getByTestId('view-options-close').props.accessibilityLabel).toBe(
+      'Close view & filter options',
+    );
+  });
+
+  it('renders a header action beside Close, outside the scrolling body (099 FR-004)', async () => {
+    const utils = await render(<Harness headerAction={<Text testID="hdr-action">clear</Text>} />);
+    await openPanel(utils);
+    expect(utils.getByTestId('hdr-action')).toBeTruthy();
+    expect(utils.getByTestId('view-options-header')).toContainElement(
+      utils.getByTestId('hdr-action'),
+    );
+    expect(utils.getByTestId('view-options-body')).not.toContainElement(
+      utils.getByTestId('hdr-action'),
     );
   });
 

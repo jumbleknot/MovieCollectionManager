@@ -11,7 +11,7 @@
 
 import React from 'react';
 import { render, fireEvent } from '@/test-support/render';
-import { MovieFilterPanel } from '@/components/movie-filter-panel';
+import { ClearFiltersButton, MovieFilterPanel } from '@/components/movie-filter-panel';
 import type { FilterOptionsData, MovieListFilters } from '@/types/collection';
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────────
@@ -37,7 +37,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     expect(getByTestId('movie-filter-panel')).toBeTruthy();
@@ -49,7 +48,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     expect(getByTestId('filter-chip-genre-Action')).toBeTruthy();
@@ -62,7 +60,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     expect(getByTestId('filter-chip-contentType-Movie')).toBeTruthy();
@@ -75,7 +72,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     expect(getByTestId('filter-chip-language-English')).toBeTruthy();
@@ -88,7 +84,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     expect(getByTestId('filter-chip-decade-1990')).toBeTruthy();
@@ -105,7 +100,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={limitedOptions}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     expect(getByTestId('filter-chip-genre-Action')).toBeTruthy();
@@ -119,7 +113,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={onFilterChange}
-        onClearFilters={() => {}}
       />,
     );
     await fireEvent.press(getByTestId('filter-chip-genre-Action'));
@@ -133,25 +126,58 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={onFilterChange}
-        onClearFilters={() => {}}
       />,
     );
     await fireEvent.press(getByTestId('filter-chip-contentType-Series'));
     expect(onFilterChange).toHaveBeenCalledWith('contentType', 'Series');
   });
 
-  it('calls onClearFilters when clear button is pressed', async () => {
-    const onClearFilters = jest.fn();
-    const { getByTestId } = await render(
+  it('ClearFiltersButton calls onPress (099 FR-004 — it now lives in the pane header)', async () => {
+    const onPress = jest.fn();
+    const { getByTestId } = await render(<ClearFiltersButton onPress={onPress} />);
+    expect(getByTestId('filter-clear-button').props.accessibilityLabel).toBe('Clear all filters');
+    await fireEvent.press(getByTestId('filter-clear-button'));
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not render the clear button itself, even with an active filter (099 FR-004)', async () => {
+    const { queryByTestId } = await render(
       <MovieFilterPanel
         filterOptions={FILTER_OPTIONS}
         activeFilters={{ genre: 'Action' }}
         onFilterChange={() => {}}
-        onClearFilters={onClearFilters}
       />,
     );
-    await fireEvent.press(getByTestId('filter-clear-button'));
-    expect(onClearFilters).toHaveBeenCalledTimes(1);
+    expect(queryByTestId('filter-clear-button')).toBeNull();
+  });
+
+  it('has no height cap of its own (099 FR-002)', async () => {
+    const { getByTestId } = await render(
+      <MovieFilterPanel
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={NO_ACTIVE_FILTERS}
+        onFilterChange={() => {}}
+      />,
+    );
+    const style = Object.assign(
+      {},
+      ...[getByTestId('movie-filter-panel').props.style].flat(Infinity),
+    );
+    expect(style.maxHeight).toBeUndefined();
+  });
+
+  it("wraps each category's chips instead of scrolling sideways (099 FR-003)", async () => {
+    const { getByTestId } = await render(
+      <MovieFilterPanel
+        filterOptions={FILTER_OPTIONS}
+        activeFilters={NO_ACTIVE_FILTERS}
+        onFilterChange={() => {}}
+      />,
+    );
+    const chips = getByTestId('filter-chips-genre');
+    expect(chips.props.horizontal).toBeFalsy();
+    const style = Object.assign({}, ...[chips.props.style].flat(Infinity));
+    expect(style.flexWrap).toBe('wrap');
   });
 
   it('renders with empty filterOptions without crashing', async () => {
@@ -169,7 +195,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={emptyOptions}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     expect(getByTestId('movie-filter-panel')).toBeTruthy();
@@ -183,7 +208,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     expect(getByTestId('filter-chip-owned-Yes')).toBeTruthy();
@@ -196,7 +220,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     expect(getByTestId('filter-chip-ripped-Yes')).toBeTruthy();
@@ -210,7 +233,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={onFilterChange}
-        onClearFilters={() => {}}
       />,
     );
     await fireEvent.press(getByTestId('filter-chip-owned-Yes'));
@@ -224,7 +246,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={onFilterChange}
-        onClearFilters={() => {}}
       />,
     );
     await fireEvent.press(getByTestId('filter-chip-ripped-No'));
@@ -246,7 +267,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={emptyOptions}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     expect(getByTestId('filter-chip-owned-Yes')).toBeTruthy();
@@ -261,7 +281,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={() => {}}
-        onClearFilters={() => {}}
       />,
     );
     const sections = getAllByTestId(/^filter-section-/);
@@ -288,7 +307,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={NO_ACTIVE_FILTERS}
         onFilterChange={onFilterChange}
-        onClearFilters={() => {}}
       />,
     );
     await fireEvent.press(getByTestId('filter-chip-genre-Action'));
@@ -302,7 +320,6 @@ describe('MovieFilterPanel', () => {
         filterOptions={FILTER_OPTIONS}
         activeFilters={{ genre: 'Action' }}
         onFilterChange={onFilterChange}
-        onClearFilters={() => {}}
       />,
     );
     await fireEvent.press(getByTestId('filter-chip-genre-Action'));

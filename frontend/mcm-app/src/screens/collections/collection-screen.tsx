@@ -42,7 +42,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useAssistantDataRefresh } from '@/hooks/use-assistant-data-sync';
 import { MovieList } from '@/components/movie-list';
 import { MovieSearchBar } from '@/components/movie-search-bar';
-import { MovieFilterPanel } from '@/components/movie-filter-panel';
+import { ClearFiltersButton, MovieFilterPanel } from '@/components/movie-filter-panel';
 import { MovieSortControl } from '@/components/movie-sort-control';
 import { MovieCountLine } from '@/components/movie-count-line';
 import { ColumnSelector } from '@/components/column-selector';
@@ -187,8 +187,19 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
           />
         </View>
 
-        {/* The three controls, unchanged — rendered only while the panel is open. */}
-        <ViewOptionsPanel>
+        {/* The three controls — rendered only while the panel is open. "Clear Filters" sits in the
+            panel's fixed header so it stays visible at any scroll position (099 FR-004). */}
+        <ViewOptionsPanel
+          headerAction={
+            countActiveFilters(filters) > 0 ? (
+              <ClearFiltersButton
+                onPress={() => {
+                  void clearFilters();
+                }}
+              />
+            ) : null
+          }
+        >
           {/* Column selector */}
           <ColumnSelector
             visibleColumns={visibleColumns}
@@ -221,9 +232,6 @@ export function CollectionScreen({ collectionId }: CollectionScreenProps) {
             isLoading={isLoadingFilterOptions}
             activeFilters={filters}
             onFilterChange={handleFilterChange}
-            onClearFilters={() => {
-              void clearFilters();
-            }}
           />
         </ViewOptionsPanel>
       </View>
