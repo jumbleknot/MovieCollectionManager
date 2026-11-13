@@ -179,7 +179,7 @@ class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
     subclass is preserved; no new __init__ params are added.
     """
 
-    async def prepare_stream(self, *, input: Any, agent_state: Any, config: Any) -> Any:  # noqa: A002
+    async def prepare_stream(self, input: Any, agent_state: Any, config: Any) -> Any:  # noqa: A002
         inject_subject_identity(config, get_subject_token())
         inject_ui_snapshot(config, get_ui_snapshot())
         inject_import_file(config, get_import_file())
