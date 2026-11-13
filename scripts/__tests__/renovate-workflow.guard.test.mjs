@@ -2118,7 +2118,7 @@ test('the Run Renovate step caps Docker Hub tag paging at 10 pages, or every Doc
   // fresh cache the same lookup logged zero "no releaseTimestamp" markings and pending became temporal.
   // `dockerMaxPages` is globalOnly, so it cannot live in renovate.json — the env var on this step is
   // the only place it can be set, and this is what keeps it from being tidied away.
-  const run = steps.find((s) => typeof s?.run === 'string' && /npx --yes renovate@\d+(\.\d+\.\d+)?\s*$/.test(s.run.trim()));
+  const run = steps.find((s) => typeof s?.run === 'string' && /npx --yes\b.*\srenovate@\d+(\.\d+\.\d+)?\s*$/.test(s.run.trim()));
   assert.ok(run, 'renovate.yml has no `npx --yes renovate@<major or exact version>` step to carry the env');
   const raw = String(run.env?.RENOVATE_DOCKER_MAX_PAGES ?? '');
   assert.match(raw, /^\d+$/, `RENOVATE_DOCKER_MAX_PAGES is ${JSON.stringify(raw)} on the Run Renovate step — unset means Renovate's default of 20, which walks into Docker Hub's page-11 403`);
@@ -2325,6 +2325,32 @@ test('every renovate@<major> the CI runs agrees, so the validator checks what th
       refs.map((r) => `    ${r.file} · ${r.jobName} · ${r.step} → renovate@${r.major}`).join('\n') +
       '\n  A major is exactly where config semantics change (v41 renamed fileMatch), so a validator\n' +
       '  pinned elsewhere would pass a config the run mis-reads — the defect it exists to catch.',
+  );
+});
+
+test('(2026-11-13) every renovate@<major> install waits the same 3-day cooldown as what it proposes', () => {
+  // The 2026-11-13 window run died on `E404 renovate-44.237.3.tgz`: that release was two minutes old,
+  // listed by npm's index, and its tarball not yet served. `--before` keeps every invocation off releases
+  // younger than 3 days (the repository's cooldown), and the SAME expression everywhere keeps the
+  // validators reading the release the run will use.
+  const BEFORE = /--before="\$\(node -e 'process\.stdout\.write\(new Date\(Date\.now\(\)-3\*864e5\)\.toISOString\(\)\)'\)"/;
+  const missing = [];
+  for (const [file, wf] of WORKFLOWS_WITH_RENOVATE) {
+    for (const [jobName, job] of Object.entries(wf?.jobs ?? {})) {
+      for (const step of job?.steps ?? []) {
+        if (typeof step?.run !== 'string' || !/renovate@\d+/.test(step.run)) continue;
+        const beforeAt = step.run.search(BEFORE);
+        const pkgAt = step.run.search(/renovate@\d+/);
+        if (beforeAt === -1 || beforeAt > pkgAt) missing.push(`${file} · ${jobName} · ${step.name ?? '(unnamed)'}`);
+      }
+    }
+  }
+  assert.ok(renovateMajorRefs().length >= 3, 'expected the three renovate@<major> invocations');
+  assert.deepEqual(
+    missing,
+    [],
+    'these renovate@<major> installs lack the 3-day `--before` (placed BEFORE the package spec, which is\n' +
+      `  where npx reads its own flags), so they can resolve a release minutes old:\n    ${missing.join('\n    ')}`,
   );
 });
 

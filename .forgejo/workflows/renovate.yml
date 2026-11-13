@@ -199,7 +199,7 @@ jobs:
       # again — so the cost is the validation itself, not a second download. The flags are the
       # measured ones; see the `renovate-config` job in guardrails.yml for what each one holds up.
       - name: 'Validate renovate.json before acting on it (item #309)'
-        run: bash scripts/ci-log-step.sh renovate-validate-config npx --yes --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
+        run: bash scripts/ci-log-step.sh renovate-validate-config npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
       - name: Run Renovate
         env:
           # Non-interactive corepack provisioning (avoid the first-use download prompt hanging the job).
@@ -261,7 +261,20 @@ jobs:
         # depended on @yarnpkg/core@4.9.2, which npm cannot install (a Yarn-only `patch:` spec;
         # EUNSUPPORTEDPROTOCOL). Under npx that failure exits 1 and prints nothing but the path to npm's log.
         # Every release from 44.132.2 on is back on 4.9.1. Back on the major pin as of 2026-10-10 (44.149.2 installed).
-        run: bash scripts/ci-log-step.sh renovate npx --yes renovate@44
+        #
+        # `--before` = now minus 3 days (added 2026-11-13). npm resolves `renovate@44` to the newest
+        # 44.x published BEFORE that moment. One flag, two reasons:
+        # (1) The Friday window run died at 07:00:37 UTC with `E404 renovate-44.237.3.tgz`. 44.237.3
+        #     was published at 06:58:27; npm's index already listed it, but the tarball wasn't served
+        #     yet, so the window was lost because the bot itself was two minutes old.
+        # (2) Every dependency Renovate PROPOSES waits 3 days (renovate.json `minimumReleaseAge`,
+        #     pnpm-workspace.yaml 4320 min). The bot, which runs with the repository write token, was
+        #     the one thing installed at whatever was published minutes earlier.
+        # The same flag is on every renovate@44 call (this step, the pre-run validation above and the
+        # guardrails validator), so all three read the SAME release; the guard test asserts it. The date
+        # comes from node, not `date -d`, so it doesn't depend on GNU date. If a fix is needed sooner
+        # (the #631 case), pin the exact version, as #631 did.
+        run: bash scripts/ci-log-step.sh renovate npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" renovate@44
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
