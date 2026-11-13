@@ -1483,7 +1483,7 @@ jobs:
           # Renovate keeps it current (customManagers in renovate.json, datasource github-releases,
           # extractVersion strips the `cli-` tag prefix); renovate-workflow.guard.test.mjs asserts
           # both the pin and the manager that maintains it are still here.
-          MAESTRO_VERSION=2.10.0
+          MAESTRO_VERSION=2.12.1
           export MAESTRO_VERSION
           curl -Ls https://get.maestro.mobile.dev | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
