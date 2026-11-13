@@ -1,7 +1,7 @@
 # Agent Gateway (langgraph-api) image for the MCM conversational assistant.
 # Build context is the repo root (constitution: build from root with -f).
 # Multi-stage: install deps with uv, then run the langgraph-api server hosting the graph.
-FROM python:3.14-slim@sha256:a2b82f3c48559aa0a8446d9af49826b6e2b2016f4cd2afabfe6013ec53729170 AS build
+FROM python:3.14-slim@sha256:9aaa474097d094040649f2162a627c0049b408f52138d980916788d80f04802f AS build
 COPY --from=ghcr.io/astral-sh/uv:0.12.10@sha256:2bb3ebca0a796a155094a27773d290c4b074572e6107f171d88d086682fd2500 /uv /usr/local/bin/uv
 # A C/C++ toolchain is required: nemoguardrails pulls `annoy`, which has no cp313 wheel
 # and compiles from source (needs g++). build-essential lives only in this build stage;
@@ -20,7 +20,7 @@ RUN uv sync --frozen --no-dev --no-install-package pip
 COPY agents/movie-assistant/src ./src
 COPY agents/movie-assistant/langgraph.json ./
 
-FROM python:3.14-slim@sha256:a2b82f3c48559aa0a8446d9af49826b6e2b2016f4cd2afabfe6013ec53729170 AS runtime
+FROM python:3.14-slim@sha256:9aaa474097d094040649f2162a627c0049b408f52138d980916788d80f04802f AS runtime
 
 # No pip in the runtime image (GHSA-6q48-6c7w-9gw2, cd-deploy run 5745). The python base ships pip,
 # and pip VENDORS its own certifi (pip/_vendor/certifi) — 2026.6.17 in this digest, a fixable Critical
