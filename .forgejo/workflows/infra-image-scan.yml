@@ -187,7 +187,7 @@ jobs:
           # three Trivy workflows stay pinned and agree.
           # ci-install-trivy.sh fetches the release assets directly and verifies the checksum; it
           # replaced trivy's contrib/install.sh, which failed silently on PR #929 (see its header).
-          TRIVY_VERSION=v0.76.1
+          TRIVY_VERSION=v0.76.2
           bash scripts/ci-install-trivy.sh "${TRIVY_VERSION}" "$HOME/.local/bin"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           "$HOME/.local/bin/trivy" --version
