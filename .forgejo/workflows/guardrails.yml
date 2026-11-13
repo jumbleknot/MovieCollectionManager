@@ -478,7 +478,7 @@ jobs:
       # EUNSUPPORTEDPROTOCOL). Under npx that failure exits 1 and prints nothing but the path to npm's log.
       # Every release from 44.132.2 on is back on 4.9.1. Back on the major pin as of 2026-10-10 (44.149.2 installed).
       - name: Validate renovate.json (strict, as a repo config)
-        run: bash scripts/ci-log-step.sh renovate-config-validate npx --yes --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
+        run: bash scripts/ci-log-step.sh renovate-config-validate npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
