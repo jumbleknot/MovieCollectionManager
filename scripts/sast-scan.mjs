@@ -31,7 +31,7 @@ import {
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const IS_WIN = process.platform === 'win32';
-const SEMGREP_PIN = '1.169.0';
+const SEMGREP_PIN = '1.185.0';
 const ALL_SCANNERS = ['semgrep', 'cargo-audit', 'pnpm-audit', 'pip-audit'];
 const CODE_EXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs|py)$/i;
 // Workflow definitions are scanned too, but ONLY under the two workflow trees (item #224). The rule
