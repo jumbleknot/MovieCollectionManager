@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: 20ed1e7b21aabefd574bf48bfa04c6271da527f1fa93280350c7ec55070d7a3f
+resource-sha256: 756d8e3e11407adb750008e6126761a76b996fb702ee71009e5fcf63b28564d8
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-11T00:49:08.167Z
+timestamp: 2026-11-14T22:39:24.828Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -317,8 +317,8 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
   `kvm:host` label carries the Docker-image-building jobs, which a `node:22-bookworm` job container
   could not run at all (no Docker CLI or daemon). See [Android emulator](./android-emulator.md) for the
   job-side view.
-  - **KVM is the emulator job's requirement, not the label's.** Five jobs share the label today —
-    `app-e2e` and `dast` and `app-image-scan` in `app-ci`, `build-deploy` in `cd-deploy`, and
+  - **KVM is the emulator job's requirement, not the label's.** Six jobs share the label today —
+    `mc-service-checks-integration`, `app-e2e`, `dast` and `app-image-scan` in `app-ci`, `build-deploy` in `cd-deploy`, and
     `build-publish` in `devcontainer-image` — and only `app-e2e` needs `/dev/kvm`; the rest need the
     Docker CLI and the `ci` daemon.
   - **One host job's own error text still describes the pre-`235f2f4c` container setup.**

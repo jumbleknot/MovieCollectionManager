@@ -300,14 +300,15 @@ daemon creates its own throwaway copies during the workflow):
 
 ```bash
 prod$ docker network create backend-network
-prod$ docker network create keycloak-network
+prod$ docker network create mcm-bff-network
+prod$ docker network create mc-service-network
 prod$ docker network create movie-assistant-mcp-network
 prod$ docker volume create mc-service-store-mongo-data          # mc-service domain DB (was mc-service_mc-db-data)
 prod$ docker volume create keycloak-store-postgres-data         # Keycloak DB (was localdev-auth_keycloak-db-data)
 prod$ docker volume create mcm-bff-cache-redis-data             # BFF session store (was mcm-redis-data)
 prod$ docker volume create mcm-bff-store-mongo-data             # BFF agent-config store (feature 018)
 prod$ docker volume create movie-assistant-store-postgres-data  # agents profile (LangGraph checkpointer)
-prod$ docker volume create agent-audit-opensearch-data          # audit stack only
+prod$ docker volume create agent-audit-opensearch-v3-data       # audit stack only
 ```
 
 ---
@@ -324,7 +325,7 @@ Run Forgejo on the **prod** daemon (it's a long-lived service, not a build artif
 services:
   forgejo:
     image: codeberg.org/forgejo/forgejo:15      # current stable LTS (Apr 2026); no `latest` tag exists
-    restart: unless-stopped
+    restart: always
     environment:
       - FORGEJO__database__DB_TYPE=postgres
       - FORGEJO__database__HOST=forgejo-db:5432
@@ -345,7 +346,7 @@ services:
     depends_on: [forgejo-db]
   forgejo-db:
     image: postgres:18-alpine
-    restart: unless-stopped
+    restart: always
     environment:
       - POSTGRES_USER=forgejo
       - POSTGRES_PASSWORD=CHANGE_ME_DB
@@ -674,7 +675,7 @@ The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once con
 > **The `kvm` label — host execution for the emulator and image-building jobs (feature 023 `app-ci`).**
 > Besides `ubuntu-latest`, the runner must also register a **host-type** label defined as
 > **`kvm:host`** (`runs-on: kvm` uses the label *name*). Jobs on it execute **directly on the `ci`
-> host** as the `ci` user, with no job container: `app-ci`'s `app-e2e`, `dast` and `app-image-scan`,
+> host** as the `ci` user, with no job container: `app-ci`'s `mc-service-checks-integration`, `app-e2e`, `dast` and `app-image-scan`,
 > `cd-deploy`'s `build-deploy` (every `nx build` there is a Docker *image* build plus a `docker push`,
 > which the `node:22-bookworm` container can't do — it has no Docker CLI/daemon), and
 > `devcontainer-image`'s `build-publish`. Why the emulator job can't run
@@ -752,7 +753,7 @@ prod$ chmod 600 .env
 # compose.yaml
 services:
   rustfs:
-    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
+    image: rustfs/rustfs:1.0.5@sha256:b81d16a90ee25bd9511280127ca1471788c6e874cf0f0da759645f46b2dc1d74
     restart: always
     environment:
       RUSTFS_ACCESS_KEY: ${RUSTFS_ACCESS_KEY:?set in .env}
@@ -768,7 +769,7 @@ services:
       retries: 10
       start_period: 20s
   createbucket:                      # same image (it ships curl); PUT of an existing bucket is 200
-    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
+    image: rustfs/rustfs:1.0.5@sha256:b81d16a90ee25bd9511280127ca1471788c6e874cf0f0da759645f46b2dc1d74
     depends_on:
       rustfs: {condition: service_healthy}
     restart: "no"
@@ -995,7 +996,7 @@ No port-forwarding, CGNAT-proof, real auto-renewing certs, DDoS protection. `clo
 services:
   cloudflared:
     image: cloudflare/cloudflared:latest
-    restart: unless-stopped
+    restart: always
     command: tunnel run
     environment:
       - TUNNEL_TOKEN=CHANGE_ME_TUNNEL_TOKEN   # from Cloudflare Zero Trust dashboard
@@ -1344,7 +1345,7 @@ holds for any job added later:
 
 Set in **Forgejo → repo → Settings → Actions → Secrets** (one per consumer; names are not secret):
 `E2E_TEST_USER`, `E2E_TEST_PASSWORD`, `REGISTRY_TOKEN` (`actions-ci-push`), `CD_PUSH_TOKEN`
-(`actions-cd-push`), `KOMODO_WEBHOOK_AUTH`, `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN`,
+(`actions-cd-push`), `REGISTRY_CLEANUP_TOKEN` (`registry-cleanup`), `KOMODO_WEBHOOK_AUTH`, `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN`,
 `KEYCLOAK_CLIENT_SECRET` / `KEYCLOAK_SERVICE_CLIENT_SECRET` / `AGENT_SUBJECT_TOKEN_CLIENT_SECRET`,
 `COOKIE_SECRET`, `AGENT_CONFIG_ENC_KEY`, `TMDB_API_KEY`, `CI_DIGEST_TOKEN`, `RENOVATE_TOKEN` /
 `RENOVATE_GITHUB_COM_TOKEN`, and the per-job Anthropic keys `ANTHROPIC_API_CI_E2E`,
