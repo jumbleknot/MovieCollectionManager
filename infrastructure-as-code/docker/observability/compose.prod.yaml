@@ -186,7 +186,7 @@ services:
   # #560). No `user:` key: the image runs as its own uid 10001 (contracts/object-store-service.md
   # S2), and a fresh volume inherits /data owned by it — any other uid fails at startup.
   langfuse-rustfs:
-    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
+    image: rustfs/rustfs:1.0.5@sha256:b81d16a90ee25bd9511280127ca1471788c6e874cf0f0da759645f46b2dc1d74
     container_name: langfuse-rustfs
     restart: always
     environment:
@@ -216,7 +216,7 @@ services:
   # PUT of an existing bucket answers 200. The secret is referenced as `$$S3_SECRET_KEY` from the
   # container's environment and fed to curl on stdin — never interpolated into argv.
   langfuse-rustfs-init:
-    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
+    image: rustfs/rustfs:1.0.5@sha256:b81d16a90ee25bd9511280127ca1471788c6e874cf0f0da759645f46b2dc1d74
     container_name: langfuse-rustfs-init
     restart: always
     depends_on:
@@ -276,7 +276,7 @@ services:
   opa-service:
     # #PROD `-debug` variant: distroless `opa` has no shell; -debug adds busybox so the /health
     # healthcheck (and Komodo status) works. Policies already `import rego.v1` (OPA 1.x compatible).
-    image: openpolicyagent/opa:1.22.2-debug@sha256:e541951d850df7969a1546b427b23a39af32e371ec437bb48729eb9d21ff0d60
+    image: openpolicyagent/opa:1.22.3-debug@sha256:31dc7eb09c41f51e051d442e70b42b91feac188469e0c65f1017b964b5c01652
     container_name: opa-service
     restart: always
     command:
