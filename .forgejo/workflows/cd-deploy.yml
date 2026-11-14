@@ -149,7 +149,7 @@ jobs:
       # the next deploy would have died at `pnpm install`. Found by check-toolchain-consistency.mjs
       # on its first run, before it fired. 24.14.1 matches the BFF runtime image and prod-apk.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with: { node-version: 24.22.2, cache: pnpm }
+        with: { node-version: 26.13.1, cache: pnpm }
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
@@ -455,7 +455,7 @@ jobs:
       # fail with nothing gating on it. Keep it version-free so the pin cannot drift again.
       - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with: { node-version: 24.22.2, cache: pnpm }
+        with: { node-version: 26.13.1, cache: pnpm }
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with: { distribution: temurin, java-version: '17' }
       # `packages:` is pinned EXPLICITLY, and the value is load-bearing. The action's own default WAS

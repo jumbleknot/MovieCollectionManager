@@ -9,8 +9,8 @@
 # and `actions/setup-node` in `renovate-config`. This sentence previously said "the only `uses:` is
 # `actions/checkout`" and had been false since `sast` gained its artifact upload — a claim standing
 # in for a property, which is the shape this repository is repeatedly bitten by. It is a
-# description, not a rule: what is load-bearing is the MIRRORED registry, not the count. Toolchain setup is plain shell on the `node:22-bookworm` runner image: pnpm via corepack
-# (pinned by package.json `packageManager`), uv via its installer. Path scoping from the original
+# description, not a rule: what is load-bearing is the MIRRORED registry, not the count. Toolchain setup is plain shell on the `node:22-bookworm` runner image: pnpm via
+# scripts/install-pnpm.sh (exactly package.json `packageManager`; no corepack, item #992), uv via its installer. Path scoping from the original
 # separate workflows is intentionally dropped — all three gate jobs run over the whole tree on every
 # PR and every push to `main` (they are cheap and keyless; running unconditionally is strictly safer
 # than path-scoping). The `push:` trigger is branch-scoped to `main` — see the note on `on:` below;
@@ -96,8 +96,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Enable pnpm (corepack, version from package.json packageManager)
-        run: bash scripts/ci-log-step.sh naming-enable-pnpm corepack enable
+      - name: Install pnpm (version from package.json packageManager; Node 26 has no corepack)
+        run: bash scripts/ci-log-step.sh naming-install-pnpm sh scripts/install-pnpm.sh
       - name: Install JS dependencies
         run: bash scripts/ci-log-step.sh naming-install-js-dependencies pnpm install --frozen-lockfile
       - name: Resource-naming gate (all sections)
@@ -223,8 +223,8 @@ jobs:
       # needs the workspace installed exactly like `naming` does. Without it the gate dies on
       # ERR_MODULE_NOT_FOUND before running a single check — a job that fails for its own missing
       # dependency rather than for anything about the bundle.
-      - name: Enable pnpm (corepack, version from package.json packageManager)
-        run: bash scripts/ci-log-step.sh okf-enable-pnpm corepack enable
+      - name: Install pnpm (version from package.json packageManager; Node 26 has no corepack)
+        run: bash scripts/ci-log-step.sh okf-install-pnpm sh scripts/install-pnpm.sh
       - name: Install JS dependencies
         run: bash scripts/ci-log-step.sh okf-install-js-dependencies pnpm install --frozen-lockfile
       - name: OKF conformance gate (selftest + scan — openwiki/ bundle structure and links)
@@ -264,8 +264,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      - name: Enable pnpm (corepack)
-        run: bash scripts/ci-log-step.sh agent-gates-enable-pnpm corepack enable
+      - name: Install pnpm (version from package.json packageManager; Node 26 has no corepack)
+        run: bash scripts/ci-log-step.sh agent-gates-install-pnpm sh scripts/install-pnpm.sh
       - name: Install uv
         run: |
           bash scripts/ci-log-step.sh agent-gates-install-uv bash -e /dev/stdin <<'CI_LOG_STEP'
@@ -329,8 +329,8 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: bash scripts/ci-log-step.sh sast-ensure-pr-base-ref-available git fetch --no-tags --depth=200 origin "$BASE_REF" || true
-      - name: Enable pnpm (corepack)
-        run: bash scripts/ci-log-step.sh sast-enable-pnpm corepack enable
+      - name: Install pnpm (version from package.json packageManager; Node 26 has no corepack)
+        run: bash scripts/ci-log-step.sh sast-install-pnpm sh scripts/install-pnpm.sh
       - name: Install native build deps (cargo-audit compiles native code)
         run: |
           bash scripts/ci-log-step.sh sast-install-native-build-deps apt-get update
@@ -472,7 +472,7 @@ jobs:
       # up certifying a config against a runtime the real run does not have.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: 24.22.2
+          node-version: 26.13.1
       # Item #631: this was pinned to 44.131.0 from 2026-10-02 to 2026-10-10, because renovate 44.131.1–44.132.1
       # depended on @yarnpkg/core@4.9.2, which npm cannot install (a Yarn-only `patch:` spec;
       # EUNSUPPORTEDPROTOCOL). Under npx that failure exits 1 and prints nothing but the path to npm's log.

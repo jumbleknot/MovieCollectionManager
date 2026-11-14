@@ -300,8 +300,9 @@ const workflowPinning = (...versions) =>
     .map(
       (v) =>
         '      - name: E2E\n        run: |\n          docker run --network host \\\n' +
+        '            -e EXPECTED_NODE_MAJOR=26 \\\n' +
         `            mcr.microsoft.com/playwright:v${v}-noble \\\n` +
-        '            sh -c "corepack enable && pnpm exec playwright test"\n',
+        '            sh /work/scripts/run-playwright-in-image.sh\n',
     )
     .join('');
 
@@ -384,8 +385,8 @@ test('(p6) one image pin is found, with its version and 1-indexed line', async (
   assert.equal(pins[0].value, '1.62.1');
   assert.equal(pins[0].file, 'app-ci.yml');
   // Counted from the fixture, not read off the implementation: jobs/app-e2e/steps (1-3), then
-  // `- name:` (4), `run: |` (5), `docker run` (6), and the image on 7.
-  assert.equal(pins[0].line, 7, 'the reported line must be the one a reader can open');
+  // `- name:` (4), `run: |` (5), `docker run` (6), `-e EXPECTED_NODE_MAJOR` (7), and the image on 8.
+  assert.equal(pins[0].line, 8, 'the reported line must be the one a reader can open');
 });
 
 test('(p7) EVERY occurrence is found — a partial bump is only visible if both are read', async () => {
@@ -660,4 +661,74 @@ test('(n6) the success line NAMES the lockstep relation it just proved', () => {
   const r = spawnSync('node', [GATE], { encoding: 'utf8' });
   assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
   assert.match(r.stdout, /lockstep package is pinned exactly/i, r.stdout);
+});
+
+// --- (nm) ONE Node major across the images, setup-node and the Playwright image — item #992 ------
+//
+// Renovate proposes the Node major on TWO tracks (`major-docker-base-images` and `major-ci-actions`),
+// and the Playwright image carries a THIRD Node it chooses itself (v1.65.0-noble moved 24 -> 26, and
+// 26 bundles no corepack, so web-e2e ran ZERO tests — PR #1013). Each half passes the floor check on
+// its own, so the floor rule cannot see a split: these assert that the majors AGREE. The Playwright
+// image's Node is not in any file, so the workflow passes the expected major into the container
+// (EXPECTED_NODE_MAJOR), the runner script there compares it with the image's real `node`, and this
+// rule holds that literal to the same major as every other pin.
+
+const NM_PKG = { packageManager: 'pnpm@12.18.0', engines: { node: '>=22.13' } };
+const NM_LOCK = lockText(['@playwright/test@1.65.0']);
+const nmDockerfile = (major) => `FROM node:${major}.13.1-alpine3.23 AS builder\nFROM node:${major}.13.1-alpine3.23 AS runner\n`;
+const nmSetupNode = (v) => `jobs:\n  a:\n    steps:\n      - uses: actions/setup-node@abc\n        with: { node-version: ${v}, cache: pnpm }\n`;
+const nmPlaywrightRun = (...majors) =>
+  'jobs:\n  app-e2e:\n    steps:\n' +
+  majors
+    .map(
+      (m) =>
+        '      - name: E2E\n        run: |\n          docker run --network host \\\n' +
+        (m === null ? '' : `            -e EXPECTED_NODE_MAJOR=${m} \\\n`) +
+        '            mcr.microsoft.com/playwright:v1.65.0-noble \\\n' +
+        '            sh /work/scripts/run-playwright-in-image.sh\n',
+    )
+    .join('');
+const nmRepo = ({ dockerMajor = 26, setupNode = '26.13.1', playwright = [26, 26] } = {}) =>
+  repo({
+    pkg: NM_PKG,
+    lockfile: NM_LOCK,
+    dockerfiles: { 'frontend/mcm-app/Dockerfile': nmDockerfile(dockerMajor) },
+    workflows: { 'app-ci.yml': nmPlaywrightRun(...playwright), 'other.yml': nmSetupNode(setupNode) },
+  });
+const majorFindings = (root) => findDrift(root).filter((f) => /Node major/.test(f.problem));
+
+test('(nm1) images, setup-node and the Playwright image on ONE major is clean', () => {
+  assert.deepEqual(findDrift(nmRepo()), []);
+});
+
+test('(nm2) THE SPLIT: the image on one major while setup-node is on another is caught', () => {
+  // The exact shape of merging `major-ci-actions` without `major-docker-base-images`.
+  const d = majorFindings(nmRepo({ dockerMajor: 24 }));
+  assert.ok(d.length >= 1, `expected a Node-major finding, got ${JSON.stringify(findDrift(nmRepo({ dockerMajor: 24 })))}`);
+  assert.ok(d.some((f) => f.file === '.forgejo/workflows/other.yml'), 'the setup-node pin that left the shipped image behind is named');
+});
+
+test('(nm3) a single setup-node on a different major is caught at its own file and line', () => {
+  const d = majorFindings(nmRepo({ setupNode: '24.22.2' }));
+  assert.equal(d.length, 1);
+  assert.equal(d[0].file, '.forgejo/workflows/other.yml');
+  assert.equal(d[0].line, 5);
+});
+
+test('(nm4) the Playwright image expected on a different major than the pins is caught', () => {
+  const d = majorFindings(nmRepo({ playwright: [26, 24] }));
+  assert.equal(d.length, 1);
+  assert.equal(d[0].file, '.forgejo/workflows/app-ci.yml');
+});
+
+test('(nm5) a Playwright docker run that declares NO expected Node major is caught, not passed vacuously', () => {
+  const d = majorFindings(nmRepo({ playwright: [26, null] }));
+  assert.equal(d.length, 1);
+  assert.match(d[0].problem, /EXPECTED_NODE_MAJOR/);
+});
+
+test('(nm6) the success line NAMES the Node-major relation it just proved', () => {
+  const r = spawnSync('node', [GATE], { encoding: 'utf8' });
+  assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+  assert.match(r.stdout, /Node major/i, `the success line does not mention the Node-major relation: ${r.stdout}`);
 });

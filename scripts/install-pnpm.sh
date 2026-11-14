@@ -1,0 +1,26 @@
+#!/bin/sh
+# Install pnpm at EXACTLY the version the root package.json `packageManager` names — the ONE way pnpm
+# is provisioned in this repo's images and CI jobs (item #992).
+#
+# WHY NOT corepack: Node 26 no longer bundles it. `corepack enable` is `corepack: not found` on every
+# node:26 image and on the Playwright v1.65+ images (PR #1013, zero tests ran). npm is still bundled,
+# so a global npm install works on every Node this repo pins, old or new.
+#
+# WHY READ packageManager instead of naming a version here: a second copy of the version is the
+# shape that half-bumped twice when the Dockerfile carried `corepack prepare pnpm@X` (item #225,
+# PRs #217 and #263). There is no copy now, so there is nothing for Renovate to leave behind.
+# (pnpm also re-execs itself at the packageManager version when the two differ, so an image baked
+# before a bump still RUNS the right pnpm — but the install is exact anyway, so nothing downloads.)
+#
+# Usage: sh scripts/install-pnpm.sh [path/to/package.json]   (default: ./package.json)
+# Writes to npm's global prefix, so run it as the user that owns that prefix (root in an image).
+set -eu
+manifest="${1:-package.json}"
+[ -f "$manifest" ] || { echo "install-pnpm: no $manifest (run from the repository root)" >&2; exit 2; }
+spec=$(node -p "require(require('path').resolve(process.argv[1])).packageManager ?? ''" "$manifest")
+case "$spec" in
+  pnpm@[0-9]*) ;;
+  *) echo "install-pnpm: packageManager must be \"pnpm@<version>\", got \"$spec\"" >&2; exit 2 ;;
+esac
+npm install --global --no-fund --no-audit --loglevel=error "$spec"
+echo "install-pnpm: $spec -> $(command -v pnpm) ($(pnpm --version))"

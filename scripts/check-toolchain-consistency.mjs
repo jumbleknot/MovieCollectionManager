@@ -36,6 +36,10 @@
 //   3. The Playwright CONTAINER IMAGE tag in app-ci.yml must name the version pnpm-lock.yaml
 //      resolves for `@playwright/test` (item #204). The tag selects the baked browser build, so a
 //      half-bump does not fail the suite — it runs ZERO tests and reports no counts at all.
+//   4. ONE Node major across `FROM node:`, every `node-version:` and the Playwright image (item
+//      #992). Renovate proposes the major on two separate tracks and each half passes rule 1 alone;
+//      the Playwright image picks its own Node, so app-ci passes `EXPECTED_NODE_MAJOR` into it and
+//      scripts/run-playwright-in-image.sh checks the image's real Node against it at run time.
 //
 // Deliberately NOT checked: that a pin is the newest available. This gate is about internal
 // agreement, which is offline-checkable and deterministic; "is there a newer Node" is Renovate's
@@ -566,6 +570,107 @@ export function findNestedPackageManagerDrift(root = REPO_ROOT) {
   return findings;
 }
 
+/** The image that SHIPS — the reference every other Node pin is compared against. */
+const SHIPPED_IMAGE = 'frontend/mcm-app/Dockerfile';
+
+/**
+ * Every `-e EXPECTED_NODE_MAJOR=<n>` in a Playwright `docker run`, and every Playwright image pin
+ * that has none. A step is one `run:` block: the pass-through and the image tag sit on the lines of
+ * the same backslash-continued command, so the expectation is read from the step the tag is in.
+ *
+ * @returns {{expected:{file:string,line:number,value:string}[], missing:{file:string,line:number}[]}}
+ */
+export function collectPlaywrightNodeExpectations(text, file) {
+  const location = posixLocation(file);
+  const expected = [];
+  const missing = [];
+  let step = { expectation: null, images: [] };
+  const close = () => {
+    if (!step.expectation) missing.push(...step.images);
+    step = { expectation: null, images: [] };
+  };
+  text.split('\n').forEach((line, i) => {
+    if (/^\s*#/.test(line)) return;
+    if (/^\s*-\s/.test(line)) close();
+    const e = line.match(/\bEXPECTED_NODE_MAJOR=(\S+?)(?=\s|\\|$)/);
+    if (e) {
+      step.expectation = e[1];
+      expected.push({ file: location, line: i + 1, value: e[1] });
+    }
+    if (/mcr\.microsoft\.com\/playwright:v\d[\w.]*-noble\b/.test(line)) step.images.push({ file: location, line: i + 1 });
+  });
+  close();
+  return { expected, missing };
+}
+
+/**
+ * ONE Node major across the shipped image, every CI `setup-node`, and the Playwright E2E image —
+ * item #992.
+ *
+ * Renovate proposes a Node major on TWO separate tracks (`major-docker-base-images` for every
+ * `FROM node:` and `major-ci-actions` for every `node-version:`), and each half passes rule 1's
+ * floor on its own. Merged apart, CI builds and tests on one major while the image ships another,
+ * and nothing in rule 1 can see it. The Playwright image is the third party: its Node is the
+ * image's choice (v1.65.0-noble moved 24 -> 26, and 26 bundles no corepack, so web-e2e ran ZERO
+ * tests — PR #1013), and it is in no file this gate can read. So each Playwright `docker run`
+ * passes `EXPECTED_NODE_MAJOR` into the container, scripts/run-playwright-in-image.sh refuses to
+ * run when the image's real `node` disagrees, and this rule holds that literal to the same major
+ * as every pin here. The static half catches a split in one second; the runtime half catches an
+ * image whose Node moved under a tag.
+ *
+ * The reference is the SHIPPED image's major, because app-ci's setup-node exists to build what
+ * that image runs; without one, the most common major is the reference.
+ *
+ * @returns {{file:string,line:number,problem:string}[]}
+ */
+export function compareNodeMajors(nodePins, expectations) {
+  const majorOf = (v) => parseVersion(String(v).split('.')[0])?.[0] ?? null;
+  const all = [
+    ...nodePins.map((p) => ({ ...p, major: majorOf(p.value), what: `Node ${p.value} (${p.how})` })),
+    ...expectations.expected.map((p) => ({ ...p, major: majorOf(p.value), what: `the Playwright image's EXPECTED_NODE_MAJOR=${p.value}` })),
+  ];
+  const findings = expectations.missing.map((p) => ({
+    file: p.file,
+    line: p.line,
+    problem:
+      'this Playwright docker run passes no EXPECTED_NODE_MAJOR, so the image\'s own Node is unchecked — ' +
+      'the image chooses its Node (v1.65 moved to 26 with no corepack, zero tests ran, PR #1013). ' +
+      'Add `-e EXPECTED_NODE_MAJOR=<the pinned Node major>` to the step.',
+  }));
+  const known = all.filter((p) => p.major !== null);
+  if (!known.length) return findings;
+
+  const shipped = known.find((p) => p.file === SHIPPED_IMAGE);
+  let reference = shipped?.major;
+  if (reference === undefined) {
+    const counts = new Map();
+    for (const p of known) counts.set(p.major, (counts.get(p.major) ?? 0) + 1);
+    reference = [...counts].sort((a, b) => b[1] - a[1])[0][0];
+  }
+  const source = shipped ? `the shipped image (${SHIPPED_IMAGE}:${shipped.line})` : 'the most common pin';
+  for (const p of known) {
+    if (p.major === reference) continue;
+    findings.push({
+      file: p.file,
+      line: p.line,
+      problem:
+        `${p.what} is Node major ${p.major}, but ${source} is on Node major ${reference} — move the ` +
+        'images, every setup-node and the Playwright image as ONE change (item #992), never as two Renovate majors',
+    });
+  }
+  return findings;
+}
+
+/** @returns {{file:string,line:number,problem:string}[]} */
+export function findNodeMajorDrift(root = REPO_ROOT, nodePins = null) {
+  const pins = nodePins ?? filesToScan(root).flatMap((rel) => collectPins(readFileSync(join(root, rel), 'utf8'), rel).filter((p) => p.kind === 'node'));
+  const workflowPath = join(root, PLAYWRIGHT_WORKFLOW);
+  const expectations = existsSync(workflowPath)
+    ? collectPlaywrightNodeExpectations(readFileSync(workflowPath, 'utf8'), PLAYWRIGHT_WORKFLOW)
+    : { expected: [], missing: [] };
+  return compareNodeMajors(pins, expectations);
+}
+
 /** @returns {{file:string,line:number,problem:string}[]} */
 export function findDrift(root = REPO_ROOT) {
   const pkgPath = join(root, 'package.json');
@@ -606,6 +711,7 @@ export function findDrift(root = REPO_ROOT) {
   findings.push(...findNxPinDrift(root));
   findings.push(...findLockstepPinDrift(root));
   findings.push(...findPlaywrightPinDrift(root));
+  findings.push(...findNodeMajorDrift(root));
   return findings;
 }
 
@@ -620,10 +726,10 @@ function runScan() {
   if (findings.length) {
     console.error(`✗ toolchain-consistency gate FAILED: ${findings.length} pin(s) disagree:`);
     for (const f of findings) console.error(`  ${f.file}:${f.line} — ${f.problem}`);
-    console.error('\nEvery Node pin must satisfy package.json `engines.node`, the pnpm version is single-sourced by the ROOT `packageManager` and declared nowhere else, the packages Renovate moves as one unit (nx, @nx/*, @playwright/test) are pinned exactly with @nx/* equal to nx, and the Playwright image tag must name the version pnpm-lock.yaml resolves.');
+    console.error('\nEvery Node pin must satisfy package.json `engines.node`, the pnpm version is single-sourced by the ROOT `packageManager` and declared nowhere else, the packages Renovate moves as one unit (nx, @nx/*, @playwright/test) are pinned exactly with @nx/* equal to nx, the Playwright image tag must name the version pnpm-lock.yaml resolves, and the Node images, every setup-node and the Playwright image (EXPECTED_NODE_MAJOR) must share ONE Node major.');
     process.exit(1);
   }
-  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced and declared in the root manifest only; nx agrees with nx.json installation.version; every lockstep package is pinned exactly and @nx/* equals nx; the Playwright image tag matches the lockfile)');
+  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced and declared in the root manifest only; nx agrees with nx.json installation.version; every lockstep package is pinned exactly and @nx/* equals nx; the Playwright image tag matches the lockfile; the images, every setup-node and the Playwright image share ONE Node major)');
 }
 
 function selftest() {
@@ -686,11 +792,20 @@ function selftest() {
   t('two different exact @playwright/test pins are REJECTED', compareLockstepDeclarations([decl('@playwright/test', '1.63.0'), decl('@playwright/test', '1.64.0', 'a/package.json')], null).length === 1);
   t('a non-lockstep package is ignored', compareLockstepDeclarations([], '22.7.10').length === 0 && !isLockstepPackage('@nxlv/python') && !isLockstepPackage('@monodon/rust'));
 
+  // The Node-major split (item #992). Again the REJECTION is the case worth running.
+  const nodePin = (file, value) => ({ file, line: 1, kind: 'node', value, how: 'x' });
+  const noPlaywright = { expected: [], missing: [] };
+  t('one Node major everywhere is clean', compareNodeMajors([nodePin('frontend/mcm-app/Dockerfile', '26.13.1'), nodePin('a.yml', '26')], { expected: [{ file: 'app-ci.yml', line: 1, value: '26' }], missing: [] }).length === 0);
+  t('THE BUG: setup-node on 26 while the shipped image is on 24 is REJECTED', compareNodeMajors([nodePin('frontend/mcm-app/Dockerfile', '24.22.2'), nodePin('a.yml', '26.13.1')], noPlaywright).length === 1);
+  t('a Playwright image expected on another major is REJECTED', compareNodeMajors([nodePin('frontend/mcm-app/Dockerfile', '26.13.1')], { expected: [{ file: 'app-ci.yml', line: 1, value: '24' }], missing: [] }).length === 1);
+  t('a Playwright run with no expectation is REJECTED', compareNodeMajors([nodePin('frontend/mcm-app/Dockerfile', '26.13.1')], { expected: [], missing: [{ file: 'app-ci.yml', line: 1 }] }).length === 1);
+  t('the expectation is read per step', collectPlaywrightNodeExpectations('      - run: |\n          docker run -e EXPECTED_NODE_MAJOR=26 \\\n            mcr.microsoft.com/playwright:v1.65.0-noble \\\n      - run: |\n          docker run \\\n            mcr.microsoft.com/playwright:v1.65.0-noble \\\n', 'x.yml').missing.length === 1);
+
   if (fails.length) {
     console.error('✗ toolchain-consistency --selftest FAILED:\n  - ' + fails.join('\n  - '));
     process.exit(1);
   }
-  console.log('✓ toolchain-consistency --selftest passed (floor comparison, pin extraction, comment immunity, Playwright drift rejection, lockstep exact-pin rejection)');
+  console.log('✓ toolchain-consistency --selftest passed (floor comparison, pin extraction, comment immunity, Playwright drift rejection, lockstep exact-pin rejection, Node-major split rejection)');
 }
 
 // Same guard idiom as check-override-consistency.mjs / check-sast-findings.mjs, and here it is not

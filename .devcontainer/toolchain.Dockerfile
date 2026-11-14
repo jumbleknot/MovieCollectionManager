@@ -17,10 +17,10 @@
 #
 # All toolchain fetches run at IMAGE-BUILD time — BEFORE the runtime egress firewall exists
 # (research D5) — so crates.io / PyPI / GitHub CDN rotation is NOT a per-open problem for the
-# baked set. Inherits feature 037's base (apt deps, corepack + Claude Code CLI, non-root
+# baked set. Inherits feature 037's base (apt deps, Claude Code CLI, non-root
 # `coder`, DinD-config dir) so the 037 verify scripts (host/engine isolation, SC-008) still pass.
 
-FROM node:24-bookworm@sha256:6dac556d980b7f0e5498d08f08cee0ca67798b4ad6c23964a9214920e67758d0
+FROM node:26-bookworm@sha256:b7087bc4d973034b30854b378ba107f9fab622b47514cb7e2592e41b8bab8d49
 
 # --- 037 base: apt deps + firewall/network tooling ---------------------------------------
 # iptables/ipset/dnsutils/iproute2 are consumed by init-firewall.sh; jq by the verify scripts
@@ -52,12 +52,12 @@ RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
 # absent, silently. A BROKEN binary on PATH is worse than none — jest calls it and dies. Do not
 # re-add a prebuilt without proving `watchman --version` in the built image.
 
-# --- 037 base: root-level Node toolchain (corepack shims + Claude Code CLI) ---------------
-# Both symlink into the root-owned /usr/local prefix → MUST be installed as root here (running
+# --- 037 base: root-level Node toolchain (Claude Code CLI) -------------------------------
+# Symlinks into the root-owned /usr/local prefix → MUST be installed as root here (running
 # from non-root `coder` in a lifecycle hook fails EACCES). Claude Code is a tool, not a secret
-# (FR-010 holds). pnpm version resolves at runtime from package.json packageManager.
-RUN corepack enable \
-    && npm install -g @anthropic-ai/claude-code
+# (FR-010 holds). pnpm is NOT here any more: Node 26 bundles no corepack (item #992), so pnpm is
+# installed from package.json `packageManager` at the TAIL of this file (see there for why).
+RUN npm install -g @anthropic-ai/claude-code
 
 # --- 043: OpenWiki CLI (OKF knowledge bundle generator) -----------------------------------
 # Same root/-g rationale as Claude Code above. Version-PINNED: the host install must match this
@@ -94,7 +94,7 @@ RUN export DEBIAN_FRONTEND=noninteractive \
 #
 # ── 060: `coder` MUST be uid 1000, and that is why `node` is moved out of the way ──────────────
 #
-# node:24-bookworm ships uid 1000 as `node`, so a plain `useradd` put `coder` on 1001. On the Docker
+# node:<major>-bookworm ships uid 1000 as `node` (re-measured on 26: still uid 1000), so a plain `useradd` put `coder` on 1001. On the Docker
 # Sandbox path the workspace lives in the microVM and is owned by the VM user at **uid 1000**, so a
 # 1001 container user cannot write it. git does not fail cleanly at the top level — it fails deep on
 # individual object writes, with messages that read like repository corruption:
@@ -318,6 +318,15 @@ RUN set -eux; \
     chmod +x /opt/microsoft/powershell/7/pwsh; \
     ln -sf /opt/microsoft/powershell/7/pwsh /usr/bin/pwsh; \
     pwsh --version
+
+# --- pnpm, at exactly package.json `packageManager` [root] (item #992) ----------------------
+# The one provisioning path every image and CI job uses (scripts/install-pnpm.sh). Node 26 bundles
+# no corepack, so the old `corepack enable` shim is gone. AT THE TAIL because it COPYs package.json,
+# and every edit to that file would otherwise rebuild the cargo-utilities layer above. A pnpm baked
+# here before a `packageManager` bump still runs the new version: pnpm re-execs itself at the
+# version the nearest manifest names (measured 2026-11-14: pnpm 12.17.0 reports 12.18.0 in-repo).
+COPY package.json scripts/install-pnpm.sh /tmp/pnpm-pin/
+RUN sh /tmp/pnpm-pin/install-pnpm.sh /tmp/pnpm-pin/package.json && rm -rf /tmp/pnpm-pin
 USER ${USERNAME}
 
 ENV SHELL=/bin/bash

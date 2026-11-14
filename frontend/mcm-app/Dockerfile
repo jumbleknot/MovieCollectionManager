@@ -2,13 +2,10 @@
 # Installs all deps and runs expo export to produce the server bundle.
 # Build context must be the monorepo root:
 #   docker build -t mcm-bff:latest -f frontend/mcm-app/Dockerfile .
-FROM node:24.22.2-alpine3.23@sha256:0efee1e068d21f6edcab7fa8c962fc4ecd50d4e28727bc23963379b63ee318ab AS builder
+FROM node:26.13.1-alpine3.23@sha256:39d8c143e60e99ae98f014bebea1e72fc96d3c9bdf9504bc3a27af5c05bfa39f AS builder
 
 # glibc compatibility — required by some native Node modules (ioredis, etc.)
 RUN apk add --no-cache gcompat
-
-# Enable corepack so pnpm is available without a separate install step
-RUN corepack enable && corepack prepare pnpm@12.18.0 --activate
 
 WORKDIR /app
 
@@ -19,6 +16,11 @@ WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/mcm-app/package.json ./frontend/mcm-app/
 COPY packages/design-system/package.json ./packages/design-system/
+
+# pnpm at exactly the root package.json `packageManager` version — no second copy of it here
+# (item #225), and no corepack, which Node 26 no longer bundles (item #992).
+COPY scripts/install-pnpm.sh /build-scripts/install-pnpm.sh
+RUN sh /build-scripts/install-pnpm.sh
 
 # Install all dependencies (including devDeps needed for the Expo/Metro build)
 RUN pnpm install --frozen-lockfile
@@ -79,12 +81,10 @@ RUN node /build-scripts/prune-bff-runtime-modules.mjs --check-bundle dist/server
 # It also keeps this layer keyed on the manifests and lockfile alone, so editing
 # app source does not re-run the 1.2 GB deploy — which matters because the build
 # cache competes for the same constrained disk as the images (item #246).
-FROM node:24.22.2-alpine3.23@sha256:0efee1e068d21f6edcab7fa8c962fc4ecd50d4e28727bc23963379b63ee318ab AS deps
+FROM node:26.13.1-alpine3.23@sha256:39d8c143e60e99ae98f014bebea1e72fc96d3c9bdf9504bc3a27af5c05bfa39f AS deps
 
 # glibc compatibility — required by some native Node modules (ioredis, etc.)
 RUN apk add --no-cache gcompat
-
-RUN corepack enable && corepack prepare pnpm@12.18.0 --activate
 
 WORKDIR /app
 
@@ -94,6 +94,9 @@ WORKDIR /app
 # node_modules (feature 015).
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY frontend/mcm-app/package.json ./frontend/mcm-app/
+# Same provisioning as the builder stage (see there).
+COPY scripts/install-pnpm.sh /build-scripts/install-pnpm.sh
+RUN sh /build-scripts/install-pnpm.sh
 # server.js and its plain-CommonJS security-header builder (feature 032) are
 # copied into the PACKAGE directory, not the image root: `pnpm deploy` carries
 # the package's own files across, which is how they arrive at /app/runtime.
@@ -123,7 +126,7 @@ RUN pnpm install --frozen-lockfile && \
 # ── Stage 3: Production runtime ───────────────────────────────────────────────
 # Receives artifacts only. No package manager runs here and none is needed —
 # the runtime is `node server.js`.
-FROM node:24.22.2-alpine3.23@sha256:0efee1e068d21f6edcab7fa8c962fc4ecd50d4e28727bc23963379b63ee318ab AS runner
+FROM node:26.13.1-alpine3.23@sha256:39d8c143e60e99ae98f014bebea1e72fc96d3c9bdf9504bc3a27af5c05bfa39f AS runner
 
 # Three things in one layer, all of which must precede the COPYs below:
 #   • gcompat — glibc compatibility for native Node modules (ioredis, etc.).
@@ -131,10 +134,10 @@ FROM node:24.22.2-alpine3.23@sha256:0efee1e068d21f6edcab7fa8c962fc4ecd50d4e28727
 #     fixable CRITICAL CVE-2026-59873 (node-tar gzip-bomb DoS) that fails the
 #     cd-deploy Trivy gate (`--severity CRITICAL --ignore-unfixed`). Removing it
 #     eliminates the vulnerable code outright — a real fix, not a suppression.
-#     node:24-latest still ships npm with tar < 7.5.19, so a base bump does not
-#     clear this; remove until the upstream manager carries the fix. The pnpm
-#     half of the old removal is now structural: corepack is never activated in
-#     this stage, so no pnpm dist is ever downloaded to /root/.cache.
+#     Re-check on every Node bump whether the bundled npm's tar carries the fix
+#     before dropping this; remove until the upstream manager does. The pnpm
+#     half of the old removal is structural: pnpm is installed only in the
+#     builder and deps stages, never in this one.
 #   • Create mcm, so the COPYs below can set ownership as they write.
 RUN apk add --no-cache gcompat && \
     rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx && \

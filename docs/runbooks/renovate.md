@@ -551,7 +551,8 @@ pnpm and Rust and nothing for Python. The symmetry was the proof — the two cha
 on PATH both produced PRs; the one without never had.
 
 **So: a new manager means a new toolchain step in `renovate.yml`.** It currently provisions pnpm
-(corepack), Rust (rustup) and uv (`astral-sh/setup-uv`).
+(`scripts/install-pnpm.sh`, at the `packageManager` version — Node 26 has no corepack), Rust (rustup)
+and uv (`astral-sh/setup-uv`).
 
 **Rule out "nothing to refresh" before believing a channel is idle** — run the refresh by hand
 (`uv lock --upgrade --dry-run`, `cargo update --dry-run`) and see whether work exists.
@@ -1032,10 +1033,13 @@ Recorded from the 2026-08-30 latent-issue audit so the next reader knows each wa
   criterion that a pnpm bump re-checks it.
 - **Node rides two Renovate groups.** Workflow `node-version` entries ride `ci actions`
   (github-actions manager); Dockerfile `FROM node` rides `docker base images`. A Node bump can
-  therefore arrive as two PRs, and the pins already differ (24.19.0 workflows / 24.22.1 app
-  Dockerfile / bare `24` in infra-image-scan.yml). Accepted **while the gate floor-checks** — none
-  of this can merge unsafe. If Node drift ever bites for real, the fix is the nx/playwright/pnpm
-  pattern: one group, one guard.
+  therefore arrive as two PRs. A **patch or minor** split is harmless and accepted. A **major** is
+  not: merged apart, CI tests on one Node while the image ships another, and the Playwright image
+  carries a third Node of its own choosing (v1.65 moved to 26, with no corepack — PR #1013 ran zero
+  tests). So since item #992 `check-toolchain-consistency.mjs` fails any tree whose `FROM node:`,
+  `node-version:` and Playwright `EXPECTED_NODE_MAJOR` disagree on the **major**. Each Renovate
+  major half therefore arrives red on purpose: hand-write the major as ONE change (images, every
+  setup-node, the Playwright image) and let it supersede both branches — never tick them.
 - **`runs-on: ubuntu-latest` is extracted** by the github-runners manager (15 refs at the audit). On act_runner
   the label maps to a runner-side container and a "bump" would be meaningless — if such a proposal
   ever appears, close it as not applicable (it is not a `lockFileMaintenance` PR; the §4 rule about

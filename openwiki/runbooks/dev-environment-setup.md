@@ -1,26 +1,26 @@
 ---
 type: Runbook
 title: Developer environment setup (host toolchain)
-description: How to provision a host development machine for MovieCollectionManager — the toolchain versions the repository pins (Node floor, pnpm via Corepack, Rust, Python/uv, Android SDK) and the companion tools (RTK output compressor, OpenWiki) — as an alternative to the devcontainer, including how the OpenWiki generator's version is held in step across the toolchain image, CI and a host install.
+description: How to provision a host development machine for MovieCollectionManager — the toolchain versions the repository pins (Node 26 and its floor, pnpm at the `packageManager` version, Rust, Python/uv, Android SDK) and the companion tools (RTK output compressor, OpenWiki) — as an alternative to the devcontainer, including how the OpenWiki generator's version is held in step across the toolchain image, CI and a host install.
 resource: docs/runbooks/dev-environment-setup.md
-resource-sha256: e1bf56b265e402bec10b128baf7da6cf9a448d11909a76dc33021a458c2d5899
+resource-sha256: c1f3cd134506124a10a4bd3c8c6878a5ca5c52cdfa5d0d141c75b0dd9c399fdb
 tags: [setup, toolchain, host, runbook, openwiki]
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-timestamp: 2026-11-10T11:46:33.764Z
+timestamp: 2026-11-14T19:18:07.533Z
 ---
 
 # Developer environment setup (host toolchain)
 
 Covers provisioning a **host** machine with the toolchain MovieCollectionManager's AI-assisted
-workflow expects: Node.js (LTS, floor `>=22.13` set by root `package.json` `engines.node`), pnpm
-(via Corepack — the exact version pinned by root `package.json` `packageManager`, currently
-`pnpm@12.13.0`), Nx (workspace, via `pnpm nx`), Rust (stable channel, the exact release pinned by root
+workflow expects: Node.js 26 (LTS — the major every image and CI `setup-node` pins; floor `>=22.13` set
+by root `package.json` `engines.node`), pnpm (installed with npm at exactly the version root
+`package.json` `packageManager` names, via `scripts/install-pnpm.sh` — Node 26 bundles no Corepack), Nx (workspace, via `pnpm nx`), Rust (stable channel, the exact release pinned by root
 `rust-toolchain.toml`), Python 3.13 + `uv`, Docker Desktop
 24+, OpenJDK 17, and the Android SDK (Platform 36 as the `compileSdk` the pinned React Native's
 Gradle version catalog sets, with Build Tools and an Emulator API 34 system image) for mobile
 builds. Everything here is pre-provisioned in the
 [containerized dev environment](./devcontainer.md) already — the toolchain image bakes Node from
-a `node:24-bookworm` base, resolves pnpm from `packageManager` via Corepack, and installs Android
+a `node:26-bookworm` base, installs pnpm at the `packageManager` version with `scripts/install-pnpm.sh`, and installs Android
 SDK platform/emulator packages for its `ANDROID_API=34` build arg — this runbook exists
 for the case where the containerized path isn't used, or before bringing up
 [local dev infrastructure](./local-dev.md).
@@ -41,11 +41,11 @@ higher floor, or the gate keeps passing pins that manager refuses to run on.
 
 ## Gotchas
 
-- **Install the pnpm version Corepack resolves from `packageManager`; never `corepack prepare
-  pnpm@latest`.** The field is declared exactly once, in the **root** manifest — a workspace
+- **Install exactly the pnpm version `packageManager` names (`sh scripts/install-pnpm.sh`); never
+  `pnpm@latest`, and not via Corepack, which Node 26 no longer bundles.** The field is declared exactly once, in the **root** manifest — a workspace
   manifest that declares its own `packageManager` silently wins for anything run inside that
   directory and is maintained by Renovate on its own track, so the consistency gate fails a
-  non-root declaration *including one whose value agrees*. Inside the repo, `corepack enable` plus
+  non-root declaration *including one whose value agrees*. Inside the repo,
   `pnpm --version` must print the `packageManager` version.
 - **Pin OpenWiki to the exact version the devcontainer toolchain image installs.** A version skew
   between the host and container workspaces can produce structurally different wiki bundles for the

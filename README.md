@@ -45,7 +45,7 @@ See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full descriptio
 | Area | Technology |
 |---|---|
 | Frontend | React Native 0.88, React 19.3, Expo SDK 58, Expo Router, Tamagui 3 (`@mcm/design-system`), CopilotKit 1.79 + AG-UI, TypeScript |
-| BFF | Expo Router API routes (Node 24 container), Redis 8 sessions, Axios |
+| BFF | Expo Router API routes (Node 26 container), Redis 8 sessions, Axios |
 | Backend | Rust 1.98 (pinned), Axum 0.8, Tokio, CQRS-style command/query handlers, MongoDB 9 |
 | AI agents | Python 3.14, LangGraph, FastAPI + AG-UI, MCP SDK 2.x, Langfuse / OpenTelemetry |
 | Identity | Keycloak 26.8 on PostgreSQL 18 — OAuth 2.0 + PKCE, RBAC |
@@ -93,7 +93,7 @@ Needed only for the Android emulator and native mobile builds, which the microVM
 
 **Prerequisites**
 
-- Node.js 24, pnpm (via Corepack), Nx
+- Node.js 26, pnpm (at the `packageManager` version, via `scripts/install-pnpm.sh`), Nx
 - Rust — pinned to **1.98.0** by [rust-toolchain.toml](rust-toolchain.toml); `rustup` reads that file automatically for every `cargo`/`rustc` call in the repo, so there is no channel to choose
 - Python 3.14 + uv (agent layer)
 - Docker Desktop
@@ -143,7 +143,7 @@ The repo ships a [Dev Containers](https://containers.dev/) definition (`.devcont
 - **Isolation first** — the assistant runs as a non-root user with no path to the host filesystem, SSH keys, or credential stores. Containers and test stacks build on the **microVM's own engine as siblings** (`docker-outside-of-docker`), behind a **deny-by-default egress policy enforced outside the VM** — which is what makes it cover sibling containers too, closing the gap the in-container firewall never could.
 - **No credentials in the image** — the container's credentials are written to a runtime env file by `.devcontainer/gen-container-secrets-env.sh` rather than declared in `containerEnv`. The devcontainer CLI turns every `containerEnv` entry into an `ENV` instruction in the generated image, which is a permanent leak: measured on the derived image on 2026-09-19, all four values were present in `Config.Env` and in **three history layers**, readable by anyone who can read the image.
 - **Faster, measurably** — the same five-stage bring-up takes **0.43×** the Docker-in-Docker wall-clock; `docker-build` alone went **1024 s → 293 s**, because a nesting level and the Windows filesystem are both out of the path.
-- **Full toolchain, pre-provisioned** — Rust + cargo tooling, Python via `uv`, Specify CLI, Node 24/pnpm/Nx, and `gh` are baked into a prebuilt `mcm-devcontainer` image (pulled from the forge registry by digest, or built locally via `node scripts/build-devcontainer-image.mjs`), so nothing is reinstalled per session.
+- **Full toolchain, pre-provisioned** — Rust + cargo tooling, Python via `uv`, Specify CLI, Node 26/pnpm/Nx, and `gh` are baked into a prebuilt `mcm-devcontainer` image (pulled from the forge registry by digest, or built locally via `node scripts/build-devcontainer-image.mjs`), so nothing is reinstalled per session.
 - **Fast** — budgets: cold first build < 5 min, warm recreate < 90 s, stop→start < 15 s; `cargo`/`pnpm`/`uv` caches persist across recreates on named volumes.
 - **Shared by more than one session** — several assistant sessions can share one container, and they share its git index and checked-out branch. Commit from a `git worktree`, never from the shared checkout: a `git checkout -b`, `git add -A`, or `git stash` there rewrites what another session is mid-edit on. Procedure and the traps: [docs/runbooks/devcontainer.md](docs/runbooks/devcontainer.md).
 - **Personal AI layer (optional)** — point the Dev Containers `dotfiles.repository` setting at your personal dotfiles repo to restore your Claude Code plugins/skills, RTK (built once from source in-container), and service logins; these persist on a personal-config volume, and the container is fully team-capable without them.
