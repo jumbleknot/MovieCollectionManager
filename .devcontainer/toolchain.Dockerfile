@@ -251,7 +251,7 @@ RUN mkdir -p \
 # at build time (pre-firewall). rust-analyzer is added as a rustup component; expose its proxy on
 # PATH via a symlink into CARGO_HOME/bin so `rust-analyzer --version` resolves directly.
 RUN curl -fsSL https://sh.rustup.rs \
-      | sh -s -- -y --profile minimal --default-toolchain 1.98.0 \
+      | sh -s -- -y --profile minimal --default-toolchain 1.99.1 \
     && rustup component add rustfmt clippy rust-analyzer \
     && rustc --version && cargo --version \
     && ln -sf "$(rustup which rust-analyzer)" "${CARGO_HOME}/bin/rust-analyzer" \
