@@ -96,22 +96,23 @@ jobs:
       # which is exactly why it inherited a runtime nobody had chosen. 24.14.1 is the version every
       # other job here already runs on — proven, not new.
       #
-      # This step MUST stay BEFORE `corepack enable`: corepack is provisioned from whichever Node is
-      # on PATH, so installing Node after it would leave corepack bound to the container's Node 22
-      # even once Node 24 exists. `renovate-workflow.guard.test.mjs` asserts both the pin and this
+      # This step MUST stay BEFORE the pnpm install: scripts/install-pnpm.sh runs `npm install -g`, and
+      # npm installs into the global prefix of whichever Node is on PATH, so installing Node after it
+      # would leave pnpm under the container's Node 22. (It was `corepack enable` until item #992:
+      # Node 26 bundles no corepack.) `renovate-workflow.guard.test.mjs` asserts both the pin and this
       # ordering; `check-toolchain-consistency.mjs` validates the version against `engines.node`.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: 24.22.2
+          node-version: 26.13.1
       # Renovate runs the manifest bump AND regenerates the lockfile ("artifacts" step) as child
       # processes using tools on PATH (binarySource=global for an npx install). The bare node:22-bookworm
       # runner has neither pnpm nor cargo, so lockfile regen failed → `renovate/artifacts` red and PRs
       # shipped with a STALE lockfile. Since app-ci enforces `pnpm install --frozen-lockfile`, a stale
       # pnpm-lock.yaml then cascades every downstream job (that was the react-monorepo PR breakage).
-      # Provide both toolchains here — mirroring guardrails.yml (pnpm via corepack) and app-ci's
+      # Provide both toolchains here — mirroring guardrails.yml (pnpm via scripts/install-pnpm.sh) and app-ci's
       # mc-service-checks (rustup minimal) — so Renovate can refresh pnpm-lock.yaml AND Cargo.lock.
-      - name: Enable pnpm (corepack, version from package.json packageManager)
-        run: bash scripts/ci-log-step.sh renovate-enable-pnpm corepack enable
+      - name: Install pnpm (version from package.json packageManager; Node 26 has no corepack)
+        run: bash scripts/ci-log-step.sh renovate-install-pnpm sh scripts/install-pnpm.sh
       - name: Install Rust (cargo, for Cargo.lock maintenance)
         run: |
           bash scripts/ci-log-step.sh renovate-install-rust bash -e /dev/stdin <<'CI_LOG_STEP'
@@ -156,7 +157,7 @@ jobs:
       # Posted BEFORE Renovate runs so a LIVE dispatch can be distinguished (and abandoned) early.
       #
       # `always()` — ITEM #484, found by that item's cross-workflow audit. This recorder sits after
-      # Checkout, corepack/pnpm, the Rust install and the uv install, and carried a bare
+      # Checkout, the pnpm install, the Rust install and the uv install, and carried a bare
       # `if: github.event_name == 'workflow_dispatch'`. A failed step skips every later step that is
       # not `always()`-guarded, so a dispatch whose toolchain setup died recorded NOTHING — and an
       # unrecorded dispatch mode is precisely the absence item #268 built this step to end. Three
@@ -202,7 +203,9 @@ jobs:
         run: bash scripts/ci-log-step.sh renovate-validate-config npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
       - name: Run Renovate
         env:
-          # Non-interactive corepack provisioning (avoid the first-use download prompt hanging the job).
+          # Non-interactive corepack, should anything still reach for one: setup-node's Node 26 has none,
+          # but the runner image's Node 22 corepack is still on PATH. pnpm itself comes from
+          # scripts/install-pnpm.sh (item #992); this only stops a first-use prompt from hanging the job.
           COREPACK_ENABLE_DOWNLOAD_PROMPT: '0'
           # Forgejo is Gitea-API-compatible; the `gitea` platform is the most battle-tested path.
           RENOVATE_PLATFORM: gitea

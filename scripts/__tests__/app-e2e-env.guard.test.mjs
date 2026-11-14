@@ -61,7 +61,14 @@ function playwrightDockerRun() {
   const joined = collected.join(' ').replace(/\\\s+/g, ' ').replace(/\s+/g, ' ');
 
   assert.match(joined, /mcr\.microsoft\.com\/playwright/, 'located a docker run, but not the Playwright one');
-  assert.match(joined, /playwright test/, 'the located invocation does not run the Playwright suite');
+  // Since item #992 the suite runs through scripts/run-playwright-in-image.sh (which checks the image's
+  // Node major, then execs `./node_modules/.bin/playwright test`) rather than an inline
+  // `pnpm exec playwright test` — Node 26 images carry no corepack to provide pnpm.
+  assert.match(
+    joined,
+    /playwright test|scripts\/run-playwright-in-image\.sh/,
+    'the located invocation does not run the Playwright suite',
+  );
   return joined;
 }
 

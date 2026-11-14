@@ -56,7 +56,8 @@ jobs:
           docker version >/dev/null || { echo "::error::cannot reach the Docker daemon at $DOCKER_HOST"; exit 1; }
           CI_LOG_STEP
 
-      # Build the heavy toolchain image. Context = repo root (the Dockerfile COPYs nothing; the
+      # Build the heavy toolchain image. Context = repo root (the Dockerfile COPYs only package.json and
+      # scripts/install-pnpm.sh, for the pnpm pin; the
       # thin .devcontainer/Dockerfile is NOT built here — this publishes its `FROM` base).
       - name: Build toolchain image
         # The `:?` var guard is INSIDE the wrapper (item #177 variant 4). Above it, an unset REGISTRY

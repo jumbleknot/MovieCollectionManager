@@ -117,8 +117,8 @@ jobs:
           echo "pages: $INPUT_PAGES"
           CI_LOG_STEP
 
-      - name: Enable pnpm (corepack, version from package.json packageManager)
-        run: bash scripts/ci-log-step.sh maintain-enable-pnpm corepack enable
+      - name: Install pnpm (version from package.json packageManager; Node 26 has no corepack)
+        run: bash scripts/ci-log-step.sh maintain-install-pnpm sh scripts/install-pnpm.sh
 
       - name: Install JS dependencies
         # The orchestrator imports `yaml`, a root dependency. Without this the run dies on
