@@ -273,7 +273,8 @@ test('the dev container installs the same generator version and the Mermaid pars
     'CI and the dev container must run the SAME generator version — otherwise they silently differ on the thing whose output is gated');
   // 078 FR-015: 0.6.0 was the first version with parallel page workers (OPENWIKI_PAGE_CONCURRENCY);
   // 0.7.1 (amendment 2026-10-07) adds the worker retry (#913) and scoped planning (#865), research R15.
-  assert.equal(pinned.version, '0.7.1', 'the generator is pinned at 0.7.1 (feature 078 amendment, research R15)');
+  // 0.9.0 (2026-11-14, Renovate PR #1011): R15 gaps re-checked and one dispatched run reviewed before merge.
+  assert.equal(pinned.version, '0.9.0', 'the generator is pinned at 0.9.0 (feature 078 amendment, research R15)');
   // `mermaid` and `jsdom` are OPTIONAL peers and their absence is silent: without the real parser a
   // diagram that fails only the strict check is rewritten into a plain `text` fence, exit 0, gates
   // green. If only one environment has the parser, the two disagree about what a valid diagram is.
