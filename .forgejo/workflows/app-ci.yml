@@ -1275,7 +1275,7 @@ jobs:
             -e BACKUP_TEST_S3_ACCESS_KEY -e BACKUP_TEST_S3_SECRET_KEY \
             -e BACKUP_TEST_WEBDAV_USER -e BACKUP_TEST_WEBDAV_PASSWORD \
             -e BACKUP_TICK_SECRET \
-            mcr.microsoft.com/playwright:v1.63.0-noble \
+            mcr.microsoft.com/playwright:v1.65.0-noble \
             sh -c "corepack enable && pnpm exec playwright test"
 
       # Feature 073 note on the four lines above. The two ENDPOINTS are non-secret hostnames and
@@ -1315,7 +1315,7 @@ jobs:
             -e E2E_AGENT_PROVIDER=anthropic -e ANTHROPIC_API_KEY -e TMDB_API_KEY \
             -e E2E_AGENT_PRODUCTION -e E2E_REQUIRE_AGENT_STACK=1 \
             -e KEYCLOAK_SERVICE_CLIENT_SECRET \
-            mcr.microsoft.com/playwright:v1.63.0-noble \
+            mcr.microsoft.com/playwright:v1.65.0-noble \
             sh -c "corepack enable && pnpm exec playwright test"
 
       # ── Result gate: a GREEN app-e2e must mean nothing was hidden (051 SC-001) ──────────────────
