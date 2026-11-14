@@ -1,11 +1,11 @@
 ---
 type: Decision
 title: The governing constitution
-description: The repository's ratified, versioned constitution — currently v2.8.0, ratified 2026-03-08 and last amended 2026-11-07, its Expo SDK 58 amendment approved by the operator on 2026-11-08 — the core principles every spec and plan must comply with, the amendment process and its same-pull-request rule, the per-feature Constitution Check gate, and the bundle-budget gate that enforces its sole accepted exception.
+description: The repository's ratified, versioned constitution — currently v2.9.0, ratified 2026-03-08 and last amended 2026-11-14 (the Node 24 → 26 baseline, approved by the operator that day), after the Expo SDK 58 amendment approved on 2026-11-08 — the core principles every spec and plan must comply with, the amendment process and its same-pull-request rule, the per-feature Constitution Check gate, and the bundle-budget gate that enforces its sole accepted exception.
 resource: .specify/memory/constitution.md
-resource-sha256: e79ad88510812605259360432c23eaa8d88825d087d8b97716aa223ae4d3cf8f
+resource-sha256: c15bf176d964035cf68427604c2d3f5d7dc074c00ae438ad9cb9ec208653671d
 tags: [governance, security, tdd, constitution]
-timestamp: 2026-11-10T03:37:28.041Z
+timestamp: 2026-11-14T20:43:16.383Z
 ---
 
 # The governing constitution
@@ -18,9 +18,9 @@ of the file) and has been amended more than twenty times as the system matured, 
 ratification through incremental clarifications like the client auth model rewrite and the Tamagui
 design-system mandate.
 
-The file currently reads **v2.8.0**: its footer says `**Version**: 2.8.0 | **Ratified**: 2026-03-08
-| **Last Amended**: 2026-11-07`, and the version-history entry carrying the `[CURRENT]` marker is the
-one dated 2026-11-07. That marker is the authoritative "latest amendment" signal — check it rather
+The file currently reads **v2.9.0**: its footer says `**Version**: 2.9.0 | **Ratified**: 2026-03-08
+| **Last Amended**: 2026-11-14`, and the version-history entry carrying the `[CURRENT]` marker is the
+one dated 2026-11-14. That marker is the authoritative "latest amendment" signal — check it rather
 than inferring the version from any summary, this page included.
 
 Amendments follow the file's own **Governance** section: a proposal documenting rationale, impact on
@@ -88,6 +88,13 @@ The amendment was approved by the operator on **2026-11-08**, recorded in the ev
 [`specs/087-expo-sdk-58/tasks.md`](../../specs/087-expo-sdk-58/tasks.md) (`T048`, now done), and
 landed in the same pull request as the SDK move — the same-PR rule, honoured. No principle was
 redefined, which is why it is a MINOR.
+
+**v2.9.0** (2026-11-14) advanced the **Node.js baseline** from 24 to 26 — the BFF line now names
+`node:26.13.1-alpine3.23` — as item #992's one change across the images, every CI `setup-node` and the
+Playwright E2E image (a single major, held by `scripts/check-toolchain-consistency.mjs`). It also records
+why pnpm moved off corepack: Node 26 no longer bundles it, so pnpm is installed at exactly the
+`packageManager` version by `scripts/install-pnpm.sh`. Approved by the operator on 2026-11-14 and landed
+in the same PR as the move; no principle redefined, so a MINOR.
 
 Amendments are drafted rather than hand-edited. The Spec Kit constitution command
 ([`.github/agents/speckit.constitution.agent.md`](../../.github/agents/speckit.constitution.agent.md),

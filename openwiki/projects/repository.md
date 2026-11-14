@@ -3,10 +3,10 @@ type: Reference
 title: MovieCollectionManager repository — structure and working conventions
 description: The MCM monorepo itself — its directory layout, the polyglot tech stack re-derived from the declaring manifests rather than from the README's tech-stack table, the toolchain and lint conventions features 081 and 087 moved (Expo SDK 58 with Jest 30, ESLint 10 flat config, the single exact Tamagui 3 pin, pnpm/Nx exact pins, the Gradle 9.4.1 bake, the still-held babel / TypeScript / async-storage / JDK majors), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas — the `sbx` v0.51.0 pin and its upgrade ritual, `sbx run`'s false dockerd failure, the memory bounds, and why egress enforcement lives outside the VM.
 resource: README.md
-resource-sha256: a10aa592408a822f1e09900cef84030b89d5a5ab58751a4add56cd7dd77bfb7f
+resource-sha256: 9d0ef2866c319030610d212226fd64ddef8e01c1264d67c4683f7afde2044309
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding, eslint, tamagui, dependencies, expo, react-native, jest]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T11:40:29.752Z
+timestamp: 2026-11-14T19:18:07.429Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -28,12 +28,12 @@ The declarations themselves are the authority:
 |---|---|---|
 | Universal client | Expo SDK 58 (`expo ~58.0.23`, `expo-router ~58.0.30`, `expo-server ~58.0.6`), React Native 0.88.1, React 19.3.0, Tamagui 3.0.18, CopilotKit 1.79.1, Jest 30.5.2 / `jest-expo` 58.0.14, TypeScript 6.0.3 | `frontend/mcm-app/package.json`, `packages/design-system/package.json` |
 | Backend | Rust 1.98.0 channel, Axum 0.8, MongoDB / BSON 3 | `rust-toolchain.toml`, `backend/mc-service/Cargo.toml` |
-| BFF and dev-container toolchain | Node 24 (`node:24.22.1-alpine3.23` in the app image, `node:24-bookworm` in the toolchain image), Gradle 9.4.1 baked, JDK 17 (openjdk-17 in the toolchain image, `java-version: '17'` in CI) | `frontend/mcm-app/Dockerfile`, `.devcontainer/toolchain.Dockerfile`, `.forgejo/workflows/app-ci.yml` |
+| BFF and dev-container toolchain | Node 26 (`node:26.13.1-alpine3.23` in the app image, `node:26-bookworm` in the toolchain image, `26.13.1` in every CI `setup-node`; one major, enforced by `check-toolchain-consistency.mjs`), Gradle 9.4.1 baked, JDK 17 (openjdk-17 in the toolchain image, `java-version: '17'` in CI) | `frontend/mcm-app/Dockerfile`, `.devcontainer/toolchain.Dockerfile`, `.forgejo/workflows/app-ci.yml` |
 | Package manager and task runner | pnpm 12.13.0, Nx 23.3.0 | `package.json`, `nx.json` |
 | Agent layer | Python 3.14 runtime image, `requires-python >=3.13` | `agents/movie-assistant/Dockerfile`, `agents/movie-assistant/pyproject.toml`, `agents/movie-assistant/uv.lock` |
 
 **Rust 1.98.0** is pinned by `rust-toolchain.toml`, which `rustup` reads automatically for every
-`cargo`/`rustc` call inside the repo, so there is no channel to choose. **Node 24** covers both the BFF
+`cargo`/`rustc` call inside the repo, so there is no channel to choose. **Node 26** covers both the BFF
 container base and the dev-container toolchain image, with **pnpm 12** and **Nx 23** as the package
 manager and task runner.
 
@@ -103,7 +103,7 @@ artifacts.
   only `>=18`, and every pin already sits at 22/24, so lowering it would buy nothing.
   `scripts/check-toolchain-consistency.mjs` is what makes that floor binding — it fails on a workflow or
   Dockerfile Node pin below it, on a pnpm version named anywhere other than `packageManager`, and on a
-  second `packageManager` field outside the root manifest (corepack resolves that field from the
+  second `packageManager` field outside the root manifest (pnpm resolves that field from the
   *nearest* manifest, so a duplicate silently wins in its directory). The task runner and its plugins
   are pinned **exactly**, and every `@nx/*` equals `nx`, because a ranged `@nx/*` is one lockfile
   refresh away from three Nx versions on one tree — a half-bump that ran **zero** tests on the Playwright
@@ -230,7 +230,7 @@ agent stack) build on the microVM's own engine and share its network namespace
 (`docker-outside-of-docker`, `--network=host`). Egress is governed by a deny-by-default policy
 enforced **outside the VM** — closing the gap an in-container firewall never could.
 
-Rust and its cargo tooling, Python via `uv`, the Specify CLI, Node 24 / pnpm / Nx, and `gh` are
+Rust and its cargo tooling, Python via `uv`, the Specify CLI, Node 26 / pnpm / Nx, and `gh` are
 baked into the prebuilt `mcm-devcontainer` image (pulled from the forge registry by digest, or built
 locally via `node scripts/build-devcontainer-image.mjs`), so there is no toolchain to install and
 none to keep current by hand.
@@ -353,7 +353,7 @@ known first-run `firewall-allowlist` case that passed on re-run.
 The native host toolchain is the alternative environment, and it is needed **only** for the Android
 emulator and native mobile builds, which the microVM cannot host.
 
-**Prerequisites:** Node.js 24, pnpm (via Corepack), Nx; Rust — pinned to **1.98.0** by
+**Prerequisites:** Node.js 26, pnpm (at the `packageManager` version, via `scripts/install-pnpm.sh`), Nx; Rust — pinned to **1.98.0** by
 [rust-toolchain.toml](../../rust-toolchain.toml), which `rustup` reads automatically for every
 `cargo`/`rustc` call in the repo; Python 3.14 + `uv` (agent layer); Docker Desktop; and Android
 Studio + JDK 17 for mobile development only.

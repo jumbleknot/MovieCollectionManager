@@ -3,10 +3,10 @@ type: Runbook
 title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0, and -1 for the OpenWiki generator's lock refresh) that allocates the six in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
 resource: docs/runbooks/renovate.md
-resource-sha256: 77a8d2735310e0307be12b8ecafca49a46b8572859eae70a6388c4fe0500ea43
+resource-sha256: 5f25acd439dd0206b98f870b9d01bedd7c1053da2c1edbbbb1d994663fb1013f
 tags: [renovate, ci, dependencies, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-12T18:56:30.063Z
+timestamp: 2026-11-14T19:18:07.734Z
 ---
 
 # Renovate dependency bot
@@ -328,12 +328,15 @@ at every site, and tracked by something that will move it.
 the pinned major, so from 2026-08-09 every run logged `npm warn EBADENGINE` and then `ERROR:
 Unsupported node environment detected` and exited 1 — this was the only workflow in the repository with
 no `setup-node`, which is exactly why it inherited a runtime nobody had chosen. `renovate.yml` now pins
-24.19.0, the version every other job already ran, and that step must stay **before** `corepack enable`,
-because corepack is provisioned from whichever Node is on PATH at the time. A guard test asserts both
+the same Node every other job runs (26 since item #992), and that step must stay **before** the pnpm
+install (`scripts/install-pnpm.sh`, formerly `corepack enable`), because npm installs pnpm into whichever
+Node is on PATH at the time. A guard test asserts both
 the pin and the ordering, and `check-toolchain-consistency.mjs` validates the version against
 `engines.node`. A Node bump can still arrive as two PRs (workflow `node-version` entries ride
-`ci actions`, a Dockerfile `FROM node` rides `docker base images`) — accepted while the gate
-floor-checks.
+`ci actions`, a Dockerfile `FROM node` rides `docker base images`). A patch/minor split is harmless; a
+**major** split fails the gate (item #992 — one Node major across the images, every setup-node and the
+Playwright image), so each Renovate major half arrives red on purpose: hand-write the major as ONE
+change that supersedes both branches.
 
 **Rust: the devcontainer needs an image rebuild after any toolchain bump.** `cargo`, `rustc`, and
 `nx test mc-service` fail in the dev container immediately after a bump lands, because rustup keys
@@ -460,7 +463,7 @@ None of these produce a red build or a searchable error. They produce absence, a
   2026-08-28 (item #218): the `pep621` channel created nothing for weeks until `uv` was added to
   `renovate.yml`'s toolchain steps. Rule out "nothing to refresh" by running the tool by hand
   (`uv lock --upgrade --dry-run`, `cargo update --dry-run`) before believing a channel is idle. A new
-  manager means a new toolchain step: the job provisions pnpm (corepack), Rust (rustup) and uv.
+  manager means a new toolchain step: the job provisions pnpm (`scripts/install-pnpm.sh`), Rust (rustup) and uv.
 - **The health digest used to read "Healthy" from the wrong signal, twice (items #485, #563, now
   folded together).** It originally read only the advisory `renovate/stability-days` column, which
   missed both red **required** PRs (2026-09-04) and a red main CVE sweep (2026-09-18: the digest posted

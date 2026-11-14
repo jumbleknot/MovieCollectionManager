@@ -16,7 +16,7 @@
 #
 # Usage (cwd = frontend/mcm-app inside the container): sh /work/scripts/run-playwright-in-image.sh [playwright test args]
 set -eu
-: "${EXPECTED_NODE_MAJOR:?pass -e EXPECTED_NODE_MAJOR=<the repo's Node major> to docker run}"
+: "${EXPECTED_NODE_MAJOR:?pass -e EXPECTED_NODE_MAJOR=<the pinned Node major> to docker run}"
 actual=$(node -p 'process.versions.node.split(".")[0]')
 if [ "$actual" != "$EXPECTED_NODE_MAJOR" ]; then
   echo "::error::the Playwright image runs Node $(node -v) but the repo pins Node $EXPECTED_NODE_MAJOR — move the image tag, the Node images and every setup-node together (item #992)" >&2

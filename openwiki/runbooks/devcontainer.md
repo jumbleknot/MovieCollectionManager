@@ -3,10 +3,10 @@ type: Runbook
 title: Containerized dev environment (devcontainer — Docker Desktop / DinD path)
 description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the thin Dockerfile layer and its measured ~13 GB copy-up cost, the canonical egress allowlist behind the in-container firewall (its schema, exclusions and fatal-precondition design), the in-container dev-ollama helper, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
 resource: docs/runbooks/devcontainer.md
-resource-sha256: ef1a46a27b3d9aa7879c8af256b911c554bfed4e6d39b0485eaad7c68304ee67
+resource-sha256: 99f8a3a0ae520160b27b5c56bbde1f8bde3d5a59ea5e10d1c430937c5dc39f02
 tags: [devcontainer, docker, security, isolation, runbook, android]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T11:51:44.487Z
+timestamp: 2026-11-14T19:18:07.638Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -24,7 +24,7 @@ The committed [`.devcontainer/`](../../.devcontainer/) directory gives the AI co
 throwaway Linux container to run inside, so a compromised dependency or errant agent command has a
 blast radius bounded by the container rather than the host's files, credentials, or SSH keys.
 
-The toolchain image (`.devcontainer/toolchain.Dockerfile`) bakes in Node 24 + pnpm, Rust, Python/uv,
+The toolchain image (`.devcontainer/toolchain.Dockerfile`) bakes in Node 26 + pnpm (at the `packageManager` version), Rust, Python/uv,
 the Android SDK and an x86_64 system image, `pwsh`, the Claude Code CLI and OpenWiki, so nothing
 re-downloads once the egress firewall is up. `.devcontainer/Dockerfile` is a **thin**
 `FROM ${BASE_IMAGE}` whose only job is to let `devcontainer.json` parametrize the base through

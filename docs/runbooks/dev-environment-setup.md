@@ -13,8 +13,8 @@ pre-provisioned; on the host, install it once with the steps below.
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| Node.js | 24 (LTS) — floor in root `package.json` `engines.node` | Frontend + BFF runtime |
-| pnpm | via Corepack — the version pinned by root `package.json` `packageManager` | JavaScript/TypeScript package manager |
+| Node.js | 26 (LTS) — the major every image and CI `setup-node` pins (one major, enforced by `scripts/check-toolchain-consistency.mjs`); floor in root `package.json` `engines.node` | Frontend + BFF runtime |
+| pnpm | installed with npm at exactly the version root `package.json` `packageManager` names (Node 26 bundles no Corepack) | JavaScript/TypeScript package manager |
 | Nx | workspace (via `pnpm nx`) | Task runner (JS/TS + Rust + Python) |
 | Rust | stable channel, exact release pinned by root `rust-toolchain.toml` (rustup applies it inside the repo) | mc-service |
 | Python | 3.13 + `uv` | Agent layer, Specify CLI |
@@ -156,12 +156,13 @@ Follow the [React Native environment setup](https://reactnative.dev/docs/set-up-
 
 Then:
 
-1. **pnpm via Corepack** (bundled with Node). Do not `corepack prepare pnpm@latest`: the version is
-   pinned by `packageManager` in the root `package.json`, and Corepack activates exactly that one
-   when run inside the repository:
+1. **pnpm, at the `packageManager` version.** Node 26 no longer bundles Corepack, so install pnpm
+   with npm — at exactly the version `packageManager` in the root `package.json` names, never
+   `pnpm@latest`. This is the same thing every image and CI job does via `scripts/install-pnpm.sh`.
+   Run it from the repository root:
 
    ```bash
-   corepack enable
+   sh scripts/install-pnpm.sh   # bash/zsh; in PowerShell: npm install -g (node -p "require('./package.json').packageManager")
    pnpm --version          # run inside the repo; must print the packageManager version
    pnpm setup              # sets the global bin directory
    ```

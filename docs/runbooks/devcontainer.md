@@ -657,8 +657,9 @@ official image instead: browsers are baked in, and `--network host` shares the d
 docker run --rm --network host -v "$PWD":/work -w /work/frontend/mcm-app \
   -e E2E_BFF_TARGET=dev-container -e E2E_AGENT_PROVIDER=anthropic \
   -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e ANTHROPIC_API_KEY -e TMDB_API_KEY -e CI=1 \
-  mcr.microsoft.com/playwright:v1.63.0-noble \
-  sh -c "corepack enable && pnpm exec playwright test"
+  -e EXPECTED_NODE_MAJOR=26 \
+  mcr.microsoft.com/playwright:v1.65.0-noble \
+  sh /work/scripts/run-playwright-in-image.sh
 ```
 
 **2. Agent flows: set `E2E_AGENT_PROVIDER=anthropic`.** The dock only renders once
@@ -908,8 +909,9 @@ Measured on PR #199, where the lockfile moved 1.60.0 → 1.62.1 and this tag did
 > leave `node_modules` out entirely and let the container install its own**: source alone is
 > ~39 MB against 1.9 GB, the install takes under a minute, and copying a host-built
 > `node_modules` into a different base image is the wrong thing on its own terms. Then the
-> command becomes `sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm exec
-> playwright test <pattern> --reporter=line"`. Remove the volume when done.
+> command becomes `sh -c "sh /work/scripts/install-pnpm.sh /work/package.json && pnpm install
+> --frozen-lockfile && pnpm exec playwright test <pattern> --reporter=line"` (Node 26 images carry no
+> corepack, item #992; the script installs exactly the `packageManager` pnpm). Remove the volume when done.
 >
 > **PASS BOTH ENV FILES.** Playwright's own setup loads only `.env.e2e.local`. The feature-073
 > specs need `BACKUP_TEST_*` and `BACKUP_TICK_SECRET`, and per-worker identities need
@@ -1125,7 +1127,7 @@ cold measurement (empty Docker cache) and the warm-start number are confirmed du
 
 Feature 037 shipped a Node+pnpm+DinD pilot image. **038** makes an in-container AI session as
 capable as native — the full team toolchain (Rust + cargo utilities, `uv` + Specify CLI,
-Node 24 / pnpm / Nx, `gh`) plus the developer's **personal layer** (RTK, Claude plugins/skills,
+Node 26 / pnpm / Nx, `gh`) plus the developer's **personal layer** (RTK, Claude plugins/skills,
 logins) — **without** a multi-minute reinstall per open. Two levers keep startup fast: a
 **prebuilt toolchain image** pulled per-open, and **persistent named-volume caches**.
 
