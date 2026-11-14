@@ -174,7 +174,7 @@ services:
   # #560). No `user:` key: the image runs as its own uid 10001 (contracts/object-store-service.md
   # S2), and a fresh volume inherits /data owned by it — any other uid fails at startup.
   langfuse-rustfs:
-    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
+    image: rustfs/rustfs:1.0.5@sha256:b81d16a90ee25bd9511280127ca1471788c6e874cf0f0da759645f46b2dc1d74
     container_name: langfuse-rustfs
     profiles: [observability]
     restart: unless-stopped
@@ -203,7 +203,7 @@ services:
   # secret is referenced as `$$S3_SECRET_KEY` from the container's environment and fed to curl on
   # stdin — never interpolated into argv, where `docker inspect` and `ps` would show it.
   langfuse-rustfs-init:
-    image: rustfs/rustfs:1.0.4@sha256:ed9210d6411d77ffceb70d94b964a3cb7d225983368bc25bebe01e995293dcc2
+    image: rustfs/rustfs:1.0.5@sha256:b81d16a90ee25bd9511280127ca1471788c6e874cf0f0da759645f46b2dc1d74
     container_name: langfuse-rustfs-init
     profiles: [observability]
     depends_on:
@@ -246,7 +246,7 @@ services:
 
   # ── Open Policy Agent — agent authorization decisions (token-exchange + UI-action, R16) ──────
   opa-service:
-    image: openpolicyagent/opa:1.22.2@sha256:951ed07a3a41f5b02f68bf6f94ba1c952642daa597c89420986fd597eb09e661
+    image: openpolicyagent/opa:1.22.3@sha256:c1632ced2b6726a257a075523ce4d86258b721b5512e05ee3344ae26148e9031
     container_name: opa-service
     profiles: [observability]
     restart: unless-stopped
