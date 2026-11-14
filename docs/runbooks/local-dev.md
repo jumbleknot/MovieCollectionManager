@@ -98,7 +98,7 @@ SECRET=$(cd agents/movie-assistant && uv run python -c "import sys;sys.path.inse
 AGENT_GATEWAY_CLIENT_SECRET="$SECRET" docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile agents up -d
 ```
 
-Without the secret the gateway runs but tool calls fail-closed (chat works, add/query/organize don't). Host Ollama must be serving `qwen2.5`/`qwen2.5:32b` (or set `MODEL_PROVIDER=anthropic` + `ANTHROPIC_API_KEY`). `spreadsheet-mcp` reaches Redis over `mcm-bff-network` (wired into its compose).
+Without the secret the gateway runs but tool calls fail-closed (chat works, add/query/organize don't). Host Ollama must be serving `qwen2.5`/`qwen2.5:32b` (the gateway's compose file pins `MODEL_PROVIDER=ollama`). `spreadsheet-mcp` reaches Redis over `mcm-bff-network` (wired into its compose).
 
 **Endpoints when running:**
 
@@ -119,9 +119,9 @@ Without the secret the gateway runs but tool calls fail-closed (chat works, add/
 | `mcm-bff-cache-redis-data` | `infrastructure-as-code/docker/bff/compose.yaml` | bff compose |
 | `mcm-bff-store-mongo-data` | `infrastructure-as-code/docker/bff/compose.yaml` | bff compose |
 
-The transient volume `keycloak-mailpit-data` (stores emails) gets the `mcm_` prefix (`mcm_keycloak-mailpit-data`) — that is acceptable since emails are ephemeral.
+The transient volume `keycloak-mailpit-data` (stores emails) is not external, but carries an explicit `name:` so it gets no project prefix — it is wiped by `down --volumes`, which is acceptable since emails are ephemeral.
 
-`docker compose down --volumes` only wipes transient volumes (`mcm_keycloak-mailpit-data`); all three persistent external volumes are untouched. To wipe persistent data, remove the external volumes manually after `docker compose down`.
+`docker compose down --volumes` only wipes transient volumes (`keycloak-mailpit-data`); the persistent external volumes are untouched. To wipe persistent data, remove the external volumes manually after `docker compose down`.
 
 **Without Redis, the BFF /login endpoint returns 500 "Authentication failed"** because the rate-limiter's first Redis call fails before returning a typed error.
 
@@ -324,7 +324,7 @@ Feature 020 unifies every service's `container_name` AND compose **service key**
 
 Host-port mappings are unchanged (`localhost:8099/8082/27017/27018/6379/5433`) — only the **container DNS names** changed, so host-side tools and tests that connect via `localhost:<port>` need no edits. Keycloak client IDs / token audiences (`agent-gateway`, `mcm-bff-service`, …) are **not** DNS and stay as-is. A non-updated `.env` fails with a clear DNS/connection error naming the old host — not a silent outage (no legacy aliases, by design).
 
-> Host-side `docker exec`/`docker ps` now use the new names too: `docker exec mc-service-db …`, `docker ps --filter name=mcm-bff-cache`, etc.
+> Host-side `docker exec`/`docker ps` now use the new names too: `docker exec mc-service-store-mongo …`, `docker ps --filter name=mcm-bff-cache-redis`, etc.
 
 ## Environment Variables
 
@@ -350,7 +350,7 @@ Host-port mappings are unchanged (`localhost:8099/8082/27017/27018/6379/5433`) �
 | `MONGO_URL` | `mongodb://localhost:27018` (Metro); `mongodb://mcm-bff-store-mongo:27017` (container) |
 | `MONGO_DB_NAME` | `bff_db` |
 
-**Per-user agent config (feature 018).** The BFF stores each user's encrypted assistant credentials in the `user_agent_config` collection on its **OWN dedicated MongoDB instance, `mcm-bff-db`** — deliberately **separate** from mc-service's `mc-db` (the BFF must not reach across a service boundary into a backend service's database — constitution §Decoupling; it mirrors the BFF's already-separate Redis). `mcm-bff-db` starts by default with `docker compose up -d` (host port `27018`). Env vars:
+**Per-user agent config (feature 018).** The BFF stores each user's encrypted assistant credentials in the `user_agent_config` collection on its **OWN dedicated MongoDB instance, `mcm-bff-store-mongo`** — deliberately **separate** from mc-service's `mc-service-store-mongo` (the BFF must not reach across a service boundary into a backend service's database — constitution §Decoupling; it mirrors the BFF's already-separate Redis). `mcm-bff-store-mongo` starts by default with the `mcm` stack (`pnpm nx up-mcm infrastructure-as-code`, host port `27018`). Env vars:
 
 - `AGENT_CONFIG_ENC_KEY` — the AES-256-GCM key for at-rest encryption of the per-user provider/TMDB secrets. **Required**; the BFF throws on startup in production if it is missing. Generate one with `node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`. The **same** value must be set wherever the BFF runs (Metro `.env.local` **and** the dev container `.env.docker`) or encrypt/decrypt across restarts/containers breaks. Never commit it (NFR-Sec-1).
 - `MONGO_URL` — the BFF→`mcm-bff-store-mongo` connection: `mongodb://localhost:27018` from Metro/host, `mongodb://mcm-bff-store-mongo:27017` from the dev container. `mcm-bff-store-mongo` is a **plain standalone `mongod`** (the BFF store does single-doc upserts only — no transactions), so there is **no replica set and no `directConnection`** to worry about (unlike `mc-service-store-mongo`). `MONGO_DB_NAME` defaults to `bff_db`. First-time: `docker volume create mcm-bff-store-mongo-data`.

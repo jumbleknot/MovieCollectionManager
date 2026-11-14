@@ -1,6 +1,6 @@
 # movie-mcp — MCP server for the movie-collection domain (feature 012)
 
-A stateless **streamable-HTTP MCP server** (`FastMCP(stateless_http=True)`) that exposes the
+A stateless **streamable-HTTP MCP server** (`MCPServer`, served with `stateless_http=True`) that exposes the
 user's collections/movies to the agent as thin tools over **mc-service** REST. It adds **no
 domain logic** (FR-022) — it forwards mc-service shapes + errors verbatim — and carries the
 caller's **downscoped `aud=mc-service` JWT** out-of-band so every call is the user's own identity
@@ -12,7 +12,7 @@ Tool contract + per-agent allowlist: [`../../specs/012-multi-agent-mvp/contracts
 
 | Tool | Op | Notes |
 |---|---|---|
-| `list_collections` / `get_collection` / `list_movies` | read | keyset pagination; surfaces 404 (DAC/IDOR parity, feature 011) |
+| `list_collections` / `get_collection` / `list_movies` / `count_movies` / `get_movie_metadata` | read | keyset pagination; surfaces 404 (DAC/IDOR parity, feature 011) |
 | `create_collection` / `add_movie` | write | `idempotencyKey` header; at-most-once via mc-service uniqueness (dup → 409 → `skipped_duplicate`) |
 | `update_movie` / `delete_movie` | write | full-replacement update; 404 → `skipped_missing` |
 

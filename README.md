@@ -46,7 +46,7 @@ See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full descriptio
 |---|---|
 | Frontend | React Native 0.88, React 19.3, Expo SDK 58, Expo Router, Tamagui 3 (`@mcm/design-system`), CopilotKit 1.79 + AG-UI, TypeScript |
 | BFF | Expo Router API routes (Node 26 container), Redis 8 sessions, Axios |
-| Backend | Rust 1.98 (pinned), Axum 0.8, Tokio, CQRS-style command/query handlers, MongoDB 9 |
+| Backend | Rust 1.99 (pinned), Axum 0.8, Tokio, CQRS-style command/query handlers, MongoDB 9 |
 | AI agents | Python 3.14, LangGraph, FastAPI + AG-UI, MCP SDK 2.x, Langfuse / OpenTelemetry |
 | Identity | Keycloak 26.8 on PostgreSQL 18 — OAuth 2.0 + PKCE, RBAC |
 | Secrets | Komodo Variables in production ([ADR-0001](openwiki/decisions/adr-0001-prod-secrets-management.md)); Vault is deployed but dormant and agent-layer-scoped |
@@ -83,7 +83,7 @@ There are two supported environments. **The dev container on a Docker Sandbox mi
 .\scripts\open-sandbox.ps1     # Windows PowerShell 5.1; pwsh is NOT required
 ```
 
-This starts the microVM if it has idle-stopped (it stops ~30 s after the last session) and opens VS Code **directly inside the dev container** — replacing the four-step *Remote-SSH → Open Folder → Attach* route. Rust and its cargo tooling, Python via `uv`, Node 24 / pnpm / Nx, the Specify CLI, and `gh` are already baked into the prebuilt `mcm-devcontainer` image, so there is no toolchain to install and none to keep current by hand.
+This starts the microVM if it has idle-stopped (it stops ~30 s after the last session) and opens VS Code **directly inside the dev container** — replacing the four-step *Remote-SSH → Open Folder → Attach* route. Rust and its cargo tooling, Python via `uv`, Node 26 / pnpm / Nx, the Specify CLI, and `gh` are already baked into the prebuilt `mcm-devcontainer` image, so there is no toolchain to install and none to keep current by hand.
 
 First-time setup of the sandbox itself: [docs/runbooks/devcontainer-sandbox.md](docs/runbooks/devcontainer-sandbox.md). What the container covers, what it deliberately does not, and the headless and Docker Desktop entry points: [Development environments](#development-environments) below.
 
@@ -94,7 +94,7 @@ Needed only for the Android emulator and native mobile builds, which the microVM
 **Prerequisites**
 
 - Node.js 26, pnpm (at the `packageManager` version, via `scripts/install-pnpm.sh`), Nx
-- Rust — pinned to **1.98.0** by [rust-toolchain.toml](rust-toolchain.toml); `rustup` reads that file automatically for every `cargo`/`rustc` call in the repo, so there is no channel to choose
+- Rust — pinned to **1.99.1** by [rust-toolchain.toml](rust-toolchain.toml); `rustup` reads that file automatically for every `cargo`/`rustc` call in the repo, so there is no channel to choose
 - Python 3.14 + uv (agent layer)
 - Docker Desktop
 - Android Studio + JDK 17 (mobile development only)
@@ -183,7 +183,7 @@ All tasks run through Nx from the repo root — never npm/yarn, and never the un
 
 ```bash
 pnpm nx test mcm-app                   # frontend unit tests
-pnpm nx test mc-service                # Rust unit tests
+pnpm nx test mc-service                # Rust unit + integration tests
 pnpm nx lint mcm-app                   # ESLint
 pnpm nx lint mc-service                # clippy
 pnpm nx e2e mcm-app                    # web E2E (Playwright)
