@@ -102,7 +102,7 @@ jobs:
       # ordering; `check-toolchain-consistency.mjs` validates the version against `engines.node`.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: 24.19.0
+          node-version: 24.22.2
       # Renovate runs the manifest bump AND regenerates the lockfile ("artifacts" step) as child
       # processes using tools on PATH (binarySource=global for an npx install). The bare node:22-bookworm
       # runner has neither pnpm nor cargo, so lockfile regen failed → `renovate/artifacts` red and PRs
@@ -139,7 +139,7 @@ jobs:
       # first two. The failure mode generalises: any Renovate channel whose lockfile needs a binary
       # this runner lacks goes silently missing, so a new manager means a new toolchain here.
       - name: Set up uv (for pep621 / uv.lock maintenance)
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
           # installs is whatever is newest at run time — and uv is the generator for the uv.lock
