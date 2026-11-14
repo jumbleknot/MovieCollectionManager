@@ -988,6 +988,43 @@ test('the copilotkit gate leaves the PATCH track routine, so a security patch is
   );
 });
 
+// @ag-ui/* moves ONLY with CopilotKit. @copilotkit/runtime, /core and /shared 1.79.1 pin @ag-ui/client
+// EXACTLY at 1.0.2, and the BFF hands the app's own HttpAgent to the runtime. Measured 2026-11-14,
+// PR #1010: a lone @ag-ui/client 1.0.2 -> 1.0.4 PATCH installed a second copy and mcm-app:typecheck
+// failed TS2322 (HttpAgent not assignable to AbstractAgent, separate `_debug` declarations). So unlike
+// @copilotkit/* itself, EVERY track is gated — a lone @ag-ui patch cannot be made green.
+for (const updateType of ['patch', 'minor', 'major']) {
+  test(`an @ag-ui/client ${updateType} bump rides the approval-gated copilotkit branch`, () => {
+    const dep = copilotkitDep('@ag-ui/client', updateType);
+    assert.equal(
+      resolvedGroupName(dep),
+      'copilotkit (review individually)',
+      `@ag-ui/client resolves to ${JSON.stringify(resolvedGroupName(dep))} on the ${updateType} track.\n` +
+        '  CopilotKit pins @ag-ui/client exactly, so bumping the app\'s copy alone installs a second one and\n' +
+        '  the BFF stops typechecking (PR #1010). It must share the copilotkit branch.',
+    );
+    assert.equal(
+      resolvedRuleValue(dep, 'dependencyDashboardApproval'),
+      true,
+      `@ag-ui/client is not approval-gated on the ${updateType} track, so a red lone bump is re-proposed weekly.`,
+    );
+  });
+}
+
+// Playwright is PARKED behind approval until Node 26 lands (item #992). Measured 2026-11-14, PR #1013:
+// the v1.65.0 images ship Node 26, which has no corepack, so web-e2e ran ZERO tests. Remove the gate,
+// and this test, in item #992's PR.
+test('the playwright pin is approval-gated until item #992 moves the E2E runner to Node 26', () => {
+  for (const dep of PLAYWRIGHT_PAIR) {
+    assert.equal(
+      resolvedRuleValue({ ...dep, datasource: 'npm', updateType: 'minor' }, 'dependencyDashboardApproval'),
+      true,
+      `${dep.label} is not approval-gated: Playwright 1.65+ images need Node 26 (item #992), so a bump\n` +
+        '  arrives red (corepack: not found, zero tests ran — PR #1013) until that move lands.',
+    );
+  }
+});
+
 // ---------------------------------------------------------------------------------------------
 // test-renderer WAS HELD below 1.3 until React reached 19.3 — feature 081 US5c (PR #798), item #254.
 // Feature 087 (SDK 58) brought React 19.3, so the hold is LIFTED (research R12) and these assert it is

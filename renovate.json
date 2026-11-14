@@ -842,11 +842,20 @@
         "ranges, PR #695 (2026-10-09) moved the lockfile to 1.64.0 alone and app-e2e ran zero tests",
         "— the PR #199 shape again, from the one channel this rule does not govern. An exact pin",
         "leaves the refresh nothing to move, and turns the next version into an ordinary update",
-        "that this rule DOES group with the image tag. Do not loosen either pin back to a range."
+        "that this rule DOES group with the image tag. Do not loosen either pin back to a range.",
+        "PARKED BEHIND DASHBOARD APPROVAL UNTIL NODE 26 LANDS — item #992. MEASURED 2026-11-14, PR #1013",
+        "(1.63.0 -> 1.65.0): the v1.65.0 images ship Node.js 26 instead of 24 (release notes; the",
+        "Dockerfile's `ARG NODE_VERSION=26`), and Node 26 no longer bundles corepack, so the web-e2e",
+        "`sh -c \"corepack enable && pnpm exec playwright test\"` died with `corepack: not found` and",
+        "ZERO tests ran. The tag cannot be held back while the package moves — the tag IS the browser",
+        "build — so Playwright 1.65+ cannot land without moving the E2E runner to Node 26, which item",
+        "#992 requires to happen in ONE change with the images and setup-node. Until then it waits in",
+        "Pending Approval rather than arriving red every week. Remove this gate in #992's PR."
       ],
       "matchManagers": ["npm", "custom.regex"],
       "matchPackageNames": ["@playwright/test"],
       "groupName": "playwright pin",
+      "dependencyDashboardApproval": true,
       "automerge": false
     },
     {
@@ -905,6 +914,30 @@
       "matchManagers": ["npm"],
       "matchPackageNames": ["/^@copilotkit//"],
       "matchUpdateTypes": ["minor", "major"],
+      "groupName": "copilotkit (review individually)",
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
+      "description": [
+        "@ag-ui/* MOVES ONLY WITH COPILOTKIT. @copilotkit/runtime, /core and /shared pin @ag-ui/client",
+        "EXACTLY (1.79.1 declares `\"@ag-ui/client\": \"1.0.2\"`), and the BFF hands the app's own",
+        "@ag-ui/client HttpAgent to the runtime as an AbstractAgent. A bump of the app's copy alone",
+        "therefore installs a SECOND @ag-ui/client and the two classes stop being assignable.",
+        "MEASURED 2026-11-14, PR #1010 (@ag-ui/client 1.0.2 -> 1.0.4, a PATCH): mcm-app:typecheck failed",
+        "TS2322 `Type 'HttpAgent' is not assignable to type 'AbstractAgent'. Types have separate",
+        "declarations of a private property '_debug'` at src/app/bff-api/agent/run+api.ts:242.",
+        "SO EVERY TRACK IS GATED, PATCH INCLUDED — unlike the copilotkit rule above, which leaves patch",
+        "routine for security remediation. That reasoning does not carry over: a lone @ag-ui/* patch,",
+        "security or not, cannot be made green, because it is the version CopilotKit pins that has to",
+        "move. Sharing the copilotkit groupName puts @ag-ui/* on the SAME approval-gated branch, so",
+        "approving the CopilotKit row proposes both together; the reviewer then sets @ag-ui/client to",
+        "the version the new CopilotKit pins. The typecheck stays the backstop. Item #945 records why",
+        "two @ag-ui/core copies already exist. Must stay AFTER `js patch/minor`, for the same ordering",
+        "reason as the copilotkit rule; renovate-workflow.guard.test.mjs asserts the resolved group."
+      ],
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["/^@ag-ui//"],
       "groupName": "copilotkit (review individually)",
       "dependencyDashboardApproval": true,
       "automerge": false
