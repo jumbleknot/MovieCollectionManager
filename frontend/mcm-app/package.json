@@ -15,7 +15,7 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@ag-ui/client": "1.0.2",
+    "@ag-ui/client": "1.0.4",
     "@copilotkit/react-native": "1.79.1",
     "@copilotkit/runtime": "1.79.1",
     "@expo-google-fonts/inter": "^0.4.0",
