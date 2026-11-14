@@ -5,8 +5,8 @@ description: How the MCM backlog lives in the repository's own Forgejo tracker a
 resource: docs/runbooks/backlog.md
 resource-sha256: 385821369363cdca9c8a0fe0fbcf542691b14732fcda8dfb22b74fc6335652fe
 tags: [backlog, forgejo, issues, tooling, runbook]
-generated: { by: "openwiki/0.6.0", at: "2026-10-04T21:27:12.854Z" }
-timestamp: 2026-11-10T03:37:28.077Z
+generated: { by: "openwiki/0.9.0", at: "2026-11-14T15:19:42.527Z" }
+timestamp: 2026-11-14T15:29:37.842Z
 ---
 
 # The agent-driven backlog (Forgejo Issues)
@@ -23,6 +23,11 @@ No backlog operation produces a commit, branch, pull request or CI run: issue ch
 a one-line backlog edit costs nothing. Ten labels (`type/*`, `priority/*`, `status/*`) carry the
 machine-readable state; milestones map to feature directories (`NNN-slug`); an unmilestoned item is the
 free backlog, which is the normal case.
+
+The assistant is not the only writer. The operator files items in the web UI, and one in-repo script —
+the prod backup alert, which opens or comments on a single item titled `Prod backup: failed or stale`
+and carries its own issues-scoped credential on the prod host — writes items directly, with no guard of
+the kind described below (see [the server setup runbook](./server-setup.md)).
 
 ## The item lifecycle, and the one transition that traps
 
@@ -62,14 +67,15 @@ consulted only for the items that survive it.
 - **Two bounds, of different strength.** The token's **scope** is the server-side bound on *what* it can
   do: `write:issue` + `read:repository` — no push, no packages, no admin. *Which repository* it writes to
   is bounded only client-side, and only inside `scripts/backlog.mjs`: any other client holding the token
-  (curl, another script) can write issues in any repository on the account.
-  `MCM_FORGE_ISSUE_TOKEN` carries `write:issue` + `read:repository` and is deliberately not restricted to
-  this repository. Every write therefore asserts that its target owner/repo matches the origin remote and
-  refuses otherwise — checked once against any `--repo` value and again at the request boundary, so a
-  mis-built path cannot slip through. Comparing the derived slug against itself would be a tautology that
-  protects nothing; the guard only means something against a target that came from elsewhere. The
-  credential channels themselves — host `setx`, the `${localEnv}` passthrough, and the no-clear-text rule
-  that governs them — belong to [the secrets-management posture](../invariants/secrets-management.md) and
+  (curl, another script — the prod backup alert above is one) can write issues in any repository on the
+  account. `MCM_FORGE_ISSUE_TOKEN` carries `write:issue` + `read:repository` and is deliberately not
+  restricted to this repository. Every write therefore asserts that its target owner/repo matches the
+  origin remote and refuses otherwise — checked once against any `--repo` value and again at the request
+  boundary, so a mis-built path cannot slip through. Comparing the derived slug against itself would be a
+  tautology that protects nothing; the guard only means something against a target that came from
+  elsewhere. The credential channels themselves — host `setx`, the `${localEnv}` passthrough, and the
+  no-clear-text rule that governs them — belong to
+  [the secrets-management posture](../invariants/secrets-management.md) and
   [the dev container](./devcontainer.md); nothing about them is restated here.
 - **Reads prefer the write credential, on purpose.** The write token is used for reads whenever it is
   present, and the read-only fallback exists only for its absence — falling back on every read would keep
@@ -172,7 +178,9 @@ consulted only for the items that survive it.
   `git remote get-url origin` carries scheme, host and the port the API is served on; a base built from the
   registry hostname alone fails as a transport error that reads exactly like a blocked firewall. That is
   why unreachable-forge (exit 5) is kept distinct from an authorization refusal (exit 4), so nobody hunts a
-  credential problem that is really a missing port.
+  credential problem that is really a missing port. The derivation is shared, not reimplemented:
+  `forgeEndpoint()` and the control-char stripper are exported from `ci-status.mjs` and reused here, so the
+  two tools cannot drift on how they read the remote.
 - **Distillation omits what it did not fetch rather than defaulting it to empty.** A listing-shaped item
   carries no `blockedBy`/`blocks`/`comments` keys at all, because an empty array would read as "no
   blockers" when the truth is "nobody asked"; the API's own comment count is surfaced instead, and that is
