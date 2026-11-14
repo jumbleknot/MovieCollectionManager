@@ -42,7 +42,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: 24.19.0
+          node-version: 24.22.2
       - name: Post the weekly Renovate health digest
         env:
           # write:issue — the same purpose-scoped secret the failure digest and

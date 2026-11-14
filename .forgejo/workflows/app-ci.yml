@@ -279,7 +279,7 @@ jobs:
           fetch-depth: 0
       - name: Ensure origin/main is available as the affected base
         run: bash scripts/ci-log-step.sh affected-ensure-origin-main-available git fetch --no-tags --depth=200 origin main || true
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node 24.14.1, NOT 20. pnpm 11 (package.json `packageManager`) declares engines
       # node >= 22.13, so Node 20 fails `pnpm install` outright — this is what broke `affected` and
@@ -287,9 +287,9 @@ jobs:
       # (frontend/mcm-app/Dockerfile `node:24.14.1-alpine3.23`) and what cd-deploy's prod-apk uses, so
       # CI now tests the runtime Node instead of a stale one. `pnpm/action-setup` must stay BEFORE this
       # step — setup-node's `cache: pnpm` needs pnpm on PATH already.
-        with: { node-version: 24.19.0, cache: pnpm }
+        with: { node-version: 24.22.2, cache: pnpm }
       - name: Set up uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
           # installs is whatever is newest at run time — and uv is the generator for the uv.lock
@@ -376,10 +376,10 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
-        with: { node-version: 24.19.0, cache: pnpm }
+        with: { node-version: 24.22.2, cache: pnpm }
       - name: Install dependencies
         run: bash scripts/ci-log-step.sh mc-service-install pnpm install --frozen-lockfile
       # `--all-targets` lives in the Nx target, not here — see backend/mc-service/project.json and
@@ -461,9 +461,9 @@ jobs:
           chmod +x ~/.docker/cli-plugins/docker-compose
           docker compose version
           CI_LOG_STEP
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with: { node-version: 24.19.0, cache: pnpm }
+        with: { node-version: 24.22.2, cache: pnpm }
       - name: Install dependencies
         run: bash scripts/ci-log-step.sh mc-service-it-install-dependencies pnpm install --frozen-lockfile
       # Same reset as app-e2e, scoped to what this job brings up: the runner is persistent, Keycloak's
@@ -744,10 +744,10 @@ jobs:
           docker compose version
           CI_LOG_STEP
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
-        with: { node-version: 24.19.0, cache: pnpm }
+        with: { node-version: 24.22.2, cache: pnpm }
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with: { distribution: temurin, java-version: '17' }
       # `packages:` is pinned EXPLICITLY, and the value is load-bearing. The action's own default WAS
@@ -778,7 +778,7 @@ jobs:
       # up-agents-prod (agent-stack.mjs) shells out to `uv` to fetch the gateway client secret from
       # Keycloak — needed on the host PATH (container jobs get it from the astral action; host doesn't).
       - name: Set up uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
           # installs is whatever is newest at run time — and uv is the generator for the uv.lock
@@ -1801,13 +1801,13 @@ jobs:
           docker compose version
           CI_LOG_STEP
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
-        with: { node-version: 24.19.0, cache: pnpm }
+        with: { node-version: 24.22.2, cache: pnpm }
       # up-agents-prod (agent-stack.mjs) shells to `uv` to fetch the gateway client secret from Keycloak.
       - name: Set up uv
-        uses: astral-sh/setup-uv@1c37ad07a6a961277cf70c0d37d6f313000f5884 # v10.3.0
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           # uv's VERSION, item #307. The action is digest-pinned; without this input the uv it
           # installs is whatever is newest at run time — and uv is the generator for the uv.lock
@@ -2043,11 +2043,11 @@ jobs:
           echo "RUN_SCAN=true" >> "$GITHUB_ENV"
           CI_LOG_STEP
 
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
         if: ${{ env.RUN_SCAN == 'true' }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         if: ${{ env.RUN_SCAN == 'true' }}
-        with: { node-version: 24.19.0, cache: pnpm }
+        with: { node-version: 24.22.2, cache: pnpm }
 
       - name: Install JS dependencies (the scanner + gate use the `yaml` package)
         if: ${{ env.RUN_SCAN == 'true' }}
