@@ -315,7 +315,7 @@ like a scan failure rather than a config gap:
 
 ```bash
 docker volume create trivy-cache
-docker run --rm -v trivy-cache:/root/.cache/trivy aquasec/trivy:0.76.1 image --quiet \
+docker run --rm -v trivy-cache:/root/.cache/trivy aquasec/trivy:0.76.2 image --quiet \
   --scanners vuln \
   --db-repository ghcr.io/aquasecurity/trivy-db:2 \
   --java-db-repository ghcr.io/aquasecurity/trivy-java-db:1 \
@@ -345,7 +345,7 @@ cat > /tmp/trivy-shim/bin/trivy <<'EOF'
 exec docker run --rm -v trivy-cache:/root/.cache/trivy \
   -e TRIVY_DB_REPOSITORY=ghcr.io/aquasecurity/trivy-db:2 \
   -e TRIVY_JAVA_DB_REPOSITORY=ghcr.io/aquasecurity/trivy-java-db:1 \
-  aquasec/trivy:0.76.1 "$@"
+  aquasec/trivy:0.76.2 "$@"
 EOF
 chmod +x /tmp/trivy-shim/bin/trivy
 PATH="/tmp/trivy-shim/bin:$PATH" node scripts/infra-image-scan.mjs
@@ -527,7 +527,7 @@ beginning `RELEASE.`, which is invisible rather than unordered.)
 
 ## The gate
 
-`blocking = FIXABLE Critical` (a `FixedVersion` exists upstream). Unfixable Critical and all Medium/Low are **report-only warnings** — a bump can't clear an unfixable CVE, so it must not wedge the gate (same intent as `cd-deploy`'s `--ignore-unfixed`). The gate fails on any blocking finding not covered by a **live** (non-expired) allowlist entry.
+`blocking = FIXABLE Critical` (a `FixedVersion` exists upstream). Unfixable Critical and all Medium/Low are **report-only warnings** — a bump can't clear an unfixable CVE, so it must not wedge the gate (same intent as the `--ignore-unfixed` `cd-deploy` used to pass — it now runs this same gate). The gate fails on any blocking finding not covered by a **live** (non-expired) allowlist entry.
 
 ## Allowlist-as-baseline (`security/infra-images/allowlist.yaml`)
 

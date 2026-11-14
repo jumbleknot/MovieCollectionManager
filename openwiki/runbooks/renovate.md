@@ -3,10 +3,10 @@ type: Runbook
 title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0, and -1 for the OpenWiki generator's lock refresh) that allocates the six in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
 resource: docs/runbooks/renovate.md
-resource-sha256: 5f25acd439dd0206b98f870b9d01bedd7c1053da2c1edbbbb1d994663fb1013f
+resource-sha256: 6b3954c1c97c7afc4098764fb3df9097748e4beaa57b160b8c2de6d365760674
 tags: [renovate, ci, dependencies, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-14T19:18:07.734Z
+timestamp: 2026-11-14T22:34:20.802Z
 ---
 
 # Renovate dependency bot
@@ -102,8 +102,8 @@ branch exists.
   and raising docker above it would trade one starvation for another. **Any later `packageRules` entry
   that takes a `groupName` away from `docker base images` must set an explicit `prPriority`** —
   Renovate merges rules in order and a later rule overrides only the keys it sets, so an unreset rule
-  silently inherits 3 and competes for the slot this exists to secure. Today that is `python toolchain`
-  and `langfuse` (explicit 0) and `docker digest pins` (explicit 2, see below). A guard test fails if a
+  silently inherits 3 and competes for the slot this exists to secure. Today that is `python toolchain`,
+  `langfuse` and `uv pin` (explicit 0) and `docker digest pins` (explicit 2, see below). A guard test fails if a
   new claiming rule appears without one. This does not remove rate-limiting entirely: if
   `docker base images` itself carries more than a window's worth, tick its `unlimit-branch=` checkbox
   rather than waiting for a deterministic slot.

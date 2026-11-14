@@ -3,10 +3,10 @@ type: Runbook
 title: Infra-image CVE scanning
 description: Trivy's keyless, twice-weekly sweep over the third-party server images this project pulls but does not build (Keycloak, Postgres, Mongo, Vault, OpenSearch, Langfuse, Grafana, Unleash, Caddy, RustFS and the rest of infrastructure-as-code), plus how to read or triage a red result — one scanner per image, the fixable-Critical-only gate, the allowlist cohorts and how an entry is discharged, the bounded retry, the one pinned installer all three scanning workflows share, the shared per-image pipeline both the PR and the deploy call, the labelled container holds that keep the PR's run-scoped scan tags alive across another run's prune, and the publish-versus-promote split.
 resource: docs/runbooks/infra-image-scanning.md
-resource-sha256: fae84ffc04e7d807b4483e1340a3e2e7d5b1f5c10115590e34c818568aa51a30
+resource-sha256: 23649e535d1c70dab2ad0ae88169bec391c6bf6bf2b61d0295276f230abfa250
 tags: [security, cve, trivy, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T11:51:44.493Z
+timestamp: 2026-11-14T22:34:20.357Z
 ---
 
 # Infra-image CVE scanning
@@ -496,7 +496,7 @@ findings readable.
   as a `TRIVY_VERSION` assignment and hand it to `scripts/ci-install-trivy.sh <vX.Y.Z> <bindir>`, so a
   bump cannot move one site and strand the other. There are **three** such sites since spec 084 US3:
   app-ci's `app-image-scan` job scans the PR's images with the scanner the deploy will use, so a green PR
-  that ran a different Trivy than the deploy would prove nothing. All three currently agree on `v0.76.1`.
+  that ran a different Trivy than the deploy would prove nothing. All three currently agree on `v0.76.2`.
   The installer itself is the fix for a measured silent failure, not a preference: Trivy's own
   `contrib/install.sh` was fetched from a moving branch and piped into `sh`, and on PR #929 (runs 6696 and
   6702, 2026-11-04) it failed **twice with no error at all** — it fetches the tarball from `get.trivy.dev`

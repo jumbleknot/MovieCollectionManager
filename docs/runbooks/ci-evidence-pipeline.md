@@ -30,7 +30,7 @@ first written). Channel depends on the event:
 
 > **There is no commit status.** `POST /repos/…/statuses/{sha}` returns **403** for
 > `CI_DIGEST_TOKEN` — it needs `write:repository`, which is most of the privilege that made
-> `CD_PUSH_TOKEN` unacceptable across every job (16 then, 22 now). Since the status only ever *named* the bundle and the
+> `CD_PUSH_TOKEN` unacceptable across every job (16 then, 25 now). Since the status only ever *named* the bundle and the
 > reader already knows the run and job, it derives `{runId}--{jobSlug}` itself. Measured 2026-07-20.
 >
 > Use **`run.id`**, not `index_in_repo` — they differ (986 vs 985 on the run that proved this), and
@@ -332,7 +332,7 @@ and `ci-status failure --sha` therefore show only the `guardrails` / `app-ci` co
   wrapped with `ci-log-step.sh`, so the digest names the failing step + shows its output (before
   that it fell back to stale app-e2e evidence).
 - **Trivy `build-deploy` blocks on a FIXABLE Critical.** A recurring class: the vulnerable package is
-  **not an app dependency** — it is `node-tar` bundled by BOTH npm and corepack's pnpm inside the
+  **not an app dependency** — it is `node-tar` bundled by npm (and, before Node 26, corepack's pnpm) inside the
   `node:*-alpine` base of the mcm-bff image. `pnpm why <pkg> --prod -r` prints nothing ⇒ it is a
   base-image/manager bundle. Fix = remove the unused managers from the BFF **runner** stage (the
   runtime is `node server.js`, invoking neither) — a real elimination, not a Trivy suppression.
@@ -604,7 +604,8 @@ a pass claim.
 
 ## Maintenance notes
 
-- **All scripts are zero-dependency**, `node:` built-ins only. `guardrails` runs them with nothing
+- **The digest and reader scripts are zero-dependency**, `node:` built-ins only (the coverage gate,
+  which parses YAML with `yaml`, is the exception). A digest step runs them with nothing
   installed, and a test needing a non-root dep is the exact `ajv` failure feature 041 removed.
 - **`scripts/__tests__/*.test.mjs` runs in CI** (`guardrails / naming`, added by feature 041). New
   tests are gated automatically, but must be deterministic, offline and token-free.
@@ -630,9 +631,8 @@ a pass claim.
     CI_LOG_STEP
   ```
 
-  Instrumented steps: `app-e2e` (agent-integration, mc-service-integration, web-e2e,
-  maestro-agent-flows) and `guardrails` (secret-scan, agent-gates lint/test/golden, naming script
-  tests, sast gate). The wrapper also records **which** wrapped step failed, so the digest names it
+  Instrumented steps: every `run:` step since feature 051, unless it carries a justified
+  `# ci-log-step-exempt:` marker (`check-ci-digest-coverage.mjs` enforces it). The wrapper also records **which** wrapped step failed, so the digest names it
   instead of `_not reported_`. **A step that is not wrapped contributes no output**, and the digest says so
   under *Not collected* rather than staying silent. Add the wrapper to any step whose failure you
   would otherwise have to read in the web UI.

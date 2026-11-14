@@ -145,7 +145,8 @@ a default; an empty value is unset (how an Actions repository variable that was 
   work. A run's usage line and record carry `effort=<value>` when it is set. **Under trial** (item #525):
   latency is roughly output tokens ÷ generation speed, and a lower effort means fewer reasoning tokens
   per call — but possibly a weaker page. In CI it is the `reasoning-effort` input of a dispatch, applied to
-  every invocation of that run; do not set the repository variable until a trial's page has been reviewed.
+  every invocation of that run (empty falls through to the repository variable, then to `low` — 078
+  FR-028); do not set the repository variable until a trial's page has been reviewed.
 
 **In CI** these are repository **variables** (Settings → Actions → Variables), so switching back to
 Anthropic is a settings change, not a commit; the keys are the secrets `ANTHROPIC_API_WIKI_MAINTAIN`
@@ -206,7 +207,8 @@ call. Full write-up and reproduction steps:
 it in one line, and the symptom is a green build with an empty diff. `wiki-update` therefore sets
 **`OPENWIKI_MAX_OUTPUT_TOKENS=16384`** explicitly, which OpenWiki reads ahead of everything else — so
 that value, not any vendor table, is the one that reaches the model. The model is pinned at
-**`claude-sonnet-5`** (`OPENWIKI_MODEL_ID` in `infrastructure-as-code/project.json`).
+**`claude-sonnet-5`** (the `anthropic` row's `modelId` in `scripts/wiki-provider.mjs`, passed to the
+generator as `OPENWIKI_MODEL_ID`).
 
 **The target's 16384 is a floor; a provider may raise it (item #719).** On Fireworks, DeepSeek V4.1 Flash
 reasons inside its output budget, and a page worker that writes a whole page in one `write_file` turn can
@@ -356,7 +358,7 @@ PostHog, as with any HTTP request.
 
 **Decision: permanent, not one-off.** The tripwire is free, offline and already reads the
 record openwiki writes. What it guards against is an openwiki upgrade renaming or dropping the
-variables, which the 0.7.1 measurement above cannot rule out for 0.8. If it fires, stop using that
+variables, which the 0.7.1 measurement above cannot rule out for a later version (0.9.0 is pinned now). If it fires, stop using that
 openwiki version until the change is understood. Do not allowlist it.
 
 > **Nx `--args` is appended to a shell command line unquoted.** Measured: `--args="--x=one two"`
@@ -785,8 +787,9 @@ Both are therefore installed beside the generator in `.devcontainer/toolchain.Do
 pinned in CI's locked install (`tools/openwiki-generator/package.json`, §4), and
 `scripts/__tests__/wiki-maintain.guard.test.mjs` fails if either environment drops them — if only one
 environment has the parser, the two disagree about what a valid diagram is, and the one that writes
-the bundle wins. Both sit outside the peer range openwiki 0.7.1 declares (`mermaid ^11.16`,
-`jsdom ^29.1`) — the versions every CI run since mid-September actually resolved — and the real parser was
+the bundle wins. Both sat outside the peer range openwiki 0.7.1 declared (`mermaid ^11.16`,
+`jsdom ^29.1`) — the versions every CI run since mid-September actually resolved; openwiki 0.9.0
+declares `mermaid ^11.16.0 || ^12.0.0` and `jsdom ^29.1.1 || ^30.0.0`, which the pins satisfy — and the real parser was
 verified to load and reject a malformed fence from the locked install.
 
 ---

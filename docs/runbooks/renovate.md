@@ -89,7 +89,7 @@ above it would trade one starvation for another.
 > ⚠️ **Any later `packageRules` entry that takes a `groupName` away from `docker base images` must set
 > `"prPriority": 0` explicitly.** Renovate merges rules in order and a later rule overrides only the
 > keys it *sets*, so an unreset rule silently inherits 3 and competes for the very slot this exists to
-> secure. Today that is `python toolchain` and `docker digest pins`.
+> secure. Today that is `langfuse`, `uv pin`, `python toolchain` and `docker digest pins`.
 > `renovate-workflow.guard.test.mjs` fails if a new one appears without the reset.
 
 **A fifth slot, 2026-10-02.** At four slots the allocation was 3 lockfile + 1 `docker base images`,
@@ -1027,7 +1027,7 @@ any superseded verdict rather than dropping it.
 Recorded from the 2026-08-30 latent-issue audit so the next reader knows each was *seen* and
 *decided*, rather than rediscovering it as a suspected defect:
 
-- **`engines.node: ">=22.13"` is a FLOOR, not a pin, and it stays one.** Every pin runs 24.x; the
+- **`engines.node: ">=22.13"` is a FLOOR, not a pin, and it stays one.** Every pin runs 26.x; the
   floor states compatibility, not reality. `check-toolchain-consistency.mjs` checks satisfaction,
   deliberately. Raise the floor only when a tool requires it — and note item #225's still-unenforced
   criterion that a pnpm bump re-checks it.
