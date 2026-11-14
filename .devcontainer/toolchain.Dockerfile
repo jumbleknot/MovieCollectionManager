@@ -263,7 +263,7 @@ RUN curl -fsSL https://sh.rustup.rs \
 # crate's published Cargo.lock for reproducibility. Set covers features 033/034/035 + tarpaulin
 # coverage (constitution). This is the bulk of the SC-011 one-time build cost.
 RUN cargo install --locked \
-      cargo-audit@0.22.2 \
+      cargo-audit@0.23.0 \
       cargo-deny \
       cargo-outdated \
       cargo-machete \

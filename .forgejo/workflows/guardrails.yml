@@ -351,7 +351,7 @@ jobs:
           # `--locked` locks cargo-audit's DEPENDENCIES, not cargo-audit — without --version this
           # installed whatever was newest that run, in the tool that decides whether a Rust
           # advisory blocks the merge. Renovate keeps the pin current (crate datasource).
-          "$HOME/.cargo/bin/cargo" install cargo-audit --locked --version 0.22.2
+          "$HOME/.cargo/bin/cargo" install cargo-audit --locked --version 0.23.0
           CI_LOG_STEP
       - name: Install JS dependencies
         run: bash scripts/ci-log-step.sh sast-install-js-dependencies pnpm install --frozen-lockfile
