@@ -224,4 +224,47 @@ Layer 1 touches `scripts/`, so it goes through spec → plan → tasks first.
 
 ## 8. Baseline: the 2026-11-14 drift audit
 
-*Recorded in the PR that adds this proposal.*
+This is the first layer-3 run, done in the PR that adds this proposal. It covered every runbook,
+`docs/MCM-Architecture.md` and the project READMEs: about 16,800 lines, read in four chunks
+against the tree at `e5cda61b`. Only checkable claims were edited, each against code evidence.
+Dated records were left as history. Anything about the live host, the forge or upstream tools that
+the repo cannot prove was reported rather than edited.
+
+| Chunk | Docs | Lines | Proven drift fixed |
+|---|---|---|---|
+| Dev/test runbooks, architecture, READMEs | 7 runbooks + 15 READMEs | ~4,600 | 44 (41 + the movie-assistant README's 3) |
+| Dev container and CI diagnostics | 4 | ~4,300 | 9 |
+| Renovate, wiki maintenance, CI evidence, scanning | 6 | ~4,000 | 12 |
+| Production and homelab | 6 | ~3,700 | 11 |
+| **Total** | **21 changed** | **~16,800** | **76, about 4.5 per 1,000 lines** |
+
+The 18 derived wiki pages over those sources were refreshed in the same PR: 9 needed body edits and
+9 were fingerprint-only.
+
+**Where the drift came from.** Three patterns account for nearly all of it.
+
+1. **Renames that left prose behind.** The pre-020 container names (`mc-db`, `mcm-bff-db`,
+   `mc-service-db`), `docker compose` calls aimed at the retired root aggregator, and the pre-071
+   OpenSearch volume. Layer 1's sweep is aimed at exactly this; one grep per old name would have
+   found each one.
+2. **Version and toolchain bumps.** Node 24 → 26, corepack removed, Playwright 1.63 → 1.65, openwiki
+   0.7.1 → 0.9.0, Trivy 0.76.1 → 0.76.2, Rust 1.98 → 1.99. Several came from a merge on the day of
+   the audit. Most of these bumps are Renovate PRs, where no session exists to run a sweep, so
+   layer 1 does not reach them. That is the strongest case for layer 2, or for citing the pin file
+   instead of restating the version.
+3. **Behaviour changes the docs never followed.** Feature 087's cold-load bundle budget, spec 097's
+   `eslint .`, the per-user TMDB key, the un-ignored mc-service HTTP tests, CI's `low`
+   reasoning-effort fallback, and from-scratch rebuild steps that later features never revisited
+   (Phase 5.5 networks, the host compose templates, the rebuild secrets list).
+
+**Left as suspected, needing a person or a live check:** the `5433` host port in `local-dev.md`;
+the logical names `mc-db` and `mcm-bff-db` that `MCM-Architecture.md` still uses in headings and
+diagrams (keep them as logical names, or switch to the container names?); whether pnpm 12 keeps the
+lockfile supply-chain verification `renovate.md` attributes to pnpm 11; whether running from the
+repo root still matters for `--dir` now that corepack is gone (`wiki-maintenance.md`,
+`sast-scanning.md`); and openwiki behaviours recorded for 0.6/0.7.1 that have not been re-checked
+on 0.9.0.
+
+**Drift found in code comments, outside this audit's scope:** the web-api-mcp compose comment on
+the TMDB key; `.devcontainer/devcontainer.json:186,257`; `.devcontainer/toolchain.Dockerfile:16`;
+`scripts/sast-scan.mjs:462-464`; `.forgejo/workflows/renovate.yml:92`.
