@@ -3,10 +3,10 @@ type: Runbook
 title: Developer environment setup (host toolchain)
 description: How to provision a host development machine for MovieCollectionManager — the toolchain versions the repository pins (Node 26 and its floor, pnpm at the `packageManager` version, Rust, Python/uv, Android SDK) and the companion tools (RTK output compressor, OpenWiki) — as an alternative to the devcontainer, including how the OpenWiki generator's version is held in step across the toolchain image, CI and a host install.
 resource: docs/runbooks/dev-environment-setup.md
-resource-sha256: c1f3cd134506124a10a4bd3c8c6878a5ca5c52cdfa5d0d141c75b0dd9c399fdb
+resource-sha256: 647e9d194cc227d0b22c43473b0aae3f6eb0ac7cfdf43e18f51fb66820b4b6d5
 tags: [setup, toolchain, host, runbook, openwiki]
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-timestamp: 2026-11-14T19:18:07.533Z
+timestamp: 2026-11-14T22:22:05.143Z
 ---
 
 # Developer environment setup (host toolchain)
@@ -50,7 +50,7 @@ higher floor, or the gate keeps passing pins that manager refuses to run on.
 - **Pin OpenWiki to the exact version the devcontainer toolchain image installs.** A version skew
   between the host and container workspaces can produce structurally different wiki bundles for the
   same repository state — check `.devcontainer/toolchain.Dockerfile` for the pinned version before
-  installing globally (currently `openwiki@0.7.1`, with `mermaid` and `jsdom` beside it).
+  installing globally (currently `openwiki@0.9.0`, with `mermaid` and `jsdom` beside it).
 - **Never invoke the bare `openwiki` CLI on this repo — always go through the Nx target.** The bare
   CLI omits the telemetry opt-out and the raised Node heap size, and reliably OOMs; see
   [OpenWiki bundle generation and maintenance](../process/wiki-maintenance.md) and
@@ -80,7 +80,7 @@ higher floor, or the gate keeps passing pins that manager refuses to run on.
 ## How the generator's version is held in step
 
 The dev container bakes a global `openwiki` + `mermaid` + `jsdom` into its toolchain image with
-`npm install -g openwiki@0.7.1 mermaid jsdom` (there is no repository checkout at image-build time);
+`npm install -g openwiki@0.9.0 mermaid jsdom` (there is no repository checkout at image-build time);
 a CI runner has no such copy, so the wiki-maintain job installs the same three **exact** pins from
 the **committed lockfile** in `tools/openwiki-generator/`
 (`pnpm --dir tools/openwiki-generator install --frozen-lockfile`). The two halves must name the same

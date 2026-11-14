@@ -3,10 +3,10 @@ type: Service
 title: The three scoped MCP servers
 description: The three purpose-scoped MCP (Model Context Protocol) servers the Agent Gateway calls as tools — movie-mcp (mc-service proxy carrying the caller's downscoped token), web-api-mcp (outbound TMDB enrichment under the requesting user's own key), and spreadsheet-mcp (token-free file processing over a transient handle) — each with a deliberately narrow identity and network footprint.
 resource: docs/MCM-Architecture.md
-resource-sha256: 8f7b3e4c87b355ae290db90980f89910f72a50675e43ccfe492d833d06c83033
+resource-sha256: 68b41b3e5e554743a187bb18bebe7d9dd76bfc28e80bbab418321acf5363ccba
 tags: [mcp, agents, python, scoped-capability, security]
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-timestamp: 2026-11-10T11:40:29.751Z
+timestamp: 2026-11-14T22:22:04.924Z
 ---
 
 # The three scoped MCP servers
@@ -365,12 +365,13 @@ after any source change — see the gotchas.
   their backing service is absent (right for a credential-less checkout, wrong for CI); in CI
   `MCM_REQUIRE_LIVE_STACK=1` turns an unexpected skip into a failure, and the rule is to add a
   legitimate skip deliberately rather than deselect a red test.
-- **web-api-mcp's README and compose comment describe a TMDB key the runtime never reads.** They say
-  the key is "server-side config" — Vault-injected in prod, read from `.env.local` locally — and the
-  compose file does pass that `.env.local` in. But `_tmdb_key()` consults only the per-request
+- **web-api-mcp's compose comment describes a TMDB key the runtime never reads.** It says the key is
+  Vault-injected in prod and read from `.env.local` locally (the README said the same until
+  2026-11-14), and the compose file does pass that `.env.local` in. But `_tmdb_key()` consults only the per-request
   `X-TMDB-Key` ContextVar and has no env path at all, and the production stack sets no TMDB key for
   this container. The `.env.local` key belongs to the *integration suite*, which calls TMDB directly.
-  A new caller wired from the README would omit the header and get the configuration error.
+  A new caller wired from that comment would omit the header and get the configuration error; the
+  README now says callers must send `X-TMDB-Key`.
 
 See [Agent Gateway](./agent-gateway.md) for how tool calls are dispatched to these servers (the
 allowlist → rate-limit → identity → call → guardrail choke point), and

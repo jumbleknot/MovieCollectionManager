@@ -3,10 +3,10 @@ type: Service
 title: Agent Gateway (LangGraph)
 description: The Python LangGraph supervisor graph that powers the MCM conversational assistant, served over AG-UI by a FastAPI app, reachable only from the BFF, orchestrating tool calls to three scoped MCP servers through one code-driven chokepoint, owning no domain data, authenticating no end user, and turning any escaping exception into a sanitised terminal RUN_ERROR event rather than an aborted stream.
 resource: docs/runbooks/agent-layer.md
-resource-sha256: 3e92b8cfe6c2a5e5a31b0fb62d02383790d1b25c35a43b9bbc30d35c2a51a2e5
+resource-sha256: e78c747fff63740288845ae49a2d05fdd82168722be105eac97d7f8d4e1feed4
 tags: [langgraph, python, mcp, agent, ai, ag-ui]
 generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
-timestamp: 2026-11-12T11:37:47.175Z
+timestamp: 2026-11-14T22:22:04.611Z
 ---
 
 # Agent Gateway (LangGraph)
