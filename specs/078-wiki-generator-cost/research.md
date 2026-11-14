@@ -319,6 +319,14 @@ searched on 2026-10-07.
 | G3 | No local token usage: `dist` never reads `usage_metadata`. LangSmith tracing carries it (#972 threads it per run, 0.7.0), but needs an external account and egress from CI. | the tap's `WIKI_USAGE_LOG` counts | a persisted per-run usage summary appears (e.g. in `.openwiki/.last-update.json`). Note that `.run.json` is deleted on success. | none filed; context #51, #934 |
 | G4 | The managed `AGENTS.md`/`CLAUDE.md` block is rewritten on **every** run (twice when headless, and on `chat`). Removing the markers re-appends it. | commit each release's exact text; the guard rebuilds the block and compares byte for byte (R12) | #557 merges (`codeMode.agentFiles.policy: preserve`). 0.7.1's text is unchanged from 0.6.0. | **#556** (open issue), **#557** (open PR) |
 
+**Re-checked against 0.9.0 (2026-11-14, Renovate PR #1011), from the installed `dist`:**
+- G1: `modelKwargs` still carries only `reasoning_effort`.
+- G2: `OPENWIKI_REASONING_EFFORT` still throws for a provider/model it has no capability row for.
+- G3: nothing reads `usage_metadata`.
+- G4: the managed `AGENTS.md` block changed by one sentence; the scheduled-GitHub-Actions line became "use the repository's documented maintenance process". `CLAUDE.md`'s block is unchanged. The new `AGENTS.md` text is committed in the same PR, and the guard passed 32/32 with 0 skipped.
+- 0.9.0 still sends no `temperature`.
+- Telemetry: `isTelemetryDisabled` moved to `dist/telemetry/gates.js` and still honours both variables. It is still the first check in `recordRun`, which is still the only caller of `capture()`.
+
 ### What 0.6.1 → 0.7.1 change for this pipeline (read from the release notes and the unpacked 0.7.1 `dist`)
 
 | Change | Relevance here |

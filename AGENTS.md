@@ -36,7 +36,7 @@ This repository has a generated `openwiki/` evidence index. It is optional just-
 - Treat source code and tests as authoritative. A brief's unknowns and review items are verification gaps, not automatic requirements.
 - Prefer the narrowest quiet validation that proves the changed behavior. Preserve complete failure output.
 
-The scheduled OpenWiki GitHub Actions workflow refreshes the repository wiki. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
+Use the repository's documented maintenance process to refresh generated pages after source changes. Check its configuration and completed runs before relying on automatic updates. Do not hand-edit generated OpenWiki pages unless explicitly asked; prefer updating source code/docs and letting OpenWiki regenerate.
 
 <!-- OPENWIKI:END -->
 
@@ -64,7 +64,7 @@ repository:
   rather than edited in place. In this repository the **coding session** keeps the summaries
   current, by hand, in the same PR as the source change (ADR-0004,
   [docs/decisions/ADR-0004-session-maintained-wiki.md](docs/decisions/ADR-0004-session-maintained-wiki.md)).
-- **There is no scheduled refresh, and not the way that block says.** The generator lives on a
+- **There is no scheduled refresh.** The block's "documented maintenance process" is this: the generator lives on a
   self-hosted **Forgejo** instance under `.forgejo/workflows/wiki-maintain.yml`, not GitHub Actions,
   and it runs **only on manual dispatch**, as a rebuild of the pages the operator names (`pages`
   input). The daily schedule and its unattended machinery are retired (feature 098). A rebuild opens
