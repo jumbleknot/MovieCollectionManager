@@ -27,7 +27,7 @@
 # 1.98.0 is not a new choice: it is what `rustup … stable` resolved to on the day this landed
 # (published 2026-08-20), so pinning it changed nothing about what CI ran. Proven, not new.
 [toolchain]
-channel = "1.98.0"
+channel = "1.99.1"
 profile = "minimal"
 # clippy is what `app-ci / mc-service-checks` runs; declaring it here is what let the
 # `--component clippy` literal come out of that workflow. rustfmt is the constitution's formatter.
