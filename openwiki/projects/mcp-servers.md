@@ -365,13 +365,11 @@ after any source change — see the gotchas.
   their backing service is absent (right for a credential-less checkout, wrong for CI); in CI
   `MCM_REQUIRE_LIVE_STACK=1` turns an unexpected skip into a failure, and the rule is to add a
   legitimate skip deliberately rather than deselect a red test.
-- **web-api-mcp's compose comment describes a TMDB key the runtime never reads.** It says the key is
-  Vault-injected in prod and read from `.env.local` locally (the README said the same until
-  2026-11-14), and the compose file does pass that `.env.local` in. But `_tmdb_key()` consults only the per-request
-  `X-TMDB-Key` ContextVar and has no env path at all, and the production stack sets no TMDB key for
-  this container. The `.env.local` key belongs to the *integration suite*, which calls TMDB directly.
-  A new caller wired from that comment would omit the header and get the configuration error; the
-  README now says callers must send `X-TMDB-Key`.
+- **web-api-mcp's `.env.local` TMDB key is for the integration suite, not the server.** The compose
+  file passes that `.env.local` in, but `_tmdb_key()` consults only the per-request `X-TMDB-Key`
+  ContextVar and has no env path at all, and the production stack sets no TMDB key for this
+  container. The integration suite calls TMDB directly with that key. A new caller that omits the
+  header gets the configuration error; callers must send `X-TMDB-Key`.
 
 See [Agent Gateway](./agent-gateway.md) for how tool calls are dispatched to these servers (the
 allowlist → rate-limit → identity → call → guardrail choke point), and

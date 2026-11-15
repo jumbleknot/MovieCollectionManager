@@ -5,7 +5,9 @@ name: web-api-mcp
 # §MCP Tool Layer "Scoped Capability"). Egress to TMDB only. No published host port.
 # It IS on the isolated `movie-assistant-mcp-network` so the Agent Gateway (its sole caller) can reach it
 # WITHOUT granting backend access — the gateway bridges movie-assistant-mcp-network↔backend, web-api-mcp does not.
-# TMDB_API_KEY Vault-injected in prod; local dev reads it from the service .env.local.
+# TMDB key: the server reads ONLY the per-request `X-TMDB-Key` header the gateway forwards
+# (mcp-servers/web-api-mcp/src/server.py, _tmdb_key()) — there is no env fallback, here or in prod.
+# The .env.local below may carry a TMDB_API_KEY, but only the integration suite reads it.
 
 services:
   movie-assistant-mcp-webapi:
