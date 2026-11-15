@@ -227,9 +227,10 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
       // though structurally identical, and the assignment was a TS2322.
       //
       // Since feature 066 both sides are one `@ag-ui/client` — `@copilotkit/runtime` depends on
-      // exactly the version this app pins (0.0.59 at 1.70.1; 1.0.2 at 1.79.1, feature 081 US7, where
-      // the lockfile holds that single version) — so there is one `AbstractAgent` type and the
-      // cast has nothing left to bridge. Verified by removing it: `tsc --noEmit` is clean.
+      // exactly the version this app pins (0.0.59 at 1.70.1; 1.0.2 at 1.79.1, feature 081 US7, and
+      // still 1.0.2 at 1.87.1, item #1015, where the lockfile holds that single version) — so there
+      // is one `AbstractAgent` type and the cast has nothing left to bridge. Verified by removing
+      // it: `tsc --noEmit` is clean.
       //
       // The warning that came with the old cast still stands, and is the reason this is written out
       // rather than deleted: do NOT force the versions together with `pnpm.overrides` if they ever
