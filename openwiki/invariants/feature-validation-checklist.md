@@ -11,6 +11,9 @@ timestamp: 2026-07-30T13:00:00+00:00
 Run all of the following before marking any feature complete. **The web E2E regression (`pnpm nx e2e mcm-app`) is REQUIRED for EVERY feature — including backend-only (mc-service) changes** — because a backend change is exercised by the clients through the BFF → service; only E2E proves the real user path still works end-to-end. **If a deployed service/BFF container was changed, rebuild + redeploy it first** (`pnpm nx build <service>` then recreate the container) or the E2E validates a stale image. (Feature 011 lesson.)
 
 - [ ] `docs/templates/feature-test-tasks-template.md` format followed for all test tasks
+- [ ] **Doc-impact close-out** — re-run the doc-impact sweep's searches (recorded in `tasks.md`) for
+      the OLD identifiers; every remaining hit in a doc that states current procedure is fixed, or
+      justified in `tasks.md` (constitution v2.10.0, `docs/runbooks/doc-drift.md`)
 - [ ] Platform parity table updated for this feature
 - [ ] `pnpm nx test:unit mc-service` — Rust unit tests pass
 - [ ] `pnpm nx test:integration mc-service` — Rust integration tests pass

@@ -1,11 +1,11 @@
 ---
 type: Decision
 title: The governing constitution
-description: The repository's ratified, versioned constitution — currently v2.9.0, ratified 2026-03-08 and last amended 2026-11-14 (the Node 24 → 26 baseline, approved by the operator that day), after the Expo SDK 58 amendment approved on 2026-11-08 — the core principles every spec and plan must comply with, the amendment process and its same-pull-request rule, the per-feature Constitution Check gate, and the bundle-budget gate that enforces its sole accepted exception.
+description: The repository's ratified, versioned constitution — currently v2.10.0, ratified 2026-03-08 and last amended 2026-11-15 (the mandatory doc-impact sweep, feature 101), after the Node 24 → 26 baseline of 2026-11-14 — the core principles every spec and plan must comply with, the amendment process and its same-pull-request rule, the per-feature Constitution Check gate, and the bundle-budget gate that enforces its sole accepted exception.
 resource: .specify/memory/constitution.md
-resource-sha256: c15bf176d964035cf68427604c2d3f5d7dc074c00ae438ad9cb9ec208653671d
+resource-sha256: f9da9a35c593da5f626318fc0e05f5516ad409d70fab2ea219d262594c37ce1a
 tags: [governance, security, tdd, constitution]
-timestamp: 2026-11-14T20:43:16.383Z
+timestamp: 2026-11-15T01:53:10.478Z
 ---
 
 # The governing constitution
@@ -18,9 +18,9 @@ of the file) and has been amended more than twenty times as the system matured, 
 ratification through incremental clarifications like the client auth model rewrite and the Tamagui
 design-system mandate.
 
-The file currently reads **v2.9.0**: its footer says `**Version**: 2.9.0 | **Ratified**: 2026-03-08
-| **Last Amended**: 2026-11-14`, and the version-history entry carrying the `[CURRENT]` marker is the
-one dated 2026-11-14. That marker is the authoritative "latest amendment" signal — check it rather
+The file currently reads **v2.10.0**: its footer says `**Version**: 2.10.0 | **Ratified**: 2026-03-08
+| **Last Amended**: 2026-11-15`, and the version-history entry carrying the `[CURRENT]` marker is the
+one dated 2026-11-15. That marker is the authoritative "latest amendment" signal — check it rather
 than inferring the version from any summary, this page included.
 
 Amendments follow the file's own **Governance** section: a proposal documenting rationale, impact on
@@ -96,6 +96,14 @@ why pnpm moved off corepack: Node 26 no longer bundles it, so pnpm is installed 
 `packageManager` version by `scripts/install-pnpm.sh`. Approved by the operator on 2026-11-14 and landed
 in the same PR as the move; no principle redefined, so a MINOR.
 
+**v2.10.0** (2026-11-15) made the **doc-impact sweep** mandatory under **Documentation**: every feature
+searches the documents that state current procedure for each identifier it renames, removes or
+changes, when its tasks are generated and again at close-out, recording terms and results in
+`tasks.md`. The rule is carried structurally by the Spec Kit tasks-template override and guarded by
+`scripts/check-speckit-overrides.mjs` ([Doc drift](../runbooks/doc-drift.md)). It adds an obligation
+without redefining a principle, so a MINOR. It landed in the same PR as feature 101 (item #1021),
+whose merge is the operator's approval.
+
 Amendments are drafted rather than hand-edited. The Spec Kit constitution command
 ([`.github/agents/speckit.constitution.agent.md`](../../.github/agents/speckit.constitution.agent.md),
 and the equivalent skill at
@@ -105,7 +113,9 @@ redefinition of a principle or governance rule, MINOR for a new section or mater
 guidance, PATCH for clarifications), and carries a consistency-propagation checklist that pushes the
 change back into the dependent templates —
 [`.specify/templates/plan-template.md`](../../.specify/templates/plan-template.md) and its spec and
-tasks siblings. A principle amended without those following is a tooling failure, not just a
+tasks siblings. It checks the **core** tasks template only, so the project override
+(`.specify/templates/overrides/tasks-template.md`, which is what `/speckit-tasks` actually uses) has to
+be checked by hand. A principle amended without those following is a tooling failure, not just a
 documentation one.
 
 ## The tag-versus-digest distinction
