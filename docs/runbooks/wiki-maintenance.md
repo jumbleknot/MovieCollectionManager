@@ -565,9 +565,11 @@ runtime, and it ran under the old `npm install -g` too.
 `scripts/__tests__/wiki-maintain.guard.test.mjs`, which fails a cooldown under three days, an
 exclusion that is not an exact, floor-backed version, a range instead of an exact pin, a lockfile that disagrees with the manifest, or any
 run-time resolution in the workflow). Copy the three files somewhere scratch, raise the window past
-the age of the lock, and install frozen — **from the repository root**, with `--dir`, so corepack
-picks this repository's pnpm; run from inside the scratch directory it picks whatever pnpm is
-newest, which is a different instrument:
+the age of the lock, and install frozen **with the pinned pnpm installed** — `pnpm --version` outside
+any workspace must print the root `packageManager` version (`sh scripts/install-pnpm.sh` installs it).
+The scratch copy declares no `packageManager`, so pnpm runs it as whatever is installed, whether you
+pass `--dir` or `cd` into it; before Node 26 dropped corepack, running from the repository root
+selected the root pin instead (measured 2026-11-15 on Node 26 with pnpm 12, no corepack):
 
 ```bash
 d=$(mktemp -d) && cp tools/openwiki-generator/{package.json,pnpm-lock.yaml,pnpm-workspace.yaml} "$d"/

@@ -265,6 +265,13 @@ repo root still matters for `--dir` now that corepack is gone (`wiki-maintenance
 `sast-scanning.md`); and openwiki behaviours recorded for 0.6/0.7.1 that have not been re-checked
 on 0.9.0.
 
+*Answered 2026-11-15 (the `--dir` question):* no, the root cwd no longer selects the pin. On Node 26
+with pnpm 12 and no corepack, `pnpm --version` printed the root pin (12.18.0) at the repo root and
+the installed 12.17.0 under `--dir tools/openwiki-generator`. pnpm switches to the `packageManager`
+of the workspace it operates on, and the nested workspace declares none, so it runs on whatever pnpm
+is installed. CI installs exactly the root pin, so CI is unaffected. The two runbooks, their wiki
+pages and the code comments were corrected in the same change.
+
 **Drift found in code comments, outside this audit's scope:** the web-api-mcp compose comment on
 the TMDB key; `.devcontainer/devcontainer.json:186,257`; `.devcontainer/toolchain.Dockerfile:16`;
 `scripts/sast-scan.mjs:462-464`; `.forgejo/workflows/renovate.yml:92`.

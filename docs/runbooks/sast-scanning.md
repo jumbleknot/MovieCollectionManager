@@ -27,10 +27,12 @@ env, per surface). An unsynced surface **fails** the scan; it is never silently 
 > **Adding a nested pnpm workspace?** Nothing to register: `pnpm-audit` audits every committed
 > `pnpm-lock.yaml` (item #721), and `sast-scan.guard.test.mjs` fails if one is ever left out of the
 > audit set. Audit is lockfile-only — the sast job needs no `node_modules` in the nested workspace.
-> A nested workspace is audited as `pnpm --dir <ws> audit --json` **from the repo root**, so corepack
-> resolves the root manifest's `packageManager` (a nested `package.json` that declares none, run from
-> its own directory with no parent manifest, resolved pnpm 12.10.1 instead of the pinned 11.25.0 —
-> measured 2026-10-10).
+> A nested workspace is audited as `pnpm --dir <ws> audit --json` from the repo root. **Which pnpm runs
+> it is the INSTALLED one, not the root pin**: pnpm switches to the `packageManager` of the workspace
+> it operates on, a nested workspace (its own `pnpm-workspace.yaml`) declares none, so `--dir` runs it
+> on whatever pnpm is on PATH, from any cwd (measured 2026-11-15 on Node 26 with pnpm 12, no corepack). Under corepack the root cwd used to select the
+> root pin; it no longer does. CI installs exactly the root pin (`scripts/install-pnpm.sh` in the
+> `sast` job), so the audit still runs on it there; on a host, install the pinned pnpm first.
 >
 > A **root** pnpm finding's location is the bare `pkg@version`; a **nested** workspace's is
 > `<workspace>:pkg@version` (`tools/openwiki-generator:braces@3.0.3`). So a root entry anchored at

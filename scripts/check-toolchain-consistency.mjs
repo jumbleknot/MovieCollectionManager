@@ -27,8 +27,9 @@
 //      version must name the SAME one. `pnpm/action-setup` with no `version:` is the preferred
 //      form — it reads `packageManager` — and is always accepted.
 //   2b. `packageManager` itself is declared EXACTLY ONCE, in the ROOT manifest (item #286). This is
-//      the one rule that does not offer "or match it": corepack and pnpm resolve the field from the
-//      NEAREST package.json above the cwd, so a second one silently WINS inside that directory, and
+//      the one rule that does not offer "or match it": pnpm switches to the field of the WORKSPACE
+//      ROOT it operates on, so a second one silently WINS in a nested workspace (its own
+//      pnpm-workspace.yaml, e.g. tools/openwiki-generator; under corepack, in ANY directory), and
 //      Renovate's npm manager maintains it as a SEPARATE dependency on its own track. Measured —
 //      frontend/mcm-app/package.json held a copy that the migration wrote as pnpm@10.33.0 alongside
 //      the root's, which Renovate then carried to 10.34.5 while the root went to 11.22.0. An
@@ -533,9 +534,10 @@ export function collectNestedManifests(root) {
  * corepack pins), and the only one where the duplicate lives in the same KIND of file as the source.
  *
  * THE RULE IS "DECLARED ONCE", NOT "DECLARED CONSISTENTLY", and that is deliberate — it is the one
- * place this gate does not offer "or match it". corepack and pnpm both resolve `packageManager` from
- * the NEAREST package.json above the cwd, so a second field silently WINS for anything run inside
- * that directory; and an agreeing copy is one bot PR from drifting, which is exactly how this one
+ * place this gate does not offer "or match it". pnpm switches to the `packageManager` of the
+ * WORKSPACE ROOT it operates on, so a second field silently WINS in a nested workspace (one with its
+ * own pnpm-workspace.yaml — measured 2026-11-15, pnpm 12 without corepack; a member package's copy is
+ * ignored, though under corepack the nearest package.json won everywhere); and an agreeing copy is one bot PR from drifting, which is exactly how this one
  * drifted a whole major. Removing it is the only state that cannot come apart again.
  *
  * @returns {{file:string,line:number,problem:string}[]}
@@ -562,8 +564,8 @@ export function findNestedPackageManagerDrift(root = REPO_ROOT) {
       line: lineIdx === -1 ? 1 : lineIdx + 1,
       problem:
         `declares its own packageManager ${JSON.stringify(declared)} — the root declares ${JSON.stringify(rootPnpm)}. ` +
-        'corepack and pnpm resolve this field from the NEAREST package.json above the cwd, so this one ' +
-        'silently wins for anything run in this directory, and Renovate maintains it as a SEPARATE ' +
+        'pnpm switches to this field for any nested workspace that declares it (its own ' +
+        'pnpm-workspace.yaml), so this one can silently win there, and Renovate maintains it as a SEPARATE ' +
         'dependency that drifts onto its own track. Remove it — the root manifest is the single source.',
     });
   }

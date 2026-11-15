@@ -459,10 +459,12 @@ function runCargoAudit({ map }) {
 // and sast-scan.guard.test.mjs compares it with an independent `git ls-files` so a new nested
 // workspace — or an exclusion added here — fails the guard by name.
 //
-// INVOCATION, measured 2026-10-10 (pnpm 11.25.0 via corepack): a nested workspace is audited as
-// `pnpm --dir <ws> audit --json` FROM THE REPO ROOT. Its package.json declares no packageManager, and
-// corepack resolves the version from the directory pnpm is launched in: from the root that is the root
-// manifest's pin; a parentless copy of the generator's manifest resolved pnpm 12.10.1 instead. The
+// INVOCATION: a nested workspace is audited as `pnpm --dir <ws> audit --json` from the repo root.
+// Its package.json declares no packageManager, so it runs on the INSTALLED pnpm. Under corepack
+// (measured 2026-10-10, pnpm 11.25.0) the root cwd selected the root manifest's pin; without corepack
+// (Node 26, item #992) pnpm switches only to the packageManager of the workspace it operates on, and
+// `--dir` makes that the nested one — so the root cwd no longer matters (measured 2026-11-15). The
+// sast job installs exactly the root pin (scripts/install-pnpm.sh), which is what keeps it pinned. The
 // audit is lockfile-only — it needs no node_modules in the nested workspace (measured: 471 deps
 // audited from a checkout with none installed), so the sast job installs nothing extra.
 //

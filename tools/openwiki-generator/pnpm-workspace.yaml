@@ -8,8 +8,10 @@
 #
 # Installed by .forgejo/workflows/wiki-maintain.yml with
 #   pnpm --dir tools/openwiki-generator install --frozen-lockfile
-# run from the repository root, so corepack picks the root manifest's pnpm (packageManager is declared
-# once, in the root — check-toolchain-consistency.mjs). How to bump: docs/runbooks/wiki-maintenance.md §4.
+# on the pnpm that job installs with scripts/install-pnpm.sh (exactly the root packageManager). This
+# workspace declares no packageManager (declared once, in the root — check-toolchain-consistency.mjs),
+# so pnpm runs it as whatever is INSTALLED: without corepack (Node 26) the repository-root cwd no longer
+# selects the root pin (measured 2026-11-15). How to bump: docs/runbooks/wiki-maintenance.md §4.
 
 # openwiki's LangGraph checkpointer loads better-sqlite3's native binding at run time. Its install
 # script also ran under the old `npm install -g`, so allowing it changes no posture. Every other

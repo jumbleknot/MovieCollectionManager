@@ -218,7 +218,11 @@ passages:
     # `](/openwiki/…)` targets in this passage became file-relative. No prose changed; the
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
-    fingerprint: "sha256:b306bad6f9b5dcd126a1681961898cd4f9499a93ed563196818b476f175ec85a"
+    # Re-fingerprinted 2026-11-15 — PROSE CORRECTED: the "nearest package.json" mechanism was
+    # corepack's; pnpm 12 without corepack (Node 26, item #992) switches to the WORKSPACE ROOT's
+    # packageManager, so the passage now says where a second copy still wins (a nested workspace)
+    # and where it no longer does (a member package). The declare-once rule is unchanged.
+    fingerprint: "sha256:7464fb166011c29e047dfc71a28b81a92d88398a0388fb5328e0e194297f362a"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/rtk-token-compression.md"

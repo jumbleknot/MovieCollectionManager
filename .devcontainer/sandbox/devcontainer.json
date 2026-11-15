@@ -141,7 +141,7 @@
   // the whole problem:
   //
   //     VM        : uid=1000(agent)   ← clones the repo; any `ssh <sandbox> 'git …'` writes as this
-  //     container : uid=1001(coder)   ← `coder` lands on 1001 because node:24-bookworm already
+  //     container : uid=1001(coder)   ← `coder` lands on 1001 because node:26-bookworm already
   //                                     occupies 1000 with its `node` user, and toolchain.Dockerfile
   //                                     creates coder with a plain `useradd` (next free uid)
   //     uid 1000 seen INSIDE the container renders as `node`
