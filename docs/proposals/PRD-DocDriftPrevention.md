@@ -222,6 +222,14 @@ Layer 1 touches `scripts/`, so it goes through spec → plan → tasks first.
 3. Should README files under `agents/`, `mcp-servers/` and `infrastructure-as-code/` become
    `resource`s of wiki pages, so V17 covers them? Today a README has no summary and no fingerprint.
 
+*Answered 2026-11-15 by the operator (item #1021, spec 101):*
+
+1. **No, tasks template only.** One override and one guard. Revisit if an audit shows sweeps
+   finding dependent docs too late.
+2. **A backlog item chain.** The audit procedure's last step files the next audit as a dated
+   backlog item, so the session closing an audit owns the next one. No scheduler.
+3. **Deferred.** The audit already reads the READMEs. Let its findings decide.
+
 ## 8. Baseline: the 2026-11-14 drift audit
 
 This is the first layer-3 run, done in the PR that adds this proposal. It covered every runbook,
