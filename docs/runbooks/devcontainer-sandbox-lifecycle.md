@@ -628,10 +628,44 @@ one that passes unsafe here:
 
 ## 10b. The `sbx` version, and the ritual before upgrading it (R5)
 
-**Pinned at: `v0.51.0` (`7d55286de0c775148b985ed349f760f1eba06203`), upgraded from v0.47.0 on
-2026-11-03** (`sbx daemon stop`, then `winget upgrade --id Docker.sbx --version 0.51.0`). Most of
+**Pinned at: `v0.53.0` (`2c62838074738845f8f1096ff5f8920df61152fb`), upgraded from v0.51.0 on
+2026-11-15** (`sbx daemon stop`, then `winget upgrade --id Docker.sbx --version 0.53.0`). Most of
 this page was originally measured against v0.38.0; where a behaviour was re-checked on a later
 version it says so.
+
+**v0.52–v0.53, the release-note items that touch this environment** (there is no v0.52.0):
+
+- **Removed flags (v0.53.0)**: `sbx exec` and `sbx env exec` lose `--detach` and `--privileged`.
+  Local exec now rejects `--detach-keys` instead of ignoring it. `DOCKER_SANDBOXES_USE_DHI` is no
+  longer read; use `sbx settings set platform.images.useDHI true`. No script in this repository
+  uses any of them (checked by `git grep` at the upgrade).
+- **`sbx logout` prompts (v0.53.0)** even with no daemon running; scripts need `--yes`. Unused here.
+- **Stalled outbound connections close after about 30 s (v0.53.0)**. The knob is
+  `egress.stalledConnectionTimeoutSeconds`, and `0` disables it. A changed value reaches existing
+  sandboxes only after `sbx daemon restart`. Suspect this first if a long, quiet transfer from inside
+  the VM now dies at about 30 s.
+- **HTTP policy matching is case-insensitive (v0.53.0)** for ASCII letters in URL paths and query
+  names and values. The generator's rules are domain-only, so this changes nothing here.
+- **Restart checks mounts against their original sources (v0.53.0)**. A sandbox whose mount source
+  now resolves elsewhere is refused at restart, and the fix is to restore the host path or recreate.
+  The `E:` junction (§8) is the path to watch.
+- **Rename races (v0.53.0)**: `sbx rm` and `sbx prune` no longer delete a different sandbox that
+  took over the name after confirmation. `sbx run` reattaches to the current directory's sandbox on
+  a name collision, and creation rejects a name that differs from an existing one only in case.
+- **New `sbx df` (v0.53.0)**: disk use for local images, containers and volumes, with an estimate
+  of what could be reclaimed. It reports usage only and is still not a sizing flag: there is still
+  **no `--disk` flag**, and sizes remain §8's variables.
+- **Windows (v0.53.0)**: redirected AppData paths are handled, and the daemon is stopped during
+  per-user MSI upgrades without opening an invisible console. Published loopback ports work with
+  WSL2 mirrored networking. CVE-2026-126330 is fixed: an unpublished auto-assigned port no longer
+  comes back after a restart.
+- **Update notices go to stderr (v0.53.0)**, so `sbx … --format json` output that is redirected
+  stays clean.
+
+**Verification for v0.53.0**: the CLI was upgraded on 2026-11-15 and `sbx version` reports
+`v0.53.0 2c628380`. Nothing below it has been re-measured yet. The harness, the G5 sibling-egress
+refusal and `verify-sandbox-egress.sh --audit-check` are due at the next recreate, which is the
+Spec Kit 0.16.5 image re-pin (PR #1029). Record them here when they run.
 
 **v0.48–v0.51, the release-note items that touch this environment** (there is no v0.49.0):
 
