@@ -35,6 +35,7 @@ import { execFileSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { partitionArgs, wantsHelp, dieOnArgvError } from './lib/argv-contract.mjs';
+import { isMain } from './lib/is-main.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -197,7 +198,7 @@ export function resolveCommand(argv = []) {
   return { command: flags.has('--apply') ? 'apply' : 'dry-run' };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   let command;
   try {
     ({ command } = resolveCommand(process.argv.slice(2)));

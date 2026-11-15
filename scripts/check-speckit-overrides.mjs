@@ -23,13 +23,14 @@
 //   node scripts/check-speckit-overrides.mjs --record    # rewrite the fork point after a re-merge
 //   node scripts/check-speckit-overrides.mjs --selftest  # prove each failure is detected
 // Procedure: docs/runbooks/doc-drift.md#upgrading-spec-kit
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dieOnArgvError, partitionArgs, wantsHelp } from './lib/argv-contract.mjs';
+import { isMain } from './lib/is-main.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -270,8 +271,6 @@ export function main(argv, { root = REPO_ROOT } = {}) {
   return scan(root);
 }
 
-// pathToFileURL, not `file://${argv[1]}`: the latter never matches a Windows path, so the gate
-// would exit 0 on a Windows host having checked nothing.
-if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
+if (isMain(import.meta.url)) {
   process.exit(main(process.argv.slice(2)));
 }
