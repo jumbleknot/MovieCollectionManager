@@ -3,10 +3,10 @@ type: Runbook
 title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: d47f5e845ae1f01d5abf73e50853ff7c5c86235bbebd47f2c183d48393edf649
+resource-sha256: ab4a45f7ae49ffa237104c56568e56d156e1962adc2c21c9188009d55be7e8bb
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T11:59:39.648Z
+timestamp: 2026-11-15T01:36:03.095Z
 ---
 
 # SAST & SCA static scanning
@@ -273,9 +273,11 @@ that job), not by flipping the whole tier.
   nothing until item #721. The audit set is now discovered from git (`git ls-files '*pnpm-lock.yaml'`)
   rather than hard-coded, and `sast-scan.guard.test.mjs` compares it with an independent `git ls-files`
   so a new nested workspace — or a hand-written exclusion — fails the guard by name. A nested
-  workspace is audited as `pnpm --dir <ws> audit --json` **from the repo root**, so corepack resolves
-  the root manifest's `packageManager` (a nested `package.json` declaring none, run from its own
-  directory with no parent manifest, resolved pnpm 12.10.1 instead of the then-pinned 11.25.0 —
+  workspace is audited as `pnpm --dir <ws> audit --json` from the repo root, on the **installed**
+  pnpm: a nested workspace declares no `packageManager`, and without corepack (Node 26) the root cwd
+  no longer selects the root pin, so CI installs exactly that pin first (measured 2026-11-15 on
+  Node 26 with pnpm 12). Under corepack it did (a nested `package.json` declaring none, run from its
+  own directory with no parent manifest, resolved pnpm 12.10.1 instead of the then-pinned 11.25.0 —
   measured 2026-10-10; the root pin has since moved to `pnpm@12.13.0`, and the nested audit's finding
   set was measured **identical** under both pins — 30 findings, the `tools/openwiki-generator:`
   entries included — on 2026-10-17). The audit is lockfile-only, so the `sast` job installs nothing

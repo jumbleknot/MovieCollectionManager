@@ -3,10 +3,10 @@ type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
 description: The derived summary of how the openwiki/ bundle is kept current since feature 098 — the coding session's duty to refresh a derived page in the same PR as its source, the source fingerprint and the V17 check that blocks a stale page, G14's single-human-written-file rule, the retired Claims bookkeeping and unattended machinery, and the generator's remaining role as a manual, dispatch-only rebuild of operator-named pages — with that rebuild's provider table and env-scoping rule, its locked install and release-age cooldown, its job deadline and exit codes, the per-page verification and restore machinery, the single long-lived proposal, the canonical-home rule, the provenance stamp, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
-resource-sha256: edd47dd7f14d8389305f6148fa7631f7a7b809ae197567d3e8448223d3e9d793
+resource-sha256: 1a9c034c9242f0bd0c686cbfbb4b2fee5fa581630656f9ab8b7ac19d7c324705
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
-timestamp: 2026-11-14T22:34:21.161Z
+timestamp: 2026-11-15T01:36:03.188Z
 ---
 
 
@@ -284,7 +284,9 @@ yields lockfile advice for a finding in this tree — see
 that is not an exact, floor-backed version, a range instead of an exact pin, a lockfile that disagrees
 with the manifest, a root workspace glob that swallows this directory, or any run-time resolution in the
 workflow). Copy the three files somewhere scratch, raise the window past the age of the lock, and install
-frozen — **from the repository root**, with `--dir`, so corepack picks this repository's pnpm:
+frozen **with the pinned pnpm installed** (`pnpm --version` must print the root `packageManager`
+version): the copy declares none, so pnpm runs it as whatever is installed — since Node 26 dropped
+corepack, running from the repository root no longer selects the root pin:
 
 ```bash
 d=$(mktemp -d) && cp tools/openwiki-generator/{package.json,pnpm-lock.yaml,pnpm-workspace.yaml} "$d"/

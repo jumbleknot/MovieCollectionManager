@@ -30,9 +30,11 @@ npm and yarn are prohibited outright, not just discouraged in docs. The root `pa
 - **Always use `pnpm install`.** There is no supported recovery path through npm or yarn — the
   workspace's symlinked `node_modules` layout and `pnpm-workspace.yaml` project list assume pnpm.
 - **The pnpm VERSION is declared exactly once, in the ROOT `package.json`'s `packageManager` — a
-  workspace package must never declare its own.** corepack and pnpm resolve that field from the
-  *nearest* `package.json` above the working directory, so a second copy silently wins for anything
-  run inside that package, and Renovate's built-in npm manager extracts it from every manifest and
+  workspace package must never declare its own.** pnpm (12, no corepack since Node 26) switches to
+  the `packageManager` of the *workspace root* it operates on: a member package's copy is ignored
+  (the repo root's wins), but a directory with its own `pnpm-workspace.yaml` — `tools/openwiki-generator`
+  — uses its own copy from any cwd, `--dir` included, so a second copy there silently wins (measured
+  2026-11-15; under corepack the *nearest* `package.json` won, members included). And Renovate's built-in npm manager extracts it from every manifest and
   maintains each copy as a separate dependency on its own track. Measured 2026-08-29 (item #286):
   `frontend/mcm-app/package.json` held a copy written as `pnpm@10.33.0` by the npm→pnpm migration
   alongside the root's; later bumps moved the root only, Renovate carried the app copy to `10.34.5`,

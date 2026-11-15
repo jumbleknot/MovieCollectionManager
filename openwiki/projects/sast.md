@@ -4,9 +4,9 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
 tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: d47f5e845ae1f01d5abf73e50853ff7c5c86235bbebd47f2c183d48393edf649
+resource-sha256: ab4a45f7ae49ffa237104c56568e56d156e1962adc2c21c9188009d55be7e8bb
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
-timestamp: 2026-11-10T11:59:39.638Z
+timestamp: 2026-11-15T01:36:03.000Z
 ---
 
 # SAST & SCA static security scanning
@@ -38,8 +38,9 @@ model-provider credential in the `wiki-maintain` job. Until item #721 that tree 
 and nothing said so. `pnpmAuditSet()` therefore enumerates every committed `pnpm-lock.yaml` with
 `git ls-files`, and a guard test compares that set against an independent `git ls-files` so a new
 nested workspace — or a hand-written exclusion — fails by name. A nested workspace is audited as
-`pnpm --dir <ws> audit --json` **from the repo root**, which is also what makes corepack resolve the
-root manifest's `packageManager`; the audit is lockfile-only, so the `sast` job installs no extra
+`pnpm --dir <ws> audit --json` from the repo root, on the INSTALLED pnpm — a nested workspace declares
+no `packageManager`, and since corepack left (Node 26) the root cwd no longer selects the root pin, so
+CI installs exactly that pin first; the audit is lockfile-only, so the `sast` job installs no extra
 `node_modules`. Location follows the pip-audit convention: a root finding keeps the bare
 `package@version` the existing entries anchor to (`^braces@3\.0\.3$`), while a nested workspace's is
 prefixed `<workspace>:package@version`, so a root entry never silently covers the same package in
