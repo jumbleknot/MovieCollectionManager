@@ -3,10 +3,10 @@ type: Runbook
 title: Developer environment setup (host toolchain)
 description: How to provision a host development machine for MovieCollectionManager — the toolchain versions the repository pins (Node 26 and its floor, pnpm at the `packageManager` version, Rust, Python/uv, Android SDK) and the companion tools (RTK output compressor, OpenWiki) — as an alternative to the devcontainer, including how the OpenWiki generator's version is held in step across the toolchain image, CI and a host install.
 resource: docs/runbooks/dev-environment-setup.md
-resource-sha256: 6591e37b3007d32d4e1f1b697339fbf02e874d8a52dfd794f065e677149bd752
+resource-sha256: aa61285e540e0473fad10ab34e7fc526a18f241d2e23e2482afdc77a916800a9
 tags: [setup, toolchain, host, runbook, openwiki]
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-timestamp: 2026-11-15T15:16:54.385Z
+timestamp: 2026-11-15T18:43:57.061Z
 ---
 
 # Developer environment setup (host toolchain)
@@ -45,8 +45,13 @@ higher floor, or the gate keeps passing pins that manager refuses to run on.
   `pnpm@latest`, and not via Corepack, which Node 26 no longer bundles.** The field is declared exactly once, in the **root** manifest — a workspace
   manifest that declares its own `packageManager` silently wins for anything run inside that
   directory and is maintained by Renovate on its own track, so the consistency gate fails a
-  non-root declaration *including one whose value agrees*. Inside the repo,
-  `pnpm --version` must print the `packageManager` version.
+  non-root declaration *including one whose value agrees*.
+- **Verify with `node scripts/check-pnpm-version.mjs`, not `pnpm --version` inside the repo.** Inside
+  the repo pnpm switches itself to the pin and prints it whatever is installed. Nested workspaces
+  (`pnpm --dir tools/openwiki-generator`, the sast audit) declare no `packageManager`, so they run on
+  the **installed** pnpm. The check asks pnpm from an empty temp directory and fails naming both
+  versions. `install-pnpm.sh` runs the same check after installing, and CI runs it after each
+  `pnpm/action-setup` step (item #1025).
 - **Pin OpenWiki to the exact version the devcontainer toolchain image installs.** A version skew
   between the host and container workspaces can produce structurally different wiki bundles for the
   same repository state — check `.devcontainer/toolchain.Dockerfile` for the pinned version before
