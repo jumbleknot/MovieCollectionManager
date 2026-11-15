@@ -105,7 +105,7 @@ hung, that is why.
 2. **Final E2E validation runs against the containerized BFF — the dev container (non-Secure HTTP, `:8082`)** — only *after* the Metro suites are green. This exercises the real `expo-server` production server (not Metro's dev server) and proves the request path is the container, not Metro, via the `X-BFF-Source` header (asserted in `global-setup.ts`, fail-fast on a Metro false-green).
 3. **After all green, reset the environment to Metro-only** (tear down the container + revert `.env.local` — see "Switch back to Metro" below).
 
-**The prod container (HTTPS, Secure cookies) is reserved for a future CI/CD pipeline — it is NOT a routine local step.** There is no CI E2E job today; feature 007 proved the prod-HTTPS path works locally (US3, kept for reference in the quickstart), but going forward that hardened run belongs in CI/CD, not the local loop. Full runbook for all modes: [specs/007-e2e-bff-container/quickstart.md](../../specs/007-e2e-bff-container/quickstart.md).
+**The prod container (HTTPS, Secure cookies) is reserved for a future CI/CD pipeline — it is NOT a routine local step.** CI's E2E job (`app-ci`'s `app-e2e`) runs the dev-container mode, not this one; feature 007 proved the prod-HTTPS path works locally (US3, kept for reference in the quickstart), but going forward that hardened run belongs in CI/CD, not the local loop. Full runbook for all modes: [specs/007-e2e-bff-container/quickstart.md](../../specs/007-e2e-bff-container/quickstart.md).
 
 The same app + BFF **code** runs in every mode; only the *server fronting it* (Metro vs `expo-server`-in-a-container) and the *cookie/TLS posture* change:
 
@@ -207,11 +207,11 @@ limit and the dock silently renders no messages.
 >
 > Two things keep that honest, and both name the cause rather than the symptom:
 >
-> - `pnpm nx bundle-budget mcm-app` — asserts the entry chunk against a committed 2,000,000-byte
->   budget (measured 1,762,630), that no deferred package is back in the entry chunk, and that no
+> - `pnpm nx bundle-budget mcm-app` — asserts the cold-load total (every script the worst page loads) against a committed
+>   2,000,000-byte budget (entry chunk measured 1,762,630), that no deferred package is back in the entry chunk, and that no
 >   `src/bff-server/**` module or `luxon` is in ANY client chunk. It runs in CI through the
 >   `affected` job. If it reports `deferred-package check: SKIPPED`, the export lost `--source-maps`
->   and two of its three assertions are not running.
+>   and two of its four assertions are not running.
 > - `perf.spec.ts` — measures a cold Slow-3G `/home` and attaches a `perf-metrics` payload with
 >   `jsTransferredKB`, `slow3gColdTtiMs`, `chunksBeforeInteractive` and `deferredChunkStayedDeferred`.
 >   **`deferredChunkStayedDeferred: false` is the specific and easy mistake**: the lazy boundary
@@ -413,14 +413,14 @@ container**, and `main` went red on a docs-and-uv merge. Two things follow:
 
 Every one of these produced a confident, wrong answer, and every one was checkable in seconds.
 
-- **NOTHING STATICALLY CHECKS `tests/e2e/**` — a clean `typecheck` is not evidence about a spec.**
+- **NOTHING TYPE-CHECKS `tests/e2e/**` — a clean `typecheck` is not evidence about a spec.**
   `frontend/mcm-app/tsconfig.json` carries `exclude: ["tests/e2e", "tests/load", "tests/web-e2e"]`, and
-  the `lint` target runs `eslint src` only. Verified 2026-09-26 the way this section demands — by
+  the `lint` target (`eslint .` since spec 097) lints them but checks no types. Verified 2026-09-26 the way this section demands — by
   planting `const __probe: number = "not a number";` in `backups.spec.ts` and watching
   `tsc --noEmit -p frontend/mcm-app/tsconfig.json` pass, with `--listFiles | grep -c backups.spec.ts`
   returning **0**. (The instrument itself was confirmed working: the same command under
   typescript@5.9.3 did surface a real config error, so the clean pass was not a silent no-op.) So
-  **running the spec is the only verification these files have** — do not offer a green typecheck as
+  **running the spec is the only type verification these files have** — do not offer a green typecheck as
   evidence that one is sound.
 - **AN ASSERTION WHOSE EXPECTED STATE ALREADY HOLDS IS NOT A WAIT (item #564).** The sharpest form of
   this class, because the test still *reads* as if it waits. `backups.spec.ts`'s three-run retention
@@ -483,7 +483,7 @@ Every one of these produced a confident, wrong answer, and every one was checkab
   **FIXED** — `agent-stack.mjs` now parses argv in `resolveCommand()`, a pure tested function that
   prints `USAGE` for `--help`/`-h` and **raises on any unrecognised argument** rather than defaulting
   to deploy. `--status` remains the read-only probe. Kept here rather than deleted because the fix
-  removes one instance and the *class* is the durable lesson — and because two siblings still have it
+  removes one instance and the *class* is the durable lesson — and because siblings had it too
   (below).
 
   This is the `--grep-invert` entry with the failure inverted, which is why it sits beside it:
@@ -743,7 +743,7 @@ abandoned full-suite run was still at test 24/174 fifteen minutes after being "s
 isolated re-run and making its timings meaningless. Always confirm and clean up:
 
 ```bash
-docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.63.0-noble \
+docker ps --filter ancestor=mcr.microsoft.com/playwright:v1.65.0-noble \
   --format '{{.ID}}\t{{.Command}}'      # then: docker kill <id>
 ```
 
@@ -852,9 +852,9 @@ steps run **after** bring-up and **before** the web/APK/emulator legs (fast-fail
 1. **Agent** (`movie-assistant`) — `-m "not golden"` (the `ci_quarantine` marker is gone; all quarantined
    tests were fixed — `agents/movie-assistant/pyproject.toml`). Then the three MCP servers' suites
    (`movie-mcp`, `spreadsheet-mcp`, `web-api-mcp`).
-2. **mc-service** — vs the live replica-set Mongo (`27017`, `directConnection=true`) + Keycloak JWKS. The ~24
-   full-stack HTTP tests marked `#[ignore = "requires Keycloak JWKS timing; verified in E2E"]` stay ignored (they
-   need in-process JWKS timing that's flaky under `build_test_app`) — running them is a tracked follow-up.
+2. **mc-service** — vs the live replica-set Mongo (`27017`, `directConnection=true`) + Keycloak JWKS. The
+   full-stack HTTP tests once marked `#[ignore = "requires Keycloak JWKS timing; verified in E2E"]` now run, behind
+   a JWKS-readiness wait (`backend/mc-service/tests/integration/common/mod.rs`) — the ignore was an ordering bug, not flakiness.
 3. **mcm-app BFF** — vs the live dev BFF (`:8082`) + Keycloak + Redis db1 + BFF Mongo (`:27018`).
 
 **No-false-green convention** (`specs/041-…/contracts/skip-escalation-convention.md`): one env flag

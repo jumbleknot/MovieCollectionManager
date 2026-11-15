@@ -103,7 +103,7 @@ toolchain image.
 version skew between the two workspaces can produce structurally different bundles:
 
 ```powershell
-pnpm add -g openwiki@0.7.1 mermaid jsdom
+pnpm add -g openwiki@0.9.0 mermaid jsdom
 ```
 
 `mermaid` and `jsdom` are the generator's **optional** peer dependencies, and leaving them out fails
@@ -113,7 +113,7 @@ rewrites any diagram it cannot verify into a plain `text` fence. The run still e
 still passes — the only symptom is a diagram quietly downgraded to preformatted text. Install them
 here for the same reason CI and the container image do.
 
-Requires Node ≥ 22.22 (OpenWiki 0.5.x raised its own floor; the container is on Node 24). Configuration lives in `%USERPROFILE%\.openwiki\.env` — outside the repository,
+Requires Node ≥ 22.22 (OpenWiki 0.5.x raised its own floor; the container is on Node 26). Configuration lives in `%USERPROFILE%\.openwiki\.env` — outside the repository,
 so it cannot enter git.
 
 > **Always invoke it through the Nx target, never the bare CLI:**
@@ -129,7 +129,7 @@ so it cannot enter git.
 > so a direct call would silently use different settings.
 
 **No new host environment variable is required by this feature.** The only host value it consumes is
-`ANTHROPIC_API_KEY`, which you have already set for the dev container. If you want belt-and-braces
+`MCM_ANTHROPIC_API_KEY`, which you have already set for the dev container. If you want belt-and-braces
 protection against an accidental bare invocation, you can additionally set
 `setx OPENWIKI_TELEMETRY_DISABLED 1` — optional, not required.
 
@@ -146,7 +146,7 @@ pnpm nx okf-lint infrastructure-as-code
 
 Follow the [React Native environment setup](https://reactnative.dev/docs/set-up-your-environment). This project uses:
 
-- Node.js **24** (LTS). CI and every Dockerfile pin a 24.x release; the root `package.json`
+- Node.js **26** (LTS). CI and every Dockerfile pin a 26.x release; the root `package.json`
   `engines.node` floor is what `scripts/check-toolchain-consistency.mjs` enforces them against
 - Open **JDK 17**
 - Android Studio with **Android SDK Platform 36** (the `compileSdk` React Native's Gradle version

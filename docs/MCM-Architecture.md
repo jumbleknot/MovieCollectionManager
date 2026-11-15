@@ -25,7 +25,7 @@ Browse and manage your movie collection from a web browser or mobile app
 
 - `mcm-app` is the core Frontend App where users view and manage movie collections they have access to
 - `mc-service` is the core Backend Service that implements all movie collection domain models and executes core movie collection logic
-- `mc-service` stores movie collection data on a mongodb server named `mc-db` in a single mongodb database named `mc_db` with shared collections across all users
+- `mc-service` stores movie collection data on a mongodb server named `mc-service-store-mongo` (`mc-db`) in a single mongodb database named `mc_db` with shared collections across all users
   - The `movie_collections` shared collection stores identifiers along with Access Control Lists (ACLs) for all movie collections
   - The `movies` shared collection stores data about the movies in the collections
 - `mcm-app`'s BFF runs **per-user collection backups** (feature 073): scheduled and on-demand copies of a user's collections to S3-compatible or WebDAV storage the *user* owns, with keep-last-N retention and a restore that only ever creates new collections. The scheduler ticks in-process in the BFF (disabled when `BACKUP_TICK_SECRET` is unset); every read and restore write goes through `mc-service` as the user, so DAC applies unchanged, and an unattended run acts on a Keycloak offline token the user consented to. Destination secrets are AES-256-GCM-sealed under their own key (`BACKUP_CREDENTIAL_ENC_KEY`, separate from `AGENT_CONFIG_ENC_KEY`) in the BFF-owned store — see [runbooks/backups.md](runbooks/backups.md)
@@ -95,7 +95,7 @@ Each movie collection has an owner (defaulted to the user who created the movie 
 
 ### MongoDB Collections
 
-mc-service owns its own MongoDB instance, `mc-db` (the BFF has a **separate** instance, `mcm-bff-db` — see [Per-User Agent Config Store](#per-user-agent-config-store-mcm-bff-db-bff-owned); no cross-boundary DB access, per constitution §Decoupling).
+mc-service owns its own MongoDB instance, `mc-db` (container `mc-service-store-mongo`; the BFF has a **separate** instance, `mcm-bff-db`, container `mcm-bff-store-mongo` — see [Per-User Agent Config Store](#per-user-agent-config-store-mcm-bff-db-bff-owned); no cross-boundary DB access, per constitution §Decoupling).
 
 | Collection | Purpose |
 |------------|---------|
@@ -164,7 +164,7 @@ Custody of these credentials is a **BFF responsibility** (the BFF-Layer principl
 |---|---|---|---|
 | `mcm-bff-db` | BFF | `user_agent_config` | Per-user assistant config (`_id = userId`): enabled flag, provider, Ollama base URL, **encrypted** Anthropic/TMDB credentials (`*Enc`), personal cost limit, `updatedAt` |
 
-`mcm-bff-db` is a **plain standalone `mongod`** (no replica set, no `directConnection`) — the BFF store does single-document upserts only, so it needs neither (unlike `mc-db`, whose replica set exists for mc-service's cascade-delete transaction). The BFF connects via `MONGO_URL` (`mcm-bff-db:27017` in-container / `localhost:27018` from host), never mc-service's `MC_DB_URL`. The AES-256-GCM master key (`AGENT_CONFIG_ENC_KEY`) is held separately — injected into the BFF's environment (from Komodo Variables in production, from the file `scripts/gen-dev-env.mjs` generates in dev) — never alongside the data.
+`mcm-bff-db` is a **plain standalone `mongod`** (no replica set, no `directConnection`) — the BFF store does single-document upserts only, so it needs neither (unlike `mc-db`, whose replica set exists for mc-service's cascade-delete transaction). The BFF connects via `MONGO_URL` (`mcm-bff-store-mongo:27017` in-container / `localhost:27018` from host), never mc-service's `MC_DB_URL`. The AES-256-GCM master key (`AGENT_CONFIG_ENC_KEY`) is held separately — injected into the BFF's environment (from Komodo Variables in production, from the file `scripts/gen-dev-env.mjs` generates in dev) — never alongside the data.
 
 ### Three Agent-UI Capabilities (MCM examples)
 
@@ -625,6 +625,7 @@ docker network create keycloak-network
 docker volume create mc-service-store-mongo-data
 docker volume create keycloak-store-postgres-data
 docker volume create mcm-bff-cache-redis-data
+docker volume create mcm-bff-store-mongo-data
 # Mint the per-stack secrets. Feature 022 replaced the keycloak .env.local / secrets/*.txt pair
 # with one generated file per stack, so there is nothing to copy or fill in by hand:
 node scripts/gen-dev-secrets.mjs

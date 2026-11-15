@@ -10,7 +10,7 @@ severity scale, one allowlist-as-baseline, one blocking `sast` CI job.
 | SAST | **Semgrep** (OSS) | first-party TS/JS tree (BFF + full frontend) + Python agent layer | `uvx semgrep@<pin> scan` |
 | SCA | **cargo audit** | Rust deps (root `Cargo.lock`) | `cargo audit --json` |
 | SCA | **pnpm audit** | JS deps (root `pnpm-lock.yaml`) | `pnpm audit --json` |
-| SCA | **pip-audit** | Python deps (`agents/movie-assistant/uv.lock`) | `uvx pip-audit` over a `uv export` |
+| SCA | **pip-audit** | Python deps (each `uv.lock` under `agents/` and `mcp-servers/`) | `uvx pip-audit` over a `uv export` |
 
 Rust *code* is out of Semgrep scope (clippy via `pnpm nx lint mc-service` already covers Rust patterns);
 Rust participates only through `cargo audit` (deps). `p/secrets` is **never** enabled — the existing

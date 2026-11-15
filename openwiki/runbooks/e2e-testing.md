@@ -3,10 +3,10 @@ type: Runbook
 title: E2E testing (BFF container modes & flakiness diagnosis)
 description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), the CI integration-tier gate with its per-suite skip-escalation flags, the two agent-test tiers that decide what blocks a merge, the security-policy walk that only the browser can see, why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the shared-state, instrument and Playwright-image-pin traps that make a green run prove less than it looks.
 resource: docs/runbooks/e2e-testing.md
-resource-sha256: a33a6e1ea4aba78dd497bfc5f6f918ac620a218dc95352a25d8e71f4b791ac49
+resource-sha256: c23d2dd712f3cf9155dd78f60ff1ea72ad77c6142665812a0726d15e97e164a1
 tags: [e2e, testing, playwright, ci, flakiness, runbook, integration, keycloak, backups]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T11:51:44.491Z
+timestamp: 2026-11-14T22:22:05.241Z
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -416,9 +416,9 @@ For mobile-specific tunneling and APK-rebuild decisions, see
   (3) A local subset pass is not evidence about a change to a shared hook — a fix that passed
   6/6 unit tests and 5/5 E2E produced 28 and 26 failures in the full CI suite because it exercised
   three spec files in isolation while the regression only appears under full concurrency.
-- **Nothing statically checks `tests/e2e/**` — a clean `typecheck` is not evidence about a spec.**
+- **Nothing type-checks `tests/e2e/**` — a clean `typecheck` is not evidence about a spec.**
   `frontend/mcm-app/tsconfig.json` excludes `tests/e2e` (and `tests/load`, `tests/web-e2e`), and the
-  `lint` target runs `eslint src` only. Verified by planting a type error in a spec and watching
+  `lint` target (`eslint .` since spec 097) lints them but checks no types. Verified by planting a type error in a spec and watching
   `tsc --noEmit` pass with the file absent from `--listFiles`. **Running the spec is the only
   verification these files have** — do not offer a green typecheck as evidence that one is sound.
 - **An assertion whose expected state already holds is not a wait.** The sharpest instrument trap,

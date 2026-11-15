@@ -58,7 +58,7 @@ Prerequisites: Docker running; local `auth` + `mcm` stacks up (add `--profile ag
 ```bash
 node scripts/gen-dev-secrets.mjs
 pnpm nx up-auth infrastructure-as-code
-pnpm nx up-mcm infrastructure-as-code            # add --profile agents for gateway coverage
+pnpm nx up-mcm infrastructure-as-code            # then: pnpm nx up-mcm-agents infrastructure-as-code for gateway coverage
 ```
 
 Local baseline:
@@ -67,7 +67,7 @@ Local baseline:
 pnpm nx dast infrastructure-as-code              # or: node scripts/zap-scan.mjs --target local --mode baseline
 ```
 
-Reports land in `security/zap/reports/` (gitignored): `report.html`, `report.json`, `report.sarif`.
+Reports land in `security/zap/reports/` (gitignored): `report.html`, `report.json`, `report-sarif.json`.
 
 ## Reports
 

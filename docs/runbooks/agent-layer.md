@@ -78,7 +78,7 @@ measurements are in [model-provider scoping](../../openwiki/invariants/model-pro
 The host
 gateway runs on the Metro loopback `127.0.0.1:8123` with production nodes when `WEB_API_MCP_URL`
 + `MOVIE_MCP_URL` are set (see HANDOFF "How to bring the agent stack up"); the full containerised
-stack is `docker compose --profile agents up -d` (needs the `movie-assistant-store-postgres-data`
+stack is `docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml --profile agents up -d` (needs the `movie-assistant-store-postgres-data`
 volume + **host Ollama** running with the models pulled — feature 019 removed the containerized
 `ollama` service, so host Ollama is the only supported model-serving path). The gateway is
 private-network only (the BFF is the sole caller).
@@ -316,9 +316,9 @@ flags (`hasAnthropicKey`/`hasTmdbKey`) and non-secret settings.
   to base when no Anthropic key — R10). The TMDB key rides `X-TMDB-Key`, scoped to web-api-mcp calls
   only. A per-user `costLimitUsd` (BFF-only, **not** sent to the gateway) overrides the global cost
   ceiling via `enforceAgentCostCeiling(userId, override)`.
-- **Env**: `AGENT_CONFIG_ENC_KEY` (required) + `MONGO_URL` → the BFF's **own dedicated `mcm-bff-db`**
-  instance (`mcm-bff-db:27017` in-container / `localhost:27018` host — standalone, separate from
-  mc-service's `mc-db`, no `directConnection`) — see [local-dev.md](local-dev.md#environment-variables). The shared
+- **Env**: `AGENT_CONFIG_ENC_KEY` (required) + `MONGO_URL` → the BFF's **own dedicated `mcm-bff-store-mongo`**
+  instance (`mcm-bff-store-mongo:27017` in-container / `localhost:27018` host — standalone, separate from
+  mc-service's `mc-service-store-mongo`, no `directConnection`) — see [local-dev.md](local-dev.md#environment-variables). The shared
   `MODEL_PROVIDER`/`OLLAMA_BASE_URL`/`ANTHROPIC_API_KEY`/`TMDB_API_KEY` are removed from the
   user-facing runtime (kept only for the keyless golden gate). The committed-tree secret-scan guard
   (`scripts/secret-scan.mjs`, the `secret-scan` job in `.forgejo/workflows/guardrails.yml`) fails the build on any leaked key (SC-006).
@@ -343,7 +343,7 @@ flags (`hasAnthropicKey`/`hasTmdbKey`) and non-secret settings.
 infrastructure-as-code` + `pnpm nx e2e:agents mcm-app`.** A committed light stack (host Ollama +
 MemorySaver; `scripts/agent-stack.mjs` + `scripts/agent-e2e.mjs`) runs the agent flows against
 the **dev-container BFF + containerized production gateway + containerized MCP**. `up-agents-prod`
-builds the 3 images, creates the `movie-assistant-mcp-network` (`docker network create movie-assistant-mcp-network` is now a
+builds the 4 images (gateway + 3 MCP), creates the `movie-assistant-mcp-network` (`docker network create movie-assistant-mcp-network` is now a
 first-time-setup step), fetches the gateway client secret from Keycloak admin (`kc_admin`), and
 verifies production nodes. Default provider is Ollama; **`MODEL_PROVIDER=anthropic node
 scripts/agent-stack.mjs`** deploys the gateway against Claude instead (the `models.py` code
@@ -392,11 +392,11 @@ See `agents/movie-assistant/.env.local.example` for all the vars.
 
 OpenSearch (append-only agent audit sink,
 index `mcm-agent-audit`) is **not** part of `--profile observability` — it runs under its own
-profile: `docker compose --profile audit up -d` (HTTPS `:9200`, self-signed). **Heap is pinned to
+profile: `pnpm nx up-audit infrastructure-as-code` (HTTPS `:9200`, self-signed). **Heap is pinned to
 1 GB via `OPENSEARCH_JAVA_OPTS=-Xms1g -Xmx1g`** in
 `infrastructure-as-code/docker/opensearch/compose.yaml` — required to prevent the 4 GB default
 from OOM-killing the container on a dev box. First-time setup: `docker volume create
-agent-audit-opensearch-data` then `bash infrastructure-as-code/docker/opensearch/init-audit-user.sh`
+agent-audit-opensearch-v3-data` (and `agent-audit-opensearch-snapshots`) then `bash infrastructure-as-code/docker/opensearch/init-audit-user.sh`
 (idempotent; creates the write-only `agent-audit` role + user: can index, cannot read/delete).
 Env: `OPENSEARCH_URL`, `OPENSEARCH_USERNAME`, `OPENSEARCH_PASSWORD` — all env-gated; when unset,
 the Python `src/audit_sink.py` and BFF `audit-sink.ts` log audit events only (no OpenSearch

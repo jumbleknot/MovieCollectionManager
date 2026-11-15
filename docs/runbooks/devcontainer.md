@@ -654,6 +654,7 @@ official image instead: browsers are baked in, and `--network host` shares the d
 `localhost:8082/8099` resolve exactly as from your shell (needs the local-bridge allow above):
 
 ```bash
+ANTHROPIC_API_KEY="$MCM_ANTHROPIC_API_KEY" \
 docker run --rm --network host -v "$PWD":/work -w /work/frontend/mcm-app \
   -e E2E_BFF_TARGET=dev-container -e E2E_AGENT_PROVIDER=anthropic \
   -e E2E_TEST_USER -e E2E_TEST_PASSWORD -e ANTHROPIC_API_KEY -e TMDB_API_KEY -e CI=1 \
@@ -869,12 +870,12 @@ docker run --rm --network host --env-file ./.env.e2e.local \
   -e KEYCLOAK_URL=http://localhost:8099 -e KEYCLOAK_REALM=grumpyrobot \
   -e KEYCLOAK_SERVICE_CLIENT_ID=mcm-bff-service -e KEYCLOAK_SERVICE_CLIENT_SECRET \
   -e KEYCLOAK_CLIENT_ID=movie-collection-manager \
-  -w /workspaces/mcm/frontend/mcm-app mcr.microsoft.com/playwright:v1.63.0-noble \
+  -w /workspaces/mcm/frontend/mcm-app mcr.microsoft.com/playwright:v1.65.0-noble \
   node_modules/.bin/playwright test tests/e2e/web/<spec>.spec.ts --project=chromium --workers=1 --reporter=line
 ```
 
 Pin the image to the repo's Playwright version (`pnpm exec playwright --version`, currently
-**v1.63.0** → `mcr.microsoft.com/playwright:v1.63.0-noble`) so the browser build matches.
+**v1.65.0** → `mcr.microsoft.com/playwright:v1.65.0-noble`) so the browser build matches.
 This pin is NOT cosmetic and NOT independent of the lockfile: a lockfile refresh that moves
 `@playwright/test` without moving this tag makes the browser launch fail outright
 (`browserType.launch: Executable doesn't exist at /ms-playwright/chromium_headless_shell-…`),
@@ -1007,10 +1008,10 @@ bash .devcontainer/verify/verify-engine-isolation.sh --host-check   # the host h
 
 ## Toolchain scope
 
-Pilot image = **Node 24 + pnpm (corepack) + DinD** on `node:24-bookworm`. Note: the
-prod BFF deploys on **node:20**, but the repo's pinned pnpm 11 (`packageManager` in `package.json`) requires Node >= 22.13 (and loads `node:sqlite` at startup)
-(Node ≥ 22/24 only) — on Node 20, `pnpm install` crashes with `ERR_UNKNOWN_BUILTIN_MODULE`. So the
-dev container tracks the **dev toolchain's Node (24, same as the host)**; BFF runtime parity is a
+Pilot image = **Node 26 + pnpm (`scripts/install-pnpm.sh`) + DinD** on `node:26-bookworm`. Note: the
+prod BFF deploys on **node:26** too, and the repo's Node floor stays at >= 22.13 (`engines` in `package.json`, set when pnpm 11 loaded `node:sqlite` at startup)
+(Node ≥ 22 only) — on Node 20, `pnpm install` crashed with `ERR_UNKNOWN_BUILTIN_MODULE`. So the
+dev container tracks the **dev toolchain's Node (26, same as the host)**; BFF runtime parity is a
 SHOULD validated in CI, not here. **Rust stable + Python 3.13 + `uv` are PRESENT** — feature 038
 delivered them as devcontainer features, and the rest of this runbook already describes working with
 them (`cargo`, `uv sync`, the Python integration tiers). Compose stacks still build their own
@@ -1057,7 +1058,7 @@ nothing else would report it.
 
 ## OpenWiki — the OKF knowledge wiki (feature 043)
 
-`openwiki@0.7.1` is **baked into the toolchain image** (`.devcontainer/toolchain.Dockerfile`, beside
+`openwiki@0.9.0` is **baked into the toolchain image** (`.devcontainer/toolchain.Dockerfile`, beside
 the Claude Code CLI), together with its optional `mermaid` + `jsdom` peer dependencies, so it is
 present with no per-developer install. The two peers are installed because their absence is silent:
 OpenWiki embeds Mermaid diagrams by default from 0.5.0 and validates every fence after a run, and

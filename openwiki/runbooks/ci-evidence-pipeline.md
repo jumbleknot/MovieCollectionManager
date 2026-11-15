@@ -3,10 +3,10 @@ type: Runbook
 title: CI evidence pipeline (producing the evidence)
 description: How CI produces the evidence a session reads back — the per-job failure digest with its three channels (PR comment, digest inside the bundle, and the green-run counts bundle), the 5 MB ci-failures bundle with its recursive packing and trimming rules, per-step durations and the generated ceiling table with the guard that makes a row agree with its own basis, and the coverage, wrapper and CRLF gates that stop the machinery eroding. The producing half of the CI-diagnostics pair; ci-diagnostics.md covers reading it.
 resource: docs/runbooks/ci-evidence-pipeline.md
-resource-sha256: 8f9c08b85753ca6cf229299c755f7882f15302c67aa816619431ae2676dbcdfc
+resource-sha256: 0be5f9b9e2c9e8915ca6fad42ff54159c29db64985622f4901997216734da271
 tags: [ci, forgejo, evidence, diagnostics, tooling, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-10T11:46:33.762Z
+timestamp: 2026-11-14T22:34:19.980Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -390,7 +390,7 @@ jobs" for a cd-deploy failure — they enumerate commit-status jobs, and cd-depl
   with `ci-log-step.sh`, so the digest names the failing step and shows its output — before that it fell
   back to stale app-e2e evidence.
 - **Trivy `build-deploy` blocks on a FIXABLE Critical**, and a recurring class of those is **not an app
-  dependency**: `node-tar` is bundled by both npm and corepack's pnpm inside the `node:*-alpine` base of
+  dependency**: `node-tar` is bundled by npm (and, before Node 26, corepack's pnpm) inside the `node:*-alpine` base of
   the BFF image. `pnpm why <pkg> --prod -r` printing nothing is the tell that it is a base-image or
   package-manager bundle. The fix is a real elimination — remove the unused managers from the BFF runner
   stage, which invokes neither — not a Trivy suppression; verify a Docker-image fix locally with a Trivy
@@ -618,7 +618,8 @@ claim.
 
 ## Maintenance notes
 
-- **All these scripts are zero-dependency**, `node:` built-ins only. `guardrails` runs them with nothing
+- **The digest and reader scripts are zero-dependency**, `node:` built-ins only (the coverage gate,
+  which parses YAML with `yaml`, is the exception). A digest step runs them with nothing
   installed — before any `pnpm install` — so the workflow parsers are line-oriented and hand-rolled, and
   a test needing a non-root dependency breaks the gate that runs it.
 - **`scripts/__tests__/*.test.mjs` runs in CI** (`guardrails / naming`), so new tests are gated

@@ -138,8 +138,8 @@ pnpm nx lint movie-assistant                 # ruff + mypy
 pnpm nx build movie-assistant                # agent-gateway Docker image
 ```
 
-CI: `.github/workflows/agent-gates.yml` runs lint + unit (leak-scan) + golden replay on every
-push/PR touching the agent or MCP source.
+CI: the `agent-gates` job in `.forgejo/workflows/guardrails.yml` runs lint + unit (leak-scan) +
+golden replay on every PR and every push to `main`.
 
 ## Control Tower (OPA / Unleash / OpenSearch)
 
@@ -161,12 +161,14 @@ it falls back to the env flags (`AGENT_KILL_SWITCH`, `AGENT_DEGRADE`, etc.). The
 generated per-machine into `stacks/observability.env` as `UNLEASH_CLIENT_TOKEN` (feature 021;
 `node scripts/gen-dev-secrets.mjs`). SDK URL = base + `/api` (e.g. `http://localhost:4242/api`).
 
-**OpenSearch** — `--profile audit` is a separate profile (NOT `--profile observability`). First-time
-setup:
+**OpenSearch** — runs in its own `audit` stack (feature 020), behind the `audit` profile (NOT
+`--profile observability`). First-time setup (the external networks come from the standard
+first-time setup in [docs/runbooks/local-dev.md](../../docs/runbooks/local-dev.md)):
 
 ```bash
-docker volume create agent-audit-opensearch-data
-docker compose --profile audit up -d
+docker volume create agent-audit-opensearch-v3-data     # OpenSearch 3 (feature 071)
+docker volume create agent-audit-opensearch-snapshots   # chown to the node uid before first use
+pnpm nx up-audit infrastructure-as-code
 bash infrastructure-as-code/docker/opensearch/init-audit-user.sh
 ```
 
@@ -182,7 +184,7 @@ See `.env.local.example` for all vars.
 
 ## Run locally (host gateway, production nodes)
 
-Bring up the agent stack per `HANDOFF.md` ("How to bring the agent stack up"): movie-mcp `:8766`
+Bring up the agent stack per `specs/012-multi-agent-mvp/HANDOFF.md` ("How to bring the agent stack up"): movie-mcp `:8766`
 + web-api-mcp `:8765` + the host gateway on `127.0.0.1:8123` with `WEB_API_MCP_URL`+`MOVIE_MCP_URL`
 set (production nodes) + Ollama + Keycloak/Redis/mc-service. The gateway is **private-network only**
 — reachable solely from the BFF (the security boundary).

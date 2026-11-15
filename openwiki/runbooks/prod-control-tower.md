@@ -3,10 +3,10 @@ type: Runbook
 title: Prod control tower (observability / audit / dormant Vault)
 description: The three independently up/down-able production support stacks — prod-audit, prod-observability and the deliberately dormant prod-vault — how consumer env alone turns each capability on, and the six one-time stateful cutovers they have carried — the completed and closed-out RustFS object-store swap on the shipped 1.0.4 line, Langfuse 4 + ClickHouse 25 on recreated volumes, OpenSearch 2→3 with history preserved, the spec-081 US8b observability Postgres 16→18 move, and the two schema-carrying Langfuse minors (4.56.0 → 4.68.0, item 839, and 4.68.0 → 4.72.0, item 895) whose merge is the migration — with their measured traps.
 resource: docs/runbooks/prod-control-tower.md
-resource-sha256: eb8819035c5594a8f6a4f64145fc1dd425682b7e345c10355838294125fbba7e
+resource-sha256: 18e9e69a7b06083450bc6ae29231d8691883acaf189609fb922c68123ba67144
 tags: [production, observability, audit, vault, komodo, opensearch, langfuse, rustfs, postgres, clickhouse, cutover, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T11:59:39.640Z
+timestamp: 2026-11-14T22:39:24.440Z
 ---
 
 # Prod control tower (observability / audit / dormant Vault)

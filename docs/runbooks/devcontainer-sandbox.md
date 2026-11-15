@@ -167,9 +167,11 @@ FR-032 collapses them), with its own `containerEnv` and its own `onCreateCommand
 the path in daily use, so a change made only to the Docker Desktop file is real, committed, and
 inert — and the recreate that "didn't work" sends you looking at the wrong thing. Edit both.
 
-⚠️ **`devcontainer up` echoes its full `docker run` invocation, including every `-e` secret in clear
-text** — `MCM_ANTHROPIC_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN`. Treat
-that output as credential material: never paste it into an issue, a chat, or a transcript.
+⚠️ **The credentials are passed with `--env-file`, so `devcontainer up` echoes only the file path —
+but `docker inspect <container>` still shows every value in clear text** — `MCM_ANTHROPIC_API_KEY`,
+`TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN` (see
+`.devcontainer/gen-container-secrets-env.sh`). Treat that output as credential material: never paste
+it into an issue, a chat, or a transcript.
 
 **Hold the VM shell open for the whole build.** The idle-stop above fires ~30 s after the last
 session disconnects, and a half-built container is one of the ways `Exited (255)` appears.
@@ -685,10 +687,10 @@ docker buildx build … --build-arg BASE_IMAGE=<registry>/<ns>/mcm-devcontainer@
 If that digest is the old one, stop; nothing after it matters. A genuine re-pin is **not**
 all-CACHED, because the layers above the new base must rebuild.
 
-⚠️ **`devcontainer up` prints its full `docker run` invocation, including every `-e` secret in clear
-text** — `MCM_ANTHROPIC_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN`. Treat
-that output as credential material: do not paste it into an issue, a chat, or a transcript, and
-rotate all four if you already have.
+⚠️ **`docker inspect` on the new container shows every credential in clear text** — `MCM_ANTHROPIC_API_KEY`,
+`TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN` (`devcontainer up` itself echoes only the
+`--env-file` path, see §9). Treat that output as credential material: do not paste it into an issue,
+a chat, or a transcript, and rotate all four if you already have.
 
 Afterwards, confirm from **inside** the new container — the pin is not the proof, the tool is:
 

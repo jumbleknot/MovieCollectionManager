@@ -12,7 +12,7 @@ Contracts (variables, consumer-env, health/audit): `specs/025-observability-audi
 [prod-data-tier-auth.md](prod-data-tier-auth.md); the prod secrets standard (Komodo Variables, not the
 dormant Vault) → [ADR-0001](../decisions/ADR-0001-prod-secrets-management.md).
 
-**Related (feature 028):** reboot-resilience — why the LangFuse (`3030`) and Grafana (`3002`) operator UIs
+**Related (feature 028):** reboot-resilience — why the LangFuse (`19030`) and Grafana (`19002`) operator UIs
 here now bind `0.0.0.0` (rootless-before-tailscaled boot race) and the post-reboot recovery checklist →
 [prod-reboot-resilience.md](prod-reboot-resilience.md).
 
@@ -28,7 +28,7 @@ here now bind `0.0.0.0` (rootless-before-tailscaled boot race) and the post-rebo
 ## One-time host prerequisites (prod host)
 
 ```sh
-# 10 external volumes (data survives redeploys)
+# 9 external volumes (data survives redeploys)
 docker volume create observability-langfuse-postgres-v18-data   # spec 081 US8b: postgres 18 (the pre-18 -data volume is the rollback)
 docker volume create observability-langfuse-clickhouse-data
 docker volume create observability-langfuse-clickhouse-logs

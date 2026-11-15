@@ -3,10 +3,10 @@ type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
 description: The derived summary of how the openwiki/ bundle is kept current since feature 098 — the coding session's duty to refresh a derived page in the same PR as its source, the source fingerprint and the V17 check that blocks a stale page, G14's single-human-written-file rule, the retired Claims bookkeeping and unattended machinery, and the generator's remaining role as a manual, dispatch-only rebuild of operator-named pages — with that rebuild's provider table and env-scoping rule, its locked install and release-age cooldown, its job deadline and exit codes, the per-page verification and restore machinery, the single long-lived proposal, the canonical-home rule, the provenance stamp, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
-resource-sha256: 84dcf962fd864d5f4441a3a14c1b6cf1338eb158e8e00f06b387a6fa0878c3e3
+resource-sha256: edd47dd7f14d8389305f6148fa7631f7a7b809ae197567d3e8448223d3e9d793
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
-timestamp: 2026-11-12T11:42:00.251Z
+timestamp: 2026-11-14T22:34:21.161Z
 ---
 
 
@@ -170,8 +170,9 @@ all, but a property of the row, and one that may only ever *raise* the target's 
   that closes it.
 - `MCM_WIKI_SERVICE_TIER=priority` (Fireworks only) — +25% price; measured on this workload it bought
   **no** speed, so it is not the default.
-- `MCM_WIKI_REASONING_EFFORT` (Fireworks only: `none`, `low`, `high`, `max`; unset = the model's own
-  default, which is `high` for this model) — the item-#525 trial knob described next.
+- `MCM_WIKI_REASONING_EFFORT` (Fireworks only: `none`, `low`, `high`, `max`; unset locally = the model's own
+  default, which is `high` for this model; in CI an unset value falls through to `low`) — the item-#525
+  trial knob described next.
 - **The per-turn output cap (item #719)** is *not* an operator variable but a property of the provider
   row: the Nx target's `OPENWIKI_MAX_OUTPUT_TOKENS=16384` is a **floor**, and the `fireworks` row
   raises it to **65536** because DeepSeek V4.1 Flash reasons *inside* its output budget. Dispatch 5115
@@ -191,7 +192,7 @@ all, but a property of the row, and one that may only ever *raise* the target's 
 **The reasoning-effort knob (item #525).** `scripts/wiki-provider.mjs` rejects any value Fireworks does
 not document for this model, so a bad value fails before any paid work. It cannot travel as openwiki's own
 `OPENWIKI_REASONING_EFFORT`, because openwiki refuses an effort for its `fireworks` provider — true in
-0.6.0 and still true in the pinned 0.7.1 (078 research R15) — so the **usage tap**
+0.6.0 and 0.7.1 (078 research R15; not re-checked for the 0.9.0 now pinned) — so the **usage tap**
 (`scripts/wiki-usage-tap.mjs`), loaded into the generator process, sets `reasoning_effort`
 on the Fireworks chat-completions request bodies instead — exactly the route `MCM_WIKI_SERVICE_TIER`
 already uses. The preflight sends it too, so a value the provider rejects fails before paid work. The
@@ -199,7 +200,8 @@ run's usage line and its record carry `effort=<value>` when it is set, and the e
 row, because Fireworks bills reasoning as output tokens. **It is under trial:** latency is roughly output
 tokens ÷ generation speed, and a lower effort means fewer reasoning tokens per call — but possibly a
 weaker page. In CI it is the `reasoning-effort` **input of a dispatch**, applied to every invocation of
-that run; without it the repository variable applies, which stays unset — the model default. Do not set
+that run; without it the repository variable applies, and with that unset too the workflow sends `low`
+(078 FR-028). Do not set
 the repository variable until a trial's page has been reviewed.
 
 The launcher also *imposes* one variable the operator never sets: it puts
@@ -619,8 +621,10 @@ The figures in the example are illustrative.
   (`tools/openwiki-generator/package.json`). A guard in
   `scripts/__tests__/wiki-maintain.guard.test.mjs` asserts that the two lists match: if only one
   environment has the parser, they disagree about what a valid diagram is, and the environment that
-  writes the bundle decides. Both sit **outside** the peer range openwiki 0.7.1 declares
-  (`mermaid ^11.16`, `jsdom ^29.1`) — the versions every CI run since mid-September actually resolved.
+  writes the bundle decides. Both sat **outside** the peer range openwiki 0.7.1 declared
+  (`mermaid ^11.16`, `jsdom ^29.1`) — the versions every CI run since mid-September actually resolved;
+  openwiki 0.9.0 declares `mermaid ^11.16.0 || ^12.0.0` and `jsdom ^29.1.1 || ^30.0.0`, which the pins
+  satisfy.
 
 - **Claims are retired, and a rebuild leaves none behind.** OpenWiki 0.5.2 records Claims — evidence
   for each page in a JSON sidecar under `openwiki/.claims/`, certified against the page's bytes by

@@ -699,7 +699,7 @@ Two tokens, each doing exactly one job. Neither value ever enters git.
 Scopes: **`read:repository` + `read:issue` + `read:package`**.
 
 Set on the Windows host and passed through by `devcontainer.json` via `${localEnv}`, exactly like
-`ANTHROPIC_API_KEY`:
+`MCM_ANTHROPIC_API_KEY`:
 
 ```powershell
 setx MCM_FORGE_TOKEN "<token>"

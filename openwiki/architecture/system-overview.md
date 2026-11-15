@@ -3,10 +3,10 @@ type: Architecture
 title: System overview (MCM)
 description: The whole-system map of MovieCollectionManager — the core components (mcm-app/BFF, mc-service, mc-db, mcm-bff-db, Keycloak), the additive AI Agents layer and its boundary, the RBAC/DAC access-control split, and the load-bearing gotchas around them — distilled from the canonical architecture document.
 resource: docs/MCM-Architecture.md
-resource-sha256: 8f7b3e4c87b355ae290db90980f89910f72a50675e43ccfe492d833d06c83033
+resource-sha256: 68b41b3e5e554743a187bb18bebe7d9dd76bfc28e80bbab418321acf5363ccba
 tags: [architecture, overview, rbac, dac, agents, docker-compose]
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T02:11:17.233Z" }
-timestamp: 2026-11-10T11:40:29.743Z
+timestamp: 2026-11-14T22:22:04.715Z
 ---
 
 # System overview (MCM)
