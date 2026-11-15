@@ -3,10 +3,10 @@ type: Runbook
 title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0, and -1 for the OpenWiki generator's lock refresh) that allocates the six in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
 resource: docs/runbooks/renovate.md
-resource-sha256: 6b3954c1c97c7afc4098764fb3df9097748e4beaa57b160b8c2de6d365760674
+resource-sha256: 2921dbbe71d80f275ad34df19cec48dbc8332da8680f848609148cdecbf1bb5e
 tags: [renovate, ci, dependencies, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-14T22:34:20.802Z
+timestamp: 2026-11-15T15:48:20.591Z
 ---
 
 # Renovate dependency bot
@@ -66,7 +66,7 @@ branch exists.
   the daily `branch-reaper` (`branch-reaper.yml`, also on every push to `main`), 04:00
   the twice-weekly CVE sweep (`infra-image-scan.yml`, Friday plus Tuesday), 06:00
   `devcontainer-image` (a heavy build with a 60-minute timeout), 07:00 the Renovate window, 10:00
-  `lockfile-refresh-check`, 11:00 `renovate-health`. The reaper's daily 02:30 slot is deliberate: it
+  `lockfile-refresh-check`, 11:00 `renovate-health`. Both scripts **post a public comment when run bare**, on any host (the Windows host too since PR #1029), so run them locally with `--dry-run`. The reaper's daily 02:30 slot is deliberate: it
   is ahead of the nightly 03:00 and the Friday window, so a merged `renovate/*` branch is gone
   *before* Renovate decides whether to reuse it. A second image build used to sit at 05:00 —
   `minio-image.yml`, for the from-source MinIO build — but feature 080 retired that build for the
