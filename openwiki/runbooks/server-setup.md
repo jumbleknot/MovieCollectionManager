@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: 756d8e3e11407adb750008e6126761a76b996fb702ee71009e5fcf63b28564d8
+resource-sha256: 322b230bb7552070802f5914de454b36654f366c1d4421919c9a8bf7b4efc6c2
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-14T22:39:24.828Z
+timestamp: 2026-11-15T01:49:43.591Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -535,8 +535,8 @@ flowchart TD
   - **Dropping `sudo` is WORSE than the no-op.** Measured 2026-09-15 with `docker run --rm
     node:22-bookworm`: `/usr/share/dotnet`, `/opt/ghc`, `/usr/local/.ghcup`, `/usr/share/swift`, and
     `/usr/local/share/powershell` do not exist. The one sizeable removable directory,
-    `/usr/local/lib/node_modules` (19 MB), holds `corepack` and `npm`, which `pnpm/action-setup`
-    needs — so "just drop the `sudo`" turns a harmless no-op into a broken job. Deleting files from an
+    `/usr/local/lib/node_modules` (19 MB), holds `corepack` and `npm`, which the job's pnpm install
+    step (`scripts/install-pnpm.sh`) runs to install pnpm into it — so "just drop the `sudo`" turns a harmless no-op into a broken job. Deleting files from an
     image's lower layers also writes whiteouts to the container layer, so host usage goes UP. **To free
     real disk from a job, prune the rootless daemon** (`docker image prune -af`), which needs no
     privileges and is what `app-e2e`, `dast`, and `build-deploy` all do. `prod-apk` has no Docker CLI

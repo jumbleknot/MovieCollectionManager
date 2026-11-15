@@ -665,8 +665,9 @@ The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once con
 > * **The GitHub-hosted payloads are not there to delete.** Measured 2026-09-15 with
 >   `docker run --rm node:22-bookworm`: `/usr/share/dotnet`, `/opt/ghc`, `/usr/local/.ghcup`,
 >   `/usr/share/swift` and `/usr/local/share/powershell` do not exist. The one sizeable removable
->   directory, `/usr/local/lib/node_modules` (19 MB), holds `corepack` and `npm` — which
->   `pnpm/action-setup` needs — so "just drop the `sudo`" turns a harmless no-op into a broken job.
+>   directory, `/usr/local/lib/node_modules` (19 MB), holds `corepack` and `npm` — and the job's
+>   pnpm install step (`scripts/install-pnpm.sh`) runs that npm and installs pnpm into it — so
+>   "just drop the `sudo`" turns a harmless no-op into a broken job.
 >   To free real disk from a job, prune the **daemon** (`docker image prune -af`), which needs no
 >   privileges and is what `app-e2e`, `dast` and `build-deploy` all do.
 >

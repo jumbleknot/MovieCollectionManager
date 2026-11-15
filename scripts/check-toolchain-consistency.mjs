@@ -24,8 +24,9 @@
 //      requirement checkable WITHOUT a network call or a hardcoded pnpm→node table that would rot.
 //      Raise the floor when the package manager's own `engines` rises.
 //   2. The pnpm version is SINGLE-SOURCED by `packageManager`. Any other place naming a pnpm
-//      version must name the SAME one. `pnpm/action-setup` with no `version:` is the preferred
-//      form — it reads `packageManager` — and is always accepted.
+//      version must name the SAME one. The two installers CI uses both read `packageManager` and name
+//      no version: scripts/install-pnpm.sh in container jobs, `pnpm/action-setup` with no `version:`
+//      on the `kvm:host` runner (which installer goes where: renovate-workflow.guard.test.mjs).
 //   2b. `packageManager` itself is declared EXACTLY ONCE, in the ROOT manifest (item #286). This is
 //      the one rule that does not offer "or match it": pnpm switches to the field of the WORKSPACE
 //      ROOT it operates on, so a second one silently WINS in a nested workspace (its own

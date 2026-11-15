@@ -346,8 +346,8 @@ jobs:
       # no-op. Measured 2026-09-15, `docker run --rm node:22-bookworm`: five of the six paths
       # (/usr/share/dotnet, /opt/ghc, /usr/local/.ghcup, /usr/share/swift,
       # /usr/local/share/powershell) do not exist in this image at all, and the sixth —
-      # /usr/local/lib/node_modules, 19 MB — contains `corepack` and `npm`, which the very next step
-      # (pnpm/action-setup, which resolves pnpm through corepack) needs. A working `rm -rf` would
+      # /usr/local/lib/node_modules, 19 MB — contains `corepack` and `npm`, and the pnpm install step
+      # below (scripts/install-pnpm.sh) runs that npm and installs pnpm INTO it. A working `rm -rf` would
       # break the job to reclaim 19 MB of a 914 GB disk, and would not reclaim even that: deleting
       # files that live in the image's lower layers writes whiteouts to the container layer, so host
       # usage goes UP.
@@ -366,7 +366,7 @@ jobs:
           echo "No reclamation is attempted here. This job runs in node:22-bookworm, which carries"
           echo "none of the GitHub-hosted-runner payloads (dotnet, ghc, swift, powershell) that a"
           echo "cleanup step would target, and its only sizeable removable directory holds corepack"
-          echo "and npm, which the pnpm setup step below depends on. See item #457."
+          echo "and npm, which the pnpm install step below runs (and installs pnpm into). See item #457."
           echo "The Android SDK install needs roughly 10-15 GB; below is what is actually free."
           df -h /
           # Item #457 AC4 — the figure, in a form that survives the job log.
@@ -447,13 +447,14 @@ jobs:
             "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -d "{\"context\":\"cd-deploy/prod-apk-disk\",\"state\":\"success\",\"description\":\"$desc\"}" >/dev/null
           CI_LOG_STEP
-      # No `version:` — resolve pnpm from package.json `packageManager`, exactly like every other
-      # pnpm/action-setup in this repo (cd-deploy:131, app-ci ×4, infra-image-scan). This job used to
-      # pin `version: 10.33.0` explicitly, which made the pin DUAL-sourced: a `packageManager` bump
-      # would leave this job installing the old pnpm against a new-format lockfile, so
-      # `pnpm install --frozen-lockfile` fails — and because `prod-apk` is non-blocking, it would
-      # fail with nothing gating on it. Keep it version-free so the pin cannot drift again.
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      # pnpm at exactly package.json `packageManager`, via scripts/install-pnpm.sh — the installer for
+      # every container job (this one runs in node:22-bookworm); host (`kvm`) jobs such as build-deploy
+      # use pnpm/action-setup instead (renovate-workflow.guard.test.mjs). Never name a version here: this
+      # job once pinned `version: 10.33.0`, which made the pin DUAL-sourced, so a `packageManager` bump
+      # left it installing the old pnpm against a new-format lockfile and `pnpm install --frozen-lockfile`
+      # failed — with nothing gating on it, because `prod-apk` is non-blocking.
+      - name: Install pnpm (version from package.json packageManager; one installer repo-wide)
+        run: bash scripts/ci-log-step.sh prod-apk-install-pnpm sh scripts/install-pnpm.sh
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with: { node-version: 26.13.1, cache: pnpm }
       - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6

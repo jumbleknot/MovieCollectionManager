@@ -279,15 +279,18 @@ jobs:
           fetch-depth: 0
       - name: Ensure origin/main is available as the affected base
         run: bash scripts/ci-log-step.sh affected-ensure-origin-main-available git fetch --no-tags --depth=200 origin main || true
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Install pnpm (version from package.json packageManager; one installer repo-wide)
+        run: bash scripts/ci-log-step.sh affected-install-pnpm sh scripts/install-pnpm.sh
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node 26, matching what the app actually runs on (frontend/mcm-app/Dockerfile `FROM node:26.x`),
       # what cd-deploy's prod-apk uses, and the Node inside the Playwright image, so CI tests the
       # runtime Node instead of a stale one. check-toolchain-consistency.mjs fails a PR whose images,
       # setup-node pins and Playwright image disagree on the Node MAJOR (item #992) — Renovate
       # proposes the images and these pins as two separate majors, so move them as ONE change. (Never
-      # below engines.node either: Node 20 under pnpm 11 broke `affected` and `mc-service-checks`.) `pnpm/action-setup` must stay BEFORE this
-      # step — setup-node's `cache: pnpm` needs pnpm on PATH already.
+      # below engines.node either: Node 20 under pnpm 11 broke `affected` and `mc-service-checks`.) The pnpm install step must stay BEFORE
+      # this step — setup-node's `cache: pnpm` runs `pnpm store path`, so pnpm must be on PATH already.
+      # Which installer is decided by the runner: scripts/install-pnpm.sh in a container job (this one),
+      # pnpm/action-setup on the persistent `kvm:host` runner (renovate-workflow.guard.test.mjs).
         with: { node-version: 26.13.1, cache: pnpm }
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
@@ -377,7 +380,8 @@ jobs:
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - name: Install pnpm (version from package.json packageManager; one installer repo-wide)
+        run: bash scripts/ci-log-step.sh mc-service-checks-install-pnpm sh scripts/install-pnpm.sh
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
         with: { node-version: 26.13.1, cache: pnpm }

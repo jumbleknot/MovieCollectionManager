@@ -23,7 +23,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -802,6 +802,82 @@ test('pnpm has ONE source: no image names a pnpm version, each installs it from 
     'renovate.json carries a pnpm customManager again. It can only exist to extract a second copy of the\n' +
       '  pnpm version, which is the two-half shape item #992 removed.',
   );
+});
+
+// ...and CI installs it ONE way PER RUNNER KIND. After #992 the installer depended on the file, not on
+// the runner: scripts/install-pnpm.sh in guardrails/renovate/wiki-maintain, `pnpm/action-setup` in ten
+// other steps. Both read `packageManager`, so the VERSION could not drift; the rule that decides
+// between them is where the job runs.
+//
+//   container jobs (`ubuntu-latest` = an ephemeral node:22-bookworm container, root) → install-pnpm.sh.
+//     `npm install --global` writes into a container that is thrown away with the job.
+//   host jobs (`runs-on: kvm` = the `kvm:host` label: directly on the persistent CI host as the
+//     unprivileged `ci` user, docs/runbooks/Server-Setup-Runbook.md) → pnpm/action-setup, which
+//     installs into a per-job location. install-pnpm.sh there would `npm install --global` into the
+//     host's system prefix (EACCES) or, after setup-node, into the tool cache concurrent jobs share.
+//
+// Either way pnpm must be installed BEFORE its first use, which includes setup-node's `cache: pnpm`
+// (it runs `pnpm store path`). PNPM_COMMAND matches pnpm in COMMAND position only, so prose inside
+// an `echo` (prod-apk's disk report) is not a use.
+const WORKFLOW_DIR = resolve(REPO_ROOT, '.forgejo/workflows');
+const PNPM_COMMAND = /(^\s*|ci-log-step\.sh\s+\S+\s+|&&\s*|\|\|\s*|;\s*|\$\(\s*)pnpm\s/m;
+const HOST_RUNNERS = new Set(['kvm']);
+
+function pnpmInstallFindings(dir = WORKFLOW_DIR) {
+  const findings = [];
+  for (const file of readdirSync(dir).filter((f) => /\.ya?ml$/.test(f)).sort()) {
+    const doc = parseYaml(readFileSync(resolve(dir, file), 'utf8'));
+    for (const [job, def] of Object.entries(doc?.jobs ?? {})) {
+      const onHost = HOST_RUNNERS.has(String(def?.['runs-on'] ?? ''));
+      const want = onHost ? 'pnpm/action-setup (a kvm:host job)' : '`sh scripts/install-pnpm.sh` (a container job)';
+      const jobSteps = def?.steps ?? [];
+      const at = (i) => `${file} › ${job} › step ${i + 1}${jobSteps[i]?.name ? ` (${jobSteps[i].name})` : ''}`;
+      let installedAt = -1;
+      jobSteps.forEach((step, i) => {
+        const viaAction = /(^|\/)pnpm\/action-setup@/.test(String(step?.uses ?? ''));
+        const viaScript = /scripts\/install-pnpm\.sh/.test(String(step?.run ?? ''));
+        if (viaAction && !onHost) findings.push(`${at(i)} uses pnpm/action-setup — install with ${want}`);
+        if (viaScript && onHost) findings.push(`${at(i)} runs install-pnpm.sh on the persistent host — install with ${want}`);
+        if ((viaAction || viaScript) && installedAt === -1) installedAt = i;
+        const needsPnpm = PNPM_COMMAND.test(String(step?.run ?? '')) || /pnpm/.test(String(step?.with?.cache ?? ''));
+        if (needsPnpm && !viaScript && installedAt === -1) {
+          findings.push(`${at(i)} needs pnpm, but no earlier step installs it — add ${want} before it`);
+        }
+      });
+    }
+  }
+  return findings;
+}
+
+test('CI installs pnpm ONE way per runner kind, before its first use', () => {
+  const findings = pnpmInstallFindings();
+  assert.deepEqual(findings, [], `pnpm is provisioned the wrong way, or too late:\n  ${findings.join('\n  ')}`);
+});
+
+test('the pnpm-installer rule rejects each wrong shape (control)', async () => {
+  const { mkdtempSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const d = mkdtempSync(resolve(tmpdir(), 'pnpm-installer-'));
+  const AS = '      - uses: pnpm/action-setup@abc\n';
+  const SCRIPT = '      - run: sh scripts/install-pnpm.sh\n';
+  const NODE = '      - uses: actions/setup-node@abc\n        with: { node-version: 26.13.1, cache: pnpm }\n';
+  const USE = '      - run: pnpm install --frozen-lockfile\n';
+  const ECHO = '      - run: echo "the pnpm setup step below needs npm"\n';
+  const job = (runsOn, body) => `jobs:\n  j:\n    runs-on: ${runsOn}\n    steps:\n${body}`;
+  const cases = [
+    ['container + script first', job('ubuntu-latest', SCRIPT + NODE + USE), 0],
+    ['host + action first', job('kvm', AS + NODE + USE), 0],
+    ['prose mentioning pnpm is not a use', job('ubuntu-latest', ECHO + SCRIPT + USE), 0],
+    ['container + action-setup', job('ubuntu-latest', AS + NODE + USE), 1],
+    ['host + script', job('kvm', SCRIPT + NODE + USE), 1],
+    ['cache: pnpm before the install', job('ubuntu-latest', NODE + SCRIPT + USE), 1],
+    ['pnpm used with no install', job('ubuntu-latest', USE), 1],
+  ];
+  for (const [label, yml, expected] of cases) {
+    for (const f of readdirSync(d)) writeFileSync(resolve(d, f), '');
+    writeFileSync(resolve(d, 'w.yml'), yml);
+    assert.equal(pnpmInstallFindings(d).length, expected, `${label}: ${JSON.stringify(pnpmInstallFindings(d))}`);
+  }
 });
 
 for (const updateType of ['patch', 'minor', 'major']) {
