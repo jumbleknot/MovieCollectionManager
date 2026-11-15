@@ -156,12 +156,12 @@ jobs:
         run: |
           bash scripts/ci-log-step.sh naming-override-consistency-gate node scripts/check-override-consistency.mjs --selftest
           bash scripts/ci-log-step.sh naming-override-consistency-gate node scripts/check-override-consistency.mjs
-      - name: Spec Kit override gate (selftest + scan — the tasks-template fork and override-first resolution, feature 101)
+      - name: Spec Kit override gate (selftest + scan — the tasks-template fork, override-first resolution and registered local edits, feature 101)
         # The doc-impact sweep lives in a project OVERRIDE of Spec Kit's tasks template, because an
         # upgrade rewrites the core one. An override is a fork, so an upgrade can also leave it stale
         # (upstream improvements never arrive) or stop resolving it at all (the sweep silently
         # vanishes). Either way every check would stay green; this step is what makes it red.
-        # Resolution: docs/runbooks/doc-drift.md#upgrading-spec-kit.
+        # Resolution: docs/runbooks/spec-kit.md#upgrading-spec-kit.
         run: |
           bash scripts/ci-log-step.sh naming-speckit-override-gate node scripts/check-speckit-overrides.mjs --selftest
           bash scripts/ci-log-step.sh naming-speckit-override-gate node scripts/check-speckit-overrides.mjs

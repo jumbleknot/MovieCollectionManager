@@ -1,14 +1,14 @@
 ---
 type: Runbook
-title: "Doc drift: the doc-impact sweep, Spec Kit upgrades, and the quarterly audit"
-description: How the repository keeps its procedure documents in step with the code (the direction V17 does not cover) — the doc-impact sweep every SDD feature runs at task generation and close-out, carried by a project override of Spec Kit's tasks template; the fork guard that turns a Spec Kit upgrade's silent template change into a red guardrails check, its five failure codes and the --record-only fingerprint; the Copilot and /speckit-constitution gaps the override cannot reach; and the quarterly drift audit that measures the result and files its own successor.
+title: "Doc drift: the doc-impact sweep and the quarterly audit"
+description: How the repository keeps its procedure documents in step with the code (the direction V17 does not cover) — the doc-impact sweep every SDD feature runs at task generation and close-out, carried by a project override of Spec Kit's tasks template (whose guard and upgrade procedure live on the Spec Kit page); the three layers and which are live; and the quarterly drift audit that measures the result and files its own successor.
 resource: docs/runbooks/doc-drift.md
-resource-sha256: 0a926f271f6e835032708db1ae0451ad8ff6db7cda3b7277acead034beaaac41
+resource-sha256: 506ea62140d691a9d7963b67c74fddb50662b3c32479fc9748e954b81b1ac00b
 tags: [documentation, drift, spec-kit, sdd, audit, runbook]
-timestamp: 2026-11-15T15:16:54.235Z
+timestamp: 2026-11-15T16:33:03.746Z
 ---
 
-# Doc drift: the doc-impact sweep, Spec Kit upgrades, and the quarterly audit
+# Doc drift: the doc-impact sweep and the quarterly audit
 
 **Feature 101** (item #1021). V17 keeps each wiki summary in step with its source document. This
 runbook covers the other direction: keeping the source document in step with **the code it
@@ -28,47 +28,16 @@ baseline are in `../../docs/proposals/PRD-DocDriftPrevention.md`. For the wiki s
    `describes:` link would have caught on a feature whose sweep ran (SM-3).
 3. **The quarterly drift audit** (live). See below.
 
-## Where the sweep lives, and why it needs a guard
+## Where the sweep lives
 
 The sweep is a required task in `.specify/templates/overrides/tasks-template.md`, a project override
-that Spec Kit's `Resolve-Template` checks before presets, extensions and core. The constitution
-(v2.10.0, **Documentation**) requires it independently, and the final validation checklist carries
-the close-out item.
+that Spec Kit resolves ahead of its core template. The constitution (v2.10.0, **Documentation**)
+requires it independently, and the final validation checklist carries the close-out item.
 
-**An override is a fork.** After a Spec Kit upgrade, `/speckit-tasks` would keep using the old copy
-and never see upstream improvements, silently. `scripts/check-speckit-overrides.mjs` runs in
-guardrails and fails with one of five codes:
-
-- `core-changed`: the core template no longer matches the fork point on the override's first line.
-  The failure prints the core diff since the fork base, found by hash in git history. It still fails
-  when history is unavailable.
-- `override-missing`, `header-invalid`, `sweep-missing`: the override is gone, its fork point is
-  malformed, or no task line carries `**Doc-impact sweep**`.
-- `resolution-broken`: `setup-tasks.ps1` no longer resolves `tasks-template` through both
-  `Resolve-Template` (the path) and `Resolve-TemplateContent` (the content, which `/speckit-tasks`
-  prefers since Spec Kit 0.16), or either no longer checks `overrides/` first. A bare `return $null`
-  ahead of the check (name validation) is allowed. The scripts are read as text and never run.
-
-The fork point is written **only** by `--record`, never by hand. `--record` refuses an override that
-has lost the sweep. **Upgrade procedure**: install the new CLI, run
-`specify integration upgrade claude --force` from a worktree, read the printed core diff, merge it
-into the override (keeping the sweep and close-out tasks), `--record`, bump the dev container's
-`SPECKIT_VERSION` pin to the same release, and land all of it in one PR. Before `--force`, find the
-managed files with deliberate local edits and re-apply them afterwards. On a Windows checkout most
-of `specify integration status`'s "modified" count is CRLF-only. The one real edit is the Forgejo
-fan-out in `speckit-taskstoissues`. A
-`resolution-broken` failure means Spec Kit changed how templates resolve. Update the guard at the
-cause; never delete it.
-
-## Gotchas
-
-- **The Copilot integration bypasses the override.** `.github/agents/speckit.tasks.agent.md` reads
-  the core template directly. Only the constitution rule covers a Copilot-generated `tasks.md`, and
-  the file is Spec Kit-owned, so it is not patched.
-- **`/speckit-constitution` checks the core tasks template**, not the override. After a constitution
-  amendment, check the override by hand.
-- **The core template's sample-task comment says to delete every sample.** The override adds an
-  explicit exception for the sweep and close-out tasks. Keep that note when re-merging an upgrade.
+The override is a fork, so an upgrade can leave it stale or stop resolving it. The guard that
+catches that (`scripts/check-speckit-overrides.mjs`), its failure codes, the upgrade procedure and the
+Copilot and `/speckit-constitution` gaps are on [the Spec Kit page](spec-kit.md), which lists every
+Spec Kit customisation in one place.
 
 ## The quarterly audit
 

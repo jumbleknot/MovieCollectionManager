@@ -142,7 +142,7 @@ The tasks.md should be immediately executable - each task must be specific enoug
 
 **CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
 
-**Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature specification or if user requests TDD approach.
+**Tests are REQUIRED** (project local edit, see `docs/runbooks/spec-kit.md`; constitution "Test-Driven Development", NON-NEGOTIABLE): generate test tasks for every user story, written before the implementation they cover, in the TDD checkpoint format of `docs/templates/feature-test-tasks-template.md`. Each test task names the acceptance scenarios it covers and carries a **Verify RED** command with the expected failure; its paired implementation task carries a **Verify GREEN** command with the expected pass, as indented fields under the checklist line (see the User Story 1 sample in the tasks template). Documentation and config tasks use that template's "Done when" form instead.
 
 ### Checklist Format (REQUIRED)
 

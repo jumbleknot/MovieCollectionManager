@@ -9,6 +9,9 @@ timestamp: 2026-08-11T00:00:00+00:00
 # Proposal → spec → plan → tasks → implementation lifecycle
 
 This repository practices Spec-Driven Development (SDD) using the Specify CLI (GitHub Spec Kit).
+Every way the repository customises Spec Kit (template overrides, local edits to its files, hooks,
+pins), the guard that keeps them, and the upgrade procedure are listed on
+[the Spec Kit page](../runbooks/spec-kit.md).
 Every feature moves through the same four-stage pipeline before code is considered legitimate:
 
 ```mermaid

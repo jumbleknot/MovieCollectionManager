@@ -1,4 +1,4 @@
-# Doc drift: the doc-impact sweep, Spec Kit upgrades, and the quarterly audit
+# Doc drift: the doc-impact sweep and the quarterly audit
 
 V17 keeps each `openwiki/` summary in step with its **source document**. Nothing mechanical keeps
 the source document in step with **the code it describes**. This runbook covers the docs-from-code
@@ -34,57 +34,9 @@ Each hit becomes a named doc task, or gets a one-line reason it needs no change.
 
 ## Upgrading Spec Kit
 
-The project override is a **fork** of Spec Kit's core tasks template. After an upgrade, the core
-template may have improved, and `/speckit-tasks` would keep using the old copy without saying so.
-`scripts/check-speckit-overrides.mjs` (a guardrails step) turns that into a red check. The override's
-first line records the fork point:
-
-```text
-<!-- forked-from: .specify/templates/tasks-template.md sha256=<hash> spec-kit=<version> -->
-```
-
-The procedure, all in one PR:
-
-1. **Run the upgrade.** Install the new CLI release as in
-   [dev-environment-setup.md](dev-environment-setup.md), then run
-   `specify integration upgrade claude --force` from a worktree. It rewrites the files listed in
-   `.specify/integrations/*.manifest.json`, but not `overrides/`, the constitution or `openwiki/`.
-   Bump `SPECKIT_VERSION` in `.devcontainer/toolchain.Dockerfile` and the version in
-   dev-environment-setup.md to the same release, so the dev container's CLI matches the files.
-   **Before** `--force`, find the manifest files carrying deliberate local edits. `specify
-   integration status` counts them, but on a Windows checkout most of its count is CRLF-only.
-   Compare each file's committed LF bytes, and the same bytes as CRLF, against the manifest hash.
-   A file that matches neither is a real edit. Re-apply it after the upgrade. In the 0.11.2 → 0.16.5
-   upgrade the only one was `.claude/skills/speckit-taskstoissues/SKILL.md` (Forgejo `backlog.mjs`
-   fan-out instead of GitHub MCP, feature 049).
-2. **Run the gate**: `node scripts/check-speckit-overrides.mjs`. Expect `core-changed` if the
-   upgrade touched the core tasks template. The failure prints the core template's diff since the
-   fork base, found by hash in git history. In a shallow clone it says history is unavailable and
-   still fails. Compare the two files by hand in that case.
-3. **Merge the upstream change into the override.** Keep the **Doc-impact sweep** and
-   **Close-out re-search** tasks and the `EXCEPTION` note in the sample-task comment.
-4. **Record**: `node scripts/check-speckit-overrides.mjs --record`. Never hand-type the hash. The
-   gate refuses to record an override that has lost the sweep task.
-5. **Re-run the gate** (expect ✓) and its tests:
-   `node --test scripts/__tests__/check-speckit-overrides.test.mjs`.
-
-The other failure codes:
-
-| Code | Meaning | Fix |
-|---|---|---|
-| `override-missing` | The override file is gone | Restore it from git, then `--record` |
-| `header-invalid` | Line 1 is not a fork point | `--record` rewrites it |
-| `sweep-missing` | No task line carries `**Doc-impact sweep**` | Restore the task. `--record` refuses until you do |
-| `resolution-broken` | `setup-tasks.ps1` no longer calls `Resolve-Template` (the path, `TASKS_TEMPLATE`) and `Resolve-TemplateContent` (the content, `TASKS_TEMPLATE_CONTENT`, which `/speckit-tasks` prefers since 0.16) for `tasks-template`, or either no longer checks `overrides/` first. A bare `return $null` before the check (template-name validation) is allowed | Spec Kit changed how it resolves templates. Re-evaluate where the sweep must live (proposal §4.2: a preset, or composition), then update the guard at the cause. **Never delete the guard** to make it pass |
-
-**Known gaps** (from feature 101's own sweep):
-
-- The **Copilot** integration's tasks agent (`.github/agents/speckit.tasks.agent.md`) reads the core
-  template directly, not through `Resolve-Template`, so it never sees the override. Only the
-  constitution rule covers a Copilot-generated `tasks.md`. The file is Spec Kit-owned, so it is not
-  edited here.
-- `/speckit-constitution` checks the **core** tasks template for consistency after an amendment.
-  When amending the constitution, check the override too.
+The override that carries the sweep is one of several Spec Kit customisations. All of them, the
+guard that keeps them (`scripts/check-speckit-overrides.mjs`), its failure codes, the upgrade
+procedure and the known gaps are in [spec-kit.md](spec-kit.md#upgrading-spec-kit).
 
 ## The quarterly drift audit (layer 3)
 
