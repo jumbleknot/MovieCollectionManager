@@ -89,12 +89,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-      # An explicit Node (26.13.1 below), NOT the container's bundled v22.23.2. renovate@44.14.12 raised
-      # `engines.node` to ^24.11.0 INSIDE the pinned major, so from 2026-08-09 every run logged
+      # Node 24.14.1, NOT the container's bundled v22.23.2. renovate@44.14.12 raised `engines.node`
+      # to ^24.11.0 INSIDE the pinned major, so from 2026-08-09 every run logged
       # `npm warn EBADENGINE` and then `ERROR: Unsupported node environment detected`, and exited 1
       # (run 1704, 2026-08-13). This was the only workflow in the repository with no `setup-node`,
-      # which is exactly why it inherited a runtime nobody had chosen. (History: the fix first pinned
-      # 24.14.1, the version every other job ran on then; it has since moved with them to Node 26.)
+      # which is exactly why it inherited a runtime nobody had chosen. 24.14.1 is the version every
+      # other job here already runs on — proven, not new.
       #
       # This step MUST stay BEFORE the pnpm install: scripts/install-pnpm.sh runs `npm install -g`, and
       # npm installs into the global prefix of whichever Node is on PATH, so installing Node after it

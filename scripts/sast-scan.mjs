@@ -459,11 +459,11 @@ function runCargoAudit({ map }) {
 // and sast-scan.guard.test.mjs compares it with an independent `git ls-files` so a new nested
 // workspace — or an exclusion added here — fails the guard by name.
 //
-// INVOCATION: a nested workspace is audited as `pnpm --dir <ws> audit --json` FROM THE REPO ROOT, so
-// it runs under the pnpm the root `packageManager` pins (installed by scripts/install-pnpm.sh) — the
-// nested package.json declares no packageManager of its own. (History: measured 2026-10-10 under
-// corepack, which resolved the version from the launch directory; corepack is gone since item #992,
-// but launching from the root still keeps the one pinned version.) The audit is lockfile-only — it needs no node_modules in the nested workspace (measured: 471 deps
+// INVOCATION, measured 2026-10-10 (pnpm 11.25.0 via corepack): a nested workspace is audited as
+// `pnpm --dir <ws> audit --json` FROM THE REPO ROOT. Its package.json declares no packageManager, and
+// corepack resolves the version from the directory pnpm is launched in: from the root that is the root
+// manifest's pin; a parentless copy of the generator's manifest resolved pnpm 12.10.1 instead. The
+// audit is lockfile-only — it needs no node_modules in the nested workspace (measured: 471 deps
 // audited from a checkout with none installed), so the sast job installs nothing extra.
 //
 // LOCATION: root findings keep the bare `package@version` the existing allowlist entries anchor to

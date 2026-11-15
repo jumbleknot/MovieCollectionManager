@@ -254,7 +254,7 @@
     }
   },
 
-  // No secrets (FR-010). pnpm (scripts/install-pnpm.sh) + Claude Code CLI are baked in the image (root-level, see
+  // No secrets (FR-010). corepack + Claude Code CLI are baked in the image (root-level, see
   // Dockerfile); postCreate only installs workspace deps as `coder`. On the named-volume path
   // (fresh clone) this is a clean install. `--config.confirmModulesPurge=false` prevents a
   // non-interactive abort (ERR_PNPM_ABORTED_REMOVE_MODULES_DIR_NO_TTY) IF the workspace already
