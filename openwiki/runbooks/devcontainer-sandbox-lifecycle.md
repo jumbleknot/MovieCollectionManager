@@ -3,10 +3,10 @@ type: Runbook
 title: Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
 description: "The lifecycle half of the Docker Sandbox dev-container runbook, pinned to sbx v0.53.0 — template recreate-from-nothing and why it is fast but cold, the three creation-time-resizable volumes and how a full disk disguises itself, the six gaps a cold recreate must fill, the memory bound that keeps an OOM kill off Keycloak (Jest workers capped at 4, a 10 GiB dev container), the destructive verification harness with its three vantage points and one vacuous pass, and the ritual before upgrading the sbx binary."
 resource: docs/runbooks/devcontainer-sandbox-lifecycle.md
-resource-sha256: 4c184ba0b32ec7ed54841fa800c4cef5870b9f787e16e7c3f834bc60b7889a1e
+resource-sha256: a10bdd99adf91db586614c422d7b96080d859ed04dc5e550cd9bd871f86a702b
 tags: [devcontainer, sandbox, docker, lifecycle, disk, verification, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
-timestamp: 2026-11-15T15:35:52.859Z
+timestamp: 2026-11-15T16:44:09.478Z
 ---
 
 # Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
@@ -450,8 +450,7 @@ here are version-specific and undocumented. Record the version whenever you repo
 **Currently pinned at `v0.53.0`, upgraded from v0.51.0 on 2026-11-15** (`sbx daemon stop`, then
 `winget upgrade --id Docker.sbx --version 0.53.0`; there is no v0.52.0). Most of the source was
 originally measured against v0.38.0; the dated measurements for each pin are recorded in source §10b.
-The harness and egress checks have **not yet been re-run on v0.53.0**; they are due at the next
-recreate. The v0.53.0 items that touch this environment:
+**Verified on v0.53.0, 2026-11-15**, with the Spec Kit 0.16.5 re-pin: the harness passed 12/12 from the VM shell, G5 passed, and the host `--audit-check` passed with 103/103 destinations live. The engine-seam host check was not run, because Docker Desktop was stopped. The first start after the upgrade overran `open-sandbox.ps1`'s 120 s SSH deadline, although the VM was healthy (SSH answered at about 2 min). Git Bash's `ssh` still cannot resolve `mcm.sbx`, so use Windows OpenSSH. The v0.53.0 items that touch this environment:
 
 - **Removed flags**: `sbx exec` / `sbx env exec` lose `--detach` and `--privileged`, and
   `DOCKER_SANDBOXES_USE_DHI` is no longer read. Nothing in the repository used them.

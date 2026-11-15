@@ -662,10 +662,23 @@ version it says so.
 - **Update notices go to stderr (v0.53.0)**, so `sbx … --format json` output that is redirected
   stays clean.
 
-**Verification for v0.53.0**: the CLI was upgraded on 2026-11-15 and `sbx version` reports
-`v0.53.0 2c628380`. Nothing below it has been re-measured yet. The harness, the G5 sibling-egress
-refusal and `verify-sandbox-egress.sh --audit-check` are due at the next recreate, which is the
-Spec Kit 0.16.5 image re-pin (PR #1029). Record them here when they run.
+**Verification for v0.53.0 + the Spec Kit 0.16.5 re-pin, 2026-11-15** (`sbx version`
+`v0.53.0 2c628380`; image `mcm-devcontainer@sha256:f04054c6…`, built from merge `902aff3d`):
+
+| Check | Result |
+| --- | --- |
+| First start after the upgrade (`open-sandbox.ps1 -PrintOnly`) | `sbx run` exited 0, but SSH did **not** answer within the launcher's 120 s deadline, so the script threw. SSH answered about 2 min after boot, and nothing was wrong. One observation, so the deadline was not raised; if it recurs, raise it in `open-sandbox.ps1` |
+| Re-pin, §7d | Image verified before the pin moved: `specify` 0.16.5, Node v26.13.1, pnpm 12.18.0, pwsh 7.6.5, `coder` uid 1000. `PIN OK`, then `devcontainer up` gave `outcome: success` with `BASE_IMAGE` on the new digest, **0 `CACHED` of 33 layers** (a real rebuild), and openwiki 0.9.0 in the container |
+| `run-harness.sh`, from the VM shell | **12/12 PASS** on the first run, `firewall-allowlist` and `reproducible-recreate` included |
+| G5 sibling-egress refusal (in `firewall-allowlist`) | **PASS** |
+| `verify-sandbox-egress.sh --audit-check` (host) | **PASS**: the refusal is in the audit log, and all 103 canonical destinations are live. So v0.53.0's policy-matching changes did not break it |
+| `verify-engine-seam.sh --host-check` | **NOT RUN**: Docker Desktop was stopped (`server=` empty), which makes it pass vacuously (§10) |
+
+Measured traps: Git Bash's `ssh` still cannot resolve `mcm.sbx` on v0.53.0, despite v0.51.0's note
+that it was fixed. Use `C:\Windows\System32\OpenSSH\ssh.exe`, which carries the `sbx ssh proxy`
+route. Also, `openwiki --version` exits non-zero, so a probe of the form `openwiki --version ||
+echo missing` reports a present install as missing. Read
+`$(npm root -g)/openwiki/package.json` instead.
 
 **v0.48–v0.51, the release-note items that touch this environment** (there is no v0.49.0):
 
