@@ -143,7 +143,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-`specs/098-session-maintained-wiki/plan.md`
+`specs/101-doc-drift-prevention/plan.md`
 <!-- SPECKIT END -->
 
 <!-- OPENWIKI:START -->
