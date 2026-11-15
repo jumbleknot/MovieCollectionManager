@@ -177,7 +177,7 @@ and the same without `--selftest`.
   **Result (2026-11-15)**: `2.9.0` → `.specify/memory/constitution.md:27` (history line) and `openwiki/process/constitution.md:92` (its v2.9.0 history paragraph), both history. `Documentation updates in docs` → no hits. Clean.
 - [x] T023 Run the touched gates: `node --test scripts/__tests__/*.test.mjs` (watch the skip count), `node scripts/check-speckit-overrides.mjs --selftest && node scripts/check-speckit-overrides.mjs`, `node scripts/check-ci-digest-coverage.mjs`, `node scripts/check-openwiki-okf.mjs`, `node scripts/check-openwiki-governance.mjs`, `node scripts/wiki-refresh.mjs --stale` (empty).
 - [x] T024 Run quickstart.md end to end.
-- [ ] T025 Open the PR from branch `101-doc-drift-prevention` (a real branch, per `docs/runbooks/ci-diagnostics.md`), with the T011/T012 evidence, and comment on item #1021 with the acceptance criteria status.
+- [x] T025 Open the PR from branch `101-doc-drift-prevention` (a real branch, per `docs/runbooks/ci-diagnostics.md`), with the T011/T012 evidence, and comment on item #1021 with the acceptance criteria status.
 
 Not applicable from the final validation checklist: mc-service, mcm-app, E2E and mobile items. This
 feature changes no deployable unit and no client path (`scripts/`, `.specify/`, docs, and one
