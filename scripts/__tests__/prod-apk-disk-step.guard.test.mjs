@@ -22,8 +22,8 @@
 //   2. Dropping `sudo` — the reflex fix, and the one a reader who only knows fact 1 will reach for —
 //      is WORSE than the no-op. Measured 2026-09-15 with `docker run --rm node:22-bookworm`: five of
 //      the six paths do not exist in the image, and the sixth, /usr/local/lib/node_modules (19 MB),
-//      holds `corepack` and `npm`. `pnpm/action-setup` runs two steps later and resolves pnpm through
-//      corepack, so a working `rm -rf` would break the job — to reclaim 19 MB of a 914 GB disk, and
+//      holds `corepack` and `npm`. The pnpm install step (scripts/install-pnpm.sh) runs that npm two
+//      steps later and installs pnpm into it, so a working `rm -rf` would break the job — to reclaim 19 MB of a 914 GB disk, and
 //      not even that, since deleting files from an image's lower layers writes whiteouts to the
 //      container layer and host usage goes UP.
 //
@@ -85,8 +85,8 @@ test('the prod-apk disk step never deletes /usr/local/lib/node_modules (item #45
   const step = prodApkDiskStep();
   assert.ok(
     !/rm\s+-[a-z]*r[a-z]*f?[^\n]*\/usr\/local\/lib\/node_modules/.test(step.run),
-    'That directory holds corepack and npm in node:22-bookworm, and pnpm/action-setup resolves ' +
-      'pnpm through corepack two steps later. Removing it breaks the job to reclaim 19 MB of a ' +
+    'That directory holds corepack and npm in node:22-bookworm, and scripts/install-pnpm.sh runs ' +
+      'that npm two steps later to install pnpm into it. Removing it breaks the job to reclaim 19 MB of a ' +
       '914 GB disk — and writes whiteouts to the container layer, so host usage rises.',
   );
 });
