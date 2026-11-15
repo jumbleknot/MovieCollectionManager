@@ -23,4 +23,20 @@ case "$spec" in
   *) echo "install-pnpm: packageManager must be \"pnpm@<version>\", got \"$spec\"" >&2; exit 2 ;;
 esac
 npm install --global --no-fund --no-audit --loglevel=error "$spec"
-echo "install-pnpm: $spec -> $(command -v pnpm) ($(pnpm --version))"
+
+# Verify the pnpm now FIRST ON PATH is the pin (item #1025). Nested workspaces (pnpm --dir
+# tools/openwiki-generator, the sast audit) declare no packageManager and run on whatever pnpm is
+# installed, so a different pnpm earlier on PATH would silently run them. pnpm is asked from an empty
+# temp dir: inside the repo it self-switches to the pin and would print the pin whatever is installed.
+# Inline rather than calling scripts/check-pnpm-version.mjs, because the image build copies only this
+# file and package.json. Keep both on the same rule.
+want=${spec#pnpm@}
+want=${want%%+*}
+probe=$(mktemp -d)
+got=$(cd "$probe" && pnpm --version 2>/dev/null | tail -n 1) || got=''
+rmdir "$probe"
+if [ "$got" != "$want" ]; then
+  echo "::error::pnpm on PATH is ${got:-absent} ($(command -v pnpm || echo 'not found')), but packageManager pins $want" >&2
+  exit 1
+fi
+echo "install-pnpm: $spec -> $(command -v pnpm) ($got)"

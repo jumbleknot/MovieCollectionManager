@@ -51,6 +51,9 @@ mcp-integration-web-api	300	n=40 max=4s x3=12s -> floor 300s; runs 3503..3103
 # app-image-scan-web-api-mcp	-	new in spec 084 US3; NO observations yet.
 # app-image-scan-spreadsheet-mcp	-	new in spec 084 US3; NO observations yet.
 # app-image-scan-remove-tags	-	new in spec 084 US3; NO observations yet.
+# app-image-scan-check-pnpm-version	-	new in item #1025; NO observations yet. One `pnpm --version`.
+# app-e2e-check-pnpm-version	-	new in item #1025; NO observations yet. One `pnpm --version` from an
+#   empty temp dir (well under a second); the backstop bounds it.
 #   The `app-image-scan` steps run in their own job, bounded by its CI_STEP_TIMEOUT_SECONDS (900s).
 # app-e2e-build-images	-	split out of app-e2e-bring-up-keycloak (feature 073); NO observations
 #   yet under this name. It is the cache-dependent half: ~0s when the Docker layer cache hits,

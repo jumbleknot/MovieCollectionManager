@@ -167,9 +167,17 @@ Then:
 
    ```bash
    sh scripts/install-pnpm.sh   # bash/zsh; in PowerShell: npm install -g (node -p "require('./package.json').packageManager")
-   pnpm --version          # run inside the repo; must print the packageManager version
+   node scripts/check-pnpm-version.mjs   # must pass: the pnpm on PATH is the packageManager version
    pnpm setup              # sets the global bin directory
    ```
+
+   Do not check with `pnpm --version` inside the repository. There pnpm switches itself to the
+   `packageManager` version and prints the pin, whatever is installed. Nested workspaces such as
+   `tools/openwiki-generator` declare no `packageManager`, so `pnpm --dir <ws> …` (the sast audit, the
+   openwiki generator install) runs on the **installed** pnpm. `scripts/check-pnpm-version.mjs` asks
+   pnpm from an empty temp directory, and fails with both versions named when they differ. It also
+   runs after every `install-pnpm.sh` install and after each `pnpm/action-setup` step in CI
+   (item #1025). Re-run it after any global pnpm change on the host.
 
 2. **EAS (Expo Application Services):**
 

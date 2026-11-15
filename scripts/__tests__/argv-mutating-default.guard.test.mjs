@@ -179,6 +179,7 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
     'wiki-refresh.mjs': 'rejects-already',              // partitionArgs (argv-contract.mjs) rejects before any write, exit 2 (098)
     'wiki-generate.mjs': 'rejects-already',             // main(): anything but --preflight exits 2 before the run; its only rmSync clears its own stale telemetry record (#516)
     'check-speckit-overrides.mjs': 'rejects-already',   // partitionArgs (argv-contract.mjs) rejects, exit 2; default is a read-only scan, --record writes only on request, its only rmSync clears --selftest's temp fixtures (101)
+    'check-pnpm-version.mjs': 'rejects-already',        // partitionArgs (argv-contract.mjs) rejects, exit 2; a read-only check whose only rmSync removes its own empty probe dir (#1025)
 
     // FIXED in item #504, and the deferral's premise turned out to be wrong. FR-009's exit-0 rule
     // governs the DIGEST path, not argument-driven paths — `--selftest` has always hard-exited 1 on
