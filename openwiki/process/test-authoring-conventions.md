@@ -58,6 +58,10 @@ Documentation and config tasks are exempt from the RED/GREEN cycle — the templ
 separate "Done when" format for those. See `docs/templates/feature-test-tasks-template.md` for the
 full template, the platform parity table format, and the worked example.
 
+`/speckit-tasks` also shows the format: the project's tasks-template override marks tests as
+required and carries a sample test pair with Verify RED / Verify GREEN fields, and a guardrails check
+fails if an upgrade drops it (`tdd-format-missing`; see [the Spec Kit page](../runbooks/spec-kit.md)).
+
 ## Gotchas
 
 - **A passing test that was never RED is not a TDD test.** The template's explicit "Expected RED:

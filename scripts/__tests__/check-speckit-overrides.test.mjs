@@ -10,6 +10,7 @@ import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
+  LOCAL_EDITS,
   checkSpeckitOverrides,
   main,
   parseForkPoint,
@@ -22,7 +23,30 @@ const COMMON = '.specify/scripts/powershell/common.ps1';
 const SETUP = '.specify/scripts/powershell/setup-tasks.ps1';
 
 const CORE_BODY = '# Tasks: [FEATURE NAME]\n\n## Phase 1: Setup\n\n- [ ] T001 Create project structure\n';
-const SWEEP_TASK = '- [ ] T002 **Doc-impact sweep** — list the identifiers this feature changes\n';
+const TDD_TEMPLATE = 'docs/templates/feature-test-tasks-template.md';
+const INVENTORY = 'docs/runbooks/spec-kit.md';
+// The sweep task plus the TDD checkpoint pair (constitution "TDD Checkpoint Format"); every
+// fixture override carries both unless a test removes one.
+const SWEEP_TASK = [
+  '- [ ] T002 **Doc-impact sweep** — list the identifiers this feature changes',
+  `- [ ] T010 [US1] Test for [behaviour] (format: ${TDD_TEMPLATE})`,
+  '  - **Verify RED**: `<command>` → 1 failing',
+  '- [ ] T011 [US1] Implement [behaviour]',
+  '  - **Verify GREEN**: `<command>` → 1 passed',
+  '',
+].join('\n');
+const SKILL = '.claude/skills/speckit-taskstoissues/SKILL.md';
+const MANIFEST = '.specify/integrations/claude.manifest.json';
+const UPSTREAM_SKILL = '# taskstoissues\n\nUse the GitHub MCP server to create issues.\n';
+const LOCAL_SKILL = '# taskstoissues\n\nnode scripts/backlog.mjs create --title "T001: x"\n';
+const REGISTRY = [{ file: SKILL, marker: 'scripts/backlog.mjs', why: 'Forgejo backlog (feature 049)' }];
+const inventoryFor = (files) => `# Spec Kit\n\n${files.map((f) => `- \`${f}\``).join('\n')}\n`;
+// Names every file either registry might hold: tests that pass no registry use the real LOCAL_EDITS.
+const INVENTORY_OK = inventoryFor([
+  '.specify/templates/overrides/tasks-template.md',
+  TDD_TEMPLATE,
+  ...new Set([SKILL, ...LOCAL_EDITS.map((e) => e.file)]),
+]);
 // The shape Spec Kit 0.16.x ships: an input-validation `return $null` BEFORE the override check
 // (harmless — it resolves nothing), and a second resolver, Resolve-TemplateContent, whose output is
 // what /speckit-tasks actually reads (TASKS_TEMPLATE_CONTENT).
@@ -53,7 +77,16 @@ const SETUP_OK = [
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const header = (hash) => `<!-- forked-from: ${CORE} sha256=${hash} spec-kit=0.11.2 -->\n`;
 
-function fixture({ core = CORE_BODY, override, common = COMMON_OK, setup = SETUP_OK, git = false } = {}) {
+function fixture({
+  core = CORE_BODY,
+  override,
+  common = COMMON_OK,
+  setup = SETUP_OK,
+  inventory = INVENTORY_OK,
+  manifest = null, // { [path]: hash } — written as a Spec Kit integration manifest when given
+  files = {}, // extra files, e.g. the skill a manifest lists
+  git = false,
+} = {}) {
   const root = mkdtempSync(join(tmpdir(), 'speckit-overrides-'));
   const put = (rel, body) => {
     if (body === null) return;
@@ -65,6 +98,9 @@ function fixture({ core = CORE_BODY, override, common = COMMON_OK, setup = SETUP
   put(COMMON, common);
   put(SETUP, setup);
   put('.specify/init-options.json', JSON.stringify({ speckit_version: '0.11.2' }));
+  put(INVENTORY, inventory);
+  if (manifest) put(MANIFEST, JSON.stringify({ integration: 'claude', version: '0.16.5', files: manifest }));
+  for (const [rel, body] of Object.entries(files)) put(rel, body);
   if (git) {
     const g = (...a) => execFileSync('git', a, { cwd: root, stdio: 'pipe' });
     g('init', '-q');
@@ -122,7 +158,8 @@ test('an override whose first line is not a fork point fails header-invalid', ()
 });
 
 test('an override without the sweep TASK fails sweep-missing, even if the words appear in prose', () => {
-  const override = header(sha(CORE_BODY)) + CORE_BODY + 'The **Doc-impact sweep** is described elsewhere.\n';
+  const override = header(sha(CORE_BODY)) + CORE_BODY +
+    SWEEP_TASK.replace(/^.*\*\*Doc-impact sweep\*\*.*$/m, 'The **Doc-impact sweep** is described elsewhere.');
   assert.deepEqual(codes(checkSpeckitOverrides({ root: fixture({ override }) })), ['sweep-missing']);
 });
 
@@ -259,6 +296,102 @@ test('CLI: scan exits 1 on drift and 0 after --record', () => {
   assert.equal(quiet(() => main(['--record'], { root })).rc, 0);
   assert.equal(quiet(() => main([], { root })).rc, 0);
   rmSync(root, { recursive: true, force: true });
+});
+
+// ── Gap 2: the TDD checkpoint format lives in the override, not only in the constitution ──────────
+
+test('an override without a Verify RED / Verify GREEN sample fails tdd-format-missing', () => {
+  const noTdd = header(sha(CORE_BODY)) + CORE_BODY + '- [ ] T002 **Doc-impact sweep** — x\n';
+  assert.deepEqual(codes(checkSpeckitOverrides({ root: fixture({ override: noTdd }) })), ['tdd-format-missing']);
+});
+
+test('an override that drops only Verify GREEN, or only the template pointer, fails tdd-format-missing', () => {
+  for (const cut of ['  - **Verify GREEN**: `<command>` → 1 passed\n', ` (format: ${TDD_TEMPLATE})`]) {
+    const override = header(sha(CORE_BODY)) + CORE_BODY + SWEEP_TASK.replace(cut, '');
+    assert.deepEqual(codes(checkSpeckitOverrides({ root: fixture({ override }) })), ['tdd-format-missing'], cut);
+  }
+});
+
+test('recordForkPoint refuses to record a fork that lost the TDD checkpoint sample', () => {
+  const root = fixture({ override: header(sha(CORE_BODY)) + CORE_BODY + '- [ ] T002 **Doc-impact sweep** — x\n' });
+  assert.throws(() => recordForkPoint({ root }), /Verify RED/);
+});
+
+// ── Gap 3: deliberate edits to Spec Kit-managed files are registered and guarded ──────────────────
+
+test('a registered local edit that is in place passes', () => {
+  const root = fixture({ manifest: { [SKILL]: sha(UPSTREAM_SKILL) }, files: { [SKILL]: LOCAL_SKILL } });
+  assert.deepEqual(checkSpeckitOverrides({ root, localEdits: REGISTRY }), { ok: true, failures: [] });
+});
+
+test('an upgrade that restores the upstream file over a registered edit fails local-edit-reverted', () => {
+  const root = fixture({ manifest: { [SKILL]: sha(UPSTREAM_SKILL) }, files: { [SKILL]: UPSTREAM_SKILL } });
+  const r = checkSpeckitOverrides({ root, localEdits: REGISTRY });
+  assert.deepEqual(codes(r), ['local-edit-reverted']);
+  assert.match(r.failures[0].message, /speckit-taskstoissues/);
+});
+
+test('the CRLF form of the upstream file still counts as reverted (a Windows checkout)', () => {
+  const crlf = UPSTREAM_SKILL.replace(/\n/g, '\r\n');
+  const root = fixture({ manifest: { [SKILL]: sha(UPSTREAM_SKILL) }, files: { [SKILL]: crlf } });
+  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: REGISTRY })), ['local-edit-reverted']);
+});
+
+test('a registered edit that differs from upstream but lost its marker fails local-edit-reverted', () => {
+  const root = fixture({ manifest: { [SKILL]: sha(UPSTREAM_SKILL) }, files: { [SKILL]: '# rewritten, no backlog\n' } });
+  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: REGISTRY })), ['local-edit-reverted']);
+});
+
+test('an edit to a managed file that is NOT registered fails unregistered-edit', () => {
+  const other = '.claude/skills/speckit-plan/SKILL.md';
+  const root = fixture({
+    manifest: { [SKILL]: sha(UPSTREAM_SKILL), [other]: sha('upstream plan\n') },
+    files: { [SKILL]: LOCAL_SKILL, [other]: 'locally edited plan\n' },
+  });
+  const r = checkSpeckitOverrides({ root, localEdits: REGISTRY });
+  assert.deepEqual(codes(r), ['unregistered-edit']);
+  assert.match(r.failures[0].message, /speckit-plan/);
+});
+
+test('a CRLF-only difference from the manifest is not an edit', () => {
+  const other = '.claude/skills/speckit-plan/SKILL.md';
+  const root = fixture({
+    manifest: { [SKILL]: sha(UPSTREAM_SKILL), [other]: sha('upstream plan\n') },
+    files: { [SKILL]: LOCAL_SKILL, [other]: 'upstream plan\r\n' },
+  });
+  assert.deepEqual(checkSpeckitOverrides({ root, localEdits: REGISTRY }), { ok: true, failures: [] });
+});
+
+test('a registered file that no manifest lists any more fails registry-stale', () => {
+  const root = fixture({ manifest: { '.claude/skills/speckit-plan/SKILL.md': sha('p\n') }, files: { '.claude/skills/speckit-plan/SKILL.md': 'p\n' } });
+  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: REGISTRY })), ['registry-stale']);
+});
+
+// ── Gap 1: one inventory names every customisation, and the gate keeps it honest ──────────────────
+
+test('an inventory runbook that omits a guarded customisation fails inventory-stale, naming it', () => {
+  const root = fixture({
+    inventory: inventoryFor(['.specify/templates/overrides/tasks-template.md', TDD_TEMPLATE]),
+    manifest: { [SKILL]: sha(UPSTREAM_SKILL) },
+    files: { [SKILL]: LOCAL_SKILL },
+  });
+  const r = checkSpeckitOverrides({ root, localEdits: REGISTRY });
+  assert.deepEqual(codes(r), ['inventory-stale']);
+  assert.match(r.failures[0].message, /speckit-taskstoissues/);
+});
+
+test('a missing inventory runbook fails inventory-stale', () => {
+  assert.deepEqual(codes(checkSpeckitOverrides({ root: fixture({ inventory: null }) })), ['inventory-stale']);
+});
+
+test('the real tree: every managed-file edit is registered and every customisation is inventoried', () => {
+  const r = checkSpeckitOverrides();
+  const relevant = ['unregistered-edit', 'local-edit-reverted', 'registry-stale', 'inventory-stale', 'tdd-format-missing'];
+  assert.deepEqual(codes(r).filter((c) => relevant.includes(c)), [], JSON.stringify(r.failures));
+});
+
+test('CLI: --selftest passes', () => {
+  assert.equal(quiet(() => main(['--selftest'])).rc, 0);
 });
 
 test('CLI: --record and --selftest together exit 2', () => {
