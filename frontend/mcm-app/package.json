@@ -16,8 +16,8 @@
   },
   "dependencies": {
     "@ag-ui/client": "1.0.2",
-    "@copilotkit/react-native": "1.79.1",
-    "@copilotkit/runtime": "1.79.1",
+    "@copilotkit/react-native": "1.87.1",
+    "@copilotkit/runtime": "1.87.1",
     "@expo-google-fonts/inter": "^0.4.0",
     "@expo-google-fonts/outfit": "^0.4.0",
     "@expo/metro-runtime": "~58.0.17",
