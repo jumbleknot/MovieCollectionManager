@@ -8,6 +8,7 @@ import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import {
   checkSpeckitOverrides,
   main,
@@ -22,20 +23,32 @@ const SETUP = '.specify/scripts/powershell/setup-tasks.ps1';
 
 const CORE_BODY = '# Tasks: [FEATURE NAME]\n\n## Phase 1: Setup\n\n- [ ] T001 Create project structure\n';
 const SWEEP_TASK = '- [ ] T002 **Doc-impact sweep** — list the identifiers this feature changes\n';
-const COMMON_OK = [
-  'function Resolve-Template {',
+// The shape Spec Kit 0.16.x ships: an input-validation `return $null` BEFORE the override check
+// (harmless — it resolves nothing), and a second resolver, Resolve-TemplateContent, whose output is
+// what /speckit-tasks actually reads (TASKS_TEMPLATE_CONTENT).
+const resolver = (name, ret) => [
+  `function ${name} {`,
   '    param([string]$TemplateName, [string]$RepoRoot)',
+  "    if ($TemplateName -cnotmatch '^[a-z0-9-]+$') { return $null }",
   '    $base = Join-Path $RepoRoot \'.specify/templates\'',
   '    $override = Join-Path $base "overrides/$TemplateName.md"',
-  '    if (Test-Path $override) { return $override }',
+  `    if (Test-Path $override) { return ${ret('$override')} }`,
   '    $presetsDir = Join-Path $RepoRoot \'.specify/presets\'',
   '    $extDir = Join-Path $RepoRoot \'.specify/extensions\'',
   '    $core = Join-Path $base "$TemplateName.md"',
-  '    if (Test-Path $core) { return $core }',
+  `    if (Test-Path $core) { return ${ret('$core')} }`,
   '}',
   '',
+];
+const COMMON_OK = [
+  ...resolver('Resolve-Template', (p) => p),
+  ...resolver('Resolve-TemplateContent', (p) => `[System.IO.File]::ReadAllText(${p})`),
 ].join('\n');
-const SETUP_OK = "$tasksTemplate = Resolve-Template -TemplateName 'tasks-template' -RepoRoot $paths.REPO_ROOT\n";
+const SETUP_OK = [
+  "$tasksTemplate = Resolve-Template -TemplateName 'tasks-template' -RepoRoot $paths.REPO_ROOT",
+  "$tasksTemplateContent = Resolve-TemplateContent -TemplateName 'tasks-template' -RepoRoot $paths.REPO_ROOT",
+  '',
+].join('\n');
 
 const sha = (s) => createHash('sha256').update(s).digest('hex');
 const header = (hash) => `<!-- forked-from: ${CORE} sha256=${hash} spec-kit=0.11.2 -->\n`;
@@ -150,6 +163,41 @@ test('Resolve-Template that checks presets before overrides/ fails resolution-br
 
 test('a common.ps1 without Resolve-Template fails resolution-broken', () => {
   assert.deepEqual(codes(checkSpeckitOverrides({ root: fixture({ common: '# nothing here\n' }) })), ['resolution-broken']);
+});
+
+test('a resolver that RETURNS A PATH before checking overrides/ fails resolution-broken', () => {
+  const common = COMMON_OK.replace(
+    "{ return $null }",
+    "{ return (Join-Path $RepoRoot '.specify/templates/tasks-template.md') }",
+  );
+  assert.deepEqual(codes(checkSpeckitOverrides({ root: fixture({ common }) })), ['resolution-broken']);
+});
+
+test('setup-tasks.ps1 that no longer resolves the CONTENT through Resolve-TemplateContent fails resolution-broken', () => {
+  const setup = SETUP_OK.replace(/^\$tasksTemplateContent = .*$/m, "$tasksTemplateContent = Get-Content '.specify/templates/tasks-template.md' -Raw");
+  assert.deepEqual(codes(checkSpeckitOverrides({ root: fixture({ setup }) })), ['resolution-broken']);
+});
+
+test('Resolve-TemplateContent that checks presets before overrides/ fails resolution-broken', () => {
+  const [path, content] = COMMON_OK.split(/(?=^function Resolve-TemplateContent)/m);
+  const swapped = content.replace(/^.*overrides\/.*\n.*Test-Path \$override.*\n/m, '').replace(
+    /^\}$/m,
+    '    $override = Join-Path $base "overrides/$TemplateName.md"\n    if (Test-Path $override) { return $override }\n}\n',
+  );
+  assert.deepEqual(codes(checkSpeckitOverrides({ root: fixture({ common: path + swapped }) })), ['resolution-broken']);
+});
+
+test('a common.ps1 without Resolve-TemplateContent fails resolution-broken', () => {
+  const common = COMMON_OK.split(/(?=^function Resolve-TemplateContent)/m)[0];
+  assert.deepEqual(codes(checkSpeckitOverrides({ root: fixture({ common }) })), ['resolution-broken']);
+});
+
+test('CLI entry point runs when invoked as a script, on every platform', () => {
+  // The old guard compared import.meta.url to `file://${argv[1]}`, which never matches a Windows
+  // path (file:///E:/… vs E:\…): the gate exited 0 having checked nothing.
+  const script = join(dirname(fileURLToPath(import.meta.url)), '..', 'check-speckit-overrides.mjs');
+  const out = execFileSync(process.execPath, [script, '--help'], { encoding: 'utf8' });
+  assert.match(out, /^usage: node scripts\/check-speckit-overrides\.mjs/);
 });
 
 test('every fault is reported, not just the first', () => {

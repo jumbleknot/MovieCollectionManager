@@ -45,8 +45,12 @@ Install [git](https://git-scm.com/downloads).
 2. Install the Specify CLI (GitHub Spec Kit) in a new terminal:
 
    ```bash
-   uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+   uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.5
    ```
+
+   Install the release in `.specify/init-options.json` (`speckit_version`), which is also the
+   `SPECKIT_VERSION` pin in `.devcontainer/toolchain.Dockerfile`. Add `--force` to replace an older
+   install.
 
    [Spec Kit install details](https://github.com/github/spec-kit/blob/main/README.md#1-install-specify-cli).
 
