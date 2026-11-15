@@ -42,6 +42,7 @@
 // later. On the green path this step's log is the only place they can survive.
 
 import { readFileSync } from 'node:fs';
+import { isMain } from './lib/is-main.mjs';
 
 /** Section headers Playwright prints in its summary, e.g. "  33 failed" / "  126 passed (17.9m)". */
 const SECTION_RE = /^\s*(\d+)\s+(failed|flaky|passed|did not run|interrupted|skipped)\b/;
@@ -276,6 +277,6 @@ function gate(file) {
   return 1;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   process.exit(main(process.argv.slice(2)));
 }

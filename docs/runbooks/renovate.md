@@ -1261,6 +1261,8 @@ comment).
 - `scripts/renovate-health.mjs` / item **#311** — the weekly health digest: channel liveness, stale
   branches, budget consumption, `stability-days` states, and (item #485) the **required**-context
   state of every open Renovate PR plus the weekly CVE sweep's verdict on `main`. Close item #311 to
-  stop it.
+  stop it. **A bare run POSTS the digest** as a public comment, on any host (Windows included since
+  PR #1029), so run it locally as `node scripts/renovate-health.mjs --dry-run`. The same applies to
+  `scripts/check-lockfile-refresh.mjs`.
 - [CI self-serve diagnostics](ci-diagnostics.md) — reading a failure without log access
 - [The agent-driven backlog](backlog.md) — item #29 and the `status/bot-managed` rule

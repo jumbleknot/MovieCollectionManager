@@ -32,6 +32,7 @@ import { parseRequiredGlobs, computeMergeVerdict } from './ci-status.mjs';
 // TRACKER, so a silently-ignored flag is not a usability wart here: `--dryrun`, `--dry_run` and
 // `-dry-run` each used to mean "post the comment", with an exit code identical to the intended run's.
 import { ArgvError, dieOnArgvError, partitionArgs, wantsHelp } from './lib/argv-contract.mjs';
+import { isMain } from './lib/is-main.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ITEM = 311; // the digest's home — close it to stop the digest
@@ -526,7 +527,7 @@ export function resolveCommand(argv = []) {
   return { command: flags.has('--dry-run') ? 'dry-run' : 'post' };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   // Argv is resolved OUTSIDE the catch below, on purpose. main()'s failures exit 0 (a weekly red
   // trains people to ignore the digest), but a mistyped flag is a CALLER error, not a digest
   // failure — routing it through the exit-0 discipline is exactly what made the typo invisible.

@@ -48,10 +48,11 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, statSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { basename, join, dirname, relative, resolve } from 'node:path';
+import { basename, join, dirname, relative, resolve, sep } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { ArgvError, dieOnArgvError, partitionArgsWithValues, wantsHelp } from './lib/argv-contract.mjs';
+import { isMain } from './lib/is-main.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_DIST = resolve(HERE, '..', 'frontend', 'mcm-app', 'dist');
@@ -162,7 +163,8 @@ function htmlFilesIn(root) {
   }
   return entries
     .filter((e) => e.isFile() && e.name.endsWith('.html'))
-    .map((e) => relative(root, join(e.parentPath, e.name)))
+    // POSIX page names on every platform, so a report reads the same on a Windows host as in CI.
+    .map((e) => relative(root, join(e.parentPath, e.name)).split(sep).join('/'))
     .sort();
 }
 
@@ -508,6 +510,6 @@ function main(argv) {
   return report(check(distDir, budget, { requireMaps: parsed.flags.has('--require-maps') }), parsed.flags.has('--json'));
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   process.exit(main(process.argv.slice(2)));
 }

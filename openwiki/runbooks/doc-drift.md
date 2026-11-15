@@ -3,9 +3,9 @@ type: Runbook
 title: "Doc drift: the doc-impact sweep, Spec Kit upgrades, and the quarterly audit"
 description: How the repository keeps its procedure documents in step with the code (the direction V17 does not cover) — the doc-impact sweep every SDD feature runs at task generation and close-out, carried by a project override of Spec Kit's tasks template; the fork guard that turns a Spec Kit upgrade's silent template change into a red guardrails check, its five failure codes and the --record-only fingerprint; the Copilot and /speckit-constitution gaps the override cannot reach; and the quarterly drift audit that measures the result and files its own successor.
 resource: docs/runbooks/doc-drift.md
-resource-sha256: a5b8fe67c7010f50e89b64a56cdcce931a5deb08cc4e4a1cbc1d6991c33782bf
+resource-sha256: 0a926f271f6e835032708db1ae0451ad8ff6db7cda3b7277acead034beaaac41
 tags: [documentation, drift, spec-kit, sdd, audit, runbook]
-timestamp: 2026-11-15T01:52:56.770Z
+timestamp: 2026-11-15T15:16:54.235Z
 ---
 
 # Doc drift: the doc-impact sweep, Spec Kit upgrades, and the quarterly audit
@@ -44,13 +44,19 @@ guardrails and fails with one of five codes:
   when history is unavailable.
 - `override-missing`, `header-invalid`, `sweep-missing`: the override is gone, its fork point is
   malformed, or no task line carries `**Doc-impact sweep**`.
-- `resolution-broken`: `setup-tasks.ps1` no longer resolves `tasks-template` through
-  `Resolve-Template`, or that function no longer checks `overrides/` first. The scripts are read as
-  text and never run.
+- `resolution-broken`: `setup-tasks.ps1` no longer resolves `tasks-template` through both
+  `Resolve-Template` (the path) and `Resolve-TemplateContent` (the content, which `/speckit-tasks`
+  prefers since Spec Kit 0.16), or either no longer checks `overrides/` first. A bare `return $null`
+  ahead of the check (name validation) is allowed. The scripts are read as text and never run.
 
 The fork point is written **only** by `--record`, never by hand. `--record` refuses an override that
-has lost the sweep. **Upgrade procedure**: run the upgrade, read the printed core diff, merge it into
-the override (keeping the sweep and close-out tasks), `--record`, and land all of it in one PR. A
+has lost the sweep. **Upgrade procedure**: install the new CLI, run
+`specify integration upgrade claude --force` from a worktree, read the printed core diff, merge it
+into the override (keeping the sweep and close-out tasks), `--record`, bump the dev container's
+`SPECKIT_VERSION` pin to the same release, and land all of it in one PR. Before `--force`, find the
+managed files with deliberate local edits and re-apply them afterwards. On a Windows checkout most
+of `specify integration status`'s "modified" count is CRLF-only. The one real edit is the Forgejo
+fan-out in `speckit-taskstoissues`. A
 `resolution-broken` failure means Spec Kit changed how templates resolve. Update the guard at the
 cause; never delete it.
 

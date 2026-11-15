@@ -11,8 +11,9 @@
 //   - the core template no longer matches the fork point recorded on the override's first line
 //     (Spec Kit changed it — re-merge, then --record);
 //   - the override is missing, its header is malformed, or it no longer carries the sweep task;
-//   - setup-tasks.ps1 stops resolving through Resolve-Template, or Resolve-Template stops checking
-//     overrides/ first — an upgrade that drops override support must fail, not fall back to core.
+//   - setup-tasks.ps1 stops resolving through Resolve-Template and Resolve-TemplateContent, or
+//     either stops checking overrides/ first — an upgrade that drops override support must fail,
+//     not fall back to core.
 //
 // The fork point is written ONLY by --record, from the core template's bytes. Never hand-type it
 // (the V17 rule). The scripts are read as text and never executed: the runner need not have pwsh.
@@ -29,6 +30,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dieOnArgvError, partitionArgs, wantsHelp } from './lib/argv-contract.mjs';
+import { isMain } from './lib/is-main.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -62,20 +64,33 @@ export function parseForkPoint(line) {
 const hasSweepTask = (text) => text.split('\n').some((l) => /^\s*- \[[ xX]\] /.test(l) && l.includes(SWEEP_MARKER));
 
 /**
- * Does Resolve-Template still check overrides/ before anything else? Read as text: the body runs
- * from `function Resolve-Template` to the next top-level `function`, and the first `overrides/`
- * reference must precede every presets/extensions reference and the first `return`. A harmless
- * upstream refactor can trip this; the fix is a reviewed edit HERE, never deleting the gate.
+ * setup-tasks.ps1 hands /speckit-tasks the template twice: as a path (Resolve-Template →
+ * TASKS_TEMPLATE) and, since Spec Kit 0.16, as composed content (Resolve-TemplateContent →
+ * TASKS_TEMPLATE_CONTENT), which the skill prefers. Both resolvers must be called for
+ * tasks-template, and both must check overrides/ first.
+ */
+const RESOLVERS = ['Resolve-Template', 'Resolve-TemplateContent'];
+
+/**
+ * Does each resolver still check overrides/ before anything else? Read as text: the body runs from
+ * `function <name>` to the next top-level `function`, and the first `overrides/` reference must
+ * precede every presets/extensions reference and the first `return` that yields something. A bare
+ * `return $null` (Spec Kit 0.16's template-name validation) resolves nothing, so it cannot fall
+ * back to core and is not counted. A harmless upstream refactor can still trip this; the fix is a
+ * reviewed edit HERE, never deleting the gate.
  */
 function resolutionProblems(common, setup) {
   const problems = [];
-  if (setup === null || !/Resolve-Template\s+-TemplateName\s+['"]tasks-template['"]/.test(setup)) {
-    problems.push(`${SETUP_TASKS_PS1} no longer resolves tasks-template through Resolve-Template`);
-  }
-  const fn = common === null ? -1 : common.search(/^function\s+Resolve-Template\b/m);
-  if (fn === -1) {
-    problems.push(`${COMMON_PS1} no longer defines Resolve-Template`);
-  } else {
+  for (const name of RESOLVERS) {
+    const call = new RegExp(`${name}\\s+-TemplateName\\s+['"]tasks-template['"]`);
+    if (setup === null || !call.test(setup)) {
+      problems.push(`${SETUP_TASKS_PS1} no longer resolves tasks-template through ${name}`);
+    }
+    const fn = common === null ? -1 : common.search(new RegExp(`^function\\s+${name}(?![\\w-])`, 'm'));
+    if (fn === -1) {
+      problems.push(`${COMMON_PS1} no longer defines ${name}`);
+      continue;
+    }
     const rest = common.slice(fn + 1);
     const next = rest.search(/^function\s+/m);
     const body = common.slice(fn, next === -1 ? undefined : fn + 1 + next);
@@ -84,9 +99,9 @@ function resolutionProblems(common, setup) {
       return i === -1 ? Infinity : i;
     };
     const overrides = at(/overrides\//);
-    const firstOther = Math.min(at(/presets/), at(/extensions/), at(/\breturn\b/));
+    const firstOther = Math.min(at(/presets/), at(/extensions/), at(/\breturn\b(?!\s+\$null\b)/));
     if (overrides === Infinity || overrides > firstOther) {
-      problems.push(`${COMMON_PS1} Resolve-Template no longer checks overrides/ first`);
+      problems.push(`${COMMON_PS1} ${name} no longer checks overrides/ first`);
     }
   }
   return problems;
@@ -139,8 +154,9 @@ export function checkSpeckitOverrides({ root = REPO_ROOT } = {}) {
       fail('core-changed', `${CORE_TEMPLATE} no longer matches the fork point recorded in ${OVERRIDE_TEMPLATE} (Spec Kit changed it; recorded ${fork.sha256.slice(0, 12)}, now ${sha256(core).slice(0, 12)}).\n${detail}`);
     }
   }
-  for (const p of resolutionProblems(read(COMMON_PS1), read(SETUP_TASKS_PS1))) {
-    fail('resolution-broken', `${p} — the override would be silently ignored`);
+  const resolution = resolutionProblems(read(COMMON_PS1), read(SETUP_TASKS_PS1));
+  if (resolution.length) {
+    fail('resolution-broken', `${resolution.join('; ')} — the override would be silently ignored`);
   }
   return { ok: failures.length === 0, failures };
 }
@@ -187,8 +203,10 @@ function selftest() {
   const clean = {
     [CORE_TEMPLATE]: coreBody,
     [OVERRIDE_TEMPLATE]: `${forkPointLine(sha256(coreBody), '0.11.2')}\n${coreBody}- [ ] T002 ${SWEEP_MARKER} — search the docs\n`,
-    [COMMON_PS1]: 'function Resolve-Template {\n  $o = Join-Path $b "overrides/$TemplateName.md"\n  if (Test-Path $o) { return $o }\n  $p = Join-Path $r ".specify/presets"\n}\n',
-    [SETUP_TASKS_PS1]: "$t = Resolve-Template -TemplateName 'tasks-template' -RepoRoot $r\n",
+    [COMMON_PS1]: ['Resolve-Template', 'Resolve-TemplateContent']
+      .map((n) => `function ${n} {\n  if ($bad) { return $null }\n  $o = Join-Path $b "overrides/$TemplateName.md"\n  if (Test-Path $o) { return $o }\n  $p = Join-Path $r ".specify/presets"\n}\n`)
+      .join(''),
+    [SETUP_TASKS_PS1]: "$t = Resolve-Template -TemplateName 'tasks-template' -RepoRoot $r\n$c = Resolve-TemplateContent -TemplateName 'tasks-template' -RepoRoot $r\n",
   };
   const scenarios = [
     ['clean', {}, []],
@@ -197,7 +215,8 @@ function selftest() {
     ['sweep-missing', { [OVERRIDE_TEMPLATE]: `${forkPointLine(sha256(coreBody), '0.11.2')}\n${coreBody}${SWEEP_MARKER} in prose only\n` }, ['sweep-missing']],
     ['core-changed', { [CORE_TEMPLATE]: `${coreBody}- [ ] T009 upstream\n` }, ['core-changed']],
     ['setup bypasses Resolve-Template', { [SETUP_TASKS_PS1]: "$t = '.specify/templates/tasks-template.md'\n" }, ['resolution-broken']],
-    ['presets before overrides/', { [COMMON_PS1]: 'function Resolve-Template {\n  $p = ".specify/presets"\n  $o = "overrides/x.md"\n}\n' }, ['resolution-broken']],
+    ['presets before overrides/', { [COMMON_PS1]: 'function Resolve-Template {\n  $p = ".specify/presets"\n  $o = "overrides/x.md"\n}\nfunction Resolve-TemplateContent {\n  $o = "overrides/x.md"\n}\n' }, ['resolution-broken']],
+    ['setup bypasses Resolve-TemplateContent', { [SETUP_TASKS_PS1]: "$t = Resolve-Template -TemplateName 'tasks-template' -RepoRoot $r\n" }, ['resolution-broken']],
   ];
   let broken = 0;
   for (const [name, patch, want] of scenarios) {
@@ -218,7 +237,7 @@ function selftest() {
     }
   }
   if (broken) return 1;
-  console.log('✓ speckit-overrides gate --selftest passed (clean tree passes; override-missing, header-invalid, sweep-missing, core-changed and both resolution-broken shapes are each detected)');
+  console.log('✓ speckit-overrides gate --selftest passed (clean tree passes; override-missing, header-invalid, sweep-missing, core-changed and every resolution-broken shape are each detected)');
   return 0;
 }
 
@@ -252,6 +271,6 @@ export function main(argv, { root = REPO_ROOT } = {}) {
   return scan(root);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   process.exit(main(process.argv.slice(2)));
 }

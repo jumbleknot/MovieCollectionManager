@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
-description: "The lifecycle half of the Docker Sandbox dev-container runbook, pinned to sbx v0.51.0 — template recreate-from-nothing and why it is fast but cold, the three creation-time-resizable volumes and how a full disk disguises itself, the six gaps a cold recreate must fill, the memory bound that keeps an OOM kill off Keycloak (Jest workers capped at 4, a 10 GiB dev container), the destructive verification harness with its three vantage points and one vacuous pass, and the ritual before upgrading the sbx binary."
+description: "The lifecycle half of the Docker Sandbox dev-container runbook, pinned to sbx v0.53.0 — template recreate-from-nothing and why it is fast but cold, the three creation-time-resizable volumes and how a full disk disguises itself, the six gaps a cold recreate must fill, the memory bound that keeps an OOM kill off Keycloak (Jest workers capped at 4, a 10 GiB dev container), the destructive verification harness with its three vantage points and one vacuous pass, and the ritual before upgrading the sbx binary."
 resource: docs/runbooks/devcontainer-sandbox-lifecycle.md
-resource-sha256: 200c20e39b86a5b775a9353b83fb919ca5ceca878508b2c58f942c6e3cb0b270
+resource-sha256: 4c184ba0b32ec7ed54841fa800c4cef5870b9f787e16e7c3f834bc60b7889a1e
 tags: [devcontainer, sandbox, docker, lifecycle, disk, verification, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
-timestamp: 2026-11-10T03:37:28.090Z
+timestamp: 2026-11-15T15:35:52.859Z
 ---
 
 # Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
@@ -447,10 +447,27 @@ report PASS on an environment where nothing is serving.
 tool that this environment depends on for **isolation and egress enforcement**, and several behaviours
 here are version-specific and undocumented. Record the version whenever you report a problem.
 
-**Currently pinned at `v0.51.0`, upgraded from v0.47.0 on 2026-11-03** (`sbx daemon stop`, then
-`winget upgrade --id Docker.sbx --version 0.51.0`). Most of the source was originally measured against
-v0.38.0; the dated measurements for each pin are recorded in source §10b. The items that touch this
-environment:
+**Currently pinned at `v0.53.0`, upgraded from v0.51.0 on 2026-11-15** (`sbx daemon stop`, then
+`winget upgrade --id Docker.sbx --version 0.53.0`; there is no v0.52.0). Most of the source was
+originally measured against v0.38.0; the dated measurements for each pin are recorded in source §10b.
+The harness and egress checks have **not yet been re-run on v0.53.0**; they are due at the next
+recreate. The v0.53.0 items that touch this environment:
+
+- **Removed flags**: `sbx exec` / `sbx env exec` lose `--detach` and `--privileged`, and
+  `DOCKER_SANDBOXES_USE_DHI` is no longer read. Nothing in the repository used them.
+- **Stalled outbound connections close after about 30 s** (`egress.stalledConnectionTimeoutSeconds`,
+  `0` disables it, and a change needs `sbx daemon restart`). Suspect this first if a long, quiet
+  transfer from the VM now dies at about 30 s.
+- **HTTP policy path/query matching is case-insensitive.** The generator's rules are domain-only, so
+  nothing changes here.
+- **Restart checks mounts against their original sources** and refuses a sandbox whose source now
+  resolves elsewhere. Watch the `E:` junction. The fix is to restore the path, or recreate.
+- **`sbx rm` / `prune` no longer delete a sandbox that took over the name.** The new `sbx df`
+  reports disk use. There is still no `--disk` flag.
+- **Windows**: redirected AppData paths work, and the MSI upgrade stops the daemon cleanly.
+  CVE-2026-126330 is fixed (an unpublished auto-assigned port no longer comes back after a restart).
+
+The v0.48–v0.51 items below are still in force:
 
 - **🔴 The `shell` agent is now a published kit (v0.51.0)** — a Docker Hardened Images **Debian 13**
   image with a Docker engine sbx starts — replacing the `docker/sandbox-templates:shell` image, which

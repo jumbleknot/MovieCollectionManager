@@ -26,6 +26,7 @@ import { fileURLToPath } from 'node:url';
 // TRACKER. It is also the file renovate-health.mjs was copied from, so it carried the same defect
 // and the copy was fixed first: `--dryrun`, `--dry_run` and `-dry-run` each meant "post".
 import { ArgvError, dieOnArgvError, partitionArgs, wantsHelp } from './lib/argv-contract.mjs';
+import { isMain } from './lib/is-main.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ITEM = 218;
@@ -250,7 +251,7 @@ export function resolveCommand(argv = []) {
   return { command: flags.has('--dry-run') ? 'dry-run' : 'post' };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   // Resolved OUTSIDE the catch below: main()'s failures exit 0 by design (a weekly red trains people
   // to ignore the check), but a mistyped flag is a CALLER error, not a check failure — routing it
   // through that exit-0 discipline is precisely what made the typo invisible.

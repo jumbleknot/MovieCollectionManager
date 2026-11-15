@@ -526,6 +526,25 @@ Every one of these produced a confident, wrong answer, and every one was checkab
   heuristic, because a heuristic that over-fires gets loosened until it passes, which is how an audit
   stops auditing. Every argv-dispatching script that can mutate now carries a recorded verdict there,
   and all four mutating defaults are guarded.
+- **On a Windows host, seven scripts ran NOTHING and exited 0 — FIXED, PR #1029 (2026-11-15).**
+  Their entry check, ``import.meta.url === `file://${process.argv[1]}` ``, never matches a Windows
+  path (`file:///E:/…` against `E:\…`). So `check-speckit-overrides`, `check-no-server-imports`,
+  `check-web-bundle-budget`, `e2e-failure-set`, `reap-merged-branches`, `renovate-health` and
+  `check-lockfile-refresh` printed nothing and exited 0 on the host, and a gate read as a pass it never
+  checked. It held in CI only because a POSIX path equals its URL's path. All seven now use
+  [`scripts/lib/is-main.mjs`](../../scripts/lib/is-main.mjs).
+  [`cli-entry-guard.guard.test.mjs`](../../scripts/__tests__/cli-entry-guard.guard.test.mjs) fails if
+  the old form returns, and runs each script as a real subprocess. The tell is **no output at all**
+  from a script that always prints something, and the check is the same as above: a signal other
+  than the exit code. Running for the first time on Windows, two gates showed defects they had been
+  hiding. `check-no-server-imports` missed every relative import into `bff-server` (platform
+  `resolve('/', …)`), and `check-web-bundle-budget` printed backslash page names.
+
+  🔴 **The consequence for a session on the Windows host: a bare run of `renovate-health.mjs` or
+  `check-lockfile-refresh.mjs` now really POSTS its public forge comment**, exactly as in CI.
+  Before the fix the same command silently did nothing, so a habit formed then is now a public post.
+  Locally, always pass `--dry-run`. `reap-merged-branches.mjs` stays safe bare: it deletes only with
+  `--apply`.
 
   **`ci-failure-digest.mjs` was deferred out of that change on a premise that turned out to be false
   — item #504, now fixed.** The deferral read FR-009 ("this step must NEVER change a job's outcome",

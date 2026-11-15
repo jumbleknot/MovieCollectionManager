@@ -47,10 +47,11 @@
 //
 // Exit codes: 0 clean / selftest passed · 1 violation found / selftest broken · 2 bad args.
 import { readdirSync, readFileSync, statSync, mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join, relative, resolve, dirname, sep } from 'node:path';
+import { join, relative, resolve, dirname, sep, posix } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { ArgvError, dieOnArgvError, partitionArgsWithValues, wantsHelp } from './lib/argv-contract.mjs';
+import { isMain } from './lib/is-main.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_SRC = resolve(HERE, '..', 'frontend', 'mcm-app', 'src');
@@ -125,9 +126,11 @@ export function resolvesIntoServerDir(specifier, relPath) {
     return rest === SERVER_DIR || rest.startsWith(`${SERVER_DIR}/`);
   }
   if (specifier.startsWith('.')) {
-    const joined = resolve('/', dirname(relPath), specifier).slice(1);
-    const posix = joined.split(sep).join('/');
-    return posix === SERVER_DIR || posix.startsWith(`${SERVER_DIR}/`);
+    // posix.resolve, not resolve: relPath is POSIX, and on Windows resolve('/', …) yields `E:\…`, so
+    // .slice(1) left `:\…` and no relative import ever matched — the gate missed them on a Windows
+    // host (hidden until the entry-point fix let it run there).
+    const joined = posix.resolve('/', posix.dirname(relPath), specifier).slice(1);
+    return joined === SERVER_DIR || joined.startsWith(`${SERVER_DIR}/`);
   }
   return false;
 }
@@ -286,6 +289,6 @@ function main(argv) {
   return report(runScan(srcRoot), srcRoot);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isMain(import.meta.url)) {
   process.exit(main(process.argv.slice(2)));
 }
