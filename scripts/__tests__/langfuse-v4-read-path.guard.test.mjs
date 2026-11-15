@@ -12,7 +12,7 @@
 // shape: the SC-008 guarantee would not have failed loudly, it would have **stopped being checked** — and
 // the test is credential-gated, so on a machine without a priced provider it SKIPS, which reads as green.
 //
-// The ingestion side is deliberately NOT policed here: the gateway ships langfuse SDK 4.15.1 and writes
+// The ingestion side is deliberately NOT policed here: the gateway ships langfuse SDK 5.x (item #994) and writes
 // over OTLP (measured 200), so `POST /api/public/ingestion`'s `events_only` rejection does not touch it.
 // Policing ingestion would invite someone to "fix" it with LANGFUSE_MIGRATION_V4_WRITE_MODE=dual, which
 // restores only ingestion and would mask an unmigrated read path (spec FR-013).

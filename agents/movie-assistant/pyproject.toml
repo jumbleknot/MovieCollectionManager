@@ -7,7 +7,7 @@ requires-python = ">=3.13"
 # (`uv lock`) pins exact versions (constitution: dependencies pinned via lockfile).
 dependencies = [
     "langgraph>=0.2,<2",
-    "langchain-core>=0.3,<2",
+    "langchain-core>=1,<2",
     "langchain-ollama>=0.2,<2",      # default provider (research R1)
     "langchain-anthropic>=0.3,<2",   # documented fallback provider
     # Agent Gateway = FastAPI app emitting AG-UI natively via ag-ui-langgraph
@@ -20,7 +20,7 @@ dependencies = [
     "nemoguardrails>=0.11,<1",
     "guardrails-ai>=0.5,<1",
     "pydantic>=2.7,<3",
-    "langfuse>=2.0,<5",
+    "langfuse>=5,<6",
     "opentelemetry-sdk>=1.27,<2",
     "opentelemetry-exporter-otlp>=1.27,<2",
     "hvac>=2.0,<3",                  # HashiCorp Vault client — runtime secret injection (T030a)

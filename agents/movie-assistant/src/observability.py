@@ -3,7 +3,7 @@
 Two backends, both env-gated so the default dev/test/E2E path is a no-op (SC-005 additive):
 
 - **LangFuse** (LLM traces / per-turn cost / latency): `build_langfuse_handler` returns the
-  langchain `CallbackHandler` from the INSTALLED langfuse SDK (`langfuse>=2.0,<5`, resolving to 4.x)
+  langchain `CallbackHandler` from the INSTALLED langfuse SDK (`langfuse>=5,<6`, item #994)
   when `LANGFUSE_PUBLIC_KEY`/`LANGFUSE_SECRET_KEY` are set; the
   gateway attaches it to the run config's callbacks so every turn becomes a trace with token
   cost + latency. Budgets (`AGENT_PER_TURN_COST_BUDGET_USD`, `AGENT_TURN_LATENCY_BUDGET_MS`) are
@@ -56,6 +56,14 @@ def build_langfuse_handler(
     and it nearly produced the wrong diagnosis when Langfuse 4's removal of the
     legacy READ route was being investigated. The ingestion path is deliberately
     unchanged (FR-013).
+
+    SDK v5 since item #994 (`langfuse>=5,<6`, locked 5.2.0). Nothing this function
+    uses changed: `Langfuse(public_key, secret_key, host)` still accepts `host`, a
+    no-arg `CallbackHandler()` still constructs, and the handler still reads the
+    `langfuse_user_id` / `langfuse_session_id` / `langfuse_tags` metadata keys. v5
+    needs a self-hosted server at 4.59.0 or later, `langchain-core>=1` and Python
+    3.11+. Measured 2026-11-15: one supervisor-graph turn traced into Langfuse 4.78.0
+    with its session and user attached, and SC-008 passing live.
     """
     if not langfuse_configured(env):
         return None
