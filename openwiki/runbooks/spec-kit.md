@@ -3,9 +3,9 @@ type: Runbook
 title: "Spec Kit: this repository's customisations, and upgrading it"
 description: The one inventory of every way the repository changes or adds to GitHub Spec Kit — the tasks-template override carrying the doc-impact sweep, the required tests and the Verify RED / Verify GREEN checkpoint format it shows, the two registered local edits (the /speckit-tasks skill's "tests are required" rule, and /speckit-taskstoissues sending tasks to the Forgejo backlog), the constitution, the git and agent-context extension hooks, and the three CLI version pins — plus who owns which file, the order of preference for a new customisation, the guard that fails when any of them is lost or a Spec Kit-owned file is edited without being registered, its ten failure codes, the upgrade procedure, and the Copilot and /speckit-constitution gaps.
 resource: docs/runbooks/spec-kit.md
-resource-sha256: 4d80a46717ed9e93f7390e770301a70a14bff40187c9ea4b67ceec7723ec546b
+resource-sha256: 3ba0463b841c127fd1c3a9da185663d1993eb9c5c9b1125996513261b7c06821
 tags: [spec-kit, sdd, templates, guardrails, upgrade, runbook]
-timestamp: 2026-11-15T16:33:03.882Z
+timestamp: 2026-11-15T17:56:25.721Z
 ---
 
 # Spec Kit: this repository's customisations, and upgrading it
@@ -71,7 +71,7 @@ the old manual hunt for local edits before `--force`.
 
 - **Copilot bypasses the override.** `.github/agents/speckit.tasks.agent.md` reads the core template
   directly, so only the constitution's rules cover a Copilot-generated `tasks.md`. Closing that would
-  make the agent a registered local edit.
+  make the agent a registered local edit (backlog item #1031).
 - **`/speckit-constitution` checks the core tasks template**, not the override. After an amendment,
   check the override by hand.
 - **The core template says to delete every sample task.** The override's `EXCEPTION` note keeps the

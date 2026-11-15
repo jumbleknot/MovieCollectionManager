@@ -35,7 +35,7 @@ So a change to Spec Kit's behaviour takes one of three forms, in order of prefer
 ## The customisations
 
 | # | What it changes | Where it lives | Form | How Spec Kit picks it up | Guard (failure codes) |
-|---|---|---|---|---|---|
+| --- | --- | --- | --- | --- | --- |
 | 1 | Every `tasks.md` carries a **Doc-impact sweep** task in Phase 1 and a **Close-out re-search** task in Polish (feature 101) | `.specify/templates/overrides/tasks-template.md` | Override (a fork of the core tasks template) | `Resolve-Template` / `Resolve-TemplateContent` in `common.ps1` check `overrides/` first | `override-missing`, `header-invalid`, `sweep-missing`, `core-changed`, `resolution-broken` |
 | 2 | Tests are **required**, and every test task uses the **TDD checkpoint format**: scenarios covered, a **Verify RED** with the expected failure, and a paired implementation task with a **Verify GREEN** | Format and rules: `docs/templates/feature-test-tasks-template.md`. Mandated by the constitution ("Test-Driven Development", "TDD Checkpoint Format"). Shown in the User Story 1 sample of the override in row 1 | Override (in row 1's fork) plus the constitution | Same as row 1. The core template says tests are optional; the override replaces that | `tdd-format-missing` |
 | 2a | The `/speckit-tasks` skill's own "Tests are OPTIONAL" rule is replaced with "Tests are REQUIRED" in the row 2 format. Without this edit the skill's instruction contradicts the override, and the agent reads both | `.claude/skills/speckit-tasks/SKILL.md` (Task Generation Rules) | Registered local edit to a Spec Kit-owned file | It is the skill itself | `local-edit-reverted`, `unregistered-edit`, `registry-stale` |
@@ -54,7 +54,8 @@ and every file in its `LOCAL_EDITS` registry (`inventory-stale`).
   (`.github/agents/speckit.tasks.agent.md`) reads the core template directly, not through
   `Resolve-Template`. A Copilot-generated `tasks.md` is covered only by the constitution's
   Documentation and TDD rules. Closing this would make that agent a registered local edit (row 3's
-  form). It has not been done, because sessions here generate tasks through the Claude skills.
+  form). It has not been done, because sessions here generate tasks through the Claude skills;
+  tracked as backlog item #1031.
 - **`/speckit-constitution` checks the core tasks template**, not the override, when it checks
   dependent templates after an amendment. When amending the constitution, check the override too.
 - **The scripts are PowerShell only.** An environment without `pwsh` falls back to resolving the
@@ -118,7 +119,7 @@ The procedure, all in one PR, from a worktree:
 ### Failure codes
 
 | Code | Meaning | Fix |
-|---|---|---|
+| --- | --- | --- |
 | `core-changed` | The core tasks template no longer matches the override's fork point | Merge the change into the override, then `--record` |
 | `override-missing` | The override file is gone | Restore it from git, then `--record` |
 | `header-invalid` | Line 1 is not a fork point | `--record` rewrites it |
