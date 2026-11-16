@@ -3,10 +3,10 @@ type: Runbook
 title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0, and -1 for the OpenWiki generator's lock refresh) that allocates the six in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
 resource: docs/runbooks/renovate.md
-resource-sha256: 2921dbbe71d80f275ad34df19cec48dbc8332da8680f848609148cdecbf1bb5e
+resource-sha256: 5e4378a116f5e7cc79d1e92e78c8e6c7df78ee2626d396ace7dc4aa2ad34c901
 tags: [renovate, ci, dependencies, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-15T15:48:20.591Z
+timestamp: 2026-11-16T11:23:43.735Z
 ---
 
 # Renovate dependency bot
@@ -258,7 +258,7 @@ close it — ticking a checkbox is the one sanctioned interaction.
 | Pending Approval | `approve-branch=` | **required** — `dependencyDashboardApproval` groups are never proposed otherwise |
 | Awaiting Schedule | `unschedule-branch=` | creates it on the next run, ignoring the Friday window |
 | Rate-Limited | `unlimit-branch=` | creates it despite the PR budget |
-| Pending Status Checks | `approvePr-branch=` | opens the PR now, skipping the `minimumReleaseAge` cooldown |
+| Pending Status Checks | `unpend-branch=` | opens the PR now, skipping the `minimumReleaseAge` cooldown — otherwise let it age out into Awaiting Schedule |
 | Open | `rebase-branch=` | rebases/regenerates that branch on the next run — not schedule-gated |
 | Other Branches | `other-branch=` | forces a PR for a branch that has none |
 | Repository Problems | — | **read this** — Renovate reporting its own errors; the toolchain-missing warning appears here |

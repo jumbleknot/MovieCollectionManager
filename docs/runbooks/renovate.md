@@ -163,10 +163,13 @@ that is the bot's own input mechanism, not prose.
 | Pending Approval | `approve-branch=` | **required** — `dependencyDashboardApproval` groups are never proposed otherwise |
 | Awaiting Schedule | `unschedule-branch=` | creates it on the next run, ignoring the Friday window |
 | Rate-Limited | `unlimit-branch=` | creates it despite the PR budget |
-| Pending Status Checks | `approvePr-branch=` | opens the PR now, skipping the `minimumReleaseAge` cooldown |
+| Pending Status Checks | `unpend-branch=` | opens the PR now, **skipping the `minimumReleaseAge` cooldown** — the same bar as §4's stability-days rule; otherwise let it age out, after which it moves to Awaiting Schedule |
 | Open | `rebase-branch=` | rebases/regenerates that branch on the next run — **not** schedule-gated |
 | Other Branches | `other-branch=` | forces a PR for a branch that has none |
 | Repository Problems | — | **read this.** Renovate reporting its own errors; see §5 |
+
+The Pending Status Checks key was recorded here as `approvePr-branch=` until 2026-11-16, when the live
+dashboard read `unpend-branch=` — the drift the warning above describes. Take the key from the body, not this table.
 
 **Editing the body safely.** A tick is a one-character edit. Read the body immediately before writing,
 assert the target checkbox appears exactly once and is untenanted, and assert the resulting body
