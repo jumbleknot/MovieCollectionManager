@@ -276,7 +276,7 @@ services:
   opa-service:
     # #PROD `-debug` variant: distroless `opa` has no shell; -debug adds busybox so the /health
     # healthcheck (and Komodo status) works. Policies already `import rego.v1` (OPA 1.x compatible).
-    image: openpolicyagent/opa:1.22.3-debug@sha256:31dc7eb09c41f51e051d442e70b42b91feac188469e0c65f1017b964b5c01652
+    image: openpolicyagent/opa:1.22.4-debug@sha256:bc5909a9ee68feaac292690909361ec489383dad61e72e5c7e84696fab041977
     container_name: opa-service
     restart: always
     command:
