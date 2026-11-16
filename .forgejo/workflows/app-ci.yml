@@ -1289,7 +1289,7 @@ jobs:
             -e BACKUP_TEST_WEBDAV_USER -e BACKUP_TEST_WEBDAV_PASSWORD \
             -e BACKUP_TICK_SECRET \
             -e EXPECTED_NODE_MAJOR=26 \
-            mcr.microsoft.com/playwright:v1.65.0-noble \
+            mcr.microsoft.com/playwright:v1.65.1-noble \
             sh /work/scripts/run-playwright-in-image.sh
 
       # Feature 073 note on the four lines above. The two ENDPOINTS are non-secret hostnames and
@@ -1330,7 +1330,7 @@ jobs:
             -e E2E_AGENT_PRODUCTION -e E2E_REQUIRE_AGENT_STACK=1 \
             -e KEYCLOAK_SERVICE_CLIENT_SECRET \
             -e EXPECTED_NODE_MAJOR=26 \
-            mcr.microsoft.com/playwright:v1.65.0-noble \
+            mcr.microsoft.com/playwright:v1.65.1-noble \
             sh /work/scripts/run-playwright-in-image.sh
 
       # ── Result gate: a GREEN app-e2e must mean nothing was hidden (051 SC-001) ──────────────────
