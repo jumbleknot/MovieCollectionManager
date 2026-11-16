@@ -381,11 +381,11 @@ packages:
     resolution: {integrity: sha512-lMkyes8iHrG+mk6WH7X70MdCLI2RS0FwNBY1PyQ8UemaijE2m5mv5A0Niy3HtbYTFrgkUEQjFMXmSAk2hQDuPQ==}
     engines: {node: '>=8.0.0'}
 
-  '@posthog/core@1.67.2':
-    resolution: {integrity: sha512-FcDdAm3L2UKxA2NWCxwG8KKgZ4QjGBl7f9WASLlCVPeKgXI0FeguSq81x0f2htEB37itKbUwLkNFgA3FV4b7iQ==}
+  '@posthog/core@1.67.3':
+    resolution: {integrity: sha512-BAVJB+ADAjFNBVZKCRbMi5+WMJaSFHHIEId0/ebvAwhOVIMmK4mVrktGGjx9zJBHLe82JdQVVRhpaOwLgoBMgA==}
 
-  '@posthog/types@1.424.1':
-    resolution: {integrity: sha512-p82S3QPoyewUdzLVNvGsbowUe8qds15ij/7lKXav17vccuR2bioCVaizNZw+u9WgsaY1DmEycsD1dNS5nlqjLA==}
+  '@posthog/types@1.425.0':
+    resolution: {integrity: sha512-VaAlT5cl2wQ8mRkC3agp32YqI1HCZyeDE9qc5cziXgtbqK8kGeodhqZpJgSIPz0wAl3yRtKN4yOL+d7wxDRPww==}
 
   '@smithy/core@3.40.0':
     resolution: {integrity: sha512-DssGno52pzZ5m6RlDtyKuBIpZNPg9pqgs0CnNDKz9IatxCsmvNmJNn5Zn6rf77MthZo9wf89OvZFhTY/RwxhxQ==}
@@ -1615,8 +1615,8 @@ packages:
   points-on-path@0.2.1:
     resolution: {integrity: sha512-25ClnWWuw7JbWZcgqY/gJ4FQWadKxGWk+3kR/7kD0tCaDtPPMj7oHu2ToLaVhfpnHrZzYby2w6tUA0eOIuUg8g==}
 
-  posthog-node@5.71.0:
-    resolution: {integrity: sha512-BBKDaRpZYxLMDmPxCwv5UxewEDGSJjnBKeVZ/hLL8SMGabdLGckg9G++DhHGs3QsTUwzRD4jnmEYBKiQYBSZAg==}
+  posthog-node@5.73.0:
+    resolution: {integrity: sha512-OH5PZA2GVftiHPwTCA31fy2E33sWW/o2f+ubxi3/ugPEEYzq+/Fw4h2igVpa+RThw1oYrmzgOHCOFdSkh2SzOQ==}
     engines: {node: ^20.20.0 || >=22.22.0}
     peerDependencies:
       '@opentelemetry/api': ^1.2.0
@@ -2522,11 +2522,11 @@ snapshots:
 
   '@opentelemetry/api@1.10.0': {}
 
-  '@posthog/core@1.67.2':
+  '@posthog/core@1.67.3':
     dependencies:
-      '@posthog/types': 1.424.1
+      '@posthog/types': 1.425.0
 
-  '@posthog/types@1.424.1': {}
+  '@posthog/types@1.425.0': {}
 
   '@smithy/core@3.40.0':
     dependencies:
@@ -3760,7 +3760,7 @@ snapshots:
       langchain: 1.6.5(@langchain/core@1.4.0(@opentelemetry/api@1.10.0)(openai@7.56.0(@aws-sdk/credential-provider-node@3.972.97)(@smithy/signature-v4@5.7.5)(google-auth-library@11.3.4)(undici@8.12.4)(zod@4.6.7)))(@opentelemetry/api@1.10.0)(openai@7.56.0(@aws-sdk/credential-provider-node@3.972.97)(@smithy/signature-v4@5.7.5)(google-auth-library@11.3.4)(undici@8.12.4)(zod@4.6.7))(react@19.3.1)
       langsmith: 0.9.0(@opentelemetry/api@1.10.0)(openai@7.56.0(@aws-sdk/credential-provider-node@3.972.97)(@smithy/signature-v4@5.7.5)(google-auth-library@11.3.4)(undici@8.12.4)(zod@4.6.7))
       marked: 18.2.0
-      posthog-node: 5.71.0(@opentelemetry/api@1.10.0)
+      posthog-node: 5.73.0(@opentelemetry/api@1.10.0)
       react: 19.3.1
       yaml: 2.9.1
       zod: 4.6.7
@@ -3838,9 +3838,9 @@ snapshots:
       path-data-parser: 0.1.0
       points-on-curve: 0.2.0
 
-  posthog-node@5.71.0(@opentelemetry/api@1.10.0):
+  posthog-node@5.73.0(@opentelemetry/api@1.10.0):
     dependencies:
-      '@posthog/core': 1.67.2
+      '@posthog/core': 1.67.3
     optionalDependencies:
       '@opentelemetry/api': 1.10.0
 
