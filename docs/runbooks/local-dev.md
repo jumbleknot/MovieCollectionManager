@@ -1,6 +1,6 @@
 # Runbook: Local Dev Infrastructure & Environment Variables
 
-> Setup and operational reference, loaded on demand — indexed from CLAUDE.md. The load-bearing gotchas (Redis-or-500, replica-set MongoDB, Keycloak-before-app) are stated below, with the replica-set rule also in [openwiki/gotchas/cascade-delete-and-replica-set.md](../../openwiki/gotchas/cascade-delete-and-replica-set.md); of the config *rules*, `.env` no-inline-comments is [openwiki/gotchas/env-file-inline-comments.md](../../openwiki/gotchas/env-file-inline-comments.md), `TRUSTED_PROXY` is under *Environment Variables* below, and the `@/*` alias is `frontend/mcm-app/tsconfig.json`'s `paths` (`@/*` → `src/*`). This runbook holds the full procedures and the env-var tables.
+> Setup and operational reference, loaded on demand — indexed from AGENTS.md. The load-bearing gotchas (Redis-or-500, replica-set MongoDB, Keycloak-before-app) are stated below, with the replica-set rule also in [openwiki/gotchas/cascade-delete-and-replica-set.md](../../openwiki/gotchas/cascade-delete-and-replica-set.md); of the config *rules*, `.env` no-inline-comments is [openwiki/gotchas/env-file-inline-comments.md](../../openwiki/gotchas/env-file-inline-comments.md), `TRUSTED_PROXY` is under *Environment Variables* below, and the `@/*` alias is `frontend/mcm-app/tsconfig.json`'s `paths` (`@/*` → `src/*`). This runbook holds the full procedures and the env-var tables.
 
 ## Local Dev Infrastructure
 

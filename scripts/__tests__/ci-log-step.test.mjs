@@ -169,7 +169,7 @@ test('(g5) two jobs in ONE run do not see each other\'s step logs', needsBash, (
 // nine cases failed with status 127 — nine red tests that say nothing about the code under test.
 // (Git Bash is installed on that host and would work; it is simply not what is on PATH.)
 //
-// This is the same shape as CLAUDE.md's gate on proving "it can't run in this environment": the
+// This is the same shape as AGENTS.md's gate on proving "it can't run in this environment": the
 // probe answered *does a shell exist* when the question is *can that shell reach my files*. A wrong
 // answer in either direction is bad — a false "usable" gives nine meaningless failures, a false
 // "unusable" gives a silent skip, which is the false green this whole feature exists to remove.

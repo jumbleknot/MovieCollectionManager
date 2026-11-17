@@ -3,10 +3,10 @@ type: Runbook
 title: E2E testing (BFF container modes & flakiness diagnosis)
 description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), the CI integration-tier gate with its per-suite skip-escalation flags, the two agent-test tiers that decide what blocks a merge, the security-policy walk that only the browser can see, why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the shared-state, instrument and Playwright-image-pin traps that make a green run prove less than it looks.
 resource: docs/runbooks/e2e-testing.md
-resource-sha256: d0b8c08c86a16fb3e9cf6f1178546d1194a5612d0d0872b7cb2014bf20d0e2ea
+resource-sha256: 355b4ddc39d9fd7bc54f2d393033deee9ddc83493527c3a97d4f301e20e6e72f
 tags: [e2e, testing, playwright, ci, flakiness, runbook, integration, keycloak, backups]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-15T15:48:20.459Z
+timestamp: 2026-11-17T01:23:25.374Z
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)

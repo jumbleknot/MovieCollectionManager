@@ -44,14 +44,14 @@ paths:
   - glob: "CLAUDE.md"
     policy: regenerate
     actor: agent
-    coverage: false   # writable, but not a SUBJECT: It is an INDEX into the bundle, so a concept summarizing it would be circular — the first live run proposed writing `invariants/claude.md`. Still `regenerate`: an agent updates the index as the bundle changes
-    rationale: "Same; it is also this feature's relocation source. Its machine-managed regions are owned by Nx, Spec Kit and the generator respectively and are not rewritten by an agent (FR-032)"
+    coverage: false   # writable, but not a SUBJECT: a SHIM that only imports AGENTS.md (G15), so a concept summarizing it would be circular — the first live run, when it was still the index, proposed writing `invariants/claude.md`
+    rationale: "Same; it is also this feature's relocation source. Since the inversion it holds only the generator's `@AGENTS.md` block (plus any region Nx re-adds), which an agent does not rewrite (FR-032)"
 
   - glob: "AGENTS.md"
     policy: regenerate
     actor: agent
     coverage: false   # writable, but not a SUBJECT: Same — a pointer into the bundle, not a subject the bundle should summarize
-    rationale: "Sibling assistant configuration surface — must stay consistent with CLAUDE.md (FR-033)"
+    rationale: "The instruction file every assistant reads — the index the gates live in (G8/G9); CLAUDE.md is a shim that imports it (G15)"
 
   - glob: "**/README.md"
     policy: regenerate

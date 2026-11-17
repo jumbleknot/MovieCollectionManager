@@ -79,7 +79,7 @@ confirming it needed a hand-rolled polling loop over that one context.
 > **`tail`'s** status, so exit `3` and exit `1` both arrive as `0`. Measured 2026-09-06: a watch that
 > printed `still waiting after 5100s … (exit 3)` in its own output was recorded by the session as
 > `WATCH_EXIT=0`, because the code came from the pipe. This is the same shape as the
-> `node --test <file> --test-name-pattern` trap in CLAUDE.md — the natural-looking invocation quietly
+> `node --test <file> --test-name-pattern` trap in AGENTS.md — the natural-looking invocation quietly
 > reports success. Redirect and read the file instead:
 >
 > ```bash
@@ -765,7 +765,7 @@ value-wrapping placeholder would leak its tail.
 > statuses. It did **not** prove the token is *populated* on a secretless run — that run had secrets.
 > `github.token` is runner-provisioned rather than an Actions secret, so it ought to survive where
 > `secrets.*` do not, but "ought to" is not a measurement, and proving it needs an AGit-headed push,
-> which [CLAUDE.md](../../CLAUDE.md) forbids. If a future secretless run still publishes nothing, this
+> which [AGENTS.md](../../AGENTS.md) forbids. If a future secretless run still publishes nothing, this
 > is the first thing to check.
 
 ---

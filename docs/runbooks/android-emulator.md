@@ -1,6 +1,6 @@
 # Runbook: Android Emulator & APK Builds (Mobile E2E)
 
-> Procedures for mobile E2E on the Windows 11 host and in the Docker Desktop dev container. Loaded on demand — referenced from CLAUDE.md. For the flakiness-diagnosis protocol and the BFF-container E2E modes, see [e2e-testing.md](e2e-testing.md).
+> Procedures for mobile E2E on the Windows 11 host and in the Docker Desktop dev container. Loaded on demand — referenced from AGENTS.md. For the flakiness-diagnosis protocol and the BFF-container E2E modes, see [e2e-testing.md](e2e-testing.md).
 
 ## Mobile E2E approach — CI for agent flows and native-layer changes; local emulator to iterate
 

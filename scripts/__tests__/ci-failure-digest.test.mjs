@@ -871,7 +871,7 @@ test('(ii4) the outcome line is emitted in a form a machine can find, on every p
 // T034 measured (guardrails run #1627) that the run's AUTOMATICALLY-PROVISIONED token CAN write
 // `POST /repos/{owner}/{repo}/statuses/{sha}` — it left a real `probe-051-t034` status behind. So a
 // fallback is worth building. What T034 could NOT establish is whether that token is *populated* on a
-// secretless run; proving that needs an AGit push, which CLAUDE.md forbids. Hence `both absent` is a
+// secretless run; proving that needs an AGit push, which AGENTS.md forbids. Hence `both absent` is a
 // first-class case below rather than a theoretical one.
 
 test('(jj) the purpose-scoped credential is preferred, and the existing path is untouched', async () => {

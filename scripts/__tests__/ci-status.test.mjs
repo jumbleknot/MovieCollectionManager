@@ -975,7 +975,7 @@ test('(tt) resolveRequiredGlobs falls back to the built-in list when the fetch f
 //
 // Measured on the Windows host (2026-07-26): the process died with -1073740791 (0xC0000409,
 // Windows' __fastfail abort) where the contract says 3. Output was correct every time; only the
-// exit path died — and CLAUDE.md tells agents to BRANCH on this code, so an abort reads as a
+// exit path died — and AGENTS.md tells agents to BRANCH on this code, so an abort reads as a
 // crashed tool and loses the "runner starvation, not failure" signal. Cause: `process.exit()`
 // tearing down while stdout was flushing and undici keep-alive sockets were still open.
 //
@@ -1272,7 +1272,7 @@ const GREEN_STATUS = [{
 test('(#324a) watch KEEPS POLLING when nothing has reported yet — it must not return instantly', async () => {
   // Measured 2026-08-31: `watch --pr 322 --timeout 5400` returned in ~2s with exit 3, the same code
   // it uses for "waited 90 minutes and CI is still queued". The caller cannot tell those apart, and
-  // CLAUDE.md tells agents to branch on this exit code.
+  // AGENTS.md tells agents to branch on this exit code.
   const { calls, restore } = stubForge({ statusSequence: [[], [], GREEN_STATUS] });
   try {
     const code = await quiet(() =>
@@ -1989,7 +1989,7 @@ test('findDispatchedDeploy: no match returns null — another sha, another workf
 
 test('findDispatchedDeploy: run_number / index_in_repo is never the bundle name — the id is', () => {
   // The UI calls run 5745 "5744" (index_in_repo); the bundle is `5745--build-deploy`. A name built
-  // from the UI number 404s for a bundle that exists (CLAUDE.md, instrument checks).
+  // from the UI number 404s for a bundle that exists (AGENTS.md, instrument checks).
   const f = deployFixture('dispatched-failed');
   const d = findDispatchedDeploy(f.sha, f.workflow_runs);
   assert.notEqual(d.runId, f.workflow_runs[0].index_in_repo);

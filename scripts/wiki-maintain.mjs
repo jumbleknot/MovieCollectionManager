@@ -62,7 +62,7 @@ export { loadPolicy, resolvePolicy, mayWrite, isCoverageTarget } from './openwik
  * EXPORTED because the test suite has to be able to construct the ABSENCE of a credential, and
  * re-listing these names there is what item #209 was: the list said `ANTHROPIC_API_KEY` alone, the
  * `MCM_`-prefixed name was added here and never mirrored, and from then on every credential-absence
- * test passed a credential to the child. It failed in every sanctioned environment — CLAUDE.md
+ * test passed a credential to the child. It failed in every sanctioned environment — AGENTS.md
  * carries the key under the `MCM_` name on the host, in the Docker Desktop dev container and in the
  * Sandbox VM — and, because `--execute` then skipped its own guard and ran the real path, the suite
  * also rewrote the TRACKED state file on every run.
@@ -1739,7 +1739,7 @@ async function main(argv) {
     return 2;
   }
   // A credential failure is exit 2 and is reported as such — never as "nothing to do". Accepts either
-  // name: the dev container supplies only MCM_ANTHROPIC_API_KEY (CLAUDE.md); CI sets the raw name.
+  // name: the dev container supplies only MCM_ANTHROPIC_API_KEY (AGENTS.md); CI sets the raw name.
   let provider;
   try {
     provider = resolveWikiProvider();

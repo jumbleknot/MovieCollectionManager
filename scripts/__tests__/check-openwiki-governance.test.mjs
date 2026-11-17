@@ -175,12 +175,13 @@ test('--fingerprint prints the value the manifest should carry', () => {
 
 // ── G8–G10: the index and the assistant surfaces ────────────────────────────────
 
-test('G8 prose in CLAUDE.md beyond the index and the managed regions fails', () => {
-  // Without this the file silently re-grows and the trim is undone within weeks (FR-040).
-  const { code, out } = onFixture('claude-stray-prose');
+test('G8 prose in AGENTS.md beyond the index and the managed regions fails', () => {
+  // Without this the file silently re-grows and the trim is undone within weeks (FR-040). AGENTS.md
+  // has been the instruction file since the CLAUDE.md → AGENTS.md inversion.
+  const { code, out } = onFixture('index-stray-prose');
   assert.equal(code, 1, out);
   assert.match(out, /G8/);
-  assert.match(out, /CLAUDE\.md/);
+  assert.match(out, /AGENTS\.md/);
 });
 
 test('G8 prose INSIDE a machine-managed region is exempt', () => {
@@ -189,7 +190,7 @@ test('G8 prose INSIDE a machine-managed region is exempt', () => {
   assert.equal(onFixture('valid').code, 0);
   const dir = copyFixture('valid');
   try {
-    const file = join(dir, 'CLAUDE.md');
+    const file = join(dir, 'AGENTS.md');
     writeFileSync(file, readFileSync(file, 'utf8').replace(
       'Machine-managed by Nx.',
       'Machine-managed by Nx. A whole paragraph of prose, rewritten by the tool on every run, which no\nhuman edits and no gate may reject.',
@@ -212,8 +213,40 @@ test('G10 an assistant surface pointing at moved content fails', () => {
   const { code, out } = onFixture('stale-assistant-surface');
   assert.equal(code, 1, out);
   assert.match(out, /G10/);
-  assert.match(out, /AGENTS\.md/);
+  assert.match(out, /opencode\.json/);
   assert.match(out, /docs\/local-dev\.md/);
+});
+
+// ── G15: CLAUDE.md is a shim that imports AGENTS.md ─────────────────────────────
+
+test('G15 content added to the CLAUDE.md shim fails', () => {
+  // Claude would see it and Codex/OpenCode never would; a copy of AGENTS.md there would make Copilot
+  // and Claude load everything twice.
+  const { code, out } = onFixture('claude-shim-content');
+  assert.equal(code, 1, out);
+  assert.match(out, /G15/);
+  assert.match(out, /CLAUDE\.md/);
+  assert.match(out, /A gate added in the wrong file/);
+});
+
+test('G15 a CLAUDE.md that no longer imports AGENTS.md fails', () => {
+  const { code, out } = onFixture('claude-shim-no-import');
+  assert.equal(code, 1, out);
+  assert.match(out, /G15/);
+  assert.match(out, /@AGENTS\.md/);
+});
+
+test('G15 a missing CLAUDE.md fails rather than passing for lack of a file', () => {
+  const dir = copyFixture('valid');
+  try {
+    rmSync(join(dir, 'CLAUDE.md'));
+    const { code, out } = runGate(['--root', dir]);
+    assert.equal(code, 1, out);
+    assert.match(out, /G15/);
+    assert.match(out, /missing/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // ── G11: every concept is exactly one of derived or authoritative ───────────────

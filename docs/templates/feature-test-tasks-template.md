@@ -2,7 +2,7 @@
 
 **Usage**: Copy this template when writing `tasks.md` for any new feature. Replace all `[placeholder]` values. Delete sections that do not apply (e.g., documentation tasks have no RED/GREEN cycle).
 
-This template is referenced from the repo-root `CLAUDE.md` — do not move it.
+This template is referenced from the tasks-template override, the constitution and `scripts/check-speckit-overrides.mjs` — do not move it.
 
 ---
 

@@ -50,7 +50,7 @@ written.
 
 **Procedure**:
 
-1. **Work from a worktree**, per CLAUDE.md. Note the commit you read against.
+1. **Work from a worktree**, per AGENTS.md. Note the commit you read against.
 2. **Read in chunks by area**: dev and test runbooks plus architecture and READMEs; the dev container
    and CI diagnostics; Renovate, wiki and scanning; production and homelab. One chunk at a time keeps
    each read against the tree honest.

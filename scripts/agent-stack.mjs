@@ -392,7 +392,7 @@ function deploy(build) {
   // docker read NAME from ITS OWN environment instead, so the value never becomes an argument.
   //
   // ANTHROPIC_API_KEY is set HERE, on the docker child only — never in this process's own
-  // environment, and never exported into the shell. That is the point-of-use mapping CLAUDE.md
+  // environment, and never exported into the shell. That is the point-of-use mapping AGENTS.md
   // requires: an ANTHROPIC_API_KEY visible to an interactive Claude Code session silently bills
   // pay-per-token against an unused subscription.
   const secretEnv = { AGENT_GATEWAY_CLIENT_SECRET: secret };

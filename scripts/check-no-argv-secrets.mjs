@@ -62,6 +62,7 @@ function inScope(rel) {
     rel.startsWith('scripts/') ||
     /^frontend\/mcm-app\/tests\/e2e\/mobile\/[^/]*\.ya?ml$/.test(rel) ||
     rel.startsWith('docs/') ||
+    rel === 'AGENTS.md' || // the instruction file: its gates quote test-runner invocations
     rel === 'CLAUDE.md'
   );
 }

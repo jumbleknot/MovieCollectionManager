@@ -22,7 +22,7 @@
 //       runs before the copy fails on a missing volume instead of starting Langfuse on an empty store.
 //
 // INSTRUMENT CHECK: it asserts it found at least one RustFS server in each of the three files. A
-// guard that passes because it matched nothing is the failure mode CLAUDE.md warns about.
+// guard that passes because it matched nothing is the failure mode AGENTS.md warns about.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';

@@ -3,9 +3,9 @@ type: Runbook
 title: Android emulator & APK builds (mobile E2E)
 description: The decision rule for where each mobile E2E flow runs — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone release APK with its in-bundle localhost guard and explicit Gradle heap, the launch check that must pass before any flow and the app-ci / android-launch commit status that reports it, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
-resource-sha256: b607f1c299d3f4157ef5e4a283ce61832f7f14f8eef8726a9ae8200650435441
+resource-sha256: 6b2a8e8b526ae483d99a0c50cc72b49b4a210c18b10be8cfbda92a9638732e94
 tags: [android, mobile, emulator, apk, ci, runbook]
-timestamp: 2026-11-10T11:46:33.753Z
+timestamp: 2026-11-17T01:23:25.019Z
 ---
 
 # Android emulator & APK builds (mobile E2E)

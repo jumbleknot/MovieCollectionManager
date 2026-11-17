@@ -4,9 +4,9 @@ title: OpenWiki quickstart — MovieCollectionManager
 description: The root entry point to this repository's OpenWiki bundle — what the bundle is and is not, how to query it by type, tag, resource or directory, a task-routing map to the major concept areas, and how the coverage rule and the derived-versus-authoritative split decide where a new learning belongs.
 tags: [openwiki, navigation, quickstart]
 resource: openwiki/INSTRUCTIONS.md
-resource-sha256: 0b3e1d175eccfd09cf2879a2ddb16b82c92fc635186a4ddc67b9f1c4a2350db0
+resource-sha256: 52327b4f0ac98fdf717e51943c85037c8bdeb6a894f75bdce2990d189da449e3
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
-timestamp: 2026-11-11T00:49:25.250Z
+timestamp: 2026-11-17T01:23:24.930Z
 ---
 
 # OpenWiki quickstart — MovieCollectionManager
@@ -189,8 +189,8 @@ same change, or the conformance gate fails the build.
 A durable learning goes to the **canonical home of its subject**, decided from the concept covering it:
 into the cited source when the concept is a derived summary — refreshing the summary in the same PR —
 into the concept itself when it is authoritative, and into a new concept when none covers the subject.
-Never append the detail only to a derived page, and never to `CLAUDE.md`, which is an index into this
-bundle.
+Never append the detail only to a derived page, and never to `AGENTS.md`, which is an index into this
+bundle, or to `CLAUDE.md`, a shim that only imports `AGENTS.md`.
 
 Both gates that police the bundle run offline and keyless, so checking it never needs the paid
 generator: `pnpm nx okf-lint infrastructure-as-code` for conformance (rules V1–V15 and V17) and
