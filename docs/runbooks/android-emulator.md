@@ -53,10 +53,12 @@ the flows per-file in two halves:
    and Chrome (URL queries withheld). That covers a flow that passed on its retry too: on run 7815
    `auth-guard` read `PASS 2` and its failed first login was otherwise lost with the runner. So a
    **green** run's failure can be checked against its stated cause rather than taken on trust (the
-   device capture itself is published only on a red run). Chrome is warmed after every reset —
-   `_chrome-warm-keycloak.yaml` loads Keycloak's login page once — because every full-suite login
-   failure on record was the first Custom Tab after a `pm clear` (item #986); and the device log is
-   enlarged and cleared per attempt, so a capture covers that attempt instead of the last second of
+   device capture itself is published only on a red run). That summary named item #986's mechanism on
+   run 7820: Google Play services' persistent process died 0.6 s into `auth-guard`'s Custom Tab, and
+   Android killed Chrome with it (`depends on provider …FontsProvider in dying proc
+   com.google.android.gms.persistent`), so the tab vanished and the app saw a dismissed login — not a
+   cold Chrome (a Keycloak warm-up after each reset was tried on run 7815 and did not help). The device
+   log is enlarged and cleared per attempt, so a capture covers that attempt instead of the last second of
    Maestro's own polling. `E2E_COLLECTION_NAME` / `E2E_MOVIE_TITLE` are
    fixed non-secret fixture values (`E2E Browse` / `Alpha`, from the seeded base dataset). The
    per-flow table (`flow · result · attempts · seconds`) is the `maestro-full-results` step — in the

@@ -57,7 +57,13 @@ export function failedAttempts(table) {
 /** Device-log lines worth reading per attempt. A login is ~10; Play services alone is ~1000. */
 export const MAX_DEVICE_LOG_LINES = 40;
 const LIFECYCLE_TAG = /\b[VDIWEF]\/(ActivityTaskManager|ActivityManager|WindowManager)\s*\(/;
-const OURS = /com\.android\.chrome|com\.grumpyrobot\.mcmapp|mcmapp:/;
+// Google Play services' persistent process is included: on run 7820 its death took Chrome with it
+// (`Killing com.android.chrome: depends on provider …FontsProvider in dying proc
+// com.google.android.gms.persistent`) 0.6 s into auth-guard's Custom Tab — item #986's mechanism.
+const OURS = /com\.android\.chrome|com\.grumpyrobot\.mcmapp|mcmapp:|com\.google\.android\.gms\.persistent/;
+// Why a process died or restarted: package installs/updates (Play services self-updating) and the
+// low-memory killer, whatever process they name.
+const WHY = /\b[VDIWEF]\/(PackageManager|lowmemorykiller)\s*\(|Force stopping com\.google\.android\.gms\b/;
 const KEEP_ANYWAY = /\b[EF]\/chromium\s*\(|\b[VDIWEF]\/(ReactNativeJS|ReactNative|AndroidRuntime)\s*\(/;
 
 /**
@@ -68,7 +74,7 @@ const KEEP_ANYWAY = /\b[EF]\/chromium\s*\(|\b[VDIWEF]\/(ReactNativeJS|ReactNativ
 export function deviceLogLines(log, max = MAX_DEVICE_LOG_LINES) {
   return String(log)
     .split('\n')
-    .filter((l) => (LIFECYCLE_TAG.test(l) && OURS.test(l)) || KEEP_ANYWAY.test(l))
+    .filter((l) => (LIFECYCLE_TAG.test(l) && OURS.test(l)) || KEEP_ANYWAY.test(l) || WHY.test(l))
     .map((l) => l.replace(/\?[^\s}]*/g, '?…').slice(0, 300))
     .slice(-max);
 }

@@ -79,9 +79,4 @@ reset_chrome_sso() {
   for _ in 1 2 3; do
     maestro test frontend/mcm-app/tests/e2e/mobile/_chrome-skip-fre.yaml && break || true
   done
-  # Item #986: every login attempt that failed in the full suite was the first Custom Tab after this
-  # `pm clear`. Load Keycloak's login page in Chrome once, so that Custom Tab opens on a warm Chrome.
-  # It deep-links nowhere and signs nobody in — see the flow's header. Best-effort.
-  echo "--- warm Chrome: load the Keycloak login page once ---"
-  maestro test frontend/mcm-app/tests/e2e/mobile/_chrome-warm-keycloak.yaml || true
 }

@@ -83,10 +83,16 @@ test('deviceLogLines: only the app and Chrome lifecycle, the last N, with every 
     '11-10 16:43:05.500 V/chromium( 8001): verbose noise',
     '11-10 16:43:06.000 I/ReactNativeJS( 7001): [auth] login outcome: dismiss',
     '11-10 16:43:07.000 D/BoundBrokerSvc( 7557): onBind: Intent { act=com.google.android.gms.feedback }',
+    '11-10 16:43:08.000 I/ActivityManager(  510): Process com.google.android.gms.persistent (pid 1200) has died: fg',
+    '11-10 16:43:08.100 I/ActivityManager(  510): Process com.google.android.gms.unstable (pid 1300) has died: cch',
+    '11-10 16:43:08.200 I/PackageManager(  510): Update package com.google.android.gms code path',
   ].join('\n');
   const lines = deviceLogLines(log);
   const text = lines.join('\n');
-  assert.equal(lines.length, 5);
+  assert.equal(lines.length, 7);
+  assert.match(text, /gms\.persistent .*has died/, 'run 7820: Play services dying is what killed Chrome');
+  assert.match(text, /PackageManager.*Update package com\.google\.android\.gms/);
+  assert.doesNotMatch(text, /gms\.unstable/);
   assert.match(text, /START u0 .*com\.android\.chrome/);
   assert.match(text, /mcmapp:\/\/redirect\?…/);
   assert.match(text, /has died/);
