@@ -326,6 +326,17 @@ test.describe('Unmatched addresses — feature 074', () => {
     // so the chrome IS present).
     await expect(page.getByTestId('not-found-screen').getByRole('button')).toHaveCount(1);
 
+    // WAIT FOR HYDRATION BEFORE CLICKING (item #982). An unmatched address is answered with the
+    // export's static +not-found HTML, which already carries `not-found-screen` and
+    // `not-found-home-link` — so every assertion above can pass on server-rendered markup before
+    // React has attached a single handler. A click in that window is silently dropped, and the
+    // page then sits on the 404 screen for the whole timeout. Measured 2026-11-17 on the
+    // dev-container target: the screen was visible at 283 ms, the click landed at 283-388 ms, and
+    // `/bff-api/auth/init` — the app mounting — only went out at 361 ms; a second click after
+    // hydration navigated at once. The navigation bar is the hydration signal: it is absent from
+    // the static HTML and renders only once the client has resolved this signed-in session.
+    await expect(page.getByTestId('navigation-bar')).toBeVisible({ timeout: 30000 });
+
     await page.getByTestId('not-found-home-link').click();
     await expect(page.getByTestId('home-route')).toBeVisible({ timeout: 60000 });
   });

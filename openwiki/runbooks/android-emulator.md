@@ -3,9 +3,9 @@ type: Runbook
 title: Android emulator & APK builds (mobile E2E)
 description: The decision rule for where each mobile E2E flow runs — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone release APK with its in-bundle localhost guard and explicit Gradle heap, the launch check that must pass before any flow and the app-ci / android-launch commit status that reports it, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
-resource-sha256: 6b2a8e8b526ae483d99a0c50cc72b49b4a210c18b10be8cfbda92a9638732e94
+resource-sha256: bf56ee4a6944eb0566d82c4ec3f7d21012ab40fa96056ff9e0a20261fb06768d
 tags: [android, mobile, emulator, apk, ci, runbook]
-timestamp: 2026-11-17T01:23:25.019Z
+timestamp: 2026-11-17T03:42:47.503Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -251,19 +251,25 @@ the agent half, on a **second emulator**.
   retry) and appear in the results table, but cannot fail the step. Each entry must be tagged
   **ENVIRONMENTAL** or **KNOWN DEFECT** together with the run that measured it, and a listed flow that
   now passes is reported `PASS-REMOVE-NONBLOCKING`, so a stale entry gets deleted rather than hiding the
-  next regression. Today: `login-invalid` (ENVIRONMENTAL, run 5502, 2/2 — the flow's own assertions
-  hold, but the two `pressKey: back` presses it uses to close the CI image's Chrome Custom Tab leave
-  Chrome still on the Keycloak page, so `login-screen` never returns; Chrome back-stack depth, not the
-  app) and `movie-sort` (KNOWN DEFECT, run 5502, 2/2, on a 1080x2400 pixel_6 — with the default visible
-  columns the sort row holds Title/Year/Type/Owned/Ripped chips and `sort-dir-toggle` sits past the
-  right edge of the horizontal ScrollView in `movie-sort-control.tsx`).
+  next regression. Today only `movie-sort` (KNOWN DEFECT, run 5502, 2/2, on a 1080x2400 pixel_6 — with
+  the default visible columns the sort row holds Title/Year/Type/Owned/Ripped chips and
+  `sort-dir-toggle` sits past the right edge of the horizontal ScrollView in `movie-sort-control.tsx`).
+  `login-invalid` left the table under item #985, and its exemption had named the wrong cause:
+  Keycloak autofocuses the username field on its error page, so the first of the flow's two `back`
+  presses only dismissed the keyboard and the second went back in history to the *pre-submission*
+  form (run 7296's hierarchy: username restored, password empty, no `input-error-username`). The flow
+  now asserts `Invalid username or password.` and closes the tab with Chrome's Close-tab button.
 - **How each flow runs, and why it differs from the agent half.** The non-agent flows `launchApp` with
   `clearState: false` — they rely on the harness to hand them a logged-out app — so the runner
   force-stops and `pm clear`s the app before *every* attempt (no Metro SharedPref is written; the APK
   embeds its bundle). Chrome is reset once before the batch and again before a retry, since a failed
   attempt can leave Chrome mid-login. Each flow gets **2 attempts** (one bounded retry, the local
   suite's `MAX_RETRIES=1`) rather than the agent half's 3, because these flows drive no model turn and
-  the Custom-Tab crash is the only transient left; a non-blocking flow gets one. The batch **does not
+  the Custom-Tab crash is the only transient left; a non-blocking flow gets one. Every reset is
+  followed by `_chrome-warm-keycloak.yaml`, which loads Keycloak's login page once in Chrome: every
+  full-suite login failure on record was the first Custom Tab after a `pm clear` (item #986). The device
+  log is enlarged (`logcat -G 16M`), cleared at each attempt and dumped without Maestro's own tag, so a
+  capture covers that attempt rather than the last second of Maestro's hierarchy polling. The batch **does not
   stop at the first failure** — every flow runs, a `flow · result · attempts · seconds` table is printed
   at the end and written to `mobile-diagnostics/full-suite-results.log`, and the step fails if *any*
   blocking flow failed. One ~30-minute run has to answer for all of them, and a fail-fast batch would
@@ -274,7 +280,10 @@ the agent half, on a **second emulator**.
   both the failure digest and the green-run counts bundle — this forge exposes no job log, so without
   it a *green* full run could not say which flows ran. It runs under `always()` in full mode and says
   "the full suite never started" when the file is absent, rather than adding a second red for the same
-  cause.
+  cause. After the table it runs `scripts/maestro-failure-summary.mjs`, which prints, for every flow that
+  did not pass, the failing step, Maestro's message and the elements on screen (never an input's
+  value). The device capture itself is published only on a red run, so this is what lets a *green*
+  run's non-blocking failure be checked against its entry's stated cause (item #985).
 - **Fixture values are non-secret and fixed:** `E2E_COLLECTION_NAME=E2E Browse` and
   `E2E_MOVIE_TITLE=Alpha`, taken from the seeded base dataset that the web E2E's global setup seeded
   earlier in the same job. Credentials still travel only through `scripts/maestro-run.sh`'s

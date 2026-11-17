@@ -40,12 +40,32 @@ capture_mobile_diagnostics() {
   # ReactNativeJS carries a JS exception; AndroidRuntime carries a native crash. `-d` dumps and
   # exits rather than streaming. Never fail the run on a diagnostic.
   adb logcat -d -v time ReactNativeJS:V ReactNative:V AndroidRuntime:E '*:S'     > "$dest/logcat-react.log" 2>&1 || true
-  adb logcat -d -v time > "$dest/logcat-full.log" 2>&1 || true
+  # `Maestro:S` silences Maestro's own on-device driver, which logs "Skipping invisible child" for
+  # every node of every hierarchy poll — on run 7296 that was ~1900 of ~1910 lines and the dump
+  # reached back barely a second, so the event that failed the flow (Chrome, ActivityManager, the
+  # app) had already been overwritten. See begin_attempt_device_log for the other half of the fix.
+  adb logcat -d -v time 'Maestro:S' '*:V' > "$dest/logcat-full.log" 2>&1 || true
   # Maestro writes a timestamped directory per flow run; take the newest.
   local latest
   latest="$(ls -1dt "$HOME"/.maestro/tests/*/ 2>/dev/null | head -1)"
   [ -n "$latest" ] && cp -r "$latest" "$dest/maestro/" 2>/dev/null || true
   echo "--- captured device diagnostics -> $dest ---"
+}
+
+# Give the device log room for ONE whole attempt, and start it empty (item #986).
+#
+# The emulator's default logcat ring buffer is a few hundred KB, and Maestro's on-device driver fills
+# it within seconds while it polls the view hierarchy. Measured on run 7296: both auth-guard attempts'
+# `logcat-full.log` began AFTER the failing step had already started — the window in which the OAuth
+# Custom Tab ended without a redirect was gone, so the cause could only be narrowed, not named. A
+# larger buffer, cleared at the start of every attempt, makes the capture cover exactly that attempt.
+# Best-effort, like every diagnostic here: a device that refuses -G still runs the flow.
+prepare_device_log() {
+  adb logcat -G 16M >/dev/null 2>&1 || echo "--- logcat -G 16M refused; device log keeps its default size ---"
+}
+
+begin_attempt_device_log() {
+  adb logcat -c >/dev/null 2>&1 || true
 }
 
 # Drop Chrome's persistent Keycloak SSO session (and with it the First-Run Experience, which is
@@ -59,4 +79,9 @@ reset_chrome_sso() {
   for _ in 1 2 3; do
     maestro test frontend/mcm-app/tests/e2e/mobile/_chrome-skip-fre.yaml && break || true
   done
+  # Item #986: every login attempt that failed in the full suite was the first Custom Tab after this
+  # `pm clear`. Load Keycloak's login page in Chrome once, so that Custom Tab opens on a warm Chrome.
+  # It deep-links nowhere and signs nobody in — see the flow's header. Best-effort.
+  echo "--- warm Chrome: load the Keycloak login page once ---"
+  maestro test frontend/mcm-app/tests/e2e/mobile/_chrome-warm-keycloak.yaml || true
 }

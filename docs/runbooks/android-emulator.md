@@ -40,11 +40,22 @@ the flows per-file in two halves:
    clear` + First-Run skip) once before the batch, 2 attempts per flow, and the
    batch runs to the end and fails if ANY blocking flow failed. `CI_FULL_NON_BLOCKING` in the same file
    lists flows that run (one attempt) and are reported but cannot fail the step, each tagged
-   **ENVIRONMENTAL** or **KNOWN DEFECT** with the run that measured it — today `login-invalid`
-   (ENVIRONMENTAL: two `back` presses do not close the CI image's Chrome Custom Tab) and `movie-sort`
+   **ENVIRONMENTAL** or **KNOWN DEFECT** with the run that measured it — today only `movie-sort`
    (KNOWN DEFECT: with the default visible columns, `sort-dir-toggle` is past the right edge of the
    sort row's horizontal ScrollView on a 411dp-wide phone). A listed flow that passes is reported
-   `PASS-REMOVE-NONBLOCKING`. `E2E_COLLECTION_NAME` / `E2E_MOVIE_TITLE` are
+   `PASS-REMOVE-NONBLOCKING`. `login-invalid` was listed until item #985: its two `back` presses
+   never closed the Custom Tab, because Keycloak autofocuses the username field on its error page, so
+   the first `back` only dismissed the keyboard and the second went back in history to the
+   pre-submission form. It now asserts Keycloak's `Invalid username or password.` and closes the tab
+   with Chrome's own Close-tab button, and it blocks like any other flow. After the table, the results
+   step also runs `scripts/maestro-failure-summary.mjs`, which prints, for every flow that did not
+   pass, the failing step, Maestro's message and the elements on screen — so a **green** run's
+   non-blocking failure can be checked against its entry's stated cause rather than taken on trust
+   (the device capture itself is published only on a red run). Chrome is warmed after every reset —
+   `_chrome-warm-keycloak.yaml` loads Keycloak's login page once — because every full-suite login
+   failure on record was the first Custom Tab after a `pm clear` (item #986); and the device log is
+   enlarged and cleared per attempt, so a capture covers that attempt instead of the last second of
+   Maestro's own polling. `E2E_COLLECTION_NAME` / `E2E_MOVIE_TITLE` are
    fixed non-secret fixture values (`E2E Browse` / `Alpha`, from the seeded base dataset). The
    per-flow table (`flow · result · attempts · seconds`) is the `maestro-full-results` step — in the
    counts bundle on a green run and the failure digest on a red one. **Cost, measured on app-ci run 5502:** the `maestro-full-flows` step took 1748 s (29 min, 24 flows, two of them failing through a retry), plus a second emulator boot (~2-3 min) — roughly **+30-35 min** on top of an agents-only run. The job
