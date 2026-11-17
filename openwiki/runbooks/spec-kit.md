@@ -1,11 +1,11 @@
 ---
 type: Runbook
 title: "Spec Kit: this repository's customisations, and upgrading it"
-description: The one inventory of every way the repository changes or adds to GitHub Spec Kit — the tasks-template override carrying the doc-impact sweep, the required tests and the Verify RED / Verify GREEN checkpoint format it shows, the two registered local edits (the /speckit-tasks skill's "tests are required" rule, and /speckit-taskstoissues sending tasks to the Forgejo backlog), the constitution, the git and agent-context extension hooks, and the three CLI version pins — plus who owns which file, the order of preference for a new customisation, the guard that fails when any of them is lost or a Spec Kit-owned file is edited without being registered, its ten failure codes, the upgrade procedure, and the Copilot and /speckit-constitution gaps.
+description: The one inventory of every way the repository changes or adds to GitHub Spec Kit — the tasks-template override carrying the doc-impact sweep, the required tests and the Verify RED / Verify GREEN checkpoint format it shows, the four registered local edits (the /speckit-tasks skill's and the Copilot tasks agent's "tests are required" rule, /speckit-converge appending its tasks in that format, and /speckit-taskstoissues sending tasks to the Forgejo backlog), the constitution, the git and agent-context extension hooks, and the three CLI version pins — plus who owns which file, the order of preference for a new customisation, the guard that fails when any of them is lost or a Spec Kit-owned file is edited without being registered, its ten failure codes, the upgrade procedure, and the /speckit-constitution gap.
 resource: docs/runbooks/spec-kit.md
-resource-sha256: 3ba0463b841c127fd1c3a9da185663d1993eb9c5c9b1125996513261b7c06821
+resource-sha256: df17a9b25db9fc91e69cb26fbda4978fa5e914be46bf786cd151518fb2f02d14
 tags: [spec-kit, sdd, templates, guardrails, upgrade, runbook]
-timestamp: 2026-11-15T17:56:25.721Z
+timestamp: 2026-11-17T00:35:19.490Z
 ---
 
 # Spec Kit: this repository's customisations, and upgrading it
@@ -36,12 +36,18 @@ a core template.
    full format and rules are in `docs/templates/feature-test-tasks-template.md`. Because the
    `/speckit-tasks` skill itself said "Tests are OPTIONAL", which the agent reads alongside the
    template, that line is also replaced with "Tests are REQUIRED" as a registered local edit.
+   The **Copilot tasks agent** (`.github/agents/speckit.tasks.agent.md`, item #1031) gets the same
+   text and is pointed at the override, which it otherwise bypasses by reading the core template.
+   **`/speckit-converge`** (`.claude/skills/speckit-converge/SKILL.md`, item #1054) appends its
+   Convergence tasks as RED/GREEN pairs, with a Doc-impact sweep task for a gap that renames or
+   removes an identifier, instead of upstream's one-line tasks.
 3. **`/speckit-taskstoissues` → Forgejo** (`.claude/skills/speckit-taskstoissues/SKILL.md`, feature
    049): files tasks through `scripts/backlog.mjs` instead of GitHub issues, as the other registered
    local edit. The 0.11.2 → 0.16.5 upgrade overwrote it once.
 4. **The constitution**, **the extension hooks** (the `git` extension's branch creation and
    auto-commits, which run even when marked optional; the `agent-context` extension's rewrite of
-   CLAUDE.md's `SPECKIT` region) and **three CLI version pins** that must move together.
+   CLAUDE.md's `SPECKIT` region; converge has `before_`/`after_converge` hooks like the rest, off in
+   `git-config.yml` like every event) and **three CLI version pins** that must move together.
 
 ## The guard
 
@@ -62,16 +68,13 @@ The fork point on the override's line 1 is written only by `--record`, which ref
 that lost the sweep or the TDD sample.
 
 **Upgrade procedure**, in one PR from a worktree: install the new CLI, run
-`specify integration upgrade claude --force`, bump the three pins, run the gate, re-apply each
+`specify integration upgrade claude --force` (and `copilot`), bump the three pins, run the gate, re-apply each
 `local-edit-reverted` file from git (merging what upstream added), merge any `core-changed` diff into
 the override, `--record`, then re-run the gate and its tests. The managed-file comparison replaces
 the old manual hunt for local edits before `--force`.
 
 ## Gotchas
 
-- **Copilot bypasses the override.** `.github/agents/speckit.tasks.agent.md` reads the core template
-  directly, so only the constitution's rules cover a Copilot-generated `tasks.md`. Closing that would
-  make the agent a registered local edit (backlog item #1031).
 - **`/speckit-constitution` checks the core tasks template**, not the override. After an amendment,
   check the override by hand.
 - **The core template says to delete every sample task.** The override's `EXCEPTION` note keeps the

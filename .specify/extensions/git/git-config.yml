@@ -15,6 +15,9 @@ auto_commit:
   before_clarify:
     enabled: false
     message: "[Spec Kit] Save progress before clarification"
+  before_converge:
+    enabled: false
+    message: "[Spec Kit] Save progress before convergence"
   before_plan:
     enabled: false
     message: "[Spec Kit] Save progress before planning"
@@ -51,6 +54,9 @@ auto_commit:
   after_implement:
     enabled: false
     message: "[Spec Kit] Implementation progress"
+  after_converge:
+    enabled: false
+    message: "[Spec Kit] Add convergence tasks"
   after_checklist:
     enabled: false
     message: "[Spec Kit] Add checklist"
