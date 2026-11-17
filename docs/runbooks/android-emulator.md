@@ -48,10 +48,12 @@ the flows per-file in two halves:
    the first `back` only dismissed the keyboard and the second went back in history to the
    pre-submission form. It now asserts Keycloak's `Invalid username or password.` and closes the tab
    with Chrome's own Close-tab button, and it blocks like any other flow. After the table, the results
-   step also runs `scripts/maestro-failure-summary.mjs`, which prints, for every flow that did not
-   pass, the failing step, Maestro's message and the elements on screen — so a **green** run's
-   non-blocking failure can be checked against its entry's stated cause rather than taken on trust
-   (the device capture itself is published only on a red run). Chrome is warmed after every reset —
+   step also runs `scripts/maestro-failure-summary.mjs`, which prints, for every **failed attempt**,
+   the failing step, Maestro's message, the elements on screen and the device-log lines about the app
+   and Chrome (URL queries withheld). That covers a flow that passed on its retry too: on run 7815
+   `auth-guard` read `PASS 2` and its failed first login was otherwise lost with the runner. So a
+   **green** run's failure can be checked against its stated cause rather than taken on trust (the
+   device capture itself is published only on a red run). Chrome is warmed after every reset —
    `_chrome-warm-keycloak.yaml` loads Keycloak's login page once — because every full-suite login
    failure on record was the first Custom Tab after a `pm clear` (item #986); and the device log is
    enlarged and cleared per attempt, so a capture covers that attempt instead of the last second of

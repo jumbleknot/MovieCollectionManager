@@ -3,9 +3,9 @@ type: Runbook
 title: Android emulator & APK builds (mobile E2E)
 description: The decision rule for where each mobile E2E flow runs — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone release APK with its in-bundle localhost guard and explicit Gradle heap, the launch check that must pass before any flow and the app-ci / android-launch commit status that reports it, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
-resource-sha256: 768b738b022e56e068746ab2cc2151f25143a6bdd2ffb72686552c0e696e6a02
+resource-sha256: 45cff8fe277d52cdfc5f7d7cf0d2a65606d6c7c48f7a96871b9ef82c25519a0f
 tags: [android, mobile, emulator, apk, ci, runbook]
-timestamp: 2026-11-17T03:45:17.157Z
+timestamp: 2026-11-17T05:42:09.263Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -282,9 +282,9 @@ the agent half, on a **second emulator**.
   both the failure digest and the green-run counts bundle — this forge exposes no job log, so without
   it a *green* full run could not say which flows ran. It runs under `always()` in full mode and says
   "the full suite never started" when the file is absent, rather than adding a second red for the same
-  cause. After the table it runs `scripts/maestro-failure-summary.mjs`, which prints, for every flow that
-  did not pass, the failing step, Maestro's message and the elements on screen (never an input's
-  value). The device capture itself is published only on a red run, so this is what lets a *green*
+  cause. After the table it runs `scripts/maestro-failure-summary.mjs`, which prints, for every failed
+  attempt (a flow that passed on retry included), the failing step, Maestro's message, the elements
+  on screen and the app's and Chrome's device-log lines (never an input's value or a URL query). The device capture itself is published only on a red run, so this is what lets a *green*
   run's non-blocking failure be checked against its entry's stated cause (item #985).
 - **Fixture values are non-secret and fixed:** `E2E_COLLECTION_NAME=E2E Browse` and
   `E2E_MOVIE_TITLE=Alpha`, taken from the seeded base dataset that the web E2E's global setup seeded

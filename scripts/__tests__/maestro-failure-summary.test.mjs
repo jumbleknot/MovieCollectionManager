@@ -9,7 +9,8 @@ import { tmpdir } from 'node:os';
 import { execFileSync } from 'node:child_process';
 
 import {
-  failedFlows,
+  failedAttempts,
+  deviceLogLines,
   failureMessage,
   screenLines,
   summarizeFlow,
@@ -54,6 +55,8 @@ function makeDiagnostics() {
     JSON.stringify(node({}, [node({ 'resource-id': 'early-step', text: 'not this one', bounds: '[0,0][10,10]' })])));
   writeFileSync(join(flowDir, 'screen-hierarchy', 'step-033-assertCondition-login-screen.json'),
     JSON.stringify(chromeOnKeycloak()));
+  writeFileSync(join(root, 'login-invalid-attempt1', 'logcat-full.log'),
+    '11-10 16:52:01.000 I/ActivityTaskManager(  514): START u0 {dat=http://localhost:8099/auth?state=X cmp=com.android.chrome/.CustomTab}\n');
   writeFileSync(join(flowDir, 'logs', 'maestro.log'), [
     '16:52:15.188 [ INFO] maestro.cli.runner.MaestroCommandRunner.runCommands$lambda$2: Press Back key COMPLETED',
     '16:52:30.428 [ERROR] maestro.orchestra.Orchestra.executeCommands: [Command execution] CommandFailed: Assertion is false: id: login-screen is visible',
@@ -61,10 +64,37 @@ function makeDiagnostics() {
   return root;
 }
 
-test('failedFlows: every flow that did not pass, in table order — non-blocking failures included', () => {
-  const rows = failedFlows('flow\tresult\tattempts\tseconds\na\tPASS\t1\t1\nb\tFAIL\t2\t9\nc\tFAIL-NONBLOCKING\t1\t5\nd\tPASS-REMOVE-NONBLOCKING\t1\t3\n');
-  assert.deepEqual(rows.map((r) => r.flow), ['b', 'c']);
-  assert.equal(rows[1].result, 'FAIL-NONBLOCKING');
+test('failedAttempts: a flow that PASSED on retry still reports its failed attempts — item #986 hid there', () => {
+  const rows = failedAttempts('flow\tresult\tattempts\tseconds\nauth-guard\tPASS\t2\t134\nhome\tPASS\t1\t40\nb\tFAIL\t2\t9\nc\tFAIL-NONBLOCKING\t1\t5\n');
+  assert.deepEqual(rows, [
+    { flow: 'auth-guard', result: 'PASS', attempts: [1] },
+    { flow: 'b', result: 'FAIL', attempts: [1, 2] },
+    { flow: 'c', result: 'FAIL-NONBLOCKING', attempts: [1] },
+  ]);
+});
+
+test('deviceLogLines: only the app and Chrome lifecycle, the last N, with every URL query withheld', () => {
+  const log = [
+    '11-10 16:43:01.223 I/Finsky  ( 7943): [2] aoas - Received: android.intent.action.PACKAGE_REMOVED',
+    '11-10 16:43:02.000 I/ActivityTaskManager(  514): START u0 {act=android.intent.action.VIEW dat=http://localhost:8099/realms/x/auth?client_id=mcm&state=SECRETSTATE cmp=com.android.chrome/.CustomTab} from uid 10190',
+    '11-10 16:43:03.000 I/ActivityTaskManager(  514): START u0 {dat=com.grumpyrobot.mcmapp://redirect?code=SECRETCODE&state=S2 cmp=com.grumpyrobot.mcmapp/.MainActivity}',
+    '11-10 16:43:04.000 I/ActivityManager(  514): Process com.android.chrome:sandboxed_process0 (pid 9) has died: fg',
+    '11-10 16:43:05.000 E/chromium( 8001): [ERROR:ssl_client_socket_impl.cc] handshake failed',
+    '11-10 16:43:05.500 V/chromium( 8001): verbose noise',
+    '11-10 16:43:06.000 I/ReactNativeJS( 7001): [auth] login outcome: dismiss',
+    '11-10 16:43:07.000 D/BoundBrokerSvc( 7557): onBind: Intent { act=com.google.android.gms.feedback }',
+  ].join('\n');
+  const lines = deviceLogLines(log);
+  const text = lines.join('\n');
+  assert.equal(lines.length, 5);
+  assert.match(text, /START u0 .*com\.android\.chrome/);
+  assert.match(text, /mcmapp:\/\/redirect\?…/);
+  assert.match(text, /has died/);
+  assert.match(text, /handshake failed/);
+  assert.match(text, /login outcome: dismiss/);
+  assert.doesNotMatch(text, /SECRETCODE|SECRETSTATE|client_id/, 'a URL query reached the summary');
+  assert.doesNotMatch(text, /Finsky|BoundBrokerSvc|verbose noise/);
+  assert.deepEqual(deviceLogLines(log, 2), lines.slice(-2), 'keeps the LAST lines — the failure is at the end');
 });
 
 test('failureMessage: the LAST CommandFailed line, without the logger prefix', () => {
@@ -97,15 +127,28 @@ test('screenLines: bounded, and says so when it cuts', () => {
 test('summarizeFlow: the failing step, its message and its screen, per attempt; a missing capture is said, not skipped', () => {
   const root = makeDiagnostics();
   try {
-    const text = summarizeFlow(root, { flow: 'login-invalid', result: 'FAIL-NONBLOCKING', attempts: 1 });
+    const text = summarizeFlow(root, { flow: 'login-invalid', result: 'FAIL-NONBLOCKING', attempts: [1] });
     assert.match(text, /login-invalid — FAIL-NONBLOCKING — attempt 1/);
     assert.match(text, /step-033-assertCondition-login-screen/);
     assert.match(text, /Assertion is false: id: login-screen is visible/);
     assert.match(text, /kc-page-title "Sign in to your account"/);
     assert.doesNotMatch(text, /not this one/, 'an earlier step was summarized instead of the failing one');
+    assert.match(text, /device log:\n\s+.*START u0 .*com\.android\.chrome/);
 
-    const missing = summarizeFlow(root, { flow: 'movie-sort', result: 'FAIL-NONBLOCKING', attempts: 1 });
+    const missing = summarizeFlow(root, { flow: 'movie-sort', result: 'FAIL-NONBLOCKING', attempts: [1] });
     assert.match(missing, /movie-sort — FAIL-NONBLOCKING — attempt 1: no device capture/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('summarizeAll: a retried-then-passed flow is summarized under its PASS, attempt by attempt', () => {
+  const root = makeDiagnostics();
+  try {
+    writeFileSync(join(root, 'full-suite-results.log'), 'flow\tresult\tattempts\tseconds\nlogin-invalid\tPASS\t2\t120\n');
+    const text = summarizeAll(root);
+    assert.match(text, /login-invalid — PASS on attempt 2 — attempt 1 failed/);
+    assert.doesNotMatch(text, /attempt 2 failed/);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

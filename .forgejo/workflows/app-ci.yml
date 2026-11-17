@@ -1602,8 +1602,8 @@ jobs:
           # say so rather than fail this step on a missing file and add a second red to the same cause.
           if [ -f mobile-diagnostics/full-suite-results.log ]; then
             cat mobile-diagnostics/full-suite-results.log
-            # Item #985: what each failed flow was looking at — the failing step, Maestro's message
-            # and the elements on screen. THIS step is published on a GREEN run, the device capture
+            # Items #985/#986: what each failed ATTEMPT was looking at (a flow that passed on retry
+            # included) — the failing step, Maestro's message, the screen and the app/Chrome log. THIS step is published on a GREEN run, the device capture
             # is not, so without it a non-blocking failure said FAIL and nothing that could tell its
             # documented cause from a new regression. Never fails the step (`|| true`).
             node scripts/maestro-failure-summary.mjs mobile-diagnostics || true
