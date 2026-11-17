@@ -70,6 +70,16 @@ export const LOCAL_EDITS = [
     marker: '**Tests are REQUIRED**',
     why: 'makes test tasks required in the TDD checkpoint format; upstream says tests are optional, which would cancel the override',
   },
+  {
+    file: '.claude/skills/speckit-converge/SKILL.md',
+    marker: '**Convergence tasks follow the project\'s task format**',
+    why: 'appended Convergence tasks use Verify RED / Verify GREEN pairs and a doc-impact sweep; upstream writes one-line tasks that bypass the tasks-template override (item #1054)',
+  },
+  {
+    file: '.github/agents/speckit.tasks.agent.md',
+    marker: '.specify/templates/overrides/tasks-template.md',
+    why: 'points the Copilot tasks agent at the tasks-template override and makes tests required; upstream reads the core template and says tests are optional (item #1031)',
+  },
 ];
 // How far back to look for the fork base. Spec Kit upgrades are rare; the core template has had a
 // handful of revisions in this repository's whole history.

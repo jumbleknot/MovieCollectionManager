@@ -221,6 +221,33 @@ Append to the **end** of `tasks.md`, per the append contract:
 
    Constitution-violation tasks MUST be emitted first and described as
    `CRITICAL`.
+
+   **Convergence tasks follow the project's task format** (project local edit, see
+   `docs/runbooks/spec-kit.md`; constitution "Test-Driven Development" and "TDD Checkpoint
+   Format", NON-NEGOTIABLE, and its Documentation rule). The one-line form above is the
+   checklist line only:
+
+   - A finding that needs code or behaviour to change is emitted as a **test task + implementation
+     task pair**, test first, in the TDD checkpoint format of
+     `docs/templates/feature-test-tasks-template.md`. The test task names the acceptance scenario
+     or requirement it covers (its `<source-ref>`) and carries a **Verify RED** command with the
+     expected failure; the paired implementation task carries a **Verify GREEN** command with the
+     expected pass. Both are indented fields under the checklist line, as in the User Story 1
+     sample of `.specify/templates/overrides/tasks-template.md`:
+
+     ```markdown
+     - [ ] T042 Test for <behaviour> in <test path> per US1/AC2 (missing)
+       - **Scenarios covered**: US1/AC2 [the acceptance criterion from spec.md]
+       - **Verify RED**: `[exact command running only this test]` → expected: [N] failing — `[assertion message]`
+     - [ ] T043 <imperative description> in <path> per US1/AC2 (missing) (prerequisite: T042 verified RED)
+       - **Verify GREEN**: `[same command as T042]` → expected: 0 failures — `[N passed]`; then the touched suite still passes
+     ```
+
+   - A documentation or config-only finding uses that template's **Done when** form instead.
+   - A finding whose fix renames, moves or removes an identifier, path, command or flag also
+     gets a **Doc-impact sweep** task (the same task as Phase 1 of the override): search the
+     docs, runbooks, `openwiki/` and agent instruction files for the old name, and update every
+     hit in the same change.
 4. Never reuse or renumber existing IDs. If a prior Convergence phase exists, add a new,
    separately-numbered one below it — do not touch the old one.
 

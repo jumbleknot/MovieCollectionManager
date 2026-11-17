@@ -73,12 +73,12 @@ You **MUST** consider the user input before proceeding (if not empty).
    - Create parallel execution examples per user story
    - Validate task completeness (each user story has all needed tasks, independently testable)
 
-4. **Generate tasks.md**: Use `.specify/templates/tasks-template.md` as structure, fill with:
+4. **Generate tasks.md**: Use the project override `.specify/templates/overrides/tasks-template.md` as structure (project local edit, see `docs/runbooks/spec-kit.md`; fall back to `.specify/templates/tasks-template.md` only if the override does not exist). Keep the override's **Doc-impact sweep** task in Phase 1, its **Close-out re-search** task in the Polish phase, and the **Verify RED** / **Verify GREEN** fields shown in its User Story 1 sample. Fill with:
    - Correct feature name from plan.md
    - Phase 1: Setup tasks (project initialization)
    - Phase 2: Foundational tasks (blocking prerequisites for all user stories)
    - Phase 3+: One phase per user story (in priority order from spec.md)
-   - Each phase includes: story goal, independent test criteria, tests (if requested), implementation tasks
+   - Each phase includes: story goal, independent test criteria, test tasks (required, see Task Generation Rules), implementation tasks
    - Final Phase: Polish & cross-cutting concerns
    - All tasks must follow the strict checklist format (see Task Generation Rules below)
    - Clear file paths for each task
@@ -131,7 +131,7 @@ The tasks.md should be immediately executable - each task must be specific enoug
 
 **CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
 
-**Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature specification or if user requests TDD approach.
+**Tests are REQUIRED** (project local edit, see `docs/runbooks/spec-kit.md`; constitution "Test-Driven Development", NON-NEGOTIABLE): generate test tasks for every user story, written before the implementation they cover, in the TDD checkpoint format of `docs/templates/feature-test-tasks-template.md`. Each test task names the acceptance scenarios it covers and carries a **Verify RED** command with the expected failure; its paired implementation task carries a **Verify GREEN** command with the expected pass, as indented fields under the checklist line (see the User Story 1 sample in the tasks template). Documentation and config tasks use that template's "Done when" form instead.
 
 ### Checklist Format (REQUIRED)
 
@@ -173,12 +173,12 @@ Every task MUST strictly follow this format:
      - Models needed for that story
      - Services needed for that story
      - Interfaces/UI needed for that story
-     - If tests requested: Tests specific to that story
+     - Tests specific to that story (required)
    - Mark story dependencies (most stories should be independent)
 
 2. **From Contracts**:
    - Map each interface contract → to the user story it serves
-   - If tests requested: Each interface contract → contract test task [P] before implementation in that story's phase
+   - Each interface contract → contract test task [P] before implementation in that story's phase
 
 3. **From Data Model**:
    - Map each entity to the user story(ies) that need it
@@ -195,6 +195,6 @@ Every task MUST strictly follow this format:
 - **Phase 1**: Setup (project initialization)
 - **Phase 2**: Foundational (blocking prerequisites - MUST complete before user stories)
 - **Phase 3+**: User Stories in priority order (P1, P2, P3...)
-  - Within each story: Tests (if requested) → Models → Services → Endpoints → Integration
+  - Within each story: Tests → Models → Services → Endpoints → Integration
   - Each phase should be a complete, independently testable increment
 - **Final Phase**: Polish & Cross-Cutting Concerns

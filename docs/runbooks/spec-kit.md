@@ -39,23 +39,19 @@ So a change to Spec Kit's behaviour takes one of three forms, in order of prefer
 | 1 | Every `tasks.md` carries a **Doc-impact sweep** task in Phase 1 and a **Close-out re-search** task in Polish (feature 101) | `.specify/templates/overrides/tasks-template.md` | Override (a fork of the core tasks template) | `Resolve-Template` / `Resolve-TemplateContent` in `common.ps1` check `overrides/` first | `override-missing`, `header-invalid`, `sweep-missing`, `core-changed`, `resolution-broken` |
 | 2 | Tests are **required**, and every test task uses the **TDD checkpoint format**: scenarios covered, a **Verify RED** with the expected failure, and a paired implementation task with a **Verify GREEN** | Format and rules: `docs/templates/feature-test-tasks-template.md`. Mandated by the constitution ("Test-Driven Development", "TDD Checkpoint Format"). Shown in the User Story 1 sample of the override in row 1 | Override (in row 1's fork) plus the constitution | Same as row 1. The core template says tests are optional; the override replaces that | `tdd-format-missing` |
 | 2a | The `/speckit-tasks` skill's own "Tests are OPTIONAL" rule is replaced with "Tests are REQUIRED" in the row 2 format. Without this edit the skill's instruction contradicts the override, and the agent reads both | `.claude/skills/speckit-tasks/SKILL.md` (Task Generation Rules) | Registered local edit to a Spec Kit-owned file | It is the skill itself | `local-edit-reverted`, `unregistered-edit`, `registry-stale` |
+| 2b | The Copilot tasks agent builds `tasks.md` from the **override** in row 1, not the core template, and its "Tests are OPTIONAL" rule is replaced with row 2a's "Tests are REQUIRED" text, so a Copilot-generated `tasks.md` carries the sweep, the close-out re-search and the RED/GREEN pairs (item #1031) | `.github/agents/speckit.tasks.agent.md` (Outline step 4, Task Generation Rules) | Registered local edit to a Spec Kit-owned file | It is the agent itself | `local-edit-reverted`, `unregistered-edit`, `registry-stale` |
+| 2c | `/speckit-converge` appends its **Convergence** tasks in the row 2 format: a test + implementation pair with **Verify RED** / **Verify GREEN** for any code gap, "Done when" for docs/config, and a **Doc-impact sweep** task for a gap that renames, moves or removes an identifier. Upstream writes one-line tasks that never see the override (item #1054) | `.claude/skills/speckit-converge/SKILL.md` (step 7, the append contract) | Registered local edit to a Spec Kit-owned file | It is the skill itself | `local-edit-reverted`, `unregistered-edit`, `registry-stale` |
 | 3 | `/speckit-taskstoissues` files tasks as **Forgejo backlog items** through `scripts/backlog.mjs`, with blocking edges and a milestone per feature, instead of GitHub issues through the GitHub MCP server (feature 049; dedupe step added from upstream 0.16.5) | `.claude/skills/speckit-taskstoissues/SKILL.md` | Registered local edit to a Spec Kit-owned file | It is the skill itself | `local-edit-reverted`, `unregistered-edit`, `registry-stale` |
 | 4 | The governing principles every spec, plan and task list is checked against | `.specify/memory/constitution.md` | Project-owned | Every `/speckit-*` command reads it | none needed: upgrades do not touch it |
-| 5 | Extension hooks: the `git` extension creates the feature branch before `/speckit-specify` and auto-commits around every command (`auto_execute_hooks: true`, so "optional" hooks still run); the `agent-context` extension rewrites the `<!-- SPECKIT START -->` … `<!-- SPECKIT END -->` region of `CLAUDE.md` (the "read the current plan" pointer) | `.specify/extensions.yml`, `.specify/extensions/*/` | Project-owned config | Spec Kit's hook runner | none needed |
+| 5 | Extension hooks: the `git` extension creates the feature branch before `/speckit-specify` and auto-commits around every command (`auto_execute_hooks: true`, so "optional" hooks still run); the `agent-context` extension rewrites the `<!-- SPECKIT START -->` … `<!-- SPECKIT END -->` region of `CLAUDE.md` (the "read the current plan" pointer). `before_converge` / `after_converge` hooks were added with the rest (item #1054), so converge runs inside the same commit trail; like every event, they commit only when `.specify/extensions/git/git-config.yml` enables them (all off today) | `.specify/extensions.yml`, `.specify/extensions/*/` | Project-owned config | Spec Kit's hook runner | none needed |
 | 6 | The CLI version the dev container and hosts install | `SPECKIT_VERSION` in `.devcontainer/toolchain.Dockerfile`; `speckit_version` in `.specify/init-options.json`; the install line in [dev-environment-setup.md](dev-environment-setup.md) | Pins | n/a | none: keep the three equal by hand in the upgrade PR |
 
-Rows 1, 2, 2a and 3 are the ones an upgrade can break. The gate checks that this table names
+Rows 1, 2, 2a, 2b, 2c and 3 are the ones an upgrade can break. The gate checks that this table names
 `.specify/templates/overrides/tasks-template.md`, `docs/templates/feature-test-tasks-template.md`
 and every file in its `LOCAL_EDITS` registry (`inventory-stale`).
 
 ### Known gaps
 
-- **Copilot does not see rows 1 and 2.** The Copilot tasks agent
-  (`.github/agents/speckit.tasks.agent.md`) reads the core template directly, not through
-  `Resolve-Template`. A Copilot-generated `tasks.md` is covered only by the constitution's
-  Documentation and TDD rules. Closing this would make that agent a registered local edit (row 3's
-  form). It has not been done, because sessions here generate tasks through the Claude skills;
-  tracked as backlog item #1031.
 - **`/speckit-constitution` checks the core tasks template**, not the override, when it checks
   dependent templates after an amendment. When amending the constitution, check the override too.
 - **The scripts are PowerShell only.** An environment without `pwsh` falls back to resolving the
@@ -98,7 +94,9 @@ The procedure, all in one PR, from a worktree:
      (`git diff HEAD -- <file>` shows what was lost), merging in anything upstream added. In the
      0.11.2 → 0.16.5 upgrade that meant keeping the `backlog.mjs` fan-out and adopting upstream's
      new dedupe step. Row 2a is one paragraph: put the "Tests are REQUIRED" text back in place of
-     upstream's "Tests are OPTIONAL".
+     upstream's "Tests are OPTIONAL". Row 2b is the same paragraph plus the override path in
+     Outline step 4 (run `specify integration upgrade copilot --force` too). Row 2c is the
+     "Convergence tasks follow the project's task format" block in step 7.
    - `core-changed` if the upgrade touched the core tasks template. The failure prints the core
      template's diff since the fork base, found by hash in git history. In a shallow clone it says
      history is unavailable and still fails; compare the two files by hand.
