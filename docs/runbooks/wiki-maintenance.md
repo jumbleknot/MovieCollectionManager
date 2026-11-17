@@ -3,7 +3,7 @@
 **Features 044 and 098.** How the OKF bundle at `openwiki/` is kept current. Since feature 098
 (ADR-0004) that is the **coding session's** job, in the same PR as the change that made a summary
 stale; the generator remains only as a **manual rebuild of pages an operator names**. Also: how to
-run and read a rebuild, and where a new learning goes now that `CLAUDE.md` is an index.
+run and read a rebuild, and where a new learning goes now that `AGENTS.md` is an index (and `CLAUDE.md` a shim that imports it).
 
 Related: [ci-diagnostics.md](ci-diagnostics.md) · [devcontainer.md](devcontainer.md) ·
 [ADR-0004](../decisions/ADR-0004-session-maintained-wiki.md) · `openwiki/INSTRUCTIONS.md` (the
@@ -686,8 +686,9 @@ A page states rules and what fields mean, never the current contents of live sta
 wrong by the next change (`openwiki/INSTRUCTIONS.md` §9). A measured value that explains a rule belongs
 here, in the runbook, dated and with its run number.
 
-**Do not write prose into `CLAUDE.md`** expecting a later run to relocate it. That file is an index and
-a gate fails on content beyond its index and its three machine-managed regions. The rejected
+**Do not write prose into `AGENTS.md`** expecting a later run to relocate it. That file is the index
+every assistant reads, and a gate fails on content beyond its index and its three machine-managed
+regions (G8). `CLAUDE.md` is only a shim that imports it, and a gate (G15) fails on anything added there. The rejected
 alternative — grow the instruction file and clean up later — is recorded in `INSTRUCTIONS.md` §7.
 
 ### Protected passages

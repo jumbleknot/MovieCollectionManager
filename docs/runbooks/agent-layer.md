@@ -1,6 +1,6 @@
 # AI Agent Layer (features 012 + 014)
 
-> Reference for the additive conversational assistant. **Read this + `agents/movie-assistant/README.md` + `specs/012-multi-agent-mvp/HANDOFF.md` before any agent work.** Loaded on demand — not part of the always-on CLAUDE.md core.
+> Reference for the additive conversational assistant. **Read this + `agents/movie-assistant/README.md` + `specs/012-multi-agent-mvp/HANDOFF.md` before any agent work.** Loaded on demand — not part of the always-on AGENTS.md core.
 
 ## Overview (feature 012 — `agents/movie-assistant` + `mcp-servers/{movie-mcp,web-api-mcp}`)
 

@@ -3,9 +3,9 @@ type: Runbook
 title: "Doc drift: the doc-impact sweep and the quarterly audit"
 description: How the repository keeps its procedure documents in step with the code (the direction V17 does not cover) — the doc-impact sweep every SDD feature runs at task generation and close-out, carried by a project override of Spec Kit's tasks template (whose guard and upgrade procedure live on the Spec Kit page); the three layers and which are live; and the quarterly drift audit that measures the result and files its own successor.
 resource: docs/runbooks/doc-drift.md
-resource-sha256: 506ea62140d691a9d7963b67c74fddb50662b3c32479fc9748e954b81b1ac00b
+resource-sha256: d6f240aa3d1986e767fa9fe95374a54413c44c20777376de03431cda87bc4d55
 tags: [documentation, drift, spec-kit, sdd, audit, runbook]
-timestamp: 2026-11-15T16:33:03.746Z
+timestamp: 2026-11-17T01:23:25.286Z
 ---
 
 # Doc drift: the doc-impact sweep and the quarterly audit

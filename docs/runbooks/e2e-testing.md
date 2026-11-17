@@ -1,6 +1,6 @@
 # Runbook: E2E Testing (BFF-container modes, flakiness, integration harness)
 
-> Loaded on demand — referenced from CLAUDE.md's gates. The day-to-day Test Run Protocol lives in the constitution ([.specify/memory/constitution.md](../../.specify/memory/constitution.md)) and the Final Validation Checklist in [openwiki/invariants/feature-validation-checklist.md](../../openwiki/invariants/feature-validation-checklist.md); this runbook holds the container-mode procedures, the flakiness-diagnosis protocol, and the BFF integration-test harness facts. For mobile/Android specifics see [android-emulator.md](android-emulator.md).
+> Loaded on demand — referenced from AGENTS.md's gates. The day-to-day Test Run Protocol lives in the constitution ([.specify/memory/constitution.md](../../.specify/memory/constitution.md)) and the Final Validation Checklist in [openwiki/invariants/feature-validation-checklist.md](../../openwiki/invariants/feature-validation-checklist.md); this runbook holds the container-mode procedures, the flakiness-diagnosis protocol, and the BFF integration-test harness facts. For mobile/Android specifics see [android-emulator.md](android-emulator.md).
 
 > **Before ANY agent E2E: prove the two images match your source.** Both are **baked, not
 > mounted** — the Expo web bundle lives inside `mcm-bff:latest` and the graph inside

@@ -23,7 +23,8 @@
 //   * a relocated load-bearing passage cannot be silently reworded or dropped by a later refresh
 //     (G5–G7) — the protection manifest is the authority, not the concept;
 //   * the instruction file cannot quietly re-grow, and every surface pointing into the bundle resolves
-//     (G8–G10); and every concept declares whether it is canonical or a summary (G11), because the
+//     (G8–G10; the instruction file has been AGENTS.md since the CLAUDE.md → AGENTS.md inversion, with
+//     CLAUDE.md held to a shim that imports it, G15); and every concept declares whether it is canonical or a summary (G11), because the
 //     rule for where a new learning goes is undecidable otherwise.
 //
 // Two properties are load-bearing and easy to break by accident:
@@ -47,16 +48,28 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 const BUNDLE = 'openwiki';
 const MANIFEST_FILE = 'openwiki/protected.yaml';
-const INSTRUCTION_FILE = 'CLAUDE.md';
+const INSTRUCTION_FILE = 'AGENTS.md';
+
+/**
+ * CLAUDE.md is a SHIM (G15). AGENTS.md is the one instruction file: Codex and OpenCode read only it,
+ * and Copilot reads both it and CLAUDE.md. Claude Code reads only CLAUDE.md, which reaches AGENTS.md
+ * through the generator's own `@AGENTS.md` import. Any content added to CLAUDE.md therefore splits
+ * the instructions (Claude sees it, Codex and OpenCode never do), and a copy of AGENTS.md there makes
+ * Copilot and Claude load everything twice. So CLAUDE.md may hold only the import and the
+ * tool-managed regions.
+ */
+const SHIM_FILE = 'CLAUDE.md';
+const SHIM_IMPORT = '@AGENTS.md';
 
 /** Bundle files that are not concepts: navigation, the brief, the tool's history. */
 const RESERVED = new Set(['index.md', 'INSTRUCTIONS.md', 'log.md', 'quickstart.md']);
 
 /**
  * Assistant-facing configuration surfaces (FR-033). They must not point at content that has moved.
- * CLAUDE.md is checked separately and more strictly (G8/G9).
+ * AGENTS.md (the instruction file) is checked separately and more strictly (G8/G9), CLAUDE.md as a
+ * shim (G15).
  */
-const ASSISTANT_SURFACES = ['AGENTS.md', 'opencode.json', '.claude/settings.json'];
+const ASSISTANT_SURFACES = ['opencode.json', '.claude/settings.json'];
 
 /**
  * The machine-managed regions of the instruction file, each owned by a different tool. Prose inside
@@ -460,6 +473,22 @@ export function validate(root) {
     }
   }
 
+  // ── G15: CLAUDE.md is a shim that imports AGENTS.md ─────────────────────────────
+  if (!existsSync(join(root, SHIM_FILE))) {
+    add('G15', SHIM_FILE, `is missing. Claude Code reads only ${SHIM_FILE}, so without the shim a Claude session loads none of ${INSTRUCTION_FILE}'s instructions`);
+  } else {
+    const lines = read(root, SHIM_FILE).replace(/\r\n?/g, '\n').split('\n');
+    const managed = managedLines(lines);
+    if (!lines.some((l) => l.trim() === SHIM_IMPORT)) {
+      add('G15', SHIM_FILE, `does not import ${INSTRUCTION_FILE} (no \`${SHIM_IMPORT}\` line). Claude Code would load none of the instructions`);
+    }
+    for (const [i, line] of lines.entries()) {
+      const t = line.trim();
+      if (managed.has(i) || t === '' || t.startsWith('<!--') || t.endsWith('-->')) continue;
+      add('G15', SHIM_FILE, `line ${i + 1} carries content outside the machine-managed regions: "${t.slice(0, 70)}". ${SHIM_FILE} is a shim; put it in ${INSTRUCTION_FILE}, which every assistant reads. Content here reaches Claude only, and a copy of ${INSTRUCTION_FILE} makes Copilot and Claude load it twice`);
+    }
+  }
+
   // ── G10: the other assistant surfaces ────────────────────────────────────────
   for (const surface of ASSISTANT_SURFACES) {
     if (!existsSync(join(root, surface))) continue;
@@ -507,10 +536,12 @@ function selftest() {
   ].join('\n');
 
   const base = () => ({
-    'CLAUDE.md': '# Index\n\n## Knowledge\n\n- **A** → [openwiki/area/a.md](openwiki/area/a.md)\n',
+    'AGENTS.md': '# Index\n\n## Knowledge\n\n- **A** → [openwiki/area/a.md](openwiki/area/a.md)\n',
+    'CLAUDE.md': '<!-- a shim -->\n\n<!-- OPENWIKI:START -->\n\n## OpenWiki\n\n@AGENTS.md\n\n<!-- OPENWIKI:END -->\n',
     'openwiki/policy.yaml': [
       'version: 1', 'paths:',
       '  - glob: "CLAUDE.md"', '    policy: regenerate', '    actor: agent',
+      '  - glob: "AGENTS.md"', '    policy: regenerate', '    actor: agent',
       '  - glob: "openwiki/**"', '    policy: regenerate', '    actor: generator',
       '  - glob: "openwiki/policy.yaml"', '    policy: never-written',
       '  - glob: "openwiki/protected.yaml"', '    policy: never-written',
@@ -553,9 +584,15 @@ function selftest() {
   scenario('g5', (f) => { f['openwiki/area/a.md'] = concept('A load-bearing sentence that must not be rephrased.'); }, 'G5');
   scenario('g6', (f) => { f['openwiki/area/a.md'] = concept('body').replace('## Anchor Heading', '## Different Heading'); }, 'G6');
   scenario('g7', (f) => { f['openwiki/area/a.md'] = concept(PASSAGE, 'CLAUDE.md'); }, 'G7');
-  scenario('g8', (f) => { f['CLAUDE.md'] += '\nA paragraph of prose, which is how the file re-grows.\n'; }, 'G8');
-  scenario('g9', (f) => { f['CLAUDE.md'] = f['CLAUDE.md'].replace('a.md](openwiki/area/a.md)', 'gone.md](openwiki/area/gone.md)'); }, 'G9');
-  scenario('g10', (f) => { f['AGENTS.md'] = '# Pointer\n\n- [moved](docs/moved-away.md)\n'; }, 'G10');
+  scenario('g8', (f) => { f['AGENTS.md'] += '\nA paragraph of prose, which is how the file re-grows.\n'; }, 'G8');
+  scenario('g9', (f) => { f['AGENTS.md'] = f['AGENTS.md'].replace('a.md](openwiki/area/a.md)', 'gone.md](openwiki/area/gone.md)'); }, 'G9');
+  scenario('g10', (f) => { f['opencode.json'] = '{"instructions": ["docs/moved-away.md"]}\n'; }, 'G10');
+  scenario('g15-shim-missing', (f) => { f['CLAUDE.md'] = null; }, 'G15');
+  scenario('g15-no-import', (f) => { f['CLAUDE.md'] = f['CLAUDE.md'].replace('@AGENTS.md', 'see AGENTS.md'); }, 'G15');
+  scenario('g15-content-in-shim', (f) => { f['CLAUDE.md'] += '\n- **A gate** → [docs/x.md](docs/x.md)\n'; }, 'G15');
+  scenario('g15-managed-region-in-shim-is-exempt', (f) => {
+    f['CLAUDE.md'] += '\n<!-- nx configuration start-->\n## Nx\n- a rule the tool writes\n<!-- nx configuration end-->\n';
+  }, null);
   scenario('g11-neither', (f) => {
     f['openwiki/area/b.md'] = concept('body');
     f['openwiki/area/index.md'] = '# Area\n- [a](a.md)\n- [b](b.md)\n';
@@ -590,7 +627,7 @@ function selftest() {
     f['openwiki/protected.yaml'] = f['openwiki/protected.yaml'].replace(fingerprintOf(PASSAGE), fingerprintOf(reworded));
   }, null);
   scenario('managed-region-prose-is-exempt', (f) => {
-    f['CLAUDE.md'] += '\n<!-- nx configuration start-->\nA paragraph the tool rewrites every run.\n<!-- nx configuration end-->\n';
+    f['AGENTS.md'] += '\n<!-- nx configuration start-->\nA paragraph the tool rewrites every run.\n<!-- nx configuration end-->\n';
   }, null);
   scenario('fail-closed-no-manifest', (f) => { f['openwiki/protected.yaml'] = null; }, 'G0');
   scenario('fail-closed-bad-policy', (f) => { f['openwiki/policy.yaml'] = 'version: 1\npaths:\n  - glob: "unterminated\n    policy: [\n'; }, 'G0');
@@ -601,7 +638,7 @@ function selftest() {
     console.error(`✗ openwiki-governance gate --selftest FAILED:\n  ${fails.join('\n  ')}`);
     return 1;
   }
-  console.log('✓ openwiki-governance gate --selftest passed (G1–G4 policy declaration, G5–G7 passage protection incl. removal and derived-concept cases, G8–G10 index and assistant surfaces, G11 concept classification, G12 authoritative-not-regenerate, G14 one human-written file per derived page, list-valued actor, whitespace-only drift tolerated, same-change fingerprint correction accepted, managed-region prose exempt, fail-closed on both governance files)');
+  console.log('✓ openwiki-governance gate --selftest passed (G1–G4 policy declaration, G5–G7 passage protection incl. removal and derived-concept cases, G8–G10 index and assistant surfaces, G15 CLAUDE.md shim (missing, no import, content, managed region exempt), G11 concept classification, G12 authoritative-not-regenerate, G14 one human-written file per derived page, list-valued actor, whitespace-only drift tolerated, same-change fingerprint correction accepted, managed-region prose exempt, fail-closed on both governance files)');
   return 0;
 }
 

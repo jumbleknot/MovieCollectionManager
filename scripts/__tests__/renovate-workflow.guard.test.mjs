@@ -1735,7 +1735,7 @@ test('allowedVersionsPermits models the `<` bound it was just taught — the ins
 // the FIRST legitimate Renovate bump of any of the six images — curl 8.21.0 -> 8.22.0, the first
 // `docker base images` PR after the timestamp fixes — red on `guardrails / naming`, and would have
 // done so on every future bump for ever: a guard failing because the thing it protects moved, which
-// is the shape CLAUDE.md says to fix at the cause, never delete. The classification property was and
+// is the shape AGENTS.md says to fix at the cause, never delete. The classification property was and
 // is intact; only the anchor was wrong.
 const C1_ROWS = [
   { repository: 'axllent/mailpit', bump: 'major', example: 'v1.31.0 -> v2.0.0' },

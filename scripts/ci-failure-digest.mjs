@@ -367,7 +367,7 @@ function classifyFailure(reason) {
  * behind. So falling back to it is worth doing.
  *
  * ⚠️ What T034 could NOT establish is whether that token is *populated* on a secretless run; proving
- * that needs an AGit-headed push, which CLAUDE.md forbids. `both absent` therefore stays a
+ * that needs an AGit-headed push, which AGENTS.md forbids. `both absent` therefore stays a
  * first-class outcome rather than a theoretical one.
  *
  * The empty-STRING check is load-bearing: 2026-08-01 presented as `${{ secrets.CI_DIGEST_TOKEN }}`

@@ -1,7 +1,7 @@
 # Fixtures — `scripts/check-openwiki-governance.mjs` (feature 044, T002)
 
-Each subdirectory is a **mini-repository root**, not a bundle root: it holds `CLAUDE.md`, `AGENTS.md`,
-a `docs/` tree and an `openwiki/` bundle, because the governance rules span all of them. Drive the gate
+Each subdirectory is a **mini-repository root**, not a bundle root: it holds `AGENTS.md` (the index),
+`CLAUDE.md` (the shim that imports it), `opencode.json`, a `docs/` tree and an `openwiki/` bundle, because the governance rules span all of them. Drive the gate
 with `--root <fixture>`.
 
 Every fixture is the `valid/` baseline with **exactly one** mutation, so a failure names one rule and
@@ -19,9 +19,11 @@ was unavoidable the fixture was reshaped until it was.
 | `reworded-passage` | fail | **G5** words changed under a protected anchor |
 | `deleted-passage` | fail | **G6** the anchor is gone — must fail as a *removal*, not pass for lack of text to compare |
 | `protected-on-derived` | fail | **G7** a protected passage on a concept carrying a `resource` — reported twice (not-authoritative, and resource-bearing), both G7 |
-| `claude-stray-prose` | fail | **G8** a paragraph in `CLAUDE.md` outside the index and the three managed regions |
+| `index-stray-prose` | fail | **G8** a paragraph in `AGENTS.md` outside the index and the three managed regions |
 | `dangling-index-entry` | fail | **G9** an index entry pointing at a concept that does not exist |
-| `stale-assistant-surface` | fail | **G10** `AGENTS.md` pointing at a path that has moved |
+| `stale-assistant-surface` | fail | **G10** `opencode.json` pointing at a path that has moved |
+| `claude-shim-content` | fail | **G15** an index entry added to the `CLAUDE.md` shim instead of `AGENTS.md` |
+| `claude-shim-no-import` | fail | **G15** the `CLAUDE.md` shim no longer carries the `@AGENTS.md` import |
 | `unclassified-concept` | fail | **G11** a concept that is neither derived nor authoritative |
 | `both-classifications` | fail | **G11** a concept that is both |
 | `whitespace-drift` | **pass** | normalization: CRLF + trailing spaces are not a change |

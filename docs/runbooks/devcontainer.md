@@ -17,7 +17,7 @@
 > - **the credential rule** — [§ Host env vars](#host-env-vars-forwarded-via-localenv-mcm_devcontainer_image-forge_registry_host-mcm_anthropic_api_key-tmdb_api_key-mcm_forge_token-mcm_forge_issue_token)
 >   below. AI-assisted coding runs on the **Claude Max subscription**; `MCM_ANTHROPIC_API_KEY` exists
 >   only for the movie assistant and OpenWiki, and `ANTHROPIC_API_KEY` must never be set in *any*
->   environment. This is the first gate in `CLAUDE.md`.
+>   environment. This is the first gate in `AGENTS.md`.
 > - the toolchain image contents and the `${localEnv}` forwarding mechanics;
 > - the worktree rule, the Playwright-in-a-container E2E recipe, and the Claude Code config/persistence
 >   notes, each of which says where it was measured.
@@ -824,7 +824,7 @@ pnpm nx test:integration mcm-app          # → 115 collected / 114 pass / 1 fai
 > a Docker DNS name. The `app-e2e` job overrides exactly these four (`KEYCLOAK_URL`, `MC_SERVICE_URL`,
 > `MONGO_URL`, `BFF_BASE_URL`) for the same reason; the recipe above mirrors it.
 >
-> This is the CLAUDE.md gate *"It can't run in this environment" needs the same proof as "it passes"*
+> This is the AGENTS.md gate *"It can't run in this environment" needs the same proof as "it passes"*
 > in its natural habitat: 84 red suites look like a tier that cannot
 > run here, and are three `export`s.
 
@@ -1040,7 +1040,7 @@ The Spec Kit lifecycle scripts ship as **PowerShell only** (`.specify/scripts/po
 `create-new-feature.ps1` & co. That failure is **silent** — nothing errors, the spec set simply gets
 written by hand with `.specify/feature.json` edited directly, which is how every numbered feature in
 `specs/` was produced before this landed. Since SDD is a hard gate for implementation work
-(CLAUDE.md), the tool that maintains its artifacts belongs in the shared image.
+(AGENTS.md), the tool that maintains its artifacts belongs in the shared image.
 
 `pwsh` is therefore **baked into the toolchain image** as the self-contained linux-x64 binary
 archive (`/opt/microsoft/powershell/7`, symlinked to `/usr/bin/pwsh`), pinned and Renovate-tracked

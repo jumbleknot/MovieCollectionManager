@@ -617,7 +617,7 @@ const mcServiceResult = syncEnvFile(
 const NOT_GENERATED = [
   [
     'agents/movie-assistant/.env.local',
-    'carries the operator\'s own Anthropic credential — CLAUDE.md scopes that to ' +
+    'carries the operator\'s own Anthropic credential — AGENTS.md scopes that to ' +
       'MCM_ANTHROPIC_API_KEY, mapped to ANTHROPIC_API_KEY only at the point of use, so this ' +
       'generator must not become a fourth place the key lives. Supply it by hand; see ' +
       'docs/runbooks/agent-layer.md.',

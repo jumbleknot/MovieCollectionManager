@@ -481,7 +481,7 @@ test('#227: an existing file MISSING MC_DB_URL has it APPENDED — the panic is 
  */
 const DOCUMENTED_BUT_NOT_GENERATED = {
   'agents/movie-assistant/.env.local':
-    'carries the operator\'s own Anthropic credential. CLAUDE.md scopes that key to MCM_ANTHROPIC_API_KEY, ' +
+    'carries the operator\'s own Anthropic credential. AGENTS.md scopes that key to MCM_ANTHROPIC_API_KEY, ' +
     'mapped to ANTHROPIC_API_KEY only at the point of use — a generator that minted or projected it ' +
     'would be a fourth place the key lives. The operator supplies this file by hand.',
 };

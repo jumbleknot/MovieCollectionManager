@@ -80,7 +80,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     'ci-non-blocking': () => [...CI_FULL_NON_BLOCKING.keys()],
   };
   if (!commands[cmd] || rest.length > 0) {
-    // Reject rather than guess (CLAUDE.md: an argument a tool does not recognise must not be ignored).
+    // Reject rather than guess (AGENTS.md: an argument a tool does not recognise must not be ignored).
     console.error('usage: node scripts/mobile-flows.mjs ci-full|ci-non-blocking');
     process.exit(2);
   }

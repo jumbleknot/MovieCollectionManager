@@ -140,8 +140,8 @@ from the code, plus the measured operational facts that cost a session each when
 Each deserves its own concept page with the rationale preserved **verbatim** — no abridgement, no
 rewording.
 
-**These pages are authoritative and therefore carry NO `resource` field.** Do not cite `CLAUDE.md`:
-that file is being reduced to an index and holds none of this content any more, so a citation would
+**These pages are authoritative and therefore carry NO `resource` field.** Do not cite `CLAUDE.md` or `AGENTS.md`:
+the first is a shim and the second an index, and neither holds this content any more, so a citation would
 point at a summary of itself. An authoritative concept is the canonical home of its subject, which is
 also what makes the routing rule in section 7 decidable. Every authoritative concept must be listed
 under `authoritative:` in `openwiki/protected.yaml`; a concept that is neither listed there nor
@@ -275,8 +275,9 @@ The only destinations this changes are the subjects relocated out of `CLAUDE.md`
 authoritative, so learnings about them are written **into the concept**. Every other subject keeps the
 canonical home it already had.
 
-**Do not write prose into `CLAUDE.md` and expect a later run to relocate it.** That file
-is an index; a check fails on content beyond its index and its machine-managed regions.
+**Do not write prose into `AGENTS.md` and expect a later run to relocate it.** That file
+is the index every assistant reads; a check fails on content beyond its index and its machine-managed
+regions. `CLAUDE.md` is only a shim that imports it, and a gate (G15) fails on anything added there.
 
 ### A learning that corrects what is written: rewrite it in place
 

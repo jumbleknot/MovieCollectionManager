@@ -13,7 +13,7 @@
 //
 // Each provider accepts its raw name first (what CI injects) and then the `MCM_`-prefixed name (what
 // the dev container carries). The `MCM_` form exists because an exported `ANTHROPIC_API_KEY` makes
-// Claude Code bill the API instead of the subscription (CLAUDE.md, first gate); the Fireworks key
+// Claude Code bill the API instead of the subscription (AGENTS.md, first gate); the Fireworks key
 // follows the same rule for symmetry. The resolved value is mapped to the name the generator reads
 // ONLY in the generator's own environment, and the other providers' keys are removed from it: the
 // generator gets exactly the credential it uses.

@@ -26,7 +26,7 @@
 //                                               non-zero on any failure. Costs a fraction of a cent.
 //
 // Every argument other than --preflight is REJECTED: a flag this script did not recognise must never
-// mean "start a paid run" (the --help / --dry-run lesson recorded in CLAUDE.md).
+// mean "start a paid run" (the --help / --dry-run lesson recorded in AGENTS.md).
 
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';

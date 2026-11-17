@@ -62,7 +62,7 @@ function runCli(args, { env = {}, cwd = REPO_ROOT } = {}) {
   const clean = { ...process.env, ...env };
   // Scrub EVERY name the script accepts a credential from, read from the script itself. Item #209:
   // this deleted `ANTHROPIC_API_KEY` alone while wiki-maintain.mjs had long since also accepted
-  // `MCM_ANTHROPIC_API_KEY` — the name CLAUDE.md says the key is actually carried under in all three
+  // `MCM_ANTHROPIC_API_KEY` — the name AGENTS.md says the key is actually carried under in all three
   // sanctioned environments. So "with NO model credential" was false wherever anyone really works,
   // and `--execute` sailed past its own guard into the real path.
   for (const name of mod.CREDENTIAL_ENV_NAMES) delete clean[name];
@@ -1911,7 +1911,7 @@ test('an index file is writable but is NOT a subject the bundle summarizes', () 
   // `invariants/agents.md` — concepts summarizing the index that points AT them. `regenerate` answers
   // "may this be written?"; it does not answer "should the bundle summarize it?".
   const policy = realPolicy();
-  assert.equal(mod.isCoverageTarget(policy, 'CLAUDE.md'), false, 'the index must not become a concept');
+  assert.equal(mod.isCoverageTarget(policy, 'CLAUDE.md'), false, 'the shim must not become a concept');
   assert.equal(mod.isCoverageTarget(policy, 'AGENTS.md'), false);
   assert.equal(mod.mayWrite(policy, 'CLAUDE.md', 'agent').allowed, true, 'but an agent still maintains it');
 

@@ -2158,7 +2158,7 @@ function flushStdout() {
  * Measured on the Windows host (2026-07-26, unchanged by #105): the process died with
  * **-1073740791 (0xC0000409, STATUS_STACK_BUFFER_OVERRUN — Windows' __fastfail abort)** where the
  * contract says 3. The rendered output was correct every time; only the exit path died. That matters
- * beyond cosmetics because CLAUDE.md instructs agents to BRANCH on this exit code, and an abort code
+ * beyond cosmetics because AGENTS.md instructs agents to BRANCH on this exit code, and an abort code
  * is neither 0 nor 3 — it reads as a crashed tool, and `exit 3` (runner starvation, not failure) is
  * precisely the signal that must survive.
  *

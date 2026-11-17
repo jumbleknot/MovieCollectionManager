@@ -411,11 +411,13 @@ retained Docker Desktop container) rather than failing silently or looking like 
 
 ## Mandatory pre-work gates
 
-These gates apply before any implementation or assistant session. They are in `CLAUDE.md` (the
-index) in priority order because they have each cost a session or produced a hard-to-diagnose
-failure. `CLAUDE.md` is an **index, not a document** — `check-openwiki-governance.mjs` fails on prose
-beyond the index and its three managed regions — and it pulls in `AGENTS.md`, which carries the
-OpenWiki block plus the hand-authored, regeneration-surviving wiki notes.
+These gates apply before any implementation or assistant session. They are in `AGENTS.md` (the
+index every assistant reads) in priority order because they have each cost a session or produced a
+hard-to-diagnose failure. `AGENTS.md` is an **index, not a document** — `check-openwiki-governance.mjs`
+fails on prose beyond the index and its three managed regions (G8) — and it also carries the OpenWiki
+block plus the hand-authored, regeneration-surviving wiki notes. `CLAUDE.md` is a **shim**: the
+generator's `@AGENTS.md` import and nothing else (G15), so Claude Code, Copilot, Codex and OpenCode
+each load the instructions exactly once.
 
 ### 1 — Credential rule: never set `ANTHROPIC_API_KEY`
 
@@ -491,7 +493,7 @@ which is routine tidy-up rather than a detached PR. See
 
 ### The rest of the gate list is owned elsewhere
 
-The four above are the ones detailed here because they gate *starting* work. `CLAUDE.md`'s "Gates
+The four above are the ones detailed here because they gate *starting* work. `AGENTS.md`'s "Gates
 that run before you act" list is longer, and each remaining class is owned by the page that
 documents it — this is a pointer, not a restatement:
 

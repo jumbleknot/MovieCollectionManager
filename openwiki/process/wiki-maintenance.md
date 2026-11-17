@@ -3,10 +3,10 @@ type: Process
 title: OpenWiki bundle generation and maintenance
 description: How this openwiki/ knowledge bundle is generated, refreshed and gated since feature 098 — the coding session refreshes a derived page in the same PR as its source with the free wiki-refresh tool, the required okf-lint and okf-governance gates (V17 blocking a stale summary), the wiki-update and wiki-maintain Nx targets that remain only for a manual rebuild of operator-named pages, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, and why the two gates are required merge contexts while the paid rebuild deliberately is not.
 resource: infrastructure-as-code/project.json
-resource-sha256: 8e83e75eeb7dedb11fb8edb85524f316d7ca1ad5448834afb8611f662482f02b
+resource-sha256: bf22310b6960c48d8e74a45161536bb4c77dfcbafaf04450628baad5bc30c6f0
 tags: [openwiki, okf, documentation, ci, maintenance]
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
-timestamp: 2026-11-10T03:37:26.544Z
+timestamp: 2026-11-17T01:23:24.750Z
 ---
 
 # OpenWiki bundle generation and maintenance
@@ -142,7 +142,8 @@ breaks either one is refused before the run can propose it.
   resolving derived summary nor a listed authoritative one fails the gate (G11), and an authoritative
   concept whose effective policy is `regenerate` also fails (G12) — a summary of nothing could only be
   paraphrased, which is exactly what the protected passages exist to prevent. Nothing here changes
-  `CLAUDE.md`, which is an index into the bundle and is gated against re-growth.
+  `AGENTS.md`, which is an index into the bundle and is gated against re-growth, or `CLAUDE.md`, a
+  shim that only imports it (G15).
 - **The generator's own account of a run is never trusted.** `wiki-maintain` verifies each slice by the
   pages that actually landed in the working tree, by bundle conformance, by whether policy permitted
   every written path, and — since PR #857 — by running the *governance* gate over the repository root

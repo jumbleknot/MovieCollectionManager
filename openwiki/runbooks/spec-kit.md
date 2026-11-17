@@ -3,9 +3,9 @@ type: Runbook
 title: "Spec Kit: this repository's customisations, and upgrading it"
 description: The one inventory of every way the repository changes or adds to GitHub Spec Kit — the tasks-template override carrying the doc-impact sweep, the required tests and the Verify RED / Verify GREEN checkpoint format it shows, the four registered local edits (the /speckit-tasks skill's and the Copilot tasks agent's "tests are required" rule, /speckit-converge appending its tasks in that format, and /speckit-taskstoissues sending tasks to the Forgejo backlog), the constitution, the git and agent-context extension hooks, and the three CLI version pins — plus who owns which file, the order of preference for a new customisation, the guard that fails when any of them is lost or a Spec Kit-owned file is edited without being registered, its ten failure codes, the upgrade procedure, and the /speckit-constitution gap.
 resource: docs/runbooks/spec-kit.md
-resource-sha256: df17a9b25db9fc91e69cb26fbda4978fa5e914be46bf786cd151518fb2f02d14
+resource-sha256: e2d5be7bcc29989f8b3ed3e2d5abd29ff12d86efe45dd60ceae443040832c760
 tags: [spec-kit, sdd, templates, guardrails, upgrade, runbook]
-timestamp: 2026-11-17T00:35:19.490Z
+timestamp: 2026-11-17T01:55:05.241Z
 ---
 
 # Spec Kit: this repository's customisations, and upgrading it
@@ -46,7 +46,7 @@ a core template.
    local edit. The 0.11.2 → 0.16.5 upgrade overwrote it once.
 4. **The constitution**, **the extension hooks** (the `git` extension's branch creation and
    auto-commits, which run even when marked optional; the `agent-context` extension's rewrite of
-   CLAUDE.md's `SPECKIT` region; converge has `before_`/`after_converge` hooks like the rest, off in
+   AGENTS.md's `SPECKIT` region; converge has `before_`/`after_converge` hooks like the rest, off in
    `git-config.yml` like every event) and **three CLI version pins** that must move together.
 
 ## The guard
