@@ -3,9 +3,9 @@ type: Runbook
 title: Android emulator & APK builds (mobile E2E)
 description: The decision rule for where each mobile E2E flow runs — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone release APK with its in-bundle localhost guard and explicit Gradle heap, the launch check that must pass before any flow and the app-ci / android-launch commit status that reports it, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
-resource-sha256: bf56ee4a6944eb0566d82c4ec3f7d21012ab40fa96056ff9e0a20261fb06768d
+resource-sha256: 768b738b022e56e068746ab2cc2151f25143a6bdd2ffb72686552c0e696e6a02
 tags: [android, mobile, emulator, apk, ci, runbook]
-timestamp: 2026-11-17T03:42:47.503Z
+timestamp: 2026-11-17T03:45:17.157Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -216,7 +216,9 @@ the agent half, on a **second emulator**.
 
 - **How to opt in:** label the pull request **`mobile-e2e-full`**, or dispatch `app-ci` with
   `mobile_suite=full` (a `choice` input, options `agents` / `full`, default `agents`). A `main` push is
-  always agents-only — nothing about a branch implies the full suite. The label does double duty: it
+  always agents-only — nothing about a branch implies the full suite. A label added *after* the PR
+  opened takes effect only on the next push or a close-and-reopen: the trigger has no `labeled` type,
+  and the run reads the label from its own event. The label does double duty: it
   opens every mobile gate *and* sets `MOBILE_SUITE`, because a suite that was selected without opening
   the gate would never run and would still read as a green tick. Both arms are pinned by
   `scripts/__tests__/app-ci-mobile-full.guard.test.mjs`, which **evaluates** the trigger expressions

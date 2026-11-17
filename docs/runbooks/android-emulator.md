@@ -67,6 +67,12 @@ the flows per-file in two halves:
   runner scripts) **or** carries the `mobile-e2e` **or** `mobile-e2e-full` label; otherwise the PR
   gets the web E2E and integration tiers from the same job and skips the ~35-min emulator half. Only
   `mobile-e2e-full` / `mobile_suite=full` adds the full suite — `main` pushes stay agents-only.
+  **Adding a label does not start a run.** `app-ci.yml`'s `pull_request:` trigger takes the default
+  event types (opened, synchronize, reopened), not `labeled`, and the label is read from the event
+  that started the run. A label applied after the PR was opened is ignored until the next push, or
+  until the PR is closed and reopened; the new run then cancels the unlabelled one (`concurrency`
+  is per ref). The labels endpoint needs an issue-scoped token: the `git credential fill`
+  credential that opens PRs answers 403 `read:issue` (measured on PR #1057).
 - **Trigger on a branch without a PR:** `POST …/actions/workflows/app-ci.yml/dispatches` with
   `{"ref":"<branch>","inputs":{"provider":"anthropic","mobile_suite":"full"}}` (omit `mobile_suite`
   for the agents-only default) and the `git credential fill` credential — the full recipe, and why a
