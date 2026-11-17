@@ -44,12 +44,6 @@ export const CI_FULL_EXCLUDED = new Map([
 // for a reason that PR did not cause. ENVIRONMENTAL = CI-only, not the app. KNOWN DEFECT = it fails
 // on the app as it is — reported, never silently parked: fix the app or the flow, then remove it.
 export const CI_FULL_NON_BLOCKING = new Map([
-  ['login-invalid',
-    'ENVIRONMENTAL (app-ci run 5502, 2/2 attempts): the flow\'s own assertions hold — logout ends the SSO ' +
-    'session and Keycloak re-shows its form with the credential error for invalid_user — but the two ' +
-    '`pressKey: back` it uses to close the Chrome Custom Tab leave the CI image\'s Chrome still on the ' +
-    'Keycloak page (no IME open), so `login-screen` never returns. Chrome back-stack depth, not the app. ' +
-    'Failed every full-suite run on record since (6493, 6532, 7119, 7268) and that cause is unre-verified — item #985.'],
   ['movie-sort',
     'KNOWN DEFECT (app-ci run 5502, 2/2 attempts, pixel_6 1080x2400 — the same width as the local Pixel 7): ' +
     'with the DEFAULT visible columns (use-column-visibility.ts: owned + ripped on) the sort row holds ' +

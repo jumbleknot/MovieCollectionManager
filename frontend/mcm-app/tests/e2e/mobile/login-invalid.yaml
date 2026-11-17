@@ -54,11 +54,21 @@ appId: com.grumpyrobot.mcmapp
       - inputText: "wrongpassword"
       # Sign In button also hidden while password field is focused — press Enter.
       - pressKey: Enter
-# After invalid credentials Keycloak shows an error and reloads the form.
-# Chrome history has 2 entries: initial login page + error page.
-# Two back presses close the Custom Tab and return to MCM.
-- pressKey: back
-- pressKey: back
+# THE FLOW'S OWN CLAIM: Keycloak REJECTED the credential. Asserted, not assumed — the error text
+# is what separates "the bad login was submitted and refused" from "nothing was submitted".
+- extendedWaitUntil:
+    visible:
+      text: "Invalid username or password\\."
+    timeout: 15000
+# Close the Custom Tab with Chrome's own Close-tab button (item #985). The flow used to press
+# `back` twice, on the theory that Chrome's history held exactly the login page and the error
+# page. Measured on app-ci run 7296: Keycloak autofocuses the username field on the error page,
+# so the FIRST back only dismissed the keyboard and the SECOND went back one page in history —
+# the final hierarchy was the PRE-submission form (username restored, no `input-error-username`)
+# with the tab still open, so `login-screen` never returned. The button does not depend on how
+# many entries the history holds or whether a keyboard is up.
+- tapOn:
+    id: "com.android.chrome:id/close_button"
 - extendedWaitUntil:
     visible:
       id: "login-screen"

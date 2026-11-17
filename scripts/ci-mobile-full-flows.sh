@@ -73,6 +73,7 @@ fresh_app() {
   adb shell pm clear "$APP_ID" >/dev/null 2>&1 || true
 }
 
+prepare_device_log
 reset_chrome_sso
 
 failed=()
@@ -84,6 +85,7 @@ for flow in "${flows[@]}"; do
   is_non_blocking "$flow" && max=1
   while :; do
     fresh_app
+    begin_attempt_device_log
     if bash scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/$flow.yaml" "${FIXTURE_ENV[@]}"; then
       break
     fi

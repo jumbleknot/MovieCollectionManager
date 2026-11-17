@@ -40,11 +40,26 @@ the flows per-file in two halves:
    clear` + First-Run skip) once before the batch, 2 attempts per flow, and the
    batch runs to the end and fails if ANY blocking flow failed. `CI_FULL_NON_BLOCKING` in the same file
    lists flows that run (one attempt) and are reported but cannot fail the step, each tagged
-   **ENVIRONMENTAL** or **KNOWN DEFECT** with the run that measured it — today `login-invalid`
-   (ENVIRONMENTAL: two `back` presses do not close the CI image's Chrome Custom Tab) and `movie-sort`
+   **ENVIRONMENTAL** or **KNOWN DEFECT** with the run that measured it — today only `movie-sort`
    (KNOWN DEFECT: with the default visible columns, `sort-dir-toggle` is past the right edge of the
    sort row's horizontal ScrollView on a 411dp-wide phone). A listed flow that passes is reported
-   `PASS-REMOVE-NONBLOCKING`. `E2E_COLLECTION_NAME` / `E2E_MOVIE_TITLE` are
+   `PASS-REMOVE-NONBLOCKING`. `login-invalid` was listed until item #985: its two `back` presses
+   never closed the Custom Tab, because Keycloak autofocuses the username field on its error page, so
+   the first `back` only dismissed the keyboard and the second went back in history to the
+   pre-submission form. It now asserts Keycloak's `Invalid username or password.` and closes the tab
+   with Chrome's own Close-tab button, and it blocks like any other flow. After the table, the results
+   step also runs `scripts/maestro-failure-summary.mjs`, which prints, for every **failed attempt**,
+   the failing step, Maestro's message, the elements on screen and the device-log lines about the app
+   and Chrome (URL queries withheld). That covers a flow that passed on its retry too: on run 7815
+   `auth-guard` read `PASS 2` and its failed first login was otherwise lost with the runner. So a
+   **green** run's failure can be checked against its stated cause rather than taken on trust (the
+   device capture itself is published only on a red run). That summary named item #986's mechanism on
+   run 7820: Google Play services' persistent process died 0.6 s into `auth-guard`'s Custom Tab, and
+   Android killed Chrome with it (`depends on provider …FontsProvider in dying proc
+   com.google.android.gms.persistent`), so the tab vanished and the app saw a dismissed login — not a
+   cold Chrome (a Keycloak warm-up after each reset was tried on run 7815 and did not help). The device
+   log is enlarged and cleared per attempt, so a capture covers that attempt instead of the last second of
+   Maestro's own polling. `E2E_COLLECTION_NAME` / `E2E_MOVIE_TITLE` are
    fixed non-secret fixture values (`E2E Browse` / `Alpha`, from the seeded base dataset). The
    per-flow table (`flow · result · attempts · seconds`) is the `maestro-full-results` step — in the
    counts bundle on a green run and the failure digest on a red one. **Cost, measured on app-ci run 5502:** the `maestro-full-flows` step took 1748 s (29 min, 24 flows, two of them failing through a retry), plus a second emulator boot (~2-3 min) — roughly **+30-35 min** on top of an agents-only run. The job
@@ -56,6 +71,12 @@ the flows per-file in two halves:
   runner scripts) **or** carries the `mobile-e2e` **or** `mobile-e2e-full` label; otherwise the PR
   gets the web E2E and integration tiers from the same job and skips the ~35-min emulator half. Only
   `mobile-e2e-full` / `mobile_suite=full` adds the full suite — `main` pushes stay agents-only.
+  **Adding a label does not start a run.** `app-ci.yml`'s `pull_request:` trigger takes the default
+  event types (opened, synchronize, reopened), not `labeled`, and the label is read from the event
+  that started the run. A label applied after the PR was opened is ignored until the next push, or
+  until the PR is closed and reopened; the new run then cancels the unlabelled one (`concurrency`
+  is per ref). The labels endpoint needs an issue-scoped token: the `git credential fill`
+  credential that opens PRs answers 403 `read:issue` (measured on PR #1057).
 - **Trigger on a branch without a PR:** `POST …/actions/workflows/app-ci.yml/dispatches` with
   `{"ref":"<branch>","inputs":{"provider":"anthropic","mobile_suite":"full"}}` (omit `mobile_suite`
   for the agents-only default) and the `git credential fill` credential — the full recipe, and why a

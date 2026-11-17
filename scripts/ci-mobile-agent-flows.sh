@@ -101,6 +101,7 @@ run_flow() {
   if [ "$1" = "agent-add-ownership" ]; then
     extra=(--env "COLLECTION_NAME=t040own-$(date +%s)-${RANDOM}")
   fi
+  begin_attempt_device_log
   bash scripts/maestro-run.sh "frontend/mcm-app/tests/e2e/mobile/$1.yaml" ${extra[@]+"${extra[@]}"}
 }
 
@@ -108,6 +109,7 @@ run_flow() {
 # Chrome SSO reset (reset_chrome_sso) live in ci-mobile-lib.sh, shared with ci-mobile-full-flows.sh.
 # shellcheck source=scripts/ci-mobile-lib.sh
 source "$(dirname "${BASH_SOURCE[0]}")/ci-mobile-lib.sh"
+prepare_device_log
 
 for flow in "${flows[@]}"; do
   echo "=== flow: $flow ==="
