@@ -36,7 +36,7 @@ So a change to Spec Kit's behaviour takes one of three forms, in order of prefer
 
 | # | What it changes | Where it lives | Form | How Spec Kit picks it up | Guard (failure codes) |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Every `tasks.md` carries a **Doc-impact sweep** task in Phase 1 and a **Close-out re-search** task in Polish (feature 101) | `.specify/templates/overrides/tasks-template.md` | Override (a fork of the core tasks template) | `Resolve-Template` / `Resolve-TemplateContent` in `common.ps1` check `overrides/` first | `override-missing`, `header-invalid`, `sweep-missing`, `core-changed`, `resolution-broken` |
+| 1 | Every `tasks.md` carries a **Doc-impact sweep** task in Phase 1 and a **Close-out re-search** task in Polish (feature 101), and ends with an **Open the PR** task that is ticked before CI runs: CI evidence goes in the PR and backlog-item closing comments, never in `tasks.md`, so recording it costs no extra CI run | `.specify/templates/overrides/tasks-template.md` | Override (a fork of the core tasks template) | `Resolve-Template` / `Resolve-TemplateContent` in `common.ps1` check `overrides/` first | `override-missing`, `header-invalid`, `sweep-missing`, `core-changed`, `resolution-broken` |
 | 2 | Tests are **required**, and every test task uses the **TDD checkpoint format**: scenarios covered, a **Verify RED** with the expected failure, and a paired implementation task with a **Verify GREEN** | Format and rules: `docs/templates/feature-test-tasks-template.md`. Mandated by the constitution ("Test-Driven Development", "TDD Checkpoint Format"). Shown in the User Story 1 sample of the override in row 1 | Override (in row 1's fork) plus the constitution | Same as row 1. The core template says tests are optional; the override replaces that | `tdd-format-missing` |
 | 2a | The `/speckit-tasks` skill's own "Tests are OPTIONAL" rule is replaced with "Tests are REQUIRED" in the row 2 format. Without this edit the skill's instruction contradicts the override, and the agent reads both | `.claude/skills/speckit-tasks/SKILL.md` (Task Generation Rules) | Registered local edit to a Spec Kit-owned file | It is the skill itself | `local-edit-reverted`, `unregistered-edit`, `registry-stale` |
 | 2b | The Copilot tasks agent builds `tasks.md` from the **override** in row 1, not the core template, and its "Tests are OPTIONAL" rule is replaced with row 2a's "Tests are REQUIRED" text, so a Copilot-generated `tasks.md` carries the sweep, the close-out re-search and the RED/GREEN pairs (item #1031) | `.github/agents/speckit.tasks.agent.md` (Outline step 4, Task Generation Rules) | Registered local edit to a Spec Kit-owned file | It is the agent itself | `local-edit-reverted`, `unregistered-edit`, `registry-stale` |
@@ -104,8 +104,8 @@ The procedure, all in one PR, from a worktree:
    You no longer need to hunt for local edits before `--force`: the gate compares every managed
    file against its manifest hash, accepting both LF and CRLF, so a Windows checkout's line endings
    are not counted as edits.
-3. **Merge the upstream change into the override.** Keep the **Doc-impact sweep** and
-   **Close-out re-search** tasks, the User Story 1 test pair with its **Verify RED** /
+3. **Merge the upstream change into the override.** Keep the **Doc-impact sweep**,
+   **Close-out re-search** and **Open the PR** tasks, the User Story 1 test pair with its **Verify RED** /
    **Verify GREEN** fields and the pointer to `docs/templates/feature-test-tasks-template.md`, and
    the `EXCEPTION` note in the sample-task comment.
 4. **Record**: `node scripts/check-speckit-overrides.mjs --record`. Never hand-type the hash. The
