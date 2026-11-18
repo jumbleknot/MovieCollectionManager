@@ -3,10 +3,10 @@ type: Reference
 title: MovieCollectionManager repository — structure and working conventions
 description: The MCM monorepo itself — its directory layout, the polyglot tech stack re-derived from the declaring manifests rather than from the README's tech-stack table, the toolchain and lint conventions features 081 and 087 moved (Expo SDK 58 with Jest 30, ESLint 10 flat config, the single exact Tamagui 3 pin, pnpm/Nx exact pins, the Gradle 9.4.1 bake, the still-held babel / TypeScript / async-storage / JDK majors), the two supported dev environments (the dev container on a Docker Sandbox microVM as the default, the native host toolchain as the alternative kept for the Android emulator), the four mandatory pre-work gates with a pointer to the other gate classes, and the load-bearing sandbox gotchas — the `sbx` v0.51.0 pin and its upgrade ritual, `sbx run`'s false dockerd failure, the memory bounds, and why egress enforcement lives outside the VM.
 resource: README.md
-resource-sha256: ffa82cc9d54fbc444dbec9deb9d571296e7a3b55a73ad7db641166e3e3943b65
+resource-sha256: d33a04e090aee96c2ae0b510f67bff30ab413c881deb8157c1be0a08c9c70bab
 tags: [monorepo, devcontainer, docker-sandbox, nx, sdd, onboarding, eslint, tamagui, dependencies, expo, react-native, jest]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-15T20:19:42.725Z
+timestamp: 2026-11-17T11:56:34.180Z
 ---
 
 # MovieCollectionManager repository — structure and working conventions
@@ -15,7 +15,8 @@ MCM is a multi-user, full-stack movie-collection app built as a polyglot pnpm/Nx
 React Native/Expo universal client, a Rust/Axum domain service, a Python LangGraph agent gateway,
 three scoped MCP servers, shared infrastructure-as-code, and a fully self-hosted Forgejo CI/CD
 pipeline. It is also a working example of spec-driven, AI-assisted development — every feature
-flows through a spec → plan → tasks artifact set before any implementation code is written.
+flows through a spec → plan → tasks artifact set before any implementation code is written. What
+that experiment has taught, with dated measurements, is in `docs/MCM-Learnings.md`.
 
 **Re-derive the pins from the manifests, never from a README line range.** The README's tech-stack
 table sits in a section that shifts as the document is edited, so a line-range citation of it drifts
@@ -26,13 +27,13 @@ The declarations themselves are the authority:
 
 | Area | Pin | Declared in |
 |---|---|---|
-| Universal client | Expo SDK 58 (`expo ~58.0.23`, `expo-router ~58.0.30`, `expo-server ~58.0.6`), React Native 0.88.1, React 19.3.0, Tamagui 3.0.18, CopilotKit 1.79.1, Jest 30.5.2 / `jest-expo` 58.0.14, TypeScript 6.0.3 | `frontend/mcm-app/package.json`, `packages/design-system/package.json` |
-| Backend | Rust 1.99.1 channel, Axum 0.8, MongoDB / BSON 3 | `rust-toolchain.toml`, `backend/mc-service/Cargo.toml` |
+| Universal client | Expo SDK 58 (`expo ~58.0.23`, `expo-router ~58.0.30`, `expo-server ~58.0.6`), React Native 0.88.1, React 19.3.0, Tamagui 3.3.3, CopilotKit 1.87.1, Jest 30.5.2 / `jest-expo` 58.0.14, TypeScript 6.0.3 | `frontend/mcm-app/package.json`, `packages/design-system/package.json` |
+| Backend | Rust 1.100.0 channel, Axum 0.8, MongoDB / BSON 3 | `rust-toolchain.toml`, `backend/mc-service/Cargo.toml` |
 | BFF and dev-container toolchain | Node 26 (`node:26.13.1-alpine3.23` in the app image, `node:26-bookworm` in the toolchain image, `26.13.1` in every CI `setup-node`; one major, enforced by `check-toolchain-consistency.mjs`), Gradle 9.4.1 baked, JDK 17 (openjdk-17 in the toolchain image, `java-version: '17'` in CI) | `frontend/mcm-app/Dockerfile`, `.devcontainer/toolchain.Dockerfile`, `.forgejo/workflows/app-ci.yml` |
-| Package manager and task runner | pnpm 12.13.0, Nx 24.0.6 | `package.json`, `nx.json` |
+| Package manager and task runner | pnpm 12.20.0, Nx 24.0.6 | `package.json`, `nx.json` |
 | Agent layer | Python 3.14 runtime image, `requires-python >=3.13` | `agents/movie-assistant/Dockerfile`, `agents/movie-assistant/pyproject.toml`, `agents/movie-assistant/uv.lock` |
 
-**Rust 1.99.1** is pinned by `rust-toolchain.toml`, which `rustup` reads automatically for every
+**Rust 1.100.0** is pinned by `rust-toolchain.toml`, which `rustup` reads automatically for every
 `cargo`/`rustc` call inside the repo, so there is no channel to choose. **Node 26** covers both the BFF
 container base and the dev-container toolchain image, with **pnpm 12** and **Nx 24** as the package
 manager and task runner.
@@ -68,10 +69,11 @@ reason above. For individual deployable-unit pages, see the rest of the
 ├── infrastructure-as-code/    # Docker Compose stacks, Keycloak, Vault, observability, Komodo
 ├── specs/                     # Spec Kit feature folders (spec/plan/tasks per feature)
 ├── docs/                      # Architecture, PRDs, runbooks, decisions, templates (human-owned)
-├── openwiki/                  # Generated OKF knowledge wiki for coding agents (summaries + gotchas + links)
+├── openwiki/                  # OKF knowledge wiki for coding agents (summaries + gotchas + links), refreshed in the same PR as its sources
 ├── scripts/                   # CI gates and dev utilities
 ├── security/                  # SAST, DAST, and image-scan configuration
-└── .forgejo/workflows/        # CI/CD pipelines
+├── .forgejo/workflows/        # CI/CD pipelines
+└── AGENTS.md                  # The one instruction file for every coding assistant (CLAUDE.md imports it)
 ```
 
 The portable dev-environment asset is `.devcontainer/` — the two `devcontainer.json` variants, the
@@ -98,7 +100,7 @@ failure attributable to a single change. Only the stages that changed how the re
 wired belong on this page; the order, the holds and their re-check rules live in the feature's own
 artifacts.
 
-- **Package manager and task runner.** pnpm 12 (`packageManager: pnpm@12.13.0`) and Nx 24.0.6. The
+- **Package manager and task runner.** pnpm 12 (`packageManager: pnpm@12.20.0`) and Nx 24.0.6. The
   Node **floor** in the root manifest stayed at `engines.node >= 22.13` deliberately: pnpm 12 declares
   only `>=18`, and every pin already sits at 22/24, so lowering it would buy nothing.
   `scripts/check-toolchain-consistency.mjs` is what makes that floor binding — it fails on a workflow or
@@ -353,7 +355,7 @@ known first-run `firewall-allowlist` case that passed on re-run.
 The native host toolchain is the alternative environment, and it is needed **only** for the Android
 emulator and native mobile builds, which the microVM cannot host.
 
-**Prerequisites:** Node.js 26, pnpm (at the `packageManager` version, via `scripts/install-pnpm.sh`), Nx; Rust — pinned to **1.99.1** by
+**Prerequisites:** Node.js 26, pnpm (at the `packageManager` version, via `scripts/install-pnpm.sh`), Nx; Rust — pinned to **1.100.0** by
 [rust-toolchain.toml](../../rust-toolchain.toml), which `rustup` reads automatically for every
 `cargo`/`rustc` call in the repo; Python 3.14 + `uv` (agent layer); Docker Desktop; and Android
 Studio + JDK 17 for mobile development only.

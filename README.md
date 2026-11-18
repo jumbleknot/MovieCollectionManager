@@ -4,7 +4,7 @@
 
 MCM is a multi-user, full-stack application for cataloging physical and digital movie collections. Each user owns one or more collections and can record media formats, movie metadata, and links to IMDB/TMDB; search and filter their library; and maintain a wishlist of titles to buy or upgrade. A built-in conversational assistant (LangGraph multi-agent) handles natural-language tasks like adding movies, retrieving TMDB metadata, and spreadsheet import/export.
 
-The repository is also a working example of **spec-driven, AI-assisted development**: every feature flows through GitHub Spec Kit artifacts (spec → plan → tasks) governed by a repository [constitution](.specify/memory/constitution.md), with mandatory TDD and a fully self-hosted CI/CD pipeline.
+The repository is also a working example of **spec-driven, AI-assisted development**: every feature flows through GitHub Spec Kit artifacts (spec → plan → tasks) governed by a repository [constitution](.specify/memory/constitution.md), with mandatory TDD and a fully self-hosted CI/CD pipeline. What that experiment has taught so far, with dated measurements, is in [docs/MCM-Learnings.md](docs/MCM-Learnings.md).
 
 ## Features
 
@@ -44,9 +44,9 @@ See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full descriptio
 
 | Area | Technology |
 |---|---|
-| Frontend | React Native 0.88, React 19.3, Expo SDK 58, Expo Router, Tamagui 3 (`@mcm/design-system`), CopilotKit 1.79 + AG-UI, TypeScript |
+| Frontend | React Native 0.88, React 19.3, Expo SDK 58, Expo Router, Tamagui 3 (`@mcm/design-system`), CopilotKit 1.87 + AG-UI, TypeScript |
 | BFF | Expo Router API routes (Node 26 container), Redis 8 sessions, Axios |
-| Backend | Rust 1.99 (pinned), Axum 0.8, Tokio, CQRS-style command/query handlers, MongoDB 9 |
+| Backend | Rust 1.100 (pinned), Axum 0.8, Tokio, CQRS-style command/query handlers, MongoDB 9 |
 | AI agents | Python 3.14, LangGraph, FastAPI + AG-UI, MCP SDK 2.x, Langfuse / OpenTelemetry |
 | Identity | Keycloak 26.8 on PostgreSQL 18 — OAuth 2.0 + PKCE, RBAC |
 | Secrets | Komodo Variables in production ([ADR-0001](openwiki/decisions/adr-0001-prod-secrets-management.md)); Vault is deployed but dormant and agent-layer-scoped |
@@ -67,10 +67,11 @@ See [docs/MCM-Architecture.md](docs/MCM-Architecture.md) for the full descriptio
 ├── infrastructure-as-code/    # Docker Compose stacks, Keycloak, Vault, observability, Komodo
 ├── specs/                     # Spec Kit feature folders (spec/plan/tasks per feature)
 ├── docs/                      # Architecture, PRDs, runbooks, decisions, templates (human-owned)
-├── openwiki/                  # Generated OKF knowledge wiki for coding agents (summaries + gotchas + links)
+├── openwiki/                  # OKF knowledge wiki for coding agents (summaries + gotchas + links), refreshed in the same PR as its sources
 ├── scripts/                   # CI gates and dev utilities
 ├── security/                  # SAST, DAST, and image-scan configuration
-└── .forgejo/workflows/        # CI/CD pipelines
+├── .forgejo/workflows/        # CI/CD pipelines
+└── AGENTS.md                  # The one instruction file for every coding assistant (CLAUDE.md imports it)
 ```
 
 ## Getting Started
@@ -94,7 +95,7 @@ Needed only for the Android emulator and native mobile builds, which the microVM
 **Prerequisites**
 
 - Node.js 26, pnpm (at the `packageManager` version, via `scripts/install-pnpm.sh`), Nx
-- Rust — pinned to **1.99.1** by [rust-toolchain.toml](rust-toolchain.toml); `rustup` reads that file automatically for every `cargo`/`rustc` call in the repo, so there is no channel to choose
+- Rust — pinned to **1.100.0** by [rust-toolchain.toml](rust-toolchain.toml); `rustup` reads that file automatically for every `cargo`/`rustc` call in the repo, so there is no channel to choose
 - Python 3.14 + uv (agent layer)
 - Docker Desktop
 - Android Studio + JDK 17 (mobile development only)
@@ -229,7 +230,7 @@ Supply-chain and code-quality helpers used across the workflow: `cargo-audit`, `
 - ≥70% line coverage enforced on new code (Jest / tarpaulin)
 - Unit, integration (real dependencies — no mocks), and E2E suites repeated across web and mobile clients
 - **The agent E2E suite is split by tier.** Tests tagged `@gate` block a merge; tests tagged `@model-decision` — whose assertions turn on what the model chose to do — run non-blocking on `main` and on dispatch, publishing their own counts. The selection is `E2E_TIER` in `playwright.config.ts` (deliberately in the config, not a CLI flag), and a separate guard — `scripts/__tests__/agent-test-classification.test.mjs` — fails on any agent test carrying neither tag, so an unclassified test is a failure rather than a silent default and nothing leaves the gate without a tier that runs it.
-- CI gates on every push/PR: secret scan, naming conventions, SAST + dependency SCA, and DAST — plus a twice-weekly (Tue/Fri) third-party image CVE sweep whose risk-allowlist entries can carry expiry dates and are re-triaged on schedule.
+- CI gates on every push/PR: secret scan, naming conventions, SAST + dependency SCA, and DAST (when the app or its scan config changes) — plus a twice-weekly (Tue/Fri) third-party image CVE sweep whose risk-allowlist entries can carry expiry dates and are re-triaged on schedule.
 
 ## Security
 

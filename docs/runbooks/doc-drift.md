@@ -44,7 +44,7 @@ The audit measures whether layer 1 works. It is a backlog item that files its ow
 cadence needs no scheduler and no standing owner. The session that closes one audit opens the next.
 
 **Scope**: every doc that states current procedure: `docs/runbooks/**`, `docs/MCM-Architecture.md`,
-and the project READMEs under `agents/`, `mcp-servers/`, `infrastructure-as-code/` and `frontend/`. **Not**: ADRs (`docs/decisions/`), `specs/`, `docs/proposals/`, or dated records inside
+Part 1 of `docs/MCM-Learnings.md`, and the project READMEs under `agents/`, `mcp-servers/`, `infrastructure-as-code/` and `frontend/`. **Not**: ADRs (`docs/decisions/`), `specs/`, `docs/proposals/`, or dated records inside
 any doc ("measured on …", incident tables, version history). Those describe the past and stay as
 written.
 
@@ -68,9 +68,14 @@ written.
    edit, `--record` for each page listed (the [wiki-refresh skill](../../.claude/skills/wiki-refresh/SKILL.md)).
 8. **Record the measure** in the audit log below: lines read, proven drift fixed, and the rate per
    1,000 lines. SM-2 expects the rate to fall from one audit to the next.
-9. **Check SM-3**: would a `describes:` link have caught any of the drift, on a feature whose sweep
-   ran? If so, layer 1 is not enough. File layer 2 as a `status/needs-spec` item.
-10. **File the next audit, then close this one.** Use `node scripts/backlog.mjs create`, title
+9. **Refresh [MCM-Learnings.md](../MCM-Learnings.md)** in the same PR. On `main`, run
+   `node scripts/count-repo-metrics.mjs` and append its column to the measurement log (Part 3)
+   unchanged, never editing an earlier column. Update a ledger line's status (Part 2) only if a
+   lesson changed, and rewrite Part 1 only where this audit proved it wrong. The document's own
+   "How to update this document" section has the rules for each part.
+10. **Check SM-3**: would a `describes:` link have caught any of the drift, on a feature whose sweep
+    ran? If so, layer 1 is not enough. File layer 2 as a `status/needs-spec` item.
+11. **File the next audit, then close this one.** Use `node scripts/backlog.mjs create`, title
     `Drift audit YYYY-MM (quarterly, layer 3 of doc-drift prevention)` about three months on, with
     labels `type/chore` and `priority/p2`, and this procedure as its acceptance criteria. Then
     close the current item.

@@ -370,6 +370,9 @@ graph LR
             supervisor["`**Supervisor**<br/>routes only`"]
             curator["`**Curator Agent**`"]
             organizer["`**Organizer Agent**`"]
+            navigator["`**Navigator Agent**<br/>in-app UI actions`"]
+            query_agent["`**Query Agent**<br/>read-only count / list`"]
+            search_agent["`**Search Agent**<br/>find / open one movie`"]
             import_agent["`**Import Agent**<br/>spreadsheet → collections`"]
             export_agent["`**Export Agent**<br/>collections → .xlsx`"]
             hitl["`**HITL Approval Gate**`"]
@@ -415,10 +418,16 @@ graph LR
     gw_runtime -->|Runs graph| supervisor
     supervisor --> curator
     supervisor --> organizer
+    supervisor --> navigator
+    supervisor --> query_agent
+    supervisor --> search_agent
     supervisor --> import_agent
     supervisor --> export_agent
     curator -->|"Reads / metadata"| mcp_client
     organizer -->|"Write proposal"| hitl
+    navigator -->|"Reads (target lookup)"| mcp_client
+    query_agent -->|"Reads"| mcp_client
+    search_agent -->|"Reads + web fallback"| mcp_client
     import_agent -->|"Reads + parse"| mcp_client
     import_agent -->|"Batched add proposals"| hitl
     export_agent -->|"Reads + build workbook"| mcp_client
@@ -446,7 +455,7 @@ graph LR
   class frontend,backend,agents,control_tower style_sub2;
   class mcm_app,mc_service,mcp,gateway style_sub3;
   class mcm_client,mcm_bff,lg_graph style_sub4;
-  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mcm_bff_db,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,import_agent,export_agent,mcp_client,agent_db,movie_mcp,web_mcp,sheet_mcp,observ,audit,policy,vault,llm,hitl,keycloak style_node;
+  class mcm_user,mcm_web,mcm_mobile,mcm_bff_api,mcm_bff_cache,mcm_bff_db,mc_service_api,mc_service_db,gw_runtime,supervisor,curator,organizer,navigator,query_agent,search_agent,import_agent,export_agent,mcp_client,agent_db,movie_mcp,web_mcp,sheet_mcp,observ,audit,policy,vault,llm,hitl,keycloak style_node;
 
   linkStyle default stroke:blue,color:black;
 ```
@@ -462,30 +471,36 @@ config:
 sequenceDiagram
   actor User
   participant Client as MCM Client
-  participant Browser as Browser<br/>(Login Screen)
+  participant Browser as Browser / Custom Tab<br/>(IAM login page)
   participant BFF as MCM BFF API
+  participant Cache as MCM BFF Cache<br/>(Redis)
   participant IAM as IAM (Keycloak)
 
-  User->>Client: 1. user clicks signin button
-  Client->>BFF: 2. client fetches URL to start authentication code flow request<br/>from MCM BFF API and tells Browser to go to that URL
-  Browser->>IAM: 3. browser opens IAM authorization endpoint
-  IAM-->>Browser: 4. IAM redirects the browser to the login page
-  Browser->>IAM: 5. browser opens login page
+  User->>Client: 1. user clicks the sign-in button
+  Client->>Client: 2. client generates a PKCE code verifier, its S256 challenge,<br/>and a state value (expo-auth-session)
+  Client->>Browser: 3. client opens the IAM authorization endpoint with client_id,<br/>redirect URI, code challenge and state
+  Browser->>IAM: 4. browser requests the authorization endpoint
+  IAM-->>Browser: 5. IAM serves its hosted login page
   User->>Browser: 6. user enters credentials
-  Browser->>IAM: 7. browser posts user's credentials to IAM
-  IAM-->>Browser: 8. IAM verifies user's credentials<br/>and redirects browser to revisit authorization endpoint
-  Browser->>IAM: 9. browser revisits authorization endpoint
-  IAM-->>Browser: 10. IAM redirects browser to callback URL
-  Browser->>BFF: 11. browser calls callback URL with additional<br/>query parameters including one-time authorization 'code'
+  Browser->>IAM: 7. browser posts the credentials to IAM (never to MCM)
+  IAM-->>Client: 8. IAM redirects to the client's redirect URI with a one-time 'code'<br/>(web: the app's own /auth-callback route, Android: the mcm-app:// deep link<br/>rendered by the native-auth-callback screen), and the client checks state
+  Client->>BFF: 9. POST /bff-api/auth/login {code, codeVerifier, redirectUri}
   activate BFF
-  BFF->>IAM: 12. MCM BFF API requests IAM token endpoint, supplying client credentials and authorization 'code'
-  IAM-->>BFF: 13. IAM validates client credentials and authorization 'code'<br/>and returns ID token, access token, and refresh token
-  BFF->>BFF: 14. MCM BFF API sets HttpOnly token cookies (access/refresh/session-id)<br/>and creates a session record (id + timeouts) in the cache
-  BFF-->>Browser: 15. MCM BFF API redirects browser to home
+  BFF->>IAM: 10. MCM BFF API redeems the code at the IAM token endpoint<br/>with the code verifier and the client secret
+  IAM-->>BFF: 11. IAM returns ID token, access token, and refresh token
+  BFF->>BFF: 12. validates the ID token (expiry, at_hash) and the access-token signature,<br/>requires mc-user or mc-admin, and checks the account is enabled
+  BFF->>Cache: 13. creates the session (concurrent-session cap enforced), with the tokens<br/>sealed beside it (AES-256-GCM, bound to the session id and owner)
+  BFF-->>Client: 14. returns the user profile and sets ONE cookie, mcm_session_id<br/>(HttpOnly, SameSite=Strict, Secure outside development) — no token leaves the BFF
   deactivate BFF
-  Browser->>BFF: 16. browser gets home page, setting the session cookie
-  Browser->>Client: 17. browser loads MCM Client
 ```
+
+The client starts the flow and holds the PKCE verifier because the same code runs on Android, where
+the IAM redirect lands in a browser tab: a cookie the BFF set there would never reach the app's own
+HTTP client, so the authorization code must come back to the app. The code is redeemed only by the
+BFF, with the client secret, so the client never sees a token. This differs from the constitution's
+Login diagram, which shows the BFF-driven flow it recommends for web (the BFF holds the verifier and
+is the redirect URI, so the code never reaches page script); moving MCM's web build to it is item
+#1060. Android keeps the flow above either way.
 
 ### Diagram for Auth Flow - Access Backend Service Resources
 
@@ -499,20 +514,29 @@ sequenceDiagram
   actor User
   participant Client as MCM Client
   participant BFF as MCM BFF API
+  participant Cache as MCM BFF Cache<br/>(Redis)
   participant Backend as Movie Collection Service
   participant IAM as IAM (Keycloak)
 
-  Backend->>IAM: 1. on startup, Movie Collection Service fetches<br/>public key for JWT signature verification from IAM
-  IAM-->>Backend: 2. IAM returns public key
-  Client->>BFF: 3. client makes HTTP GET request to MCM BFF API,<br/>including its HttpOnly auth cookies
-  BFF->>BFF: 4. MCM BFF API extracts the access token from the HttpOnly cookie
-  BFF->>Backend: 5. MCM BFF API includes access token in request to Movie Collection Service
+  Backend->>IAM: 1. on startup, Movie Collection Service fetches the<br/>JWKS for JWT signature verification from IAM (background task)
+  IAM-->>Backend: 2. IAM returns the signing keys
+  Client->>BFF: 3. client makes an HTTP request to MCM BFF API carrying the<br/>mcm_session_id cookie — its only credential (a bearer token is refused)
+  BFF->>Cache: 4. MCM BFF API looks up the session by its id
+  Cache-->>BFF: 5. session record (timestamps) and its sealed tokens
+  BFF->>BFF: 6. enforces the idle and absolute timeouts, then unseals the tokens<br/>(AES-256-GCM, the record only decrypts for this session and owner,<br/>otherwise the session is ended)
+  opt access token due to expire
+    BFF->>Cache: 7. takes the session's short-lived Redis renewal lock<br/>(a concurrent request waits for this renewal instead of renewing)
+    BFF->>IAM: 8. renews with the refresh token
+    IAM-->>BFF: 9. new access token and rotated refresh token
+    BFF->>Cache: 10. re-seals and stores the new tokens, releases the lock
+  end
+  BFF->>Backend: 11. MCM BFF API sends the access token as Authorization: Bearer
   activate Backend
-  Backend->>Backend: 6. Movie Collection Service validates the request's JWT<br/>using the public key obtained from IAM
-  Backend->>Backend: 7. Movie Collection Service reads JWT's identity and<br/>authorization claims and uses them for permission checks
-  Backend-->>BFF: 8. Movie Collection Service returns a response to MCM BFF API
+  Backend->>Backend: 12. Movie Collection Service validates the JWT locally<br/>using the cached signing keys
+  Backend->>Backend: 13. reads the JWT's identity and role claims, then applies<br/>RBAC and the collection's ACL (DAC)
+  Backend-->>BFF: 14. Movie Collection Service returns a response to MCM BFF API
   deactivate Backend
-  BFF-->>Client: 9. MCM BFF API returns the response to the client
+  BFF-->>Client: 15. MCM BFF API returns the response to the client
 ```
 
 ### Diagram for Auth Flow - Agent Auth Flow
@@ -601,9 +625,11 @@ pnpm nx up-mcm infrastructure-as-code     # --profile app
 | Component | Image / Runtime | Purpose |
 |-----------|-----------------|---------|
 | `movie-assistant-gateway` | Custom Python image (`agents/movie-assistant/Dockerfile` — `python:3.14-slim` + uvicorn) | FastAPI app that mounts the compiled LangGraph supervisor graph over AG-UI via `ag_ui_langgraph`; emits AG-UI natively (NOT the stock LangGraph Platform server) |
+| `movie-assistant-gateway-metro` | Same image | Metro-dev only (`--profile agents-metro`): the same gateway with a loopback host port (`127.0.0.1:8123`) so a host-run BFF can reach it; never started under `--profile agents` |
 | `movie-assistant-store-postgres` | `postgres:18.6-alpine3.23` | LangGraph checkpoints (isolated from `mc-service-store-mongo`) |
 | `movie-assistant-mcp-movie` | Custom Python Docker image | MCP wrapper over `mc-service` REST API |
 | `movie-assistant-mcp-webapi` | Custom Python Docker image | TMDB/IMDB lookups + HTTP fetch |
+| `movie-assistant-mcp-spreadsheet` | Custom Python Docker image | Token-free CSV/`.xlsx` parsing and export-workbook building over a transient, single-use Redis handle |
 | `langfuse-*` + `otel-lgtm` (OpenTelemetry → Grafana/Tempo/Prometheus/Loki) | Official images | LLM per-turn cost/latency traces (LangFuse) + OTel traces/metrics/logs |
 | `agent-audit-opensearch` | `opensearchproject/opensearch` | Immutable audit log (`audit` stack) |
 | `opa-service` + `unleash-service` | Official images | Policy enforcement + kill switch |
@@ -617,22 +643,12 @@ The Agent Gateway also requires Keycloak indirectly: `movie-assistant-mcp-movie`
 
 ### First-Time Setup
 
-Run once per machine before the first `docker compose up` (the external networks and volumes are referenced by the included compose files):
-
-```bash
-docker network create backend-network
-docker network create keycloak-network
-docker volume create mc-service-store-mongo-data
-docker volume create keycloak-store-postgres-data
-docker volume create mcm-bff-cache-redis-data
-docker volume create mcm-bff-store-mongo-data
-# Mint the per-stack secrets. Feature 022 replaced the keycloak .env.local / secrets/*.txt pair
-# with one generated file per stack, so there is nothing to copy or fill in by hand:
-node scripts/gen-dev-secrets.mjs
-```
-
-The generator writes the gitignored `infrastructure-as-code/docker/stacks/*.env` files from the
-tracked `*.env.example` templates beside them — see [runbooks/local-dev.md](runbooks/local-dev.md).
+Before the first `docker compose up`, each machine needs the external Docker networks and named
+volumes the compose files reference, and one generated secrets file per stack
+(`node scripts/gen-dev-secrets.mjs`, which writes the gitignored
+`infrastructure-as-code/docker/stacks/*.env` files from the tracked `*.env.example` templates). The
+commands, including the agent and audit volumes, are in
+[runbooks/local-dev.md](runbooks/local-dev.md), which is the one list kept current.
 
 ### Local IAM Testing
 

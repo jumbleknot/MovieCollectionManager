@@ -41,6 +41,12 @@ paths:
     actor: agent
     rationale: "Same — the architecture document describes a moving target"
 
+  - glob: "docs/MCM-Learnings.md"
+    policy: regenerate
+    actor: agent
+    coverage: false   # writable, but not a SUBJECT: a narrative that links to the canonical home of every rule it mentions, so a concept summarizing it would be a summary of summaries
+    rationale: "Part 1 is current state and is rewritten in place when the story changes; Parts 2 and 3 are dated records, appended to and never rewritten. Refreshed at each quarterly drift audit (docs/runbooks/doc-drift.md)"
+
   - glob: "CLAUDE.md"
     policy: regenerate
     actor: agent

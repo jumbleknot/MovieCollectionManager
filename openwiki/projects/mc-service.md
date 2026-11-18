@@ -3,10 +3,10 @@ type: Service
 title: mc-service (Rust/Axum movie-collection service)
 description: The Rust/Axum microservice that owns all movie-collection domain logic — CRUD, business-rule validation, and RBAC/DAC enforcement — for MovieCollectionManager, built as four Clean Architecture layers with CQRS, repository, and specification patterns over its own replica-set MongoDB.
 resource: docs/MCM-Architecture.md
-resource-sha256: 68b41b3e5e554743a187bb18bebe7d9dd76bfc28e80bbab418321acf5363ccba
+resource-sha256: 9c3c92bb9f4632d0d44970c4ec87ec7e1c853788f1d8d08ee6acfaed6a173bc5
 tags: [rust, axum, clean-architecture, cqrs, mongodb]
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-timestamp: 2026-11-14T22:22:04.823Z
+timestamp: 2026-11-18T11:11:42.714Z
 ---
 
 # mc-service (Rust/Axum movie-collection service)
