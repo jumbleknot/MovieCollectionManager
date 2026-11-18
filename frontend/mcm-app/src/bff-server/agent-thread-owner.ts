@@ -8,9 +8,10 @@
  * blocked — the subject token is re-minted from the resuming user's session, so mc-service DAC
  * 404s — but the preview disclosure is a real isolation gap.
  *
- * This binds each thread to the first user who uses it (Redis SET NX) and rejects (403, before
- * any gateway call) any later request whose user does not own the thread. Fail-closed: a Redis
- * outage surfaces as a typed error from `claimAgentThreadOwner`, not a silent bypass.
+ * This binds each thread to the first user who uses it and rejects (403, before any gateway call)
+ * any later request whose user does not own the thread. The owner's every use refreshes the claim
+ * (spec 102). Fail-closed: a Redis outage or an inconclusive answer surfaces as a typed 503 from
+ * `claimAgentThreadOwner`, not a silent bypass.
  */
 
 import { claimAgentThreadOwner } from '@/bff-server/cache-service';
@@ -18,9 +19,17 @@ import { env } from '@/config/env';
 import { ForbiddenError } from '@/types/errors';
 import { logger } from '@/bff-server/logger';
 
-/** Thread lifetime = the session's absolute window (threads expire with the session, per spec). */
+/**
+ * The claim lives TWICE the gateway's checkpoint retention, sliding on every use (spec 102, item
+ * #975). The invariant is that a checkpoint never exists without its owner's claim. Both stores
+ * slide on use: the claim is refreshed here BEFORE a run, and the gateway writes the checkpoint
+ * DURING the run. So the claim outlives the checkpoint whenever its TTL exceeds the retention by
+ * more than a run lasts. Nothing bounds a run's duration (the gateway stream is proxied without a
+ * timeout), so the margin is a whole retention window, which no run reaches. A gateway restart only
+ * shortens the checkpoint's life. The gateway reads the same `AGENT_THREAD_RETENTION_SECONDS`.
+ */
 function threadOwnerTtlSeconds(): number {
-  return Math.max(1, Math.ceil(env.sessionAbsoluteTimeoutMs / 1000));
+  return 2 * Math.max(1, env.agentThreadRetentionSeconds);
 }
 
 /**

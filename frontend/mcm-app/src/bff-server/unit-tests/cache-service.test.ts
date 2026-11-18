@@ -27,6 +27,7 @@ import {
   getSessionTokensRecord,
   getSessionWithTokens,
   touchSessionRecord,
+  claimAgentThreadOwner,
 } from '@/bff-server/cache-service';
 
 // ─── Mock ioredis ─────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ const mockRedis = {
   del: jest.fn(),
   incr: jest.fn(),
   expire: jest.fn(),
+  eval: jest.fn(),
   smembers: jest.fn(),
   sadd: jest.fn(),
   srem: jest.fn(),
@@ -424,5 +426,52 @@ describe('session tokens storage (feature 085)', () => {
     expect(deleted).toEqual(
       expect.arrayContaining(['session:sess-abc-123', 'session-tokens:sess-abc-123']),
     );
+  });
+});
+
+// ─── Agent thread-owner claim (spec 102 US3, item #975) ───────────────────────
+//
+// The claim used to be `SET NX EX` then `GET`, never refreshed, with a race fallback
+// (`owner ?? userId`) that treated a vanished owner as the caller. It is now one atomic script:
+// claim if absent, refresh if the caller owns it, return the owner. What the SCRIPT does is
+// proven against real Redis in tests/integration/agent-thread-owner.integration.test.ts. A mock
+// can only prove the call, so that is all this block asserts.
+
+describe('claimAgentThreadOwner (spec 102)', () => {
+  it('is ONE eval over the owner key, with the caller and TTL as arguments, and no SET/GET', async () => {
+    mockRedis.eval.mockResolvedValue('user-1');
+    await expect(claimAgentThreadOwner('thread-9', 'user-1', 7200)).resolves.toBe('user-1');
+    expect(mockRedis.eval).toHaveBeenCalledTimes(1);
+    expect(mockRedis.eval).toHaveBeenCalledWith(
+      expect.stringContaining("redis.call('expire'"),
+      1,
+      'agent-thread-owner:thread-9',
+      'user-1',
+      '7200',
+    );
+    expect(mockRedis.set).not.toHaveBeenCalled();
+    expect(mockRedis.get).not.toHaveBeenCalled();
+  });
+
+  it('returns another owner unchanged, for the caller to refuse', async () => {
+    mockRedis.eval.mockResolvedValue('user-OTHER');
+    await expect(claimAgentThreadOwner('thread-9', 'user-1', 7200)).resolves.toBe('user-OTHER');
+  });
+
+  it.each([null, undefined, '', 1])(
+    'fails CLOSED on an inconclusive answer (%p), never "treat as ours" (US3-AC3)',
+    async (answer) => {
+      mockRedis.eval.mockResolvedValue(answer);
+      await expect(claimAgentThreadOwner('thread-9', 'user-1', 7200)).rejects.toMatchObject({
+        statusCode: 503,
+      });
+    },
+  );
+
+  it('maps a Redis failure to a retryable 503', async () => {
+    mockRedis.eval.mockRejectedValue(new Error('ECONNREFUSED'));
+    await expect(claimAgentThreadOwner('thread-9', 'user-1', 7200)).rejects.toMatchObject({
+      statusCode: 503,
+    });
   });
 });

@@ -3,9 +3,9 @@ type: Architecture
 title: AI Agents layer architecture (features 012/014/018/040/047/059/085)
 description: The end-to-end call chain, token-custody model, and per-user config design for MCM's additive conversational assistant — how identity flows from mcm-app through the BFF and Agent Gateway to mc-service without the agent ever holding the member's session token, plus the flow-continuation and generative-UI gotchas that have cost real sessions.
 resource: docs/runbooks/agent-layer.md
-resource-sha256: c2011fdfd6fd30794f87c31f636dda336e04ce5885a30a1fac63046340c8ce82
+resource-sha256: 034706cf1936545485da70f84afbf94ad6a373da7ca211fdaece4303e5fd0560
 tags: [architecture, agents, langgraph, ag-ui, token-exchange]
-timestamp: 2026-11-17T01:23:24.662Z
+timestamp: 2026-11-18T03:33:18.036Z
 ---
 
 # AI Agents layer architecture (features 012/014/018/040/047/059/085)
@@ -72,9 +72,11 @@ Two boundary rules belong to this chain rather than to either service page:
 - **The thread id is bound to its first user before any gateway call.** A CopilotKit `thread_id` is
   generated client-side and the gateway keys its LangGraph checkpoint solely on it, so a user
   presenting someone else's `thread_id` could otherwise read that checkpoint's pending proposal
-  (collection and movie names). The BFF claims each thread for the first user who uses it (Redis
-  `SET NX`, TTL = the session's absolute window) and refuses any later mismatch with `403` *before*
-  the gateway is reached. Cross-user *writes* were already blocked — the subject token is re-minted
+  (collection and movie names). The BFF claims each thread for the first user who uses it and
+  refuses any later mismatch with `403` *before* the gateway is reached. The claim is one atomic
+  Lua script that refreshes on each of the owner's uses. Its TTL is 2 × `AGENT_THREAD_RETENTION_SECONDS`,
+  the gateway's idle window for the checkpoint, so the claim outlives the checkpoint it guards (spec
+  102, item #975). Set that variable on both services or on neither. Cross-user *writes* were already blocked — the subject token is re-minted
   from the resuming member's session, so `mc-service` DAC returns `404` — but the preview disclosure
   was a real isolation gap.
 - **Nothing reaches the graph through the request body.** The run-scoped subject token, the
@@ -235,7 +237,9 @@ unconfigured — the agent layer must work in a plain dev environment with none 
   token value to `agent-db`-persisted state, it defeats the entire "pause length is irrelevant"
   design goal described above — treat any PR that touches checkpoint serialization as auth-review
   sensitive. `state.forbid_token_fields` is the guard that will (correctly) reject it, so a change
-  that "fixes" that rejection is the change to scrutinize.
+  that "fixes" that rejection is the change to scrutinize. It does not cover checkpoint METADATA,
+  which LangGraph fills from every scalar `configurable` value whose key lacks a `__` prefix. That
+  is how the bearer token reached every checkpoint until spec 102 (item #973).
 - **Stage-continuation guards must be paired with a state-reset.** Every `*_stage` guard
   (`search_stage`, `organize_stage`, `import_stage`, `navigate_stage`, `add_stage`) has a matching
   `_STATE_RESET` — a finished flow that skips its reset can leak stage state into a later, unrelated

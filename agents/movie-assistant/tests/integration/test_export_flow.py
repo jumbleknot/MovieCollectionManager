@@ -33,6 +33,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
 from src.graph import build_graph
+from src.runtime_context import FILE_HANDLE_KEY, SUBJECT_TOKEN_KEY
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_nodes
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
@@ -212,7 +213,7 @@ async def test_export_round_trips_multi_value_sets(
         export_cfg = {
             "configurable": {
                 "thread_id": f"{name}-exp",
-                "subject_token": subject_token,
+                SUBJECT_TOKEN_KEY: subject_token,
                 "user_id": user_id,
                 "export_collection_ids": [collection_id],
             }
@@ -235,9 +236,9 @@ async def test_export_round_trips_multi_value_sets(
         import_cfg = {
             "configurable": {
                 "thread_id": f"{name}-imp",
-                "subject_token": subject_token,
+                SUBJECT_TOKEN_KEY: subject_token,
                 "user_id": user_id,
-                "file_handle": import_handle,
+                FILE_HANDLE_KEY: import_handle,
                 "filename": f"{name}.xlsx",
             }
         }

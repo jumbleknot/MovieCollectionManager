@@ -29,6 +29,11 @@ export async function redisDel(key: string): Promise<void> {
   await redis.del(key);
 }
 
+/** Set a key's TTL in seconds. Used to fast-forward a claim's remaining life. */
+export async function redisExpire(key: string, seconds: number): Promise<void> {
+  await redis.expire(key, seconds);
+}
+
 export async function redisKeys(pattern: string): Promise<string[]> {
   return redis.keys(pattern);
 }

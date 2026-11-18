@@ -25,6 +25,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
 from src.graph import build_graph
+from src.runtime_context import SUBJECT_TOKEN_KEY
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_nodes
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
@@ -99,7 +100,7 @@ async def test_metadata_unavailable_skips_the_question_and_still_completes_the_a
     config = {
         "configurable": {
             "thread_id": name,
-            "subject_token": subject_token,
+            SUBJECT_TOKEN_KEY: subject_token,
             "user_id": "u",
             "agent_config": {"tmdbKey": tmdb_key},
         }

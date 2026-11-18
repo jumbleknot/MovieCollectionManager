@@ -21,6 +21,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
 from src.gateway import AGENT_PATH, build_app
+from src.runtime_context import SUBJECT_TOKEN_KEY
 
 
 def _jwt(sub: str) -> str:
@@ -31,7 +32,7 @@ def _jwt(sub: str) -> str:
 def _recording_graph(seen: dict[str, Any]) -> Any:
     async def record(state: dict[str, Any], config: RunnableConfig) -> dict[str, Any]:
         configurable = (config or {}).get("configurable", {})
-        seen["subject_token"] = configurable.get("subject_token")
+        seen["subject_token"] = configurable.get(SUBJECT_TOKEN_KEY)
         seen["user_id"] = configurable.get("user_id")
         return {"messages": [AIMessage(content="ok")]}
 

@@ -14,6 +14,7 @@ from typing import Any
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
+from src.runtime_context import FILE_HANDLE_KEY, SUBJECT_TOKEN_KEY
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_graph
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
@@ -83,9 +84,9 @@ def _config(thread: str) -> dict[str, Any]:
     return {
         "configurable": {
             "thread_id": thread,
-            "subject_token": "subj-123",
+            SUBJECT_TOKEN_KEY: "subj-123",
             "user_id": "user-1",
-            "file_handle": "h-upload-1",
+            FILE_HANDLE_KEY: "h-upload-1",
             "filename": "movies.xlsx",
         }
     }
@@ -164,7 +165,7 @@ async def test_missing_file_handle_asks_for_a_file_with_buttons() -> None:
         checkpointer=MemorySaver(),
         force=True,
     )
-    config = {"configurable": {"thread_id": "imp-nofile", "subject_token": "s", "user_id": "u"}}
+    config = {"configurable": {"thread_id": "imp-nofile", SUBJECT_TOKEN_KEY: "s", "user_id": "u"}}
     result = await graph.ainvoke({"messages": [("user", "import movies")]}, config)
     assert "__interrupt__" not in result
     last = result["messages"][-1]

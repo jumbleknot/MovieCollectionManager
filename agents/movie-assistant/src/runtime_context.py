@@ -23,6 +23,18 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import Any
 
+# The `config["configurable"]` keys that carry a BEARER CAPABILITY into the graph (spec 102, item
+# #973). The `__` prefix is load-bearing, not a style choice. LangGraph's `get_checkpoint_metadata`
+# copies every str/int/float/bool value of `configurable` into the metadata of EVERY checkpoint,
+# unless the key is in `EXCLUDED_METADATA_KEYS` or starts with `__`. Under the old plain keys the
+# caller's access token and the import handle were written into every checkpoint of the thread. The
+# exclusion happens before anything is stored, so it also holds for a durable saver, where a scrub
+# after the write would already be too late. `tests/unit/test_checkpoint_token_absence.py` asserts
+# it end to end. A new secret-bearing `configurable` value MUST use a `__mcm_` key too. A dict value
+# (`agent_config`, `ui_snapshot`) is not copied, but the test checks that as well.
+SUBJECT_TOKEN_KEY = "__mcm_subject_token"
+FILE_HANDLE_KEY = "__mcm_file_handle"
+
 # Request-local; default None when no run is active. Never checkpointed.
 _subject_token: ContextVar[str | None] = ContextVar("agent_subject_token", default=None)
 # Request-local sanitized UI snapshot for context-aware "this" resolution (US3/R15). The BFF

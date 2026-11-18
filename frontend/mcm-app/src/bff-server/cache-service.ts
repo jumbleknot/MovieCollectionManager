@@ -424,14 +424,35 @@ export async function takePendingAccountDeletion(userId: string): Promise<string
 
 // ─── Agent thread ownership (implementation-review 2026-06-09 — cross-user resume guard) ──────
 
+// Claim when absent, refresh when the caller owns it, and return the owner, as ONE server-side
+// step (spec 102, item #975). KEYS[1] = owner key, ARGV[1] = caller, ARGV[2] = TTL seconds.
+const CLAIM_OR_REFRESH_THREAD_OWNER = `
+local owner = redis.call('get', KEYS[1])
+if not owner then
+  redis.call('set', KEYS[1], ARGV[1], 'EX', ARGV[2])
+  return ARGV[1]
+end
+if owner == ARGV[1] then
+  redis.call('expire', KEYS[1], ARGV[2])
+end
+return owner
+`;
+
 /**
  * Claim a (client-supplied) agent thread for a user, returning the OWNING user id.
  *
  * A CopilotKit `thread_id` is client-generated and otherwise unbound to the authenticated user,
  * so a user could resume another user's checkpointed thread and see that proposal's preview.
- * First use claims the thread atomically (`SET key user EX ttl NX`); any later caller reads back
- * the existing owner. The caller (`enforceAgentThreadOwnership`) rejects a mismatch with 403.
- * TTL is the session-scoped thread lifetime (threads expire with the session, per spec).
+ * The caller (`enforceAgentThreadOwnership`) rejects a mismatch with 403.
+ *
+ * Spec 102 (item #975). This was `SET NX EX`, then `GET`, and it had three faults. The TTL ran from
+ * FIRST use and was never refreshed, so a thread in active use lost its owner 24 h after it
+ * started. Another user could then claim it while the gateway still held its checkpoint. And the
+ * race fallback (`owner ?? userId`, for a key that expired between the two calls) treated the
+ * caller as the owner, which fails open. Now it is one Lua script. Being atomic leaves no gap
+ * between the claim and the read, and the owner's every use refreshes the TTL. Another user's call
+ * never refreshes it. Anything but a non-empty string back is refused with a retryable 503, never
+ * read as "ours".
  */
 export async function claimAgentThreadOwner(
   threadId: string,
@@ -439,15 +460,22 @@ export async function claimAgentThreadOwner(
   ttlSeconds: number,
 ): Promise<string> {
   const redis = await getRedis();
-  const key = agentThreadOwnerKey(threadId);
+  let owner: unknown;
   try {
-    const claimed = await redis.set(key, userId, 'EX', Math.max(1, ttlSeconds), 'NX');
-    if (claimed) return userId; // 'OK' → this user just claimed an unowned thread
-    const owner = await redis.get(key); // already owned — read the owner back
-    return owner ?? userId; // race fallback: treat as ours rather than failing open
+    owner = await redis.eval(
+      CLAIM_OR_REFRESH_THREAD_OWNER,
+      1,
+      agentThreadOwnerKey(threadId),
+      userId,
+      String(Math.max(1, Math.floor(ttlSeconds))),
+    );
   } catch {
     throw new AuthError(AuthErrorCode.UNKNOWN, 'Cache service unavailable', 503);
   }
+  if (typeof owner !== 'string' || owner.length === 0) {
+    throw new AuthError(AuthErrorCode.UNKNOWN, 'Thread ownership could not be established', 503);
+  }
+  return owner;
 }
 
 // ─── Leader lock primitives (feature 073) ──────────────────────────────────────

@@ -127,7 +127,7 @@ def create_app() -> Any:
     import logging
     import os
 
-    from src.observability import configure_metrics, configure_otel
+    from src.observability import configure_metrics, configure_otel, register_checkpoint_gauge
     from src.runtime_nodes import build_runtime_graph, production_nodes_enabled
 
     # Configure the root logger so the gateway's own `logging.getLogger(__name__)` records reach
@@ -154,4 +154,7 @@ def create_app() -> Any:
     logging.getLogger(__name__).info(
         "gateway graph: %s nodes", "MCP-backed (production)" if enabled else "tool-free (default)"
     )
-    return build_app(build_runtime_graph(os.environ))
+    graph = build_runtime_graph(os.environ)
+    # Spec 102 FR-004: the retained-thread gauge, so checkpoint growth is observable.
+    register_checkpoint_gauge(getattr(graph, "checkpointer", None))
+    return build_app(graph)

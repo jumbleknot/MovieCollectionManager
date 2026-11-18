@@ -20,6 +20,7 @@ from src.agui_identity import (
     inject_ui_snapshot,
     subject_user_id,
 )
+from src.runtime_context import FILE_HANDLE_KEY, SUBJECT_TOKEN_KEY
 
 
 def _jwt(claims: dict[str, object]) -> str:
@@ -42,7 +43,7 @@ def test_inject_sets_subject_token_and_user_id() -> None:
     inject_subject_identity(config, token)
     configurable = config["configurable"]
     assert isinstance(configurable, dict)
-    assert configurable["subject_token"] == token
+    assert configurable[SUBJECT_TOKEN_KEY] == token
     assert configurable["user_id"] == "user-7"
     assert configurable["thread_id"] == "t1"  # preserves existing keys
 
@@ -51,15 +52,15 @@ def test_inject_creates_configurable_when_absent() -> None:
     token = _jwt({"sub": "u"})
     config: dict[str, object] = {}
     inject_subject_identity(config, token)
-    assert config["configurable"]["subject_token"] == token  # type: ignore[index]
+    assert config["configurable"][SUBJECT_TOKEN_KEY] == token  # type: ignore[index]
 
 
 def test_inject_is_a_noop_without_a_token() -> None:
     config: dict[str, object] = {"configurable": {"thread_id": "t1"}}
     inject_subject_identity(config, None)
-    assert "subject_token" not in config["configurable"]  # type: ignore[operator]
+    assert SUBJECT_TOKEN_KEY not in config["configurable"]  # type: ignore[operator]
     inject_subject_identity(config, "")
-    assert "subject_token" not in config["configurable"]  # type: ignore[operator]
+    assert SUBJECT_TOKEN_KEY not in config["configurable"]  # type: ignore[operator]
 
 
 # ── US3 (R15): UI-snapshot bridge into config["configurable"] ────────────────────────────────
@@ -95,7 +96,7 @@ def test_inject_import_file_sets_handle_and_filename() -> None:
     inject_import_file(config, {"handle": "h-abc", "filename": "movies.xlsx"})
     configurable = config["configurable"]
     assert isinstance(configurable, dict)
-    assert configurable["file_handle"] == "h-abc"
+    assert configurable[FILE_HANDLE_KEY] == "h-abc"
     assert configurable["filename"] == "movies.xlsx"
     assert configurable["thread_id"] == "t1"  # preserves existing keys
 
@@ -103,13 +104,13 @@ def test_inject_import_file_sets_handle_and_filename() -> None:
 def test_inject_import_file_noop_without_reference() -> None:
     config: dict[str, object] = {"configurable": {"thread_id": "t1"}}
     inject_import_file(config, None)
-    assert "file_handle" not in config["configurable"]  # type: ignore[operator]
+    assert FILE_HANDLE_KEY not in config["configurable"]  # type: ignore[operator]
 
 
 def test_inject_import_file_noop_when_handle_blank() -> None:
     config: dict[str, object] = {"configurable": {}}
     inject_import_file(config, {"handle": "  ", "filename": "x.csv"})
-    assert "file_handle" not in config["configurable"]  # type: ignore[operator]
+    assert FILE_HANDLE_KEY not in config["configurable"]  # type: ignore[operator]
 
 
 # ── 065 / item #325: the terminal-error override, at the unit level ────────────────────────────

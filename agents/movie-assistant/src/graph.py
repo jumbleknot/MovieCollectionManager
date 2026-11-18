@@ -23,9 +23,9 @@ from typing import Any
 
 from langchain_core.messages import AIMessage
 from langchain_core.runnables import RunnableConfig
-from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 
+from src.checkpoint_retention import bounded_checkpointer
 from src.kill_switch import assistant_disabled
 from src.nodes.import_disambiguation import is_cancel_import
 from src.nodes.organizer import is_organize_cancel
@@ -572,7 +572,8 @@ def build_graph(
         "export: spreadsheet export not yet implemented (US3)."
     )
     approval_gate = approval_gate or _noop_gate
-    checkpointer = checkpointer or MemorySaver()
+    # Bounded, never the unbounded `MemorySaver` (spec 102, item #974): see checkpoint_retention.
+    checkpointer = checkpointer or bounded_checkpointer(os.environ)
 
     builder = StateGraph(GraphState)
     builder.add_node("supervisor", _supervisor_node(classifier, kill_switch, circuit))

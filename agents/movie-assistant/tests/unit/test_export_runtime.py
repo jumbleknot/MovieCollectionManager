@@ -13,6 +13,7 @@ from typing import Any
 
 from langgraph.checkpoint.memory import MemorySaver
 
+from src.runtime_context import SUBJECT_TOKEN_KEY
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_graph
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
@@ -83,7 +84,7 @@ def _cfg(call: Any) -> RuntimeNodeConfig:
 def _config(thread: str, ids: list[str] | None = None) -> dict[str, Any]:
     configurable: dict[str, Any] = {
         "thread_id": thread,
-        "subject_token": "subj-123",
+        SUBJECT_TOKEN_KEY: "subj-123",
         "user_id": "user-1",
     }
     if ids is not None:
