@@ -196,7 +196,7 @@ Examples of foundational tasks (adjust based on your project):
   hold the CI result of the commit that contains it, and a commit added to record it is a new head
   that reruns every required job (app-e2e included, as its paths filter compares the whole PR with
   `main`). The run ids, the `ci-status.mjs` verdict and the merge sha go in the PR's closing comment
-  and in each backlog item's closing comment
+  and in each backlog item's closing comment, posted with `MCM_FORGE_ISSUE_TOKEN` (the `git credential fill` token answers 403)
 
 ---
 
