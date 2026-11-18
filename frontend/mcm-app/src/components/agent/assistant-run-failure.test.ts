@@ -30,6 +30,17 @@ describe('assistantRunFailureNotice', () => {
     );
   });
 
+  it('a resume of an expired conversation says so, rather than "try again" (spec 102 FR-007)', () => {
+    // The gateway's RUN_ERROR code rides on the error CopilotKit builds (`rawError.code =
+    // event.code`, @copilotkit/core onRunErrorEvent). Retrying would fail the same way.
+    const expired = Object.assign(new Error('This conversation has expired.'), {
+      code: 'conversation_expired',
+    });
+    expect(assistantRunFailureNotice(expired)).toBe(
+      'This conversation has expired. Start a new conversation.',
+    );
+  });
+
   it('anything else is a generic, retryable failure that names no internals', () => {
     expect(assistantRunFailureNotice(new Error('Internal Server Error'))).toBe(
       "The assistant couldn't respond. Please try again.",

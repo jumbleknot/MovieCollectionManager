@@ -15,6 +15,12 @@ jest.mock('@/bff-server/cache-service', () => ({
   claimAgentThreadOwner: jest.fn(),
 }));
 
+// Spec 102: the gateway keeps a checkpoint for AGENT_THREAD_RETENTION_SECONDS after its last write.
+// An odd value here, so a TTL derived from anything else (the session window, say) cannot match.
+jest.mock('@/config/env', () => ({
+  env: { agentThreadRetentionSeconds: 1234, sessionAbsoluteTimeoutMs: 86_400_000 },
+}));
+
 const mockedClaim = claimAgentThreadOwner as jest.MockedFunction<typeof claimAgentThreadOwner>;
 
 beforeEach(() => {
@@ -26,6 +32,14 @@ describe('enforceAgentThreadOwnership', () => {
     mockedClaim.mockResolvedValue('user-1'); // claim returns the now-owner
     await expect(enforceAgentThreadOwnership('user-1', 'thread-9')).resolves.toBeUndefined();
     expect(mockedClaim).toHaveBeenCalledWith('thread-9', 'user-1', expect.any(Number));
+  });
+
+  it('claims for TWICE the checkpoint retention, so the claim outlives the checkpoint (US3-AC2)', async () => {
+    // The claim is refreshed BEFORE a run and the checkpoint written DURING it, and nothing bounds
+    // a run's duration. A whole extra retention window is a margin no run reaches.
+    mockedClaim.mockResolvedValue('user-1');
+    await enforceAgentThreadOwnership('user-1', 'thread-9');
+    expect(mockedClaim).toHaveBeenCalledWith('thread-9', 'user-1', 2 * 1234);
   });
 
   it('allows when the thread is already owned by the same user', async () => {

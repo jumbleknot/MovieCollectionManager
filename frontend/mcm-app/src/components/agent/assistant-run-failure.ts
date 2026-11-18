@@ -13,6 +13,9 @@ import { useCopilotKit } from '@copilotkit/react-native';
 const TEMPORARILY_UNAVAILABLE = 'The assistant is temporarily unavailable. Please try again.';
 const SIGN_IN_AGAIN = 'Your session has expired. Please sign in again.';
 const GENERIC = "The assistant couldn't respond. Please try again.";
+// Spec 102 FR-007: the gateway's code for a resume whose checkpoint is gone. Not retryable.
+const CONVERSATION_EXPIRED = 'conversation_expired';
+const EXPIRED = 'This conversation has expired. Start a new conversation.';
 
 const RETRYABLE_CODES = new Set([
   'AGENT_IDENTITY_UNAVAILABLE',
@@ -49,6 +52,8 @@ function bffCodeOf(error: unknown): string | undefined {
 
 /** The member-facing text for a failed turn. Never echoes the error itself. */
 export function assistantRunFailureNotice(error: unknown): string {
+  // A gateway RUN_ERROR's code is set on the error itself by CopilotKit (`rawError.code`).
+  if ((error as { code?: unknown } | null)?.code === CONVERSATION_EXPIRED) return EXPIRED;
   const code = bffCodeOf(error);
   if (code && RETRYABLE_CODES.has(code)) return TEMPORARILY_UNAVAILABLE;
   if (code && SIGN_IN_CODES.has(code)) return SIGN_IN_AGAIN;

@@ -76,6 +76,10 @@ export const env = {
   // (default $0.50; per-turn cost supplied by LangFuse via T030). Breach → friendly
   // "try again later" with no action; reuses the existing Redis rate-limiter.
   agentRateLimitRequests: parseInt(optionalEnv('AGENT_RATE_LIMIT_REQUESTS', '20'), 10),
+  // Spec 102 (item #975): how long the agent gateway keeps an idle thread's checkpoint. The SAME
+  // variable and default as the gateway (agents/movie-assistant/src/checkpoint_retention.py). The
+  // BFF's thread-owner claim is derived from it so the claim always outlives the checkpoint.
+  agentThreadRetentionSeconds: parseInt(optionalEnv('AGENT_THREAD_RETENTION_SECONDS', '86400'), 10),
   agentRateLimitWindowMs: parseInt(optionalEnv('AGENT_RATE_LIMIT_WINDOW_MS', '60000'), 10),
   agentSessionCostCeilingUsd: parseFloat(optionalEnv('AGENT_SESSION_COST_CEILING_USD', '0.50')),
   // Estimated per-turn cost accrued against the session ceiling on each billable /run turn.

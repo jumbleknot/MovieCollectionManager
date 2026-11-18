@@ -81,6 +81,11 @@ each store against a lifetime that the other is about to change.
 - **FR-006** (US3): The claim's TTL is 2 × `AGENT_THREAD_RETENTION_SECONDS`. The BFF reads the same
   variable name and default as the gateway.
 
+- **FR-007** (US2): The assistant dock tells the member that an expired conversation has expired and
+  to start a new one. It does not show the generic "try again", because a retry fails the same way.
+  CopilotKit copies a `RUN_ERROR`'s `code` onto the error it reports (`rawError.code = event.code`,
+  `@copilotkit/core` 1.79.1 `onRunErrorEvent`).
+
 ## Decisions recorded
 
 - **`__` prefix, not a scrub (#973).** A scrub after the write is exactly what the item rejects: it
@@ -118,6 +123,6 @@ each store against a lifetime that the other is about to change.
 ## Out of scope
 
 - A durable checkpointer (Postgres/Redis saver). FR-001 is what makes that safe later.
-- The client rendering a dedicated "conversation expired" view. The typed `RUN_ERROR` reaches it, and
-  the existing error surface shows it.
+- A dedicated "conversation expired" view or a one-tap "new conversation" action. FR-007 changes only
+  the text of the existing failure notice.
 - Item #970 (session-end proposal sweep).

@@ -54,6 +54,12 @@
   - **Verify GREEN**: T008's commands pass, with `agent-run-api`, `agent-stop-ownership` and
     `tests/app/bff-api/agent/run.test.ts`.
 
+- [ ] **T009a** [US2] FR-007: the `conversation_expired` case in
+  `src/components/agent/assistant-run-failure.test.ts`, then the notice.
+  - **Verify RED**: `npx jest --maxWorkers=1 src/components/agent/assistant-run-failure.test.ts` →
+    1 failing: received the generic "try again" text.
+  - **Verify GREEN**: the same command passes.
+
 ## Phase 5: Polish
 
 - [ ] **T010** Doc task for each T001 hit.

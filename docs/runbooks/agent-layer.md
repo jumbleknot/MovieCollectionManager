@@ -337,11 +337,44 @@ flags (`hasAnthropicKey`/`hasTmdbKey`) and non-secret settings.
   [the SSRF-guard gotcha](../../openwiki/gotchas/agent-config-ssrf-guard.md). This is **not** the
   backup-destination guard (feature 073), whose policy is the inverse.
 
+## Conversation thread lifetime (spec 102 — items #973, #974, #975)
+
+A conversation thread lives in two stores, and their lifetimes are tied on purpose:
+
+- **The gateway checkpoint** (`BoundedInMemorySaver`, `src/checkpoint_retention.py`) is evicted once
+  the thread has had no checkpoint write for `AGENT_THREAD_RETENTION_SECONDS` (default `86400`, the
+  session's absolute window). When more than `AGENT_CHECKPOINT_MAX_THREADS` threads are held
+  (default `1000`), the least recently written go first. Reads evict an expired thread too, so it
+  is never served. The OpenTelemetry gauge `agent.checkpoint.threads` reports the retained count,
+  and each eviction logs `checkpoint retention: evicted idle=N cap=N retained=N`. A gateway restart
+  still drops every checkpoint: the store is in-process.
+- **The BFF owner claim** (`agent-thread-owner:<threadId>` in Redis) is set on first use and
+  refreshed on each of the owner's uses, in one Lua script (`claimAgentThreadOwner`). Its TTL is
+  **2 × `AGENT_THREAD_RETENTION_SECONDS`**, which the BFF reads under the same name and default.
+  The claim is refreshed before a run, the checkpoint is written during it, and nothing bounds a
+  run's duration. So a whole extra window is the margin that keeps the claim alive for as long as
+  the checkpoint exists. Another user presenting the id gets `403` throughout. An inconclusive Redis
+  answer is a retryable `503`, never "treat as ours".
+
+**Set the variable on BOTH services, or on neither.** If the gateway's window is raised and the
+BFF's is not, the claim can lapse while the checkpoint survives. That is the takeover item #975
+describes.
+
+A HITL resume of a thread with no checkpoint (evicted, or lost to a restart) ends with `RUN_STARTED`
+and a terminal `RUN_ERROR` whose `code` is `conversation_expired`. It is not a silent fresh run. The
+dock shows *"This conversation has expired. Start a new conversation."*
+
+The caller's bearer token and the import file handle reach the graph under `__mcm_`-prefixed
+`configurable` keys (`SUBJECT_TOKEN_KEY`, `FILE_HANDLE_KEY` in `src/runtime_context.py`). LangGraph
+copies every other scalar `configurable` value into each checkpoint's metadata, so a new
+secret-bearing value MUST use that prefix too. `tests/unit/test_checkpoint_token_absence.py`
+asserts that no checkpoint holds either.
+
 ## Containerized agent E2E
 
 **Containerized agent E2E (automated, no Metro/host gateway) — `pnpm nx up-agents-prod
 infrastructure-as-code` + `pnpm nx e2e:agents mcm-app`.** A committed light stack (host Ollama +
-MemorySaver; `scripts/agent-stack.mjs` + `scripts/agent-e2e.mjs`) runs the agent flows against
+the in-memory checkpointer; `scripts/agent-stack.mjs` + `scripts/agent-e2e.mjs`) runs the agent flows against
 the **dev-container BFF + containerized production gateway + containerized MCP**. `up-agents-prod`
 builds the 4 images (gateway + 3 MCP), creates the `movie-assistant-mcp-network` (`docker network create movie-assistant-mcp-network` is now a
 first-time-setup step), fetches the gateway client secret from Keycloak admin (`kc_admin`), and
