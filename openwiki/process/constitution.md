@@ -1,11 +1,11 @@
 ---
 type: Decision
 title: The governing constitution
-description: The repository's ratified, versioned constitution — currently v2.10.0, ratified 2026-03-08 and last amended 2026-11-15 (the mandatory doc-impact sweep, feature 101), after the Node 24 → 26 baseline of 2026-11-14 — the core principles every spec and plan must comply with, the amendment process and its same-pull-request rule, the per-feature Constitution Check gate, and the bundle-budget gate that enforces its sole accepted exception.
+description: The repository's ratified, versioned constitution — currently v2.11.0, ratified 2026-03-08 and last amended 2026-11-17 (session-lifetime, token-sealing and token-renewal rules for the BFF session, and the native sign-in variant), and the auth-flow diagrams corrected to server-held tokens, after the mandatory doc-impact sweep of 2026-11-15 (feature 101) — the core principles every spec and plan must comply with, the amendment process and its same-pull-request rule, the per-feature Constitution Check gate, and the bundle-budget gate that enforces its sole accepted exception.
 resource: .specify/memory/constitution.md
-resource-sha256: f9da9a35c593da5f626318fc0e05f5516ad409d70fab2ea219d262594c37ce1a
+resource-sha256: 8395af2ad92f23d5879a95e138545c95233f853f0334b7fa5c4688bb60b73a89
 tags: [governance, security, tdd, constitution]
-timestamp: 2026-11-15T01:53:10.478Z
+timestamp: 2026-11-18T11:11:42.541Z
 ---
 
 # The governing constitution
@@ -18,9 +18,9 @@ of the file) and has been amended more than twenty times as the system matured, 
 ratification through incremental clarifications like the client auth model rewrite and the Tamagui
 design-system mandate.
 
-The file currently reads **v2.10.0**: its footer says `**Version**: 2.10.0 | **Ratified**: 2026-03-08
-| **Last Amended**: 2026-11-15`, and the version-history entry carrying the `[CURRENT]` marker is the
-one dated 2026-11-15. That marker is the authoritative "latest amendment" signal — check it rather
+The file currently reads **v2.11.0**: its footer says `**Version**: 2.11.0 | **Ratified**: 2026-03-08
+| **Last Amended**: 2026-11-17`, and the version-history entry carrying the `[CURRENT]` marker is the
+one dated 2026-11-17. That marker is the authoritative "latest amendment" signal — check it rather
 than inferring the version from any summary, this page included.
 
 Amendments follow the file's own **Governance** section: a proposal documenting rationale, impact on
@@ -103,6 +103,18 @@ changes, when its tasks are generated and again at close-out, recording terms an
 `scripts/check-speckit-overrides.mjs` ([Doc drift](../runbooks/doc-drift.md)). It adds an obligation
 without redefining a principle, so a MINOR. It landed in the same PR as feature 101 (item #1021),
 whose merge is the operator's approval.
+
+**v2.11.0** (2026-11-17) wrote down, as rules, the server-side session that feature 085 built.
+**Session Management** gains **Session Lifetime** (an idle and an absolute timeout on every session,
+and a per-user concurrent-session cap that evicts the oldest), **Token Sealing** (tokens in the session
+store encrypted with an authenticated cipher bound to the session id and its owner, and a record that
+does not open ends the session) and **Token Renewal** (single-flight per session under a short lock,
+because refresh-token rotation makes a second renewal fail; a rejected renewal ends the session with a
+401, an unreachable IdP does not and the request gets a retryable 503). The **Client Auth Model** gains
+the native sign-in variant: the code returns to the app, which hands it and its PKCE verifier to the
+BFF; the BFF-driven flow is a SHOULD for web (item #1060). The Login and access diagrams, drawn with HttpOnly token cookies
+since v2.2.0 against the constitution's own Server-Side Session Storage rule, now show server-held
+tokens, and the access diagram shows the session store and the renewal step. Rules added, none redefined, so a MINOR; requested by the operator.
 
 Amendments are drafted rather than hand-edited. The Spec Kit constitution command
 ([`.github/agents/speckit.constitution.agent.md`](../../.github/agents/speckit.constitution.agent.md),

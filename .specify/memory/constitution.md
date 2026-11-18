@@ -25,7 +25,8 @@ VERSION HISTORY:
 - v2.7.0: Document database baseline advanced — `mongodb/mongodb-community-server:8.2.6-ubuntu2204-slim` (stale: 8.0.8-ubi9 was what actually ran) → `9.0-ubi9` (MongoDB 9.0, Red Hat UBI 9). No principle redefined — stack guidance only. (2026-10-20)
 - v2.8.0: Frontend stack baseline advanced — Expo SDK 57 → 58 (with React Native 0.88 and React 19.3 as the supporting runtime). The BFF's web output mode changes from `server` to `static` with `apiRoutes: true` on the `expo-router` plugin, so pages stay prerendered at build time and API routes keep running in the same Node process; under SDK 58 the old literal `"output": "server"` would mean per-request rendering. The BFF container's Node line is corrected from a stale `node:24.14.1-alpine3.23` to `node:24.22.1-alpine3.23`, what `frontend/mcm-app/Dockerfile` runs. No principle redefined — stack guidance only. (2026-11-07)
 - v2.9.0: Node.js baseline advanced — 24 → 26 (`node:26.13.1-alpine3.23` for the BFF image; the same major in every CI `setup-node` and in the Playwright E2E image, enforced as one value by `scripts/check-toolchain-consistency.mjs`). Node 26 no longer bundles corepack, so pnpm is installed at exactly the `packageManager` version by `scripts/install-pnpm.sh`. No principle redefined — stack guidance only. Item #992. (2026-11-14)
-- v2.10.0: Documentation — the **doc-impact sweep** made mandatory: every feature searches the documents that state current procedure for each identifier it renames, removes or changes, when its tasks are generated and again at close-out, recording the terms and results in `tasks.md`. Carried structurally by the project's Spec Kit tasks-template override and guarded by `scripts/check-speckit-overrides.mjs`. Adds an obligation; no principle redefined. Feature 101, item #1021. (2026-11-15) [CURRENT]
+- v2.10.0: Documentation — the **doc-impact sweep** made mandatory: every feature searches the documents that state current procedure for each identifier it renames, removes or changes, when its tasks are generated and again at close-out, recording the terms and results in `tasks.md`. Carried structurally by the project's Spec Kit tasks-template override and guarded by `scripts/check-speckit-overrides.mjs`. Adds an obligation; no principle redefined. Feature 101, item #1021. (2026-11-15)
+- v2.11.0: Session Management — Session Lifetime, Token Sealing and Token Renewal rules added; Client Auth Model gains native sign-in; auth-flow diagrams corrected to server-held tokens. No principle redefined. (2026-11-17) [CURRENT]
 -->
 
 # Constitution for Full Stack Development in this Monorepo
@@ -84,6 +85,9 @@ Conditional Access (CA) policies — including network location checks, device c
 #### Session Management
 
 - **Server-Side Session Storage:** Store all session data server-side (e.g., Redis). Only an opaque session ID must be stored in the client's cookie. Raw tokens must never be sent to the client.
+- **Session Lifetime:** Every server-side session MUST carry both an idle timeout and an absolute timeout, enforced by the BFF on every request and independent of the tokens' own lifetimes; an expired session is terminated on the server and the request rejected as unauthenticated. The number of concurrent sessions per user MUST be capped, the oldest session being evicted when a new one would exceed the cap. Rationale: a stolen session id stays usable only as long as the session lives, whatever the token lifetimes are.
+- **Token Sealing:** Tokens held in the session store MUST be encrypted with an authenticated cipher (per Encryption at Rest) and bound to the session id and its owner (e.g., as additional authenticated data), so a record copied to another session or user does not decrypt. A record that does not open MUST end the session; it is never repaired or migrated. Rationale: read access to the cache alone must not yield a usable token.
+- **Token Renewal:** The BFF renews a session's tokens itself, on the server, when the access token is due. Renewal MUST be single-flight per session: one request renews under a short-lived lock, and a concurrent request waits for that result rather than renewing on its own, because refresh-token rotation (Session Invalidation) makes a second renewal with the same refresh token fail. A renewal the IdP rejects MUST end the session (HTTP 401); an IdP that is unreachable or erroring MUST NOT end it, and the request fails with a retryable error (HTTP 503).
 - **Session Invalidation:** Stateful session identifiers must be invalidated on the server immediately after logout. Stateless JWT access tokens must be short-lived to minimize the window of opportunity if compromised. Refresh tokens must use rotation — each use must issue a new refresh token and invalidate the previous one, following OAuth2 standards. Where an external IAM provides SSO sessions (e.g., Keycloak), logout must also terminate the IAM-level user session via the IAM's administrative API, not only the BFF session and OIDC client token — revoking a token or calling the OIDC `end_session` endpoint ends the client/token session only; the IAM SSO user session (persisted in browser cookies) requires explicit administrative termination to prevent silent re-authentication on the next auth redirect.
 - **CSRF Protection:** All state-changing requests must be protected against Cross-Site Request Forgery. Cookies must use `SameSite=Strict`. Where additional protection is required (e.g., cross-origin flows), implement CSRF tokens or validate the `Origin` request header.
 
@@ -358,7 +362,7 @@ The following technologies MUST be used unless explicitly amended:
 - **Protected Screens:** Expo Router must be used with protected routes to prevent access of screens that require authentication and authorization
 - **Authentication Library:** Expo AuthSession (expo-auth-session) must be used for implementing authentication
 - **Central Authentication Service:** Keycloak is responsible for authenticating the user and issuing signed, short-lived JWTs to the Frontend App
-- **Client Auth Model:** The Frontend App — on **web AND native (Android)** — authenticates exclusively via the BFF's `HttpOnly`, `SameSite=Strict` session cookies (governed by §Security: BFF holds the tokens; only an opaque session reference reaches the client). The native client MUST NOT store raw access or refresh tokens on the device, and MUST NOT attach an `Authorization: Bearer` token from client storage — it relies on React Native's native cookie jar (the BFF's `Set-Cookie`) for credentialed requests, exactly like web. This makes the BFF the single token holder across all client surfaces (consistent with §Agent Identity Propagation, where token custody + refresh remain with the BFF). SecureStore may hold only the opaque session id / non-sensitive structural state, never raw tokens.
+- **Client Auth Model:** The Frontend App — on **web AND native (Android)** — authenticates exclusively via the BFF's `HttpOnly`, `SameSite=Strict` session cookies (governed by §Security: BFF holds the tokens; only an opaque session reference reaches the client). The native client MUST NOT store raw access or refresh tokens on the device, and MUST NOT attach an `Authorization: Bearer` token from client storage — it relies on React Native's native cookie jar (the BFF's `Set-Cookie`) for credentialed requests, exactly like web. This makes the BFF the single token holder across all client surfaces (consistent with §Agent Identity Propagation, where token custody + refresh remain with the BFF). SecureStore may hold only the opaque session id / non-sensitive structural state, never raw tokens. **Native sign-in:** a native client cannot receive a cookie set during the IdP redirect, because the redirect lands in a system browser tab whose cookie jar is not the app's. So on native, the authorization code returns to the app's own redirect URI and the app hands the code and its PKCE verifier to the BFF, which redeems them with the client secret and sets the session cookie in the app's cookie jar. Web clients SHOULD use the BFF-driven flow in the Login diagram, where the code and verifier never reach page script.
 - **HTTP Client:** Axios must be used for API calls
 - **UI / Design System:** Tamagui is the UI/styling engine, consumed via a shared package (MD3 component library, tokens, Outfit/Inter fonts). Wired runtime-only by default (the Tamagui babel/metro compiler plugins are optional optimisations). Ad-hoc/competing styling libraries must not be introduced alongside it.
 - **Logging & Monitoring:** BFF server-side code (`bff-server/`, `bff-api/`) must use the shared structured logger at `@/bff-server/logger` (format, redaction, and audit requirements are governed by Core Logging & Monitoring). Audit context must identify users by `userId` (Keycloak UUID) only — never by email or username. Client-side code (hooks, components, screens) may use `console.*` sparingly for unexpected errors only and must not log sensitive data.
@@ -905,23 +909,25 @@ sequenceDiagram
   participant IAM as IAM Service
 
   User->>ReactNativeUI: 1. user clicks signin button
-  ReactNativeUI->>BFF: 2. client fetches URL to start authentication code flow request<br/>from BFF and tells Browser to go to that URL
-  Browser->>IAM: 3. browser opens IAM service's authorization endpoint
-  IAM-->>Browser: 4. IAM service redirects the browser to the login page
-  Browser->>IAM: 5. browser opens login page
-  User->>Browser: 6. user enters credentials
-  Browser->>IAM: 7. browser posts user's credentials to IAM service
-  IAM-->>Browser: 8. IAM service verifies user's credentials<br/>and redirects browser to revist authorization endpoint
-  Browser->>IAM: 9. browser revists authorization endpoint
-  IAM-->>Browser: 10. IAM service redirects browser to callback URL
-  Browser->>BFF: 11. browser calls callback URL with additional<br/>query parameters including one-time authorization 'code'
+  ReactNativeUI->>BFF: 2. client asks the BFF to start sign-in
   activate BFF
-  BFF->>IAM: 12. BFF requests IAM service's token endpoint, supplying client credentials and authorization 'code'
-  IAM-->>BFF: 13. IAM service validates client credentials and authorization 'code'<br/>and returns ID token, access token, and refresh token
-  BFF->>BFF: 14. BFF sets HttpOnly token cookies (access/refresh/session-id)<br/>and creates a session record (id + timeouts) in the cache
+  BFF->>BFF: 3. BFF generates a PKCE code verifier, its S256 challenge, and a state value,<br/>and keeps them server-side, bound to this pending sign-in
+  BFF-->>Browser: 4. BFF redirects the browser to the IAM service's authorization endpoint<br/>with client_id, the BFF callback URL, the code challenge and state
+  deactivate BFF
+  Browser->>IAM: 5. browser opens the authorization endpoint
+  IAM-->>Browser: 6. IAM service serves its login page
+  User->>Browser: 7. user enters credentials
+  Browser->>IAM: 8. browser posts user's credentials to IAM service (never to the app)
+  IAM-->>Browser: 9. IAM service redirects the browser to the BFF callback URL<br/>with a one-time authorization 'code' and the state
+  Browser->>BFF: 10. browser calls the callback URL with the code and state
+  activate BFF
+  BFF->>BFF: 11. BFF checks the state matches the pending sign-in
+  BFF->>IAM: 12. BFF redeems the code at the IAM service's token endpoint<br/>with the code verifier and its client credentials
+  IAM-->>BFF: 13. IAM service validates the client credentials, code and verifier<br/>and returns ID token, access token, and refresh token
+  BFF->>BFF: 14. BFF creates a session record (id + timeouts) in the cache, with the<br/>tokens stored server-side beside it, and sets ONE HttpOnly, SameSite=Strict<br/>cookie holding only the opaque session id — no token is sent to the client
   BFF-->>Browser: 15. BFF redirects browser to home
   deactivate BFF
-  Browser->>BFF: 16. browser gets home page, setting the session cookie
+  Browser->>BFF: 16. browser gets home page, sending the session cookie
   Browser->>ReactNativeUI: 17. browser loads React Native UI
 ```
 
@@ -937,20 +943,29 @@ sequenceDiagram
   actor User
   participant ReactNativeUI as React Native UI
   participant BFF as BFF<br/>(Backend for Frontend)
+  participant Store as Session Store<br/>(server-side cache)
   participant Backend as Backend Service<br/>(OAuth2 Resource Server)
   participant IAM as IAM Service
 
-  Backend->>IAM: 1. on startup, backend service fetches<br/>public key for JWT signature verification from IAM service
-  IAM-->>Backend: 2. IAM service returns public key
-  ReactNativeUI->>BFF: 3. client makes HTTP GET request to BFF,<br/>including its HttpOnly auth cookies
-  BFF->>BFF: 4. BFF extracts the access token from the HttpOnly cookie
-  BFF->>Backend: 5. BFF includes access token in request to backend service
+  Backend->>IAM: 1. on startup, backend service fetches the signing keys<br/>(JWKS) for JWT signature verification from IAM service
+  IAM-->>Backend: 2. IAM service returns the signing keys
+  ReactNativeUI->>BFF: 3. client makes HTTP GET request to BFF,<br/>carrying only its HttpOnly session cookie (opaque session id)
+  BFF->>Store: 4. BFF looks up the session by its id
+  Store-->>BFF: 5. session record (timestamps) and its sealed tokens
+  BFF->>BFF: 6. BFF enforces the idle and absolute timeouts, then unseals the tokens<br/>(the record only decrypts for this session and owner, otherwise the session is ended)
+  opt access token due to expire
+    BFF->>Store: 7. takes the session's short-lived renewal lock<br/>(a concurrent request waits for this renewal instead of renewing)
+    BFF->>IAM: 8. renews with the refresh token
+    IAM-->>BFF: 9. new access token and rotated refresh token
+    BFF->>Store: 10. re-seals and stores the new tokens, releases the lock
+  end
+  BFF->>Backend: 11. BFF includes access token in request to backend service
   activate Backend
-  Backend->>Backend: 6. backend service validates requests's JWT<br/>using the public key obtained from IAM service
-  Backend->>Backend: 7. backend service reads JWT's identity and<br/>authorization claims and uses them for permission checks
-  Backend-->>BFF: 8. backend service returns a response to BFF
+  Backend->>Backend: 12. backend service validates requests's JWT<br/>using the cached signing keys
+  Backend->>Backend: 13. backend service reads JWT's identity and<br/>authorization claims and uses them for permission checks
+  Backend-->>BFF: 14. backend service returns a response to BFF
   deactivate Backend
-  BFF-->>ReactNativeUI: 9. BFF returns the response to the client
+  BFF-->>ReactNativeUI: 15. BFF returns the response to the client
 ```
 
 ### Diagram for Auth Flow - Agent Auth Flow
@@ -1021,4 +1036,4 @@ All pull requests and code reviews MUST verify compliance with active principles
 
 Development guidance and implementation examples are maintained in [docs/runbooks/dev-environment-setup.md](docs/runbooks/dev-environment-setup.md) (separate from constitution).
 
-**Version**: 2.10.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-11-15
+**Version**: 2.11.0 | **Ratified**: 2026-03-08 | **Last Amended**: 2026-11-17
