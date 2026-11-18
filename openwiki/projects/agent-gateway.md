@@ -3,10 +3,10 @@ type: Service
 title: Agent Gateway (LangGraph)
 description: The Python LangGraph supervisor graph that powers the MCM conversational assistant, served over AG-UI by a FastAPI app, reachable only from the BFF, orchestrating tool calls to three scoped MCP servers through one code-driven chokepoint, owning no domain data, authenticating no end user, and turning any escaping exception into a sanitised terminal RUN_ERROR event rather than an aborted stream.
 resource: docs/runbooks/agent-layer.md
-resource-sha256: c2011fdfd6fd30794f87c31f636dda336e04ce5885a30a1fac63046340c8ce82
+resource-sha256: 034706cf1936545485da70f84afbf94ad6a373da7ca211fdaece4303e5fd0560
 tags: [langgraph, python, mcp, agent, ai, ag-ui]
 generated: { by: "openwiki/0.7.1", at: "2026-10-10T02:25:55.688Z" }
-timestamp: 2026-11-17T01:23:24.837Z
+timestamp: 2026-11-18T03:33:18.118Z
 ---
 
 # Agent Gateway (LangGraph)
@@ -55,7 +55,16 @@ ContextVars *are* visible — then bridges them into `config["configurable"]` be
 is built. That bridge is not decorative: a ContextVar set at the ASGI boundary does not reliably
 propagate into LangGraph's per-node executor tasks. Nothing bridged this way is ever checkpointed —
 `state.forbid_token_fields` rejects a state key whose name looks like a credential
-([Auth chain](../invariants/auth-chain.md)).
+([Auth chain](../invariants/auth-chain.md)). That guard covers graph STATE, not checkpoint metadata.
+LangGraph copies every scalar `configurable` value into each checkpoint's metadata unless its key
+starts with `__`. So the subject token and the import handle ride under `__mcm_subject_token` and
+`__mcm_file_handle` (spec 102, item #973), and a new secret-bearing value must do the same.
+
+The checkpointer is a `BoundedInMemorySaver`. It evicts a thread idle for longer than
+`AGENT_THREAD_RETENTION_SECONDS` (default 86400), and evicts least-recently-written first past
+`AGENT_CHECKPOINT_MAX_THREADS` (default 1000). The gauge `agent.checkpoint.threads` reports the
+count. A resume of a thread with no checkpoint ends with `RUN_ERROR` `code=conversation_expired`,
+not a silent fresh run.
 
 The terminal-error seam is the other half of the boundary, and it is no longer a single method. An
 escaping exception must leave the stream as a terminal `RunErrorEvent`, never as an aborted socket:

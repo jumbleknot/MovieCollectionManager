@@ -170,8 +170,10 @@ The ordering is the contract, and four rules carry it:
 - **A client-supplied `thread_id` is bound to its owner before any gateway call.** The gateway keys
   its LangGraph checkpoint solely on that id, so without the binding one user could present another's
   thread id and see the checkpointed proposal preview. `enforceAgentThreadOwnership` claims the thread
-  for the first user via Redis `SET NX` and throws 403 on a later mismatch; the TTL is the session's
-  absolute window, and a Redis outage surfaces as a typed error rather than a silent bypass.
+  for the first user and throws 403 on a later mismatch. One Lua script claims the thread or
+  refreshes the owner's claim. Its TTL is 2 × `AGENT_THREAD_RETENTION_SECONDS`, so the claim outlives
+  the gateway's checkpoint (spec 102). A Redis outage or an inconclusive answer is a typed 503 rather
+  than a silent bypass.
 
 Because Expo Router has no runtime global middleware, these routes enforce auth per handler like every
 other BFF route, and `agent-route-auth.integration.test.ts` enumerates every `bff-api/agent/*` route
@@ -422,8 +424,8 @@ fixed order that is described below. The division of labour is worth stating onc
 documents go with the account, and the Redis keys go with the account, but the user's artifacts at
 their own destination never do.** Redis entries keyed by the user are cleared explicitly; the agent
 thread-owner claims are deliberately *not*, because they are keyed by client-supplied `thread_id`
-rather than by user, so they are not enumerable from a user id — they carry the session's absolute
-TTL, expire on their own, and hold an opaque user id rather than personal data. The agent-config
+rather than by user, so they are not enumerable from a user id — they carry a TTL of twice the
+gateway's checkpoint retention, expire on their own, and hold an opaque user id rather than personal data. The agent-config
 document is deleted outright (`remove`, not `clear`, which would keep non-secret settings), and it
 must go *after* the backup teardown because the offline-token grant lives inside that same document.
 
