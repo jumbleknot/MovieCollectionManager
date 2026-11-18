@@ -37,6 +37,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
 from src.graph import build_graph
+from src.runtime_context import FILE_HANDLE_KEY, SUBJECT_TOKEN_KEY
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_nodes
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
@@ -102,9 +103,9 @@ def _config(thread: str, subject_token: str, handle: str, filename: str) -> dict
     return {
         "configurable": {
             "thread_id": thread,
-            "subject_token": subject_token,
+            SUBJECT_TOKEN_KEY: subject_token,
             "user_id": _sub(subject_token),
-            "file_handle": handle,
+            FILE_HANDLE_KEY: handle,
             "filename": filename,
         }
     }
@@ -226,7 +227,7 @@ async def _run_full_import(
     no_handle = {
         "configurable": {
             "thread_id": f"{name}-{tag}",
-            "subject_token": subject_token,
+            SUBJECT_TOKEN_KEY: subject_token,
             "user_id": _sub(subject_token),
         }
     }
@@ -433,7 +434,7 @@ async def test_import_trailing_whitespace_resolves_once_and_stores_trimmed(
         no_handle = {
             "configurable": {
                 "thread_id": f"{name}-r1",
-                "subject_token": subject_token,
+                SUBJECT_TOKEN_KEY: subject_token,
                 "user_id": _sub(subject_token),
             }
         }

@@ -21,7 +21,7 @@ from typing import Any
 
 from src.agui_identity import inject_agent_config
 from src.models import escalation_or_base, runtime_env, select_model_config
-from src.runtime_context import get_agent_config, parse_agent_config
+from src.runtime_context import SUBJECT_TOKEN_KEY, get_agent_config, parse_agent_config
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_nodes
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
@@ -197,7 +197,9 @@ async def test_runtime_curator_bridges_agent_config_into_the_contextvar() -> Non
 
     nodes = build_runtime_nodes(_minimal_cfg(extract_stub))
     agent_config = {"provider": "ollama", "ollamaBaseUrl": "http://h:11434", "tmdbKey": "k"}
-    config = {"configurable": {"agent_config": agent_config, "user_id": "u", "subject_token": "s"}}
+    config = {
+        "configurable": {"agent_config": agent_config, "user_id": "u", SUBJECT_TOKEN_KEY: "s"}
+    }
     await nodes["curator"]({"messages": [("user", "hi")]}, config)
     assert captured["cfg"] == agent_config
 

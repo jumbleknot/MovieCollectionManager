@@ -41,6 +41,7 @@ from langgraph.checkpoint.memory import MemorySaver  # noqa: E402
 
 from src.graph import build_graph  # noqa: E402
 from src.proposals import EnrichedMovieCandidate, to_movie_payload  # noqa: E402
+from src.runtime_context import FILE_HANDLE_KEY, SUBJECT_TOKEN_KEY
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_nodes  # noqa: E402
 from src.tools.agent_rate_limit import AgentToolRateLimiter  # noqa: E402
 from src.tools.identity import DownscopedTokenCache, acquire_downscoped_token  # noqa: E402
@@ -320,7 +321,7 @@ async def test_export_cannot_select_another_users_collection(
     config = {
         "configurable": {
             "thread_id": f"t046a-{uuid.uuid4().hex[:8]}",
-            "subject_token": subject_token,
+            SUBJECT_TOKEN_KEY: subject_token,
             "user_id": user_id,
             "export_collection_ids": [other_users_named_collection["id"]],
         }
@@ -357,9 +358,9 @@ async def test_import_cannot_write_to_another_users_collection(
     config = {
         "configurable": {
             "thread_id": f"t038a-{uuid.uuid4().hex[:8]}",
-            "subject_token": subject_token,
+            SUBJECT_TOKEN_KEY: subject_token,
             "user_id": user_id,
-            "file_handle": handle,
+            FILE_HANDLE_KEY: handle,
             "filename": f"{other['name']}.csv",
         }
     }

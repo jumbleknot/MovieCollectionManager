@@ -37,7 +37,7 @@ from src.nodes.approval_gate import ExecOutcome, build_approval_gate
 from src.nodes.curator import ExtractFn, build_curator
 from src.nodes.organizer import PlanFn, build_organizer
 from src.proposals import Operation
-from src.runtime_context import agent_config_scope
+from src.runtime_context import FILE_HANDLE_KEY, SUBJECT_TOKEN_KEY, agent_config_scope
 from src.tools import opa
 from src.tools.agent_rate_limit import AgentToolRateLimiter, build_default_limiter
 from src.tools.identity import (
@@ -195,7 +195,7 @@ def _tmdb_key_of(agent_config: Mapping[str, Any] | None) -> str | None:
 
 
 def _subject_token(config: Mapping[str, Any] | None) -> str | None:
-    token = _configurable(config).get("subject_token")
+    token = _configurable(config).get(SUBJECT_TOKEN_KEY)
     return str(token) if token else None
 
 
@@ -987,7 +987,7 @@ def _build_import_node(cfg: RuntimeNodeConfig) -> Any:
             return await _finalize(tabs, collections, resolutions)
 
         # ── Fresh turn: parse + collect disambiguations ────────────────────────────────────
-        file_handle = str(configurable.get("file_handle") or "")
+        file_handle = str(configurable.get(FILE_HANDLE_KEY) or "")
         filename = str(configurable.get("filename") or "upload.xlsx")
         if not cfg.spreadsheet_mcp_url:
             return {

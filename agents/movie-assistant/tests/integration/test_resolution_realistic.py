@@ -49,6 +49,7 @@ from src.graph import build_graph
 from src.nodes.curator import enrich_movie
 from src.nodes.organizer import _match_movie
 from src.nodes.supervisor import resolve_option
+from src.runtime_context import SUBJECT_TOKEN_KEY
 from src.runtime_nodes import build_runtime_nodes
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.mcp_tools import (
@@ -467,7 +468,7 @@ async def test_navigate_large_library_is_bounded_and_fast(
         {
             "configurable": {
                 "thread_id": f"nav-large-{uuid.uuid4().hex[:8]}",
-                "subject_token": subject_token,
+                SUBJECT_TOKEN_KEY: subject_token,
                 "user_id": _sub(subject_token),
             }
         },

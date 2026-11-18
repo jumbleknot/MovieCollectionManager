@@ -21,6 +21,7 @@ from langchain_core.messages import AIMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
+from src.runtime_context import SUBJECT_TOKEN_KEY
 from src.runtime_nodes import (
     RuntimeNodeConfig,
     _stamp_ui_action_nonce,
@@ -91,7 +92,9 @@ def _cfg(call: Any) -> RuntimeNodeConfig:
 
 def _config(thread: str) -> dict[str, Any]:
     # The gateway/graph-entry populates subject_token + user_id into configurable (never state).
-    return {"configurable": {"thread_id": thread, "subject_token": "subj-123", "user_id": "user-1"}}
+    return {
+        "configurable": {"thread_id": thread, SUBJECT_TOKEN_KEY: "subj-123", "user_id": "user-1"}
+    }
 
 
 # 047 US4 extended the single ownership question into a chain (ownership → media formats →

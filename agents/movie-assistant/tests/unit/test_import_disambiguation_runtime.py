@@ -15,6 +15,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
 from src.nodes.import_disambiguation import CANCEL_IMPORT_LABEL
+from src.runtime_context import FILE_HANDLE_KEY, SUBJECT_TOKEN_KEY
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_graph
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
@@ -89,9 +90,9 @@ def _config(thread: str) -> dict[str, Any]:
     return {
         "configurable": {
             "thread_id": thread,
-            "subject_token": "subj-123",
+            SUBJECT_TOKEN_KEY: "subj-123",
             "user_id": "user-1",
-            "file_handle": "h-upload-1",
+            FILE_HANDLE_KEY: "h-upload-1",
             "filename": "movies.xlsx",
         }
     }
@@ -179,7 +180,7 @@ def _config_no_handle(thread: str) -> dict[str, Any]:
     return {
         "configurable": {
             "thread_id": thread,
-            "subject_token": "subj-123",
+            SUBJECT_TOKEN_KEY: "subj-123",
             "user_id": "user-1",
         }
     }

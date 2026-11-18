@@ -35,6 +35,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from langgraph.types import Command
 
 from src.graph import build_graph
+from src.runtime_context import SUBJECT_TOKEN_KEY
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_nodes
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
@@ -135,7 +136,7 @@ def _config(thread: str, subject_token: str) -> dict[str, Any]:
     return {
         "configurable": {
             "thread_id": thread,
-            "subject_token": subject_token,
+            SUBJECT_TOKEN_KEY: subject_token,
             "user_id": _sub(subject_token),
         }
     }

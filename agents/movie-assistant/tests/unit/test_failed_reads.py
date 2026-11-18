@@ -19,6 +19,7 @@ from typing import Any
 
 from langgraph.checkpoint.memory import MemorySaver
 
+from src.runtime_context import SUBJECT_TOKEN_KEY
 from src.runtime_nodes import RuntimeNodeConfig, build_runtime_graph
 from src.tools.agent_rate_limit import AgentToolRateLimiter
 from src.tools.identity import DownscopedTokenCache
@@ -108,7 +109,7 @@ def _graph(call: Any, intent: str, **seams: Any) -> Any:
 
 
 def _conf(thread: str) -> dict[str, Any]:
-    return {"configurable": {"thread_id": thread, "subject_token": "s", "user_id": "u"}}
+    return {"configurable": {"thread_id": thread, SUBJECT_TOKEN_KEY: "s", "user_id": "u"}}
 
 
 def _text(result: dict[str, Any]) -> str:

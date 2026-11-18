@@ -27,6 +27,8 @@ from copilotkit import LangGraphAGUIAgent
 
 from src.provider_errors import log_provider_error
 from src.runtime_context import (
+    FILE_HANDLE_KEY,
+    SUBJECT_TOKEN_KEY,
     get_agent_config,
     get_import_file,
     get_subject_token,
@@ -58,7 +60,7 @@ def inject_subject_identity(config: dict[str, Any], token: str | None) -> None:
     if not token:
         return
     configurable = config.setdefault("configurable", {})
-    configurable["subject_token"] = token
+    configurable[SUBJECT_TOKEN_KEY] = token
     configurable["user_id"] = subject_user_id(token)
 
 
@@ -86,7 +88,7 @@ def inject_import_file(config: dict[str, Any], import_file: dict[str, Any] | Non
     if not handle:
         return
     configurable = config.setdefault("configurable", {})
-    configurable["file_handle"] = handle
+    configurable[FILE_HANDLE_KEY] = handle
     filename = str(import_file.get("filename") or "").strip()
     if filename:
         configurable["filename"] = filename
