@@ -190,6 +190,13 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
 - [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
+- [ ] TXXX **Open the PR** from a real branch (`git push origin HEAD:<branch>`, per
+  `docs/runbooks/ci-diagnostics.md`). Tick this task in the branch's LAST commit and quote the
+  branch, the PR number and that commit's sha. **CI evidence is never recorded here**: a file cannot
+  hold the CI result of the commit that contains it, and a commit added to record it is a new head
+  that reruns every required job (app-e2e included, as its paths filter compares the whole PR with
+  `main`). The run ids, the `ci-status.mjs` verdict and the merge sha go in the PR's closing comment
+  and in each backlog item's closing comment
 
 ---
 

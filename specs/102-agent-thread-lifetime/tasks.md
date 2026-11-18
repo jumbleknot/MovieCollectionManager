@@ -81,8 +81,10 @@
 - [X] **T013** Run the touched tiers one at a time: `nx lint movie-assistant`, `nx test movie-assistant`,
   `nx lint mcm-app`, `nx typecheck mcm-app`, the touched `mcm-app` jest suites, the integration file,
   `okf-lint`, `okf-governance`.
-- [ ] **T014** Open the PR and get green CI. **Quote** the run numbers. Close items #973, #974, #975
-  once their criteria are verified.
+- [X] **T014** Open the PR and get green CI. **Quote** the run numbers. Close items #973, #974, #975
+  once their criteria are verified. Ticked after the merge, in a later docs PR: the CI evidence lives
+  in the closing comments of PR #1059 and items #973, #974 and #975, per the tasks template's
+  **Open the PR** rule (a commit recording it on the branch would have rerun every required job).
 
 ## Evidence
 
@@ -99,3 +101,4 @@
 | T009a | RED `1 failed, 8 passed` (received the generic text). GREEN `9 passed` | Local |
 | T012 | `wiki-refresh.mjs --stale` listed `architecture/agent-layer.md` and `projects/agent-gateway.md` (both from the runbook). Edited, then `--record`. `projects/bff.md` text corrected (its resource is unchanged). `--stale` prints nothing. `check-openwiki-okf.mjs`: `77 concepts conformant` | Local |
 | T013 | One at a time, `--skip-nx-cache`: `nx okf-governance` + `okf-lint` exit 0; `nx lint movie-assistant`: `160 files already formatted`, ruff `All checks passed!`, mypy `no issues found in 46 source files`; `nx test movie-assistant`: `1256 passed, 1 skipped` (the same single skip as spec 097); `nx lint mcm-app`: `0 errors, 168 warnings` (baseline 168); `nx typecheck mcm-app` exit 0; `doc-env-example-citations`, `gen-dev-env`, `relocated-docs-links` guards: `27 pass, 0 fail, 0 skipped`. The full `nx test mcm-app` is left to CI, because other sessions share this VM | Local |
+| T014 | PR #1059, head `b181bd90`: `ci-status.mjs` verdict mergeable, run ids 7848–7850 (`app-e2e`, `dast`, `android-launch` passed). Merged as `c6bdbfae`. Items #973, #974, #975 closed with per-criterion evidence comments | CI, PR #1059 |

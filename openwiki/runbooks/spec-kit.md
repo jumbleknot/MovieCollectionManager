@@ -3,9 +3,9 @@ type: Runbook
 title: "Spec Kit: this repository's customisations, and upgrading it"
 description: The one inventory of every way the repository changes or adds to GitHub Spec Kit — the tasks-template override carrying the doc-impact sweep, the required tests and the Verify RED / Verify GREEN checkpoint format it shows, the four registered local edits (the /speckit-tasks skill's and the Copilot tasks agent's "tests are required" rule, /speckit-converge appending its tasks in that format, and /speckit-taskstoissues sending tasks to the Forgejo backlog), the constitution, the git and agent-context extension hooks, and the three CLI version pins — plus who owns which file, the order of preference for a new customisation, the guard that fails when any of them is lost or a Spec Kit-owned file is edited without being registered, its ten failure codes, the upgrade procedure, and the /speckit-constitution gap.
 resource: docs/runbooks/spec-kit.md
-resource-sha256: e2d5be7bcc29989f8b3ed3e2d5abd29ff12d86efe45dd60ceae443040832c760
+resource-sha256: 655b40bc8da6d775819308bdde2b6b07e08bfc17f12e38d10b3b0d58d6f3d2a7
 tags: [spec-kit, sdd, templates, guardrails, upgrade, runbook]
-timestamp: 2026-11-17T01:55:05.241Z
+timestamp: 2026-11-18T11:32:51.167Z
 ---
 
 # Spec Kit: this repository's customisations, and upgrading it
@@ -28,8 +28,11 @@ a core template.
 ## The customisations
 
 1. **Tasks-template override** (`.specify/templates/overrides/tasks-template.md`, feature 101): a fork
-   of the core template that adds the **Doc-impact sweep** and **Close-out re-search** tasks. It
-   resolves first because `Resolve-Template` and `Resolve-TemplateContent` check `overrides/` first.
+   of the core template that adds the **Doc-impact sweep** and **Close-out re-search** tasks, and a
+   final **Open the PR** task ticked in the branch's last commit. CI evidence never goes in
+   `tasks.md`: a commit recording it would be a new head that reruns every required job, so the run
+   ids and merge sha go in the PR and backlog-item closing comments. It resolves first because
+   `Resolve-Template` and `Resolve-TemplateContent` check `overrides/` first.
 2. **Required tests in the TDD checkpoint format**: the same override replaces the core template's
    "tests are optional" with the constitution's rule. Its User Story 1 sample shows test tasks with a
    **Verify RED** (and expected failure) and a paired implementation task with a **Verify GREEN**. The

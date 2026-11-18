@@ -109,6 +109,12 @@ Source: `specs/085-bff-auth-fail-closed/` (spec, plan, research R1–R11, data m
   `(user, audience)`, a hit returned before OPA and the exchange, and a JWT naming a victim's `sub`
   received the victim's cached mc-service token. The key now includes a SHA-256 digest of the
   presented token. Apply the same test to any new per-user cache or lookup in the gateway.
+- **The guard on graph state does not cover checkpoint metadata** (spec 102, item #973). LangGraph
+  copies every scalar `config["configurable"]` value into each checkpoint's metadata unless its key
+  starts with `__`. The subject token and the import file handle therefore travel under
+  `__mcm_subject_token` / `__mcm_file_handle` (`src/runtime_context.py`), and any new
+  secret-bearing `configurable` value must use a `__mcm_` key too.
+  `tests/unit/test_checkpoint_token_absence.py` asserts it end to end.
 - **Sign-in redirect registration retries until Keycloak confirms it.** `ensureClientRedirectUris`
   records "done" only when nothing was missing or the `PUT` returned `2xx` (item #753).
 - **Pre-rollout clients sign in again once.** The retired `mcm_access_token` / `mcm_refresh_token`
