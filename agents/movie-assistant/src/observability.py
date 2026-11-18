@@ -302,6 +302,33 @@ def _counter(name: str, description: str) -> Any:
     return _instruments[name]
 
 
+def register_checkpoint_gauge(saver: Any, meter: Any | None = None) -> None:
+    """Export the retained checkpoint thread count as `agent.checkpoint.threads` (spec 102 FR-004).
+
+    Item #974: the in-memory checkpointer used to grow without bound, and nothing showed it. An
+    observable gauge reads `saver.retained_thread_count()` at each export, so the bound is visible
+    in Prometheus/Grafana. A no-op until `configure_metrics` wires a provider, like the counters.
+    A saver without the method (a test's plain `MemorySaver`) registers nothing.
+    """
+    count = getattr(saver, "retained_thread_count", None)
+    if not callable(count):
+        return
+    from opentelemetry.metrics import CallbackOptions, Observation
+
+    def observe(_options: CallbackOptions) -> list[Observation]:
+        return [Observation(int(count()))]
+
+    if meter is None:
+        from opentelemetry import metrics
+
+        meter = metrics.get_meter("movie-assistant-gateway")
+    meter.create_observable_gauge(
+        "agent.checkpoint.threads",
+        callbacks=[observe],
+        description="conversation threads held by the gateway's checkpointer",
+    )
+
+
 def record_turn(intent: str) -> None:
     """Count an agent turn (labelled by routed intent). No-op until metrics are configured."""
     _counter("agent.runs", "agent turns started").add(1, {"intent": intent or "unknown"})

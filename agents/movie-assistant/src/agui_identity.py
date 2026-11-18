@@ -173,6 +173,24 @@ def _sanitised_run_error(exc: Exception) -> SanitisedRunErrorEvent:
 
 _TERMINAL = (EventType.RUN_ERROR, EventType.RUN_FINISHED)
 
+# Spec 102 US2-AC3 — the terminal code for a resume of a thread whose checkpoint is gone (evicted by
+# the bounded saver, or lost to a gateway restart). A code the client can act on, with fixed text.
+CONVERSATION_EXPIRED = "conversation_expired"
+CONVERSATION_EXPIRED_MESSAGE = "This conversation has expired. Start a new conversation."
+
+
+def _requests_resume(input: Any) -> bool:  # noqa: A002 — the runtime's parameter name
+    """True when the run input resumes an interrupt, in either form the runtime accepts.
+
+    Mirrors `ag_ui_langgraph`'s own test (0.0.47 `_handle_stream_events`): a non-empty AG-UI
+    `resume[]`, or a legacy `forwardedProps.command.resume` that is present and not None.
+    """
+    if getattr(input, "resume", None):
+        return True
+    forwarded = getattr(input, "forwarded_props", None) or {}
+    command = forwarded.get("command") if isinstance(forwarded, dict) else None
+    return isinstance(command, dict) and command.get("resume") is not None
+
 
 class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
     """AG-UI agent that bridges the per-request subject token into `config["configurable"]`.
@@ -182,6 +200,25 @@ class IdentityAwareAGUIAgent(LangGraphAGUIAgent):
     """
 
     async def prepare_stream(self, input: Any, agent_state: Any, config: Any) -> Any:  # noqa: A002
+        if _requests_resume(input) and getattr(agent_state, "created_at", None) is None:
+            # Spec 102 US2-AC3: nothing to resume. Without this the runtime runs
+            # `Command(resume=…)` against an empty thread, which is a silent fresh run.
+            # `created_at is None` is LangGraph's "no checkpoint for this thread".
+            return {
+                "stream": None,
+                "state": None,
+                "config": None,
+                "events_to_dispatch": [
+                    RunStartedEvent(
+                        type=EventType.RUN_STARTED, thread_id=input.thread_id, run_id=input.run_id
+                    ),
+                    SanitisedRunErrorEvent(
+                        type=EventType.RUN_ERROR,
+                        message=CONVERSATION_EXPIRED_MESSAGE,
+                        code=CONVERSATION_EXPIRED,
+                    ),
+                ],
+            }
         inject_subject_identity(config, get_subject_token())
         inject_ui_snapshot(config, get_ui_snapshot())
         inject_import_file(config, get_import_file())

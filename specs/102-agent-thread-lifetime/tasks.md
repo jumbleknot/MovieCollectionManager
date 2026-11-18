@@ -32,9 +32,9 @@
 - [ ] **T005** [US2] `src/checkpoint_retention.py`, the `graph.py` default, and
   `observability.register_checkpoint_gauge` registered by `gateway.create_app`.
   - **Verify GREEN**: T004 passes.
-- [ ] **T006** [US2] The expired-resume case in `tests/unit/test_agui_identity.py`.
+- [ ] **T006** [US2] `tests/unit/test_expired_resume.py` (two expired cases and two controls).
   - **Scenarios covered**: US2-AC3
-  - **Verify RED**: `uv run pytest tests/unit/test_agui_identity.py -k expired` → fails: no
+  - **Verify RED**: `uv run pytest tests/unit/test_expired_resume.py` → fails: no
     `conversation_expired` `RUN_ERROR`.
 - [ ] **T007** [US2] The `prepare_stream` expired-resume branch.
   - **Verify GREEN**: T006 passes.
