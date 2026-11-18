@@ -278,3 +278,20 @@
 # minimumReleaseAge, so the operator overrode the cooldown with one exact-version, floor-backed
 # minimumReleaseAgeExclude entry (see tools/openwiki-generator/pnpm-workspace.yaml). `pnpm audit` on the
 # generator tree no longer reports the advisory.
+
+# ── picomatch GHSA-fc5q-39xc-vjpf (operator-approved 2026-11-18, time-boxed) ──────────────────────────
+# ReDoS through single-branch repeated extglobs, affecting picomatch <= 4.0.7 with NO patched release
+# (pnpm audit: patched_versions null), so neither a lockfile refresh nor Renovate can discharge it.
+# It began failing every PR on 2026-11-18; main's previous sast run predates the advisory.
+# NOT REACHABLE from a request, by the same reasoning as the braces/micromatch triage above. picomatch
+# is reached only through build and test tooling: react-native → @react-native/community-cli-plugin
+# → metro (jest-worker, metro-file-map), jest-haste-map/anymatch, and the openwiki generator. These
+# match glob patterns that come from repository configuration. No first-party code imports picomatch
+# (grep of frontend/mcm-app/src, agents/ and mcp-servers/, 2026-11-18). pnpm audit reports the metro
+# chain as "prod" only because react-native declares the CLI plugin as a dependency.
+- scanner: "pnpm-audit"
+  id: "GHSA-fc5q-39xc-vjpf"
+  locationPattern: "^(tools/openwiki-generator:)?picomatch@(2\\.3\\.2|4\\.0\\.7)$"
+  justification: "ReDoS in picomatch <= 4.0.7 with no patched release (pnpm audit patched_versions: null). Reached only through build and test tooling (react-native → metro, jest-haste-map/anymatch, the openwiki generator), which matches glob patterns from repository configuration, never from a request. No first-party code imports picomatch. Time-boxed so the gate re-blocks. By the expiry, check for a patched picomatch (or a withdrawal) and discharge or re-measure."
+  addedBy: "claude (operator-approved, steve, 2026-11-18)"
+  expiry: "2026-12-18"
