@@ -299,9 +299,10 @@ cookie is ever read back: `extractSessionId()` reads the cookie and nothing else
 There is **no bearer path**. The BFF does not read `Authorization` at all — not in development, not in
 test, and there is no flag that restores it (FR-008/FR-009; the old `extractRawToken` helper is gone
 and a unit test asserts no such helper exists). Test harnesses sign in the way members do. Every 401
-also clears the two retired token cookies (`mcm_access_token`, `mcm_refresh_token`) at their original
-Paths, each as its own `Set-Cookie` line — joined into one comma-separated value the browser would keep
-only the first, which is how a session that had just ended kept its refresh cookie. A session created
+clears `mcm_session_id` on its own `Set-Cookie` line. Until item #906 it also cleared the two retired
+token cookies (`mcm_access_token`, `mcm_refresh_token`) at their original Paths, each on its own line —
+joined into one comma-separated value the browser would keep only the first, which is how a session
+that had just ended kept its refresh cookie. A session created
 before 085 has no `session-tokens:` value and is **never migrated**: `requireAuth` terminates it and
 answers 401 `SESSION_NOT_FOUND`, the refresh route terminates it and answers `REFRESH_TOKEN_INVALID`.
 

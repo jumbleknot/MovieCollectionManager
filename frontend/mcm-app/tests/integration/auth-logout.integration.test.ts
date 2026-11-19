@@ -63,16 +63,14 @@ describe('/bff-api/auth/logout — integration (real BFF + Redis + Keycloak Admi
     expect(await bffRawSessionValues(sessionId)).toEqual({ record: null, tokens: null });
     expect((await getUserSessions(user.userId)).length).toBe(0); // SC-005: Keycloak SSO terminated
 
-    // Logout clears the session cookie AND the two retired token cookies (085 FR-022), each as its
-    // own Set-Cookie header with Max-Age=0. (Regression: joining them into one comma-separated
-    // Set-Cookie value left all but the first uncleared — the browser parses only the first.)
+    // Logout clears the session cookie with Max-Age=0. (The two retired pre-085 token cookies were
+    // cleared here too until item #906; their clears are gone, so nothing else is set.)
     const setCookie: string[] = res.headers['set-cookie'] ?? [];
     const cleared = (name: string): boolean =>
       setCookie.some((c) => c.startsWith(`${name}=;`) && /max-age=0/i.test(c));
     // (Jest expect takes one argument — no Playwright-style message.)
-    expect(cleared('mcm_access_token')).toBe(true); // access cookie cleared
-    expect(cleared('mcm_refresh_token')).toBe(true); // refresh cookie cleared (was the bug)
     expect(cleared('mcm_session_id')).toBe(true); // session cookie cleared
+    expect(setCookie).toHaveLength(1);
   });
 
   it('is best-effort with no session cookie — returns 200 and changes no state (US4-AC3)', async () => {

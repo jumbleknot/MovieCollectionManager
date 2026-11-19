@@ -53,10 +53,10 @@ async function _post(req: Request): Promise<Response> {
       }
     }
 
-    // Emit ONE Set-Cookie header per cleared cookie. Joining them into a single
+    // Emit ONE Set-Cookie header per cleared cookie. Joining several into a single
     // comma-separated Set-Cookie value is invalid — the browser parses only the first
-    // cookie, leaving mcm_refresh_token (Path=/bff-api/auth/refresh) and mcm_session_id
-    // uncleared. Mirror the refresh endpoint, which appends each cookie separately.
+    // cookie and leaves the rest uncleared. Mirror the refresh endpoint, which appends
+    // each cookie separately.
     const responseHeaders = securityHeaders();
     for (const cookie of buildClearAuthCookies()) {
       responseHeaders.append('Set-Cookie', cookie);

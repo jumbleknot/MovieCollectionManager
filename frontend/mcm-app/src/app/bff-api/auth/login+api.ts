@@ -9,7 +9,7 @@ import { exchangeCodeForTokens, getUserById, decodeJwtPayload } from '@/bff-serv
 import { validateJwt, extractRoles, validateAtHash } from '@/bff-server/token-service';
 import { checkLoginRateLimit, extractClientIp } from '@/bff-server/rate-limiter';
 import { createSession, getActiveSessionCount } from '@/bff-server/session-manager';
-import { buildAuthCookies, buildClearAuthCookies } from '@/bff-server/auth';
+import { buildAuthCookies } from '@/bff-server/auth';
 import { tokensFromGrant } from '@/bff-server/session-tokens';
 import { logger } from '@/bff-server/logger';
 import { withRequestContext } from '@/bff-server/request-context';
@@ -113,9 +113,8 @@ async function _post(req: Request): Promise<Response> {
       logger.error('login: session creation failed', { action: 'login_error', ip, error: err });
       throw new AuthError(AuthErrorCode.UNKNOWN, 'Session creation failed. Please try again.', 503);
     });
-    // The session reference, plus clearing the token cookies a pre-085 sign-in left behind
-    // (FR-022): a member who signs in again never keeps a stale token on the client.
-    const cookies = [...buildAuthCookies(session.sessionId), ...buildClearAuthCookies().slice(1)];
+    // The session reference is the only cookie the client holds (085 FR-016).
+    const cookies = buildAuthCookies(session.sessionId);
 
     const profile = {
       id: userId,

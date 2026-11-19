@@ -100,20 +100,20 @@ describe('POST /bff-api/auth/logout', () => {
     expect(terminateSession).toHaveBeenCalledTimes(1);
   });
 
-  it('clears the session cookie and the retired token cookies', async () => {
+  it('clears the session cookie', async () => {
     const res = await POST(makeRequest());
     const names = res.headers.getSetCookie().map((c) => c.split('=')[0]);
-    expect(names.sort()).toEqual(['mcm_access_token', 'mcm_refresh_token', 'mcm_session_id']);
+    expect(names).toEqual(['mcm_session_id']);
     expect(res.headers.getSetCookie().every((c) => /Max-Age=0/.test(c))).toBe(true);
   });
 
-  it('with no live session, clears the cookies only — nothing to revoke or end', async () => {
+  it('with no live session, clears the session cookie only — nothing to revoke or end', async () => {
     (readLiveSessionWithTokens as jest.Mock).mockResolvedValueOnce({ expired: 'missing' });
     const res = await POST(makeRequest());
     expect(res.status).toBe(200);
     expect(revokeToken).not.toHaveBeenCalled();
     expect(logoutUserSessions).not.toHaveBeenCalled();
-    expect(res.headers.getSetCookie()).toHaveLength(3);
+    expect(res.headers.getSetCookie()).toHaveLength(1);
   });
 
   it('with no session cookie at all, touches nothing', async () => {

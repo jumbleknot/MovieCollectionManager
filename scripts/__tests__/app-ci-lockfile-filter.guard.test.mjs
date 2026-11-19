@@ -32,6 +32,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse as parseYaml } from 'yaml';
@@ -171,5 +172,82 @@ test('app-e2e is still gated on the change filter it consumes', () => {
     (workflow?.jobs?.['app-e2e']?.needs ?? []).includes('changes'),
     'app-e2e does not declare `needs: changes`, so `needs.changes.outputs.app` is always empty and ' +
       'the gate silently evaluates false — the suite would never run.',
+  );
+});
+
+// ─── Item #535: a project file that DEFINES a target app-e2e runs must be in the `app` filter ───────
+//
+// `app-e2e` and `dast` deploy with `pnpm nx up-agents-prod infrastructure-as-code`, whose definition
+// lives in infrastructure-as-code/project.json. The `app` filter matched only that directory's
+// `docker/**` subtree, so a pull request changing HOW `up-agents-prod` deploys skipped the only job
+// that would prove the gateway still starts. Same shape as PR #520 (the script it runs was outside
+// the filter) and #186 (the lockfile) — each time a comment claimed coverage that did not exist.
+// The property, stated once: every project whose target an app-gated job invokes has its
+// project.json matched by `app`.
+
+/** dorny/paths-filter patterns as used here: an exact path, or `<dir>/**`. Anything else fails loud. */
+function filterMatches(pattern, path) {
+  if (pattern.endsWith('/**')) return path.startsWith(pattern.slice(0, -2));
+  assert.ok(
+    !/[*?[{]/.test(pattern),
+    `unsupported glob in the app filter: ${pattern} — extend filterMatches`,
+  );
+  return pattern === path;
+}
+
+/** project name → its project.json path, from every tracked project.json that declares a name. */
+function projectFiles() {
+  const out = execFileSync('git', ['ls-files', '*project.json'], {
+    cwd: REPO_ROOT,
+    encoding: 'utf8',
+  });
+  const map = new Map();
+  for (const rel of out.split('\n').filter(Boolean)) {
+    const { name } = JSON.parse(readFileSync(resolve(REPO_ROOT, rel), 'utf8'));
+    if (name) map.set(name, rel);
+  }
+  return map;
+}
+
+/** The project names every `nx <target> <project>` / `nx run <project>:<target>` call in a job names. */
+function invokedProjects(job, known) {
+  const text = JSON.stringify(job.steps ?? []);
+  const found = new Set();
+  for (const m of text.matchAll(/\bnx\s+(?:run\s+([\w@/-]+):[\w:-]+|[\w:-]+\s+([\w@/-]+))/g)) {
+    const name = m[1] ?? m[2];
+    if (known.has(name)) found.add(name);
+  }
+  return found;
+}
+
+test('every project file defining a target an app-gated job runs is matched by the app filter (item #535)', () => {
+  const { app } = filterSets();
+  const known = projectFiles();
+  const gated = Object.entries(workflow.jobs).filter(([, j]) =>
+    /needs\.changes\.outputs\.app == 'true'/.test(String(j?.if ?? '')),
+  );
+  assert.ok(
+    gated.length > 0,
+    'no job is gated on changes.outputs.app — this assertion would be vacuous',
+  );
+
+  const invoked = new Map(); // project → the jobs that invoke it
+  for (const [name, job] of gated)
+    for (const p of invokedProjects(job, known)) invoked.set(p, [...(invoked.get(p) ?? []), name]);
+  assert.ok(
+    invoked.has('infrastructure-as-code'),
+    'no app-gated job invokes an infrastructure-as-code target any more — the parse may be broken, ' +
+      'and this test would pass vacuously. Re-check what app-e2e deploys with.',
+  );
+
+  const unmatched = [...invoked]
+    .filter(([p]) => !app.some((pat) => filterMatches(pat, known.get(p))))
+    .map(([p, jobs]) => `${known.get(p)} (invoked by ${jobs.join(', ')})`);
+  assert.deepEqual(
+    unmatched,
+    [],
+    `these project files define targets an app-gated job runs, but the \`app\` filter does not ` +
+      `match them: ${unmatched.join('; ')}.\n  A pull request changing only that file would skip the ` +
+      'job that exercises the target it changes. Add the file to the `app` filter.',
   );
 });

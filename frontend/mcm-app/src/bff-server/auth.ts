@@ -33,13 +33,6 @@ import { AuthError, AuthErrorCode } from '@/types/errors';
 
 export const SESSION_ID_COOKIE = 'mcm_session_id';
 
-// The token cookies clients held before feature 085. Kept ONLY so `buildClearAuthCookies` can
-// expire them at their original Paths (FR-022); nothing reads them. They can go one absolute
-// session lifetime (24 h) after the 085 rollout — tracked as a backlog follow-up.
-const RETIRED_ACCESS_TOKEN_COOKIE = 'mcm_access_token';
-const RETIRED_REFRESH_TOKEN_COOKIE = 'mcm_refresh_token';
-const RETIRED_REFRESH_TOKEN_PATH = '/bff-api/auth/refresh';
-
 export function parseCookies(cookieStr: string): Record<string, string> {
   return cookieStr.split(';').reduce(
     (acc, pair) => {
@@ -207,16 +200,15 @@ export function buildAuthCookies(sessionId: string): string[] {
 }
 
 /**
- * Clear the session cookie and the two retired token cookies (FR-022). SameSite, Secure and Path
- * must match the originals or the browser ignores the clear — the retired refresh-token cookie was
- * scoped to its own Path. One Set-Cookie line per cookie: comma-joined, the browser keeps all but
- * the first.
+ * Clear the session cookie. SameSite, Secure and Path must match the original or the browser
+ * ignores the clear. Returned as a list so each cookie gets its own Set-Cookie line: comma-joined,
+ * the browser keeps all but the first.
+ *
+ * The two pre-085 token cookies (`mcm_access_token`, `mcm_refresh_token`) were cleared here too
+ * (085 FR-022) until every client had passed one absolute session lifetime (24 h) after the 085
+ * rollout; that clear was retired by item #906.
  */
 export function buildClearAuthCookies(): string[] {
   const secure = !env.isDevelopment ? '; Secure' : '';
-  return [
-    `${SESSION_ID_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=0`,
-    `${RETIRED_ACCESS_TOKEN_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=0`,
-    `${RETIRED_REFRESH_TOKEN_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=${RETIRED_REFRESH_TOKEN_PATH}; Max-Age=0`,
-  ];
+  return [`${SESSION_ID_COOKIE}=; HttpOnly; SameSite=Strict${secure}; Path=/; Max-Age=0`];
 }

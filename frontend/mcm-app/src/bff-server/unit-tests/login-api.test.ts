@@ -164,7 +164,7 @@ describe('POST /bff-api/auth/login', () => {
     expect(res.headers.get('X-Session-Id')).toBe('sess-abc');
   });
 
-  it('sets a separate Set-Cookie header per cookie: the session reference plus the two retired-cookie clears (feature 085)', async () => {
+  it('sets exactly one Set-Cookie header: the session reference (feature 085; retired clears gone, item #906)', async () => {
     setupHappyPath();
     const req = makeRequest({
       code: 'auth-code',
@@ -174,11 +174,11 @@ describe('POST /bff-api/auth/login', () => {
 
     const res = await POST(req);
 
-    // Feature 085: one live cookie (mcm_session_id) and two clears of the retired token cookies,
-    // each on its own line — joined, the browser would keep only the first.
+    // Feature 085: the only cookie is the live session reference (mcm_session_id).
     const cookies = res.headers.getSetCookie?.() ?? [];
-    expect(cookies.length).toBe(3);
-    expect(cookies.filter((c) => !/Max-Age=0/.test(c))).toHaveLength(1);
+    expect(cookies).toHaveLength(1);
+    expect(cookies[0]).toMatch(/^mcm_session_id=/);
+    expect(cookies[0]).not.toMatch(/Max-Age=0/);
   });
 
   // ─── Input validation ────────────────────────────────────────────────────────

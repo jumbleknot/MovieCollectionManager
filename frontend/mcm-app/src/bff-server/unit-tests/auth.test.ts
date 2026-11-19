@@ -198,16 +198,14 @@ describe('requireAuth — sessions that are not live', () => {
     expect(err.clearCookies).toEqual(buildClearAuthCookies());
   });
 
-  it('only the retired token cookies: refused and cleared, never migrated (FR-022, US6 AS-6)', async () => {
+  it('only the retired token cookies: refused, never migrated (US6 AS-6)', async () => {
     const err = await refusal({
       cookie: 'mcm_access_token=old.client.jwt; mcm_refresh_token=old.refresh',
     });
     expect(err.code).toBe(AuthErrorCode.UNAUTHORIZED);
     expect(mockedValidateJwt).not.toHaveBeenCalled();
     const cleared = (err.clearCookies ?? []).map((c) => c.split('=')[0]);
-    expect(cleared).toEqual(
-      expect.arrayContaining(['mcm_session_id', 'mcm_access_token', 'mcm_refresh_token']),
-    );
+    expect(cleared).toEqual(['mcm_session_id']);
   });
 
   it.each([
@@ -366,18 +364,15 @@ describe('buildAuthCookies (FR-016)', () => {
 });
 
 describe('buildClearAuthCookies', () => {
-  it('clears the session cookie and both retired token cookies, at their original Paths (FR-022)', () => {
+  it('clears only the session cookie — the retired token-cookie clears are gone (item #906)', () => {
     const cookies = buildClearAuthCookies();
-    expect(cookies).toHaveLength(3);
+    expect(cookies).toHaveLength(1);
     cookies.forEach((c) => {
       expect(c).toMatch(/Max-Age=0/);
       expect(c).toMatch(/HttpOnly/);
       expect(c).toMatch(/SameSite=Strict/);
     });
-    expect(cookies.find((c) => c.startsWith('mcm_session_id='))).toMatch(/Path=\//);
-    expect(cookies.find((c) => c.startsWith('mcm_access_token='))).toMatch(/Path=\//);
-    expect(cookies.find((c) => c.startsWith('mcm_refresh_token='))).toMatch(
-      /Path=\/bff-api\/auth\/refresh/,
-    );
+    expect(cookies[0]).toMatch(/^mcm_session_id=; /);
+    expect(cookies[0]).toMatch(/Path=\//);
   });
 });
