@@ -282,7 +282,7 @@ RUN cargo install --locked \
 # rebuild could get a CLI newer than the checked-in scripts and skills. Bump both together, per
 # docs/runbooks/spec-kit.md#upgrading-spec-kit. Only the help PROBE is tolerated below: the `||` is
 # braced so a failed uv or spec-kit install still fails the build.
-ARG SPECKIT_VERSION=v0.16.5
+ARG SPECKIT_VERSION=v1.4.2
 RUN curl -LsSf https://astral.sh/uv/0.13.8/install.sh | sh \
     && uv --version \
     && uv tool install --from "git+https://github.com/github/spec-kit.git@${SPECKIT_VERSION}" specify-cli \

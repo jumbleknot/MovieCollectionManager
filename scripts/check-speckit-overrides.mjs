@@ -61,11 +61,6 @@ const RUNBOOK = `${INVENTORY}#upgrading-spec-kit`;
  */
 export const LOCAL_EDITS = [
   {
-    file: '.claude/skills/speckit-taskstoissues/SKILL.md',
-    marker: 'scripts/backlog.mjs',
-    why: 'fans tasks out to the Forgejo backlog through scripts/backlog.mjs, not GitHub issues (feature 049)',
-  },
-  {
     file: '.claude/skills/speckit-tasks/SKILL.md',
     marker: '**Tests are REQUIRED**',
     why: 'makes test tasks required in the TDD checkpoint format; upstream says tests are optional, which would cancel the override',
@@ -81,6 +76,21 @@ export const LOCAL_EDITS = [
     why: 'points the Copilot tasks agent at the tasks-template override and makes tests required; upstream reads the core template and says tests are optional (item #1031)',
   },
 ];
+
+/**
+ * Files Spec Kit USED to own and no longer does, kept as project files. An upgrade deletes a file
+ * that drops out of its manifest as "stale" (1.4.2 did this to taskstoissues when it moved out of
+ * core, item #1066), so presence and marker are checked here; and if a manifest lists the path
+ * again, the next `--force` upgrade would overwrite it, so that fails too.
+ */
+export const PROJECT_OWNED = [
+  {
+    file: '.claude/skills/speckit-taskstoissues/SKILL.md',
+    marker: 'scripts/backlog.mjs',
+    why: 'fans tasks out to the Forgejo backlog through scripts/backlog.mjs, not GitHub issues (feature 049); project-owned since Spec Kit 1.x moved taskstoissues out of core (item #1066)',
+  },
+];
+
 // How far back to look for the fork base. Spec Kit upgrades are rare; the core template has had a
 // handful of revisions in this repository's whole history.
 const HISTORY_DEPTH = 200;
@@ -166,10 +176,33 @@ function localEditFailures(root, localEdits) {
   return failures;
 }
 
+/** Project-owned former Spec Kit files: present, still carrying their marker, and unmanaged. */
+function projectOwnedFailures(root, projectOwned) {
+  const manifest = readManifests(root) ?? new Map();
+  const failures = [];
+  for (const { file, marker, why } of projectOwned) {
+    const path = join(root, file);
+    const text = existsSync(path) ? readFileSync(path, 'utf8') : null;
+    if (text === null || !text.includes(marker)) {
+      failures.push({
+        code: 'project-file-lost',
+        message: `${file} (${why}) ${text === null ? 'is missing' : `no longer contains "${marker}"`} — an upgrade deletes files that drop out of its manifest; restore it from git history`,
+      });
+    }
+    if (manifest.has(file)) {
+      failures.push({
+        code: 'project-file-managed',
+        message: `${file} is project-owned but ${INTEGRATIONS_DIR}/*.manifest.json lists it again — the next \`specify integration upgrade --force\` overwrites it. Move it back to LOCAL_EDITS, or rename the project file`,
+      });
+    }
+  }
+  return failures;
+}
+
 /** The inventory runbook must name every customisation this gate guards. */
-function inventoryFailure(root, localEdits) {
+function inventoryFailure(root, localEdits, projectOwned) {
   const path = join(root, INVENTORY);
-  const required = [OVERRIDE_TEMPLATE, TDD_TEMPLATE, ...localEdits.map((e) => e.file)];
+  const required = [OVERRIDE_TEMPLATE, TDD_TEMPLATE, ...localEdits.map((e) => e.file), ...projectOwned.map((e) => e.file)];
   const text = existsSync(path) ? readFileSync(path, 'utf8') : null;
   const missing = text === null ? required : required.filter((f) => !text.includes(f));
   if (!missing.length) return null;
@@ -245,7 +278,7 @@ function diffSinceForkBase(root, forkHash) {
 }
 
 /** @returns {{ok: boolean, failures: Array<{code: string, message: string}>}} */
-export function checkSpeckitOverrides({ root = REPO_ROOT, localEdits = LOCAL_EDITS } = {}) {
+export function checkSpeckitOverrides({ root = REPO_ROOT, localEdits = LOCAL_EDITS, projectOwned = PROJECT_OWNED } = {}) {
   const read = (rel, enc = 'utf8') => (existsSync(join(root, rel)) ? readFileSync(join(root, rel), enc) : null);
   const failures = [];
   const fail = (code, message) => failures.push({ code, message });
@@ -281,7 +314,8 @@ export function checkSpeckitOverrides({ root = REPO_ROOT, localEdits = LOCAL_EDI
     fail('resolution-broken', `${resolution.join('; ')} — the override would be silently ignored`);
   }
   failures.push(...localEditFailures(root, localEdits));
-  const inventory = inventoryFailure(root, localEdits);
+  failures.push(...projectOwnedFailures(root, projectOwned));
+  const inventory = inventoryFailure(root, localEdits, projectOwned);
   if (inventory) failures.push(inventory);
   return { ok: failures.length === 0, failures };
 }
@@ -319,7 +353,7 @@ function scan(root) {
   const r = checkSpeckitOverrides({ root });
   if (r.ok) {
     const fork = parseForkPoint(readFileSync(join(root, OVERRIDE_TEMPLATE), 'utf8').split('\n')[0]);
-    console.log(`✓ speckit-overrides gate passed (override present with sweep task and TDD checkpoint sample, core template matches fork point ${fork.sha256.slice(0, 12)}, override-first resolution intact, ${LOCAL_EDITS.length} registered local edit(s) in place and no unregistered ones, inventory ${INVENTORY} complete)`);
+    console.log(`✓ speckit-overrides gate passed (override present with sweep task and TDD checkpoint sample, core template matches fork point ${fork.sha256.slice(0, 12)}, override-first resolution intact, ${LOCAL_EDITS.length} registered local edit(s) in place and no unregistered ones, ${PROJECT_OWNED.length} project-owned file(s) present and unmanaged, inventory ${INVENTORY} complete)`);
     return 0;
   }
   for (const f of r.failures) console.error(`[speckit-overrides] ✗ ${f.code}: ${f.message}`);
@@ -338,9 +372,10 @@ function selftest() {
   const clean = {
     [CORE_TEMPLATE]: coreBody,
     [OVERRIDE_TEMPLATE]: `${forkPointLine(sha256(coreBody), '0.11.2')}\n${overrideBody}`,
-    [INVENTORY]: [OVERRIDE_TEMPLATE, TDD_TEMPLATE, ...LOCAL_EDITS.map((e) => e.file)].join('\n'),
+    [INVENTORY]: [OVERRIDE_TEMPLATE, TDD_TEMPLATE, ...LOCAL_EDITS.map((e) => e.file), ...PROJECT_OWNED.map((e) => e.file)].join('\n'),
     [`${INTEGRATIONS_DIR}/claude.manifest.json`]: managed(registered),
     ...Object.fromEntries(LOCAL_EDITS.map((e) => [e.file, `# local skill\n${e.marker}\n`])),
+    ...Object.fromEntries(PROJECT_OWNED.map((e) => [e.file, `# project skill\n${e.marker}\n`])),
     [COMMON_PS1]: ['Resolve-Template', 'Resolve-TemplateContent']
       .map((n) => `function ${n} {\n  if ($bad) { return $null }\n  $o = Join-Path $b "overrides/$TemplateName.md"\n  if (Test-Path $o) { return $o }\n  $p = Join-Path $r ".specify/presets"\n}\n`)
       .join(''),
@@ -359,6 +394,8 @@ function selftest() {
     }, ['unregistered-edit']],
     ['registry-stale', { [`${INTEGRATIONS_DIR}/claude.manifest.json`]: managed({ ...registered, [edit.file]: undefined }) }, ['registry-stale']],
     ['inventory-stale', { [INVENTORY]: OVERRIDE_TEMPLATE }, ['inventory-stale']],
+    ['project-file-lost', { [PROJECT_OWNED[0].file]: null }, ['project-file-lost']],
+    ['project-file-managed', { [`${INTEGRATIONS_DIR}/claude.manifest.json`]: managed({ ...registered, [PROJECT_OWNED[0].file]: sha256(upstream) }) }, ['project-file-managed', 'unregistered-edit']],
     ['core-changed', { [CORE_TEMPLATE]: `${coreBody}- [ ] T009 upstream\n` }, ['core-changed']],
     ['setup bypasses Resolve-Template', { [SETUP_TASKS_PS1]: "$t = '.specify/templates/tasks-template.md'\n" }, ['resolution-broken']],
     ['presets before overrides/', { [COMMON_PS1]: 'function Resolve-Template {\n  $p = ".specify/presets"\n  $o = "overrides/x.md"\n}\nfunction Resolve-TemplateContent {\n  $o = "overrides/x.md"\n}\n' }, ['resolution-broken']],
@@ -383,7 +420,7 @@ function selftest() {
     }
   }
   if (broken) return 1;
-  console.log('✓ speckit-overrides gate --selftest passed (clean tree passes; override-missing, header-invalid, sweep-missing, tdd-format-missing, core-changed, every resolution-broken shape, local-edit-reverted, unregistered-edit, registry-stale and inventory-stale are each detected)');
+  console.log('✓ speckit-overrides gate --selftest passed (clean tree passes; override-missing, header-invalid, sweep-missing, tdd-format-missing, core-changed, every resolution-broken shape, local-edit-reverted, unregistered-edit, registry-stale, project-file-lost, project-file-managed and inventory-stale are each detected)');
   return 0;
 }
 

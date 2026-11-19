@@ -1,11 +1,11 @@
 ---
 name: "speckit-taskstoissues"
-description: "Convert existing tasks into actionable, dependency-ordered GitHub issues for the feature based on available design artifacts."
-argument-hint: "Optional filter or label for GitHub issues"
+description: "Convert existing tasks into actionable, dependency-ordered Forgejo backlog items for the feature based on available design artifacts."
+argument-hint: "Optional filter or label for backlog items"
 compatibility: "Requires spec-kit project structure with .specify/ directory"
 metadata:
-  author: "github-spec-kit"
-  source: "templates/commands/taskstoissues.md"
+  author: "project"
+  source: "project-owned since Spec Kit 1.x moved taskstoissues out of core (item #1066); forked from spec-kit 0.16.5 templates/commands/taskstoissues.md; see docs/runbooks/spec-kit.md"
 user-invocable: true
 disable-model-invocation: false
 ---
@@ -24,7 +24,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 **Check for extension hooks (before tasks-to-issues conversion)**:
 - Check if `.specify/extensions.yml` exists in the project root.
 - If it exists, read it and look for entries under the `hooks.before_taskstoissues` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
+- If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue normally
 - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable
@@ -104,7 +104,7 @@ tracking in the open, and be aware that a 70-task feature becomes 70 items in a 
 **Check for extension hooks (after tasks-to-issues conversion)**:
 Check if `.specify/extensions.yml` exists in the project root.
 - If it exists, read it and look for entries under the `hooks.after_taskstoissues` key
-- If the YAML cannot be parsed or is invalid, skip hook checking silently and continue normally
+- If the YAML cannot be parsed or is invalid, do not skip silently: tell the user that `.specify/extensions.yml` could not be read (include the parser error) and that no hooks were checked, including any mandatory (`optional: false`) hooks registered there, then continue normally
 - Filter out hooks where `enabled` is explicitly `false`. Treat hooks without an `enabled` field as enabled by default.
 - For each remaining hook, do **not** attempt to interpret or evaluate hook `condition` expressions:
   - If the hook has no `condition` field, or it is null/empty, treat the hook as executable

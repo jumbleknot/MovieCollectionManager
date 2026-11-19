@@ -11,6 +11,7 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import {
   LOCAL_EDITS,
+  PROJECT_OWNED,
   checkSpeckitOverrides,
   main,
   parseForkPoint,
@@ -45,7 +46,7 @@ const inventoryFor = (files) => `# Spec Kit\n\n${files.map((f) => `- \`${f}\``).
 const INVENTORY_OK = inventoryFor([
   '.specify/templates/overrides/tasks-template.md',
   TDD_TEMPLATE,
-  ...new Set([SKILL, ...LOCAL_EDITS.map((e) => e.file)]),
+  ...new Set([SKILL, ...LOCAL_EDITS.map((e) => e.file), ...PROJECT_OWNED.map((e) => e.file)]),
 ]);
 // The shape Spec Kit 0.16.x ships: an input-validation `return $null` BEFORE the override check
 // (harmless — it resolves nothing), and a second resolver, Resolve-TemplateContent, whose output is
@@ -99,8 +100,13 @@ function fixture({
   put(SETUP, setup);
   put('.specify/init-options.json', JSON.stringify({ speckit_version: '0.11.2' }));
   put(INVENTORY, inventory);
+  // Project-owned files are present by default, as in the real tree; a test removes one via `files`.
+  for (const { file, marker } of PROJECT_OWNED) put(file, `# project skill
+${marker}
+`);
   if (manifest) put(MANIFEST, JSON.stringify({ integration: 'claude', version: '0.16.5', files: manifest }));
-  for (const [rel, body] of Object.entries(files)) put(rel, body);
+  // `null` removes a file, including a default project-owned one.
+  for (const [rel, body] of Object.entries(files)) body === null ? rmSync(join(root, rel), { force: true }) : put(rel, body);
   if (git) {
     const g = (...a) => execFileSync('git', a, { cwd: root, stdio: 'pipe' });
     g('init', '-q');
@@ -321,12 +327,12 @@ test('recordForkPoint refuses to record a fork that lost the TDD checkpoint samp
 
 test('a registered local edit that is in place passes', () => {
   const root = fixture({ manifest: { [SKILL]: sha(UPSTREAM_SKILL) }, files: { [SKILL]: LOCAL_SKILL } });
-  assert.deepEqual(checkSpeckitOverrides({ root, localEdits: REGISTRY }), { ok: true, failures: [] });
+  assert.deepEqual(checkSpeckitOverrides({ root, localEdits: REGISTRY, projectOwned: [] }), { ok: true, failures: [] });
 });
 
 test('an upgrade that restores the upstream file over a registered edit fails local-edit-reverted', () => {
   const root = fixture({ manifest: { [SKILL]: sha(UPSTREAM_SKILL) }, files: { [SKILL]: UPSTREAM_SKILL } });
-  const r = checkSpeckitOverrides({ root, localEdits: REGISTRY });
+  const r = checkSpeckitOverrides({ root, localEdits: REGISTRY, projectOwned: [] });
   assert.deepEqual(codes(r), ['local-edit-reverted']);
   assert.match(r.failures[0].message, /speckit-taskstoissues/);
 });
@@ -334,12 +340,12 @@ test('an upgrade that restores the upstream file over a registered edit fails lo
 test('the CRLF form of the upstream file still counts as reverted (a Windows checkout)', () => {
   const crlf = UPSTREAM_SKILL.replace(/\n/g, '\r\n');
   const root = fixture({ manifest: { [SKILL]: sha(UPSTREAM_SKILL) }, files: { [SKILL]: crlf } });
-  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: REGISTRY })), ['local-edit-reverted']);
+  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: REGISTRY, projectOwned: [] })), ['local-edit-reverted']);
 });
 
 test('a registered edit that differs from upstream but lost its marker fails local-edit-reverted', () => {
   const root = fixture({ manifest: { [SKILL]: sha(UPSTREAM_SKILL) }, files: { [SKILL]: '# rewritten, no backlog\n' } });
-  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: REGISTRY })), ['local-edit-reverted']);
+  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: REGISTRY, projectOwned: [] })), ['local-edit-reverted']);
 });
 
 test('an edit to a managed file that is NOT registered fails unregistered-edit', () => {
@@ -348,7 +354,7 @@ test('an edit to a managed file that is NOT registered fails unregistered-edit',
     manifest: { [SKILL]: sha(UPSTREAM_SKILL), [other]: sha('upstream plan\n') },
     files: { [SKILL]: LOCAL_SKILL, [other]: 'locally edited plan\n' },
   });
-  const r = checkSpeckitOverrides({ root, localEdits: REGISTRY });
+  const r = checkSpeckitOverrides({ root, localEdits: REGISTRY, projectOwned: [] });
   assert.deepEqual(codes(r), ['unregistered-edit']);
   assert.match(r.failures[0].message, /speckit-plan/);
 });
@@ -359,12 +365,46 @@ test('a CRLF-only difference from the manifest is not an edit', () => {
     manifest: { [SKILL]: sha(UPSTREAM_SKILL), [other]: sha('upstream plan\n') },
     files: { [SKILL]: LOCAL_SKILL, [other]: 'upstream plan\r\n' },
   });
-  assert.deepEqual(checkSpeckitOverrides({ root, localEdits: REGISTRY }), { ok: true, failures: [] });
+  assert.deepEqual(checkSpeckitOverrides({ root, localEdits: REGISTRY, projectOwned: [] }), { ok: true, failures: [] });
 });
 
 test('a registered file that no manifest lists any more fails registry-stale', () => {
   const root = fixture({ manifest: { '.claude/skills/speckit-plan/SKILL.md': sha('p\n') }, files: { '.claude/skills/speckit-plan/SKILL.md': 'p\n' } });
-  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: REGISTRY })), ['registry-stale']);
+  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: REGISTRY, projectOwned: [] })), ['registry-stale']);
+});
+
+// ── Item #1066: a skill Spec Kit stopped managing becomes project-owned, and is still guarded ──────
+
+const OWNED = [{ file: SKILL, marker: 'scripts/backlog.mjs', why: 'Forgejo backlog (feature 049)' }];
+
+test('a project-owned file that is present with its marker, and in no manifest, passes', () => {
+  const root = fixture({ files: { [SKILL]: LOCAL_SKILL } });
+  assert.deepEqual(checkSpeckitOverrides({ root, localEdits: [], projectOwned: OWNED }), { ok: true, failures: [] });
+});
+
+test('a deleted project-owned file fails project-file-lost (the 1.4.2 upgrade removed taskstoissues as stale)', () => {
+  const root = fixture({ files: { [SKILL]: null } });
+  const r = checkSpeckitOverrides({ root, localEdits: [], projectOwned: OWNED });
+  assert.deepEqual(codes(r), ['project-file-lost']);
+  assert.match(r.failures[0].message, /speckit-taskstoissues/);
+});
+
+test('a project-owned file that lost its marker fails project-file-lost', () => {
+  const root = fixture({ files: { [SKILL]: UPSTREAM_SKILL } });
+  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: [], projectOwned: OWNED })), ['project-file-lost']);
+});
+
+test('a project-owned file that a manifest lists again fails project-file-managed', () => {
+  const root = fixture({ manifest: { [SKILL]: sha(UPSTREAM_SKILL) }, files: { [SKILL]: LOCAL_SKILL } });
+  // It differs from the manifest hash too, so the managed-file scan also reports it unregistered.
+  assert.deepEqual(codes(checkSpeckitOverrides({ root, localEdits: [], projectOwned: OWNED })), ['project-file-managed', 'unregistered-edit']);
+});
+
+test('the inventory must name every project-owned file', () => {
+  const root = fixture({ inventory: inventoryFor([OVERRIDE, TDD_TEMPLATE]), files: { [SKILL]: LOCAL_SKILL } });
+  const r = checkSpeckitOverrides({ root, localEdits: [], projectOwned: OWNED });
+  assert.deepEqual(codes(r), ['inventory-stale']);
+  assert.match(r.failures[0].message, /speckit-taskstoissues/);
 });
 
 // ── Gap 1: one inventory names every customisation, and the gate keeps it honest ──────────────────
@@ -375,7 +415,7 @@ test('an inventory runbook that omits a guarded customisation fails inventory-st
     manifest: { [SKILL]: sha(UPSTREAM_SKILL) },
     files: { [SKILL]: LOCAL_SKILL },
   });
-  const r = checkSpeckitOverrides({ root, localEdits: REGISTRY });
+  const r = checkSpeckitOverrides({ root, localEdits: REGISTRY, projectOwned: [] });
   assert.deepEqual(codes(r), ['inventory-stale']);
   assert.match(r.failures[0].message, /speckit-taskstoissues/);
 });
@@ -386,7 +426,7 @@ test('a missing inventory runbook fails inventory-stale', () => {
 
 test('the real tree: every managed-file edit is registered and every customisation is inventoried', () => {
   const r = checkSpeckitOverrides();
-  const relevant = ['unregistered-edit', 'local-edit-reverted', 'registry-stale', 'inventory-stale', 'tdd-format-missing'];
+  const relevant = ['unregistered-edit', 'local-edit-reverted', 'registry-stale', 'inventory-stale', 'tdd-format-missing', 'project-file-lost', 'project-file-managed'];
   assert.deepEqual(codes(r).filter((c) => relevant.includes(c)), [], JSON.stringify(r.failures));
 });
 
