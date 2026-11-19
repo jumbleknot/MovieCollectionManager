@@ -8,8 +8,11 @@
  * Locators are `data-testid`: React Native Web renders the RN `testID` prop as a `data-testid`
  * DOM attribute, and playwright.config.ts sets `testIdAttribute` to match.
  *
- * The destination here is the S3 test target on the compose `backups` profile, addressed by the
- * name the BFF CONTAINER can reach it by — the browser never connects to it; the BFF does.
+ * The destinations here are the S3 and WebDAV test targets from
+ * infrastructure-as-code/docker/backups/compose.yaml, each addressed by the name the BFF CONTAINER
+ * can reach it by — the browser never connects to them; the BFF does. The S3 group covers the
+ * feature in depth; the WebDAV group (item #1069) covers the WebDAV form, probe, write and read
+ * paths through the UI, and leaves the destination-agnostic contracts to the S3 group.
  */
 import { test, expect } from './fixtures/worker-session';
 import { type APIRequestContext, type Page } from '@playwright/test';
@@ -21,6 +24,14 @@ const S3_ENDPOINT =
 const S3_BUCKET = process.env['BACKUP_TEST_S3_BUCKET'] ?? 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env['BACKUP_TEST_S3_ACCESS_KEY'] ?? 'mcmbackuptest';
 const S3_SECRET = process.env['BACKUP_TEST_S3_SECRET_KEY'] ?? '';
+
+// The WebDAV target (item #1069). Same rule as S3: the INTERNAL name, the one the BFF container
+// resolves. The user is a fixed non-secret name in both compose and CI; the password is minted
+// per run in CI and lives in `.env.local` locally.
+const WEBDAV_ENDPOINT =
+  process.env['BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT'] ?? 'http://mcm-bff-backup-webdav:6065';
+const WEBDAV_USER = process.env['BACKUP_TEST_WEBDAV_USER'] ?? 'mcmbackuptest';
+const WEBDAV_PASSWORD = process.env['BACKUP_TEST_WEBDAV_PASSWORD'] ?? '';
 
 const BRING_UP =
   'Bring them up with: docker compose -p mcm --env-file ' +
@@ -65,49 +76,116 @@ async function fillDestination(page: Page, label: string): Promise<void> {
   await page.fill('[data-testid="backup-destination-secret"]', S3_SECRET);
 }
 
-test.describe('Backup destinations (feature 073)', () => {
-  // A missing credential would make every case below fail as the same authentication error,
-  // which reads as a broken feature rather than a missing input — so it skips instead.
-  //
-  // BUT A SKIP READS AS A PASS, and these are `@gate` tests. So the skip is ESCALATABLE, the same
-  // way MCM_REQUIRE_LIVE_STACK works for the integration tier: set E2E_REQUIRE_BACKUP_TARGETS=1
-  // and a missing target becomes a hard failure instead of a quiet green.
-  //
-  // CI DOES RUN THIS FILE NOW — corrected 2026-09-21, run 3873. An earlier revision of this
-  // comment said app-e2e could not bring the targets up, because the S3 one was then a
-  // from-source image in the repository's own registry and the job had neither the variable nor
-  // registry credentials. That was wired up, and since feature 080 the S3 target is the upstream
-  // `rustfs/rustfs` image, pulled by digest with no registry input at all: app-ci's
-  // `app-e2e-bring-up-backup-destinations` step brings it up and the suite runs for real, with
-  // E2E_REQUIRE_BACKUP_TARGETS=1 so an absent target fails rather than skips.
-  //
-  // The correction matters more than the fact. Acting on the stale note, this session reported
-  // "a green app-e2e is not evidence that backups work" — which had stopped being true, and
-  // would have had a reviewer discount a signal that was real.
-  const requireTargets = process.env['E2E_REQUIRE_BACKUP_TARGETS'] === '1';
-  const targetsMissing = S3_SECRET === '';
-  if (targetsMissing && requireTargets) {
+async function fillWebdavDestination(page: Page, label: string): Promise<void> {
+  await page.click('[data-testid="backup-destination-add"]');
+  await page.waitForSelector('[data-testid="backup-destination-form"]', {
+    state: 'visible',
+    timeout: 15000,
+  });
+  // The type switch FIRST: it swaps the S3 fields for the WebDAV ones, so the username field
+  // does not exist until it has been pressed.
+  await page.click('[data-testid="backup-destination-type-webdav"]');
+  await page.waitForSelector('[data-testid="backup-destination-username"]', {
+    state: 'visible',
+    timeout: 15000,
+  });
+  await page.fill('[data-testid="backup-destination-label"]', label);
+  await page.fill('[data-testid="backup-destination-endpoint"]', WEBDAV_ENDPOINT);
+  await page.fill('[data-testid="backup-destination-username"]', WEBDAV_USER);
+  await page.fill('[data-testid="backup-destination-secret"]', WEBDAV_PASSWORD);
+}
+
+// ── Whether a destination can be used at all ───────────────────────────────────
+//
+// A missing credential would make every case below fail as the same authentication error,
+// which reads as a broken feature rather than a missing input — so it skips instead.
+//
+// BUT A SKIP READS AS A PASS, and these are `@gate` tests. So the skip is ESCALATABLE, the same
+// way MCM_REQUIRE_LIVE_STACK works for the integration tier: set E2E_REQUIRE_BACKUP_TARGETS=1
+// and a missing target becomes a hard failure instead of a quiet green.
+//
+// CI DOES RUN THIS FILE NOW — corrected 2026-09-21, run 3873. An earlier revision of this
+// comment said app-e2e could not bring the targets up, because the S3 one was then a
+// from-source image in the repository's own registry and the job had neither the variable nor
+// registry credentials. That was wired up, and since feature 080 the S3 target is the upstream
+// `rustfs/rustfs` image, pulled by digest with no registry input at all: app-ci's
+// `app-e2e-bring-up-backup-destinations` step brings it up and the suite runs for real, with
+// E2E_REQUIRE_BACKUP_TARGETS=1 so an absent target fails rather than skips.
+//
+// The correction matters more than the fact. Acting on the stale note, this session reported
+// "a green app-e2e is not evidence that backups work" — which had stopped being true, and
+// would have had a reviewer discount a signal that was real.
+//
+// ONE GUARD PER DESTINATION, NOT ONE FOR THE FILE (item #1069). Each `describe` below guards
+// only the destination its own tests use, so a stopped WebDAV container skips the WebDAV tests
+// and leaves the S3 ones running, and the reverse. A file-wide guard on both would skip tests
+// that never touch the absent target — the same decide-from-the-wrong-input mistake item #981
+// was filed for.
+const REQUIRE_TARGETS = process.env['E2E_REQUIRE_BACKUP_TARGETS'] === '1';
+
+type DestinationKind = 's3' | 'webdav';
+
+const TARGETS: Record<
+  DestinationKind,
+  { name: string; endpoint: string; secretVar: string; secret: string; draft: object }
+> = {
+  s3: {
+    name: 'S3',
+    endpoint: S3_ENDPOINT,
+    secretVar: 'BACKUP_TEST_S3_SECRET_KEY',
+    secret: S3_SECRET,
+    draft: {
+      type: 's3',
+      endpoint: S3_ENDPOINT,
+      bucket: S3_BUCKET,
+      accessKeyId: S3_ACCESS_KEY,
+      secret: S3_SECRET,
+    },
+  },
+  webdav: {
+    name: 'WebDAV',
+    endpoint: WEBDAV_ENDPOINT,
+    secretVar: 'BACKUP_TEST_WEBDAV_PASSWORD',
+    secret: WEBDAV_PASSWORD,
+    draft: {
+      type: 'webdav',
+      endpoint: WEBDAV_ENDPOINT,
+      username: WEBDAV_USER,
+      secret: WEBDAV_PASSWORD,
+    },
+  },
+};
+
+/**
+ * Register, in the calling `describe`, the skip-or-fail decision for one destination.
+ *
+ * Two layers. An unset credential is decided at collection time, before anything runs. But A SET
+ * SECRET IS NOT A RUNNING TARGET (item #981): a `.env.local` copied from another checkout carries
+ * the secret while the backups compose file was never brought up here, and then every test failed
+ * on `backup-destination-list` never appearing — an instrument error that reads as an application
+ * defect. So reachability is also PROBED, once per worker, before any test in the group runs.
+ *
+ * The probe goes THROUGH THE BFF (the unsaved-draft form of destinations/test), not straight at
+ * the endpoint: that address is the name the BFF CONTAINER resolves, which the Playwright process
+ * cannot, and the BFF is the hop whose reachability the tests depend on. A draft persists nothing.
+ * Any non-`ok` outcome — refused, timed out, a URL-guard 400, a wrong secret — means the tests in
+ * the group cannot pass, so it skips (or, required, fails) and says why.
+ */
+function guardDestination(kind: DestinationKind): void {
+  const target = TARGETS[kind];
+  const missing = target.secret === '';
+  if (missing && REQUIRE_TARGETS) {
     throw new Error(
-      'E2E_REQUIRE_BACKUP_TARGETS=1 but BACKUP_TEST_S3_SECRET_KEY is unset — the backup ' +
-        `destinations are not up. ${BRING_UP}`,
+      `E2E_REQUIRE_BACKUP_TARGETS=1 but ${target.secretVar} is unset — the ${target.name} ` +
+        `backup destination is not up. ${BRING_UP}`,
     );
   }
   test.skip(
-    targetsMissing,
-    'BACKUP_TEST_S3_SECRET_KEY is unset — the backup destinations are not up. This is a SKIP, ' +
-      'not a pass. Set E2E_REQUIRE_BACKUP_TARGETS=1 to make it a failure.',
+    missing,
+    `${target.secretVar} is unset — the ${target.name} backup destination is not up. This is a ` +
+      'SKIP, not a pass. Set E2E_REQUIRE_BACKUP_TARGETS=1 to make it a failure.',
   );
 
-  // A SET SECRET IS NOT A RUNNING TARGET (item #981). A `.env.local` copied from another checkout
-  // carries the secret while the compose file above was never brought up here, and then all seven
-  // tests failed on `backup-destination-list` never appearing — an instrument error that reads as
-  // an application defect. So reachability is PROBED, once per worker, before any test runs.
-  //
-  // The probe goes THROUGH THE BFF (the unsaved-draft form of destinations/test), not straight at
-  // S3_ENDPOINT: that address is the name the BFF CONTAINER resolves, which the Playwright process
-  // cannot, and the BFF is the hop whose reachability the tests depend on. A draft persists
-  // nothing. Any non-`ok` outcome — refused, timed out, a URL-guard 400, a wrong secret — means
-  // the tests below cannot pass, so it skips (or, required, fails) and says why.
   test.beforeAll(async ({ playwright, workerStorageState }, testInfo) => {
     const api = await playwright.request.newContext({
       storageState: workerStorageState,
@@ -116,14 +194,7 @@ test.describe('Backup destinations (feature 073)', () => {
     let unreachable: string | null = null;
     try {
       const res = await api.post(`${BASE}/bff-api/backups/destinations/test`, {
-        data: {
-          type: 's3',
-          label: 'e2e-reachability-probe',
-          endpoint: S3_ENDPOINT,
-          bucket: S3_BUCKET,
-          accessKeyId: S3_ACCESS_KEY,
-          secret: S3_SECRET,
-        },
+        data: { ...target.draft, label: `e2e-reachability-probe-${kind}` },
         timeout: 15000,
       });
       // A refused address is a 400 problem document rather than `{ ok: false }` — and an
@@ -141,69 +212,77 @@ test.describe('Backup destinations (feature 073)', () => {
     if (unreachable === null) return;
 
     const why =
-      `the S3 backup destination ${S3_ENDPOINT} is not usable from the BFF (${unreachable}). ` +
-      BRING_UP;
-    if (requireTargets) throw new Error(`E2E_REQUIRE_BACKUP_TARGETS=1 but ${why}`);
+      `the ${target.name} backup destination ${target.endpoint} is not usable from the BFF ` +
+      `(${unreachable}). ${BRING_UP}`;
+    if (REQUIRE_TARGETS) throw new Error(`E2E_REQUIRE_BACKUP_TARGETS=1 but ${why}`);
     test.skip(
       true,
-      `BACKUP_TEST_S3_SECRET_KEY is set, but ${why} This is a SKIP, not a pass. Set ` +
+      `${target.secretVar} is set, but ${why} This is a SKIP, not a pass. Set ` +
         'E2E_REQUIRE_BACKUP_TARGETS=1 to make it a failure.',
     );
   });
+}
 
-  // Each worker has its OWN user (054 US4), but that user persists across runs — so a spec that
-  // failed before reaching its delete step leaves a destination behind, and the next run sees
-  // several. That is exactly how `.first()` came to delete the wrong one and report the feature
-  // broken. Start every test from a known-empty list instead of hoping the previous one tidied up.
-  /**
-   * Remove every backup job and destination belonging to the acting user.
-   *
-   * Run BOTH before and after each test, deliberately. Before, so a test starts from a known
-   * list and a positional locator is unambiguous. After, so nothing this file created is still
-   * there for the next thing to trip over — the lesson the collections leak taught at the cost
-   * of three CI cycles.
-   *
-   * Jobs first: deleting a destination DISABLES its jobs (FR-006) rather than removing them, so
-   * clearing destinations alone would leave disabled jobs behind and a non-empty job list.
-   */
-  async function clearBackupState(request: APIRequestContext): Promise<void> {
-    const jobs = await (await request.get(`${BASE}/bff-api/backups/jobs`)).json();
-    for (const j of Array.isArray(jobs) ? jobs : []) {
-      await request.delete(`${BASE}/bff-api/backups/jobs/${j.id}`);
-    }
-    const destinations = await (await request.get(`${BASE}/bff-api/backups/destinations`)).json();
-    for (const d of Array.isArray(destinations) ? destinations : []) {
-      await request.delete(`${BASE}/bff-api/backups/destinations/${d.id}`);
-    }
-    // AND THE STANDING PERMISSION (feature 073 T061). The scheduling test grants a real, NON-
-    // EXPIRING Keycloak offline token to the acting user. Leaving one behind is worse than
-    // leaving a collection behind: it is a live credential on a shared test account that
-    // nothing later in the job would clean up, and it does not age out. Revoked here so the
-    // token is given up at Keycloak, not merely forgotten.
-    await request.delete(`${BASE}/bff-api/backups/consent`);
+// ── Per-test state, shared by every group ──────────────────────────────────────
+
+// Each worker has its OWN user (054 US4), but that user persists across runs — so a spec that
+// failed before reaching its delete step leaves a destination behind, and the next run sees
+// several. That is exactly how `.first()` came to delete the wrong one and report the feature
+// broken. Start every test from a known-empty list instead of hoping the previous one tidied up.
+/**
+ * Remove every backup job and destination belonging to the acting user.
+ *
+ * Run BOTH before and after each test, deliberately. Before, so a test starts from a known
+ * list and a positional locator is unambiguous. After, so nothing this file created is still
+ * there for the next thing to trip over — the lesson the collections leak taught at the cost
+ * of three CI cycles.
+ *
+ * Jobs first: deleting a destination DISABLES its jobs (FR-006) rather than removing them, so
+ * clearing destinations alone would leave disabled jobs behind and a non-empty job list.
+ */
+async function clearBackupState(request: APIRequestContext): Promise<void> {
+  const jobs = await (await request.get(`${BASE}/bff-api/backups/jobs`)).json();
+  for (const j of Array.isArray(jobs) ? jobs : []) {
+    await request.delete(`${BASE}/bff-api/backups/jobs/${j.id}`);
   }
+  const destinations = await (await request.get(`${BASE}/bff-api/backups/destinations`)).json();
+  for (const d of Array.isArray(destinations) ? destinations : []) {
+    await request.delete(`${BASE}/bff-api/backups/destinations/${d.id}`);
+  }
+  // AND THE STANDING PERMISSION (feature 073 T061). The scheduling test grants a real, NON-
+  // EXPIRING Keycloak offline token to the acting user. Leaving one behind is worse than
+  // leaving a collection behind: it is a live credential on a shared test account that
+  // nothing later in the job would clean up, and it does not age out. Revoked here so the
+  // token is given up at Keycloak, not merely forgotten.
+  await request.delete(`${BASE}/bff-api/backups/consent`);
+}
 
+/**
+ * Register, in the calling `describe`, the before- and after-each cleanup every group needs.
+ *
+ * THE COLLECTIONS THIS FILE CREATES MUST BE REMOVED, and that is not tidiness — it is the
+ * difference between a green suite and a broken one three flows later.
+ *
+ * MEASURED on run 3838. The restore test creates `<name> (backup <timestamp>)` collections and a
+ * `Mutated …` one, in the SHARED e2e test account. Left behind, the next mobile flow asked
+ * "tell me about Avatar" and the assistant answered:
+ *
+ *   "Which collection should I add Avatar: Fire and Ash to? You have: E2E Browse, E2E Mutation,
+ *    E2E Default, Mutated e2e-17899…, E2E Browse (backup 2026-09-20 19:03), …"
+ *
+ * — a disambiguation instead of a movie card, so `agent-disambiguation` failed three attempts on
+ * a card that never had a title. A test that mutates shared state and does not restore it does
+ * not fail itself; it fails something else, later, somewhere that looks unrelated.
+ *
+ * Matched by NAME because the restore is driven through the UI, so the created ids are not
+ * visible to the test. Both patterns are ones only this file produces: `(backup <timestamp>)` is
+ * the restore writer's own suffix, and `Mutated e2e-` is this file's mutation fixture.
+ */
+function registerCleanup(): void {
   test.beforeEach(async ({ request }) => {
     await clearBackupState(request);
   });
 
-  // THE COLLECTIONS THIS FILE CREATES MUST BE REMOVED, and that is not tidiness — it is the
-  // difference between a green suite and a broken one three flows later.
-  //
-  // MEASURED on run 3838. The restore test creates `<name> (backup <timestamp>)` collections and a
-  // `Mutated …` one, in the SHARED e2e test account. Left behind, the next mobile flow asked
-  // "tell me about Avatar" and the assistant answered:
-  //
-  //   "Which collection should I add Avatar: Fire and Ash to? You have: E2E Browse, E2E Mutation,
-  //    E2E Default, Mutated e2e-17899…, E2E Browse (backup 2026-09-20 19:03), …"
-  //
-  // — a disambiguation instead of a movie card, so `agent-disambiguation` failed three attempts on
-  // a card that never had a title. A test that mutates shared state and does not restore it does
-  // not fail itself; it fails something else, later, somewhere that looks unrelated.
-  //
-  // Matched by NAME because the restore is driven through the UI, so the created ids are not
-  // visible to the test. Both patterns are ones only this file produces: `(backup <timestamp>)` is
-  // the restore writer's own suffix, and `Mutated e2e-` is this file's mutation fixture.
   test.afterEach(async ({ request }) => {
     await clearBackupState(request);
     const res = await request.get(`${BASE}/bff-api/collections`);
@@ -216,16 +295,19 @@ test.describe('Backup destinations (feature 073)', () => {
       }
     }
   });
+}
 
-  /** The server-assigned id for a destination, so a locator names ONE row rather than the first. */
-  async function destinationIdFor(page: Page, label: string): Promise<string> {
-    const list = await (await page.request.get(`${BASE}/bff-api/backups/destinations`)).json();
-    const match = (Array.isArray(list) ? list : []).find(
-      (d: { label: string }) => d.label === label,
-    );
-    if (!match) throw new Error(`no destination named ${label} — it was not created`);
-    return match.id;
-  }
+/** The server-assigned id for a destination, so a locator names ONE row rather than the first. */
+async function destinationIdFor(page: Page, label: string): Promise<string> {
+  const list = await (await page.request.get(`${BASE}/bff-api/backups/destinations`)).json();
+  const match = (Array.isArray(list) ? list : []).find((d: { label: string }) => d.label === label);
+  if (!match) throw new Error(`no destination named ${label} — it was not created`);
+  return match.id;
+}
+
+test.describe('Backup destinations (feature 073)', () => {
+  guardDestination('s3');
+  registerCleanup();
 
   test('add, verify, edit and delete a destination', { tag: '@gate' }, async ({ page }) => {
     const label = unique();
@@ -817,6 +899,94 @@ test.describe('Backup destinations (feature 073)', () => {
 
       // And the next-run line is present, naming the zone rather than a bare time.
       await expect(page.locator('[data-testid="backup-next-run"]')).toContainText(/Not scheduled/i);
+    },
+  );
+});
+
+// ── WebDAV (item #1069) ────────────────────────────────────────────────────────
+//
+// The S3 group above covers the feature in depth. What it cannot cover is anything WebDAV-specific
+// in the UI path: the form's type switch and username field, the probe answering for a WebDAV
+// server, and the WebDAV driver's write AND read through a real run and restore. Those are what
+// this group asserts — the destination-agnostic contracts (secret never echoed, blocked address,
+// restore adds rather than replaces, scheduling, retention, failure surfacing) are not repeated.
+//
+// Its OWN guard: a stopped WebDAV container skips only these tests, never the S3 ones.
+test.describe('Backup destinations — WebDAV (item #1069)', () => {
+  guardDestination('webdav');
+  registerCleanup();
+
+  test('add, verify and delete a WebDAV destination', { tag: '@gate' }, async ({ page }) => {
+    const label = unique();
+    await openBackupsSettings(page);
+
+    await fillWebdavDestination(page, label);
+    await page.click('[data-testid="backup-destination-save"]');
+    await page.waitForSelector('[data-testid="backup-destination-list"]', {
+      state: 'visible',
+      timeout: 20000,
+    });
+    await expect(page.getByText(label, { exact: true })).toBeVisible();
+
+    // A real probe against a real WebDAV server, through the saved (stored-secret) path.
+    const id = await destinationIdFor(page, label);
+    await page.click(`[data-testid="backup-destination-test-${id}"]`);
+    await expect(page.locator('[data-testid="backup-destination-test-result"]')).toContainText(
+      /confirmed it can be written to/i,
+      { timeout: 30000 },
+    );
+
+    await page.click(`[data-testid="backup-destination-delete-${id}"]`);
+    await expect(page.getByText(label, { exact: true })).toHaveCount(0, { timeout: 20000 });
+  });
+
+  test(
+    'back up to WebDAV, see it in history, and restore from it',
+    { tag: '@gate' },
+    async ({ page }) => {
+      const label = unique();
+      await openBackupsSettings(page);
+      await fillWebdavDestination(page, label);
+      await page.click('[data-testid="backup-destination-save"]');
+      await page.waitForSelector('[data-testid="backup-destination-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
+
+      await page.click('[data-testid="backup-job-add"]');
+      await page.waitForSelector('[data-testid="backup-job-form"]', {
+        state: 'visible',
+        timeout: 15000,
+      });
+      await page.fill('[data-testid="backup-job-label"]', `${label} job`);
+      await page.click('[data-testid="backup-job-save"]');
+      await page.waitForSelector('[data-testid="backup-job-list"]', {
+        state: 'visible',
+        timeout: 20000,
+      });
+
+      // WRITE path: the run uploads the archive over WebDAV.
+      await page.locator('[data-testid^="backup-job-run-"]').first().click();
+      await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
+        /Backed up \d+ movies/i,
+        { timeout: 120000 },
+      );
+
+      // LIST path: the version is read back from the WebDAV server, not from a local record.
+      await page.locator('[data-testid^="backup-job-versions-"]').first().click();
+      await expect(page.locator('[data-testid="backup-version-list"]')).toBeVisible({
+        timeout: 30000,
+      });
+      const restore = page.locator('[data-testid^="backup-version-restore-"]').first();
+      await expect(restore).toBeEnabled();
+
+      // READ path: the restore downloads the archive over WebDAV. The created collections carry
+      // the `(backup <timestamp>)` suffix, which registerCleanup's afterEach removes.
+      await restore.click();
+      await expect(page.locator('[data-testid="backup-notice-banner"]')).toContainText(
+        /Restored \d+ movies/i,
+        { timeout: 120000 },
+      );
     },
   );
 });
