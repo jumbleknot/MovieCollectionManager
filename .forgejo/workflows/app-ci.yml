@@ -1286,14 +1286,15 @@ jobs:
             -e BACKUP_TEST_S3_INTERNAL_ENDPOINT=http://mcm-bff-backup-rustfs:9000 \
             -e BACKUP_TEST_S3_BUCKET=mcm-backups-test \
             -e BACKUP_TEST_S3_ACCESS_KEY -e BACKUP_TEST_S3_SECRET_KEY \
+            -e BACKUP_TEST_WEBDAV_INTERNAL_ENDPOINT=http://mcm-bff-backup-webdav:6065 \
             -e BACKUP_TEST_WEBDAV_USER -e BACKUP_TEST_WEBDAV_PASSWORD \
             -e BACKUP_TICK_SECRET \
             -e EXPECTED_NODE_MAJOR=26 \
             mcr.microsoft.com/playwright:v1.65.1-noble \
             sh /work/scripts/run-playwright-in-image.sh
 
-      # Feature 073 note on the four lines above. The two ENDPOINTS are non-secret hostnames and
-      # are passed as literals; the two CREDENTIALS use the bare `-e NAME` pass-through form, which
+      # Feature 073 note on the lines above. The ENDPOINTS are non-secret hostnames and are
+      # passed as literals; the CREDENTIALS use the bare `-e NAME` pass-through form, which
       # makes docker read the value from its own environment instead of putting it on a command
       # line every user on this shared host can read with `ps` (the defect fixed in 56983c75,
       # where a routine `ps -eo cmd` printed live keys and they had to be rotated).
@@ -1305,7 +1306,8 @@ jobs:
       # E2E_REQUIRE_BACKUP_TARGETS=1 is the important one: backups.spec.ts SKIPS when the
       # destinations are absent, so that a developer without them is not blocked — and a skip
       # reads as a pass. Here the destinations ARE up, so their absence must fail the gate rather
-      # than quietly shrink it.
+      # than quietly shrink it. The spec guards S3 and WebDAV SEPARATELY (item #1069), each group
+      # probing only the destination it uses, so either one being down fails here by name.
 
       # The MODEL tier. Non-blocking, and NOT absent — nothing leaves the gate without a tier that
       # runs it (051 SC-001, 054 FR-017); a tier nobody runs is quarantine wearing a schedule.

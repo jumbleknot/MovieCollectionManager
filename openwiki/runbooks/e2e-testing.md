@@ -75,8 +75,9 @@ What this changes for you:
   `infrastructure-as-code/docker/backups/compose.yaml`), and the web E2E gate forwards
   `E2E_REQUIRE_BACKUP_TARGETS=1` into the Playwright container. `backups.spec.ts` skips when
   `BACKUP_TEST_S3_SECRET_KEY` is unset **or** a `beforeAll` probe through the BFF
-  (`POST /bff-api/backups/destinations/test`, unsaved draft) finds the S3 target unusable — a set
-  secret is not a running target (item #981) — right for a developer without the containers, wrong
+  (`POST /bff-api/backups/destinations/test`, unsaved draft) finds the target unusable — a set
+  secret is not a running target (item #981). S3 and WebDAV are guarded per `describe` group, so
+  each skips or fails only the tests that use it (item #1069) — right for a developer without the containers, wrong
   in CI where they *are* up — so each flag converts that skip into a failure. The S3 and WebDAV
   credentials are minted per run and exported via `$GITHUB_ENV`; `BACKUP_TICK_SECRET` is read back
   from the generated `.env.docker` rather than minted again, because a second random value would
