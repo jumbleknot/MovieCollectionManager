@@ -3,10 +3,10 @@ type: Runbook
 title: CI self-serve diagnostics
 description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the one pinned Trivy installer all three scanning workflows share, and the labelled container holds that stop another run's prune deleting the scan tags, the event-versus-trigger_event split (including which run posted a check) and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
-resource-sha256: 3dcc3e0a2babddeb9bdacf5c2afff77ad5541844fb4b4dba7db5d0118ed69dec
+resource-sha256: 9635154f935c24d606d24d8eab1a80517abe7af2568088fa650389864ba1bfc1
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-17T01:23:25.112Z
+timestamp: 2026-11-19T11:32:20.062Z
 ---
 
 # CI self-serve diagnostics
@@ -579,6 +579,17 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   proxy forwards the credential over an IPC socket, so `git credential fill` works non-interactively;
   in a bare session with no VS Code attached it returns nothing, and the fallback is to push the branch
   and open the PR in the web UI — **never** AGit.
+- **Open, merge and dispatch through `scripts/forge-pr.mjs`, never a hand-typed `git credential fill`
+  recipe (item 1072).** Measured 2026-11-19: a session reused a copy with `protocol=https` hard-coded
+  against the `http://` origin (the forge on :3000 speaks only HTTP). The helper returned an empty
+  password, and the host's credential manager reported a TLS handshake failure. The session blamed the
+  host's credential helper, but the fault was the scheme it had typed. `scripts/lib/forge-credential.mjs`
+  reads the scheme and host from `git remote get-url origin`. When the helper returns nothing it fails
+  immediately, naming the `protocol=… host=…` it asked for, rather than returning an empty token that
+  surfaces later as a 401. `forge-pr.mjs open` refuses a head that is not a branch on the forge.
+  `merge <N> --expect-head <sha>` acts only when the PR head equals that sha, `ci-status status --sha`
+  exits 0 for it, and the forge reports the PR mergeable. It then pins `head_commit_id` and deletes the
+  branch. An unknown flag is rejected (exit 2) and never falls through to an action.
 - **`GET /pulls/{n}` reports `head.sha` as the branch's current tip, not the commit that was
   merged.** After a PR is merged, further pushes to the same branch update `head.sha`, so
   `merged: true` can co-exist with a `head.sha` that is newer than `main` — the PR page reads as
@@ -614,8 +625,8 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
 - **Verifying a branch without opening a PR: `workflow_dispatch` works, but posts no commit
   status.** Feature branches trigger almost nothing on `push:` (guardrails and app-ci scope their
   push trigger to `main`). Both workflows expose `workflow_dispatch`, so a branch can be fully
-  verified without a PR — dispatch with the `git credential fill` credential, not `MCM_FORGE_TOKEN`
-  (read-only, 403s). Two traps: (1) a dispatched run posts **no commit status**, so
+  verified without a PR — `node scripts/forge-pr.mjs dispatch <workflow.yml> --ref <branch>`, which
+  uses the `git credential fill` credential, not `MCM_FORGE_TOKEN` (read-only, 403s). Two traps: (1) a dispatched run posts **no commit status**, so
   `ci-status status --sha` keeps saying *waiting* no matter the outcome — read `/actions/tasks`
   instead; (2) **`run_number` in `/actions/tasks` is NOT the bundle ID** — the bundle name comes
   from `GITHUB_RUN_ID` (repository-wide counter), not `run_number` (per-workflow counter). Fetching

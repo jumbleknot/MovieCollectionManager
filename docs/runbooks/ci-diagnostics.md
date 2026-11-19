@@ -978,29 +978,21 @@ slow queue rather than "these workflows are not going to run at all".
 **Both expose `workflow_dispatch`, so a branch can be fully verified without a PR:**
 
 ```bash
-FORGE=http://<forge>/api/v1
-TOK=$(printf "protocol=http\nhost=<forge-host>\n\n" | git credential fill | grep '^password=' | cut -d= -f2-)
-
-curl -s -o /dev/null -w '%{http_code}\n' -X POST \
-  -H "Authorization: token $TOK" -H 'Content-Type: application/json' \
-  "$FORGE/repos/<owner>/<repo>/actions/workflows/guardrails.yml/dispatches" \
-  -d '{"ref":"<branch>"}'                                   # -> 204
-
-curl -s -o /dev/null -w '%{http_code}\n' -X POST \
-  -H "Authorization: token $TOK" -H 'Content-Type: application/json' \
-  "$FORGE/repos/<owner>/<repo>/actions/workflows/app-ci.yml/dispatches" \
-  -d '{"ref":"<branch>","inputs":{"provider":"anthropic"}}'  # -> 204
+node scripts/forge-pr.mjs dispatch guardrails.yml --ref <branch>
+node scripts/forge-pr.mjs dispatch app-ci.yml --ref <branch> --input provider=anthropic
 ```
 
-Use the **`git credential fill`** credential, not `MCM_FORGE_TOKEN` — the read token 403s. Pass
-`provider: anthropic` to `app-ci` so the agent E2E specs run on the surface that matters.
+The script uses the **`git credential fill`** credential, not `MCM_FORGE_TOKEN`, because the read
+token 403s on a dispatch. It reads that credential's scheme and host from `git remote get-url origin`;
+see [Opening one from a session](#opening-one-from-a-session) for why nobody types that by hand
+anymore. Pass `provider=anthropic` to `app-ci` so the agent E2E specs run on the surface that matters.
 
 ⚠️ **A dispatched run posts NO commit status** (the same property documented for `cd-deploy` in
 [ci-evidence-pipeline.md](ci-evidence-pipeline.md#cd-deploy-is-a-special-case)). `ci-status status --sha` will therefore keep saying *waiting* no matter how the run
 goes — it is reading a channel the run never writes to. Read `/actions/tasks` instead:
 
 ```bash
-curl -s -H "Authorization: token $TOK" "$FORGE/repos/<owner>/<repo>/actions/tasks?limit=40"
+curl -s -H "Authorization: token $MCM_FORGE_TOKEN" "http://<forge>/api/v1/repos/<owner>/<repo>/actions/tasks?limit=40"   # a read: the read token is enough
 ```
 
 ⚠️ **And note the shape of that payload**: Forgejo puts the outcome in **`status`**
@@ -1051,13 +1043,34 @@ the web UI.
 
 ```bash
 git push origin HEAD:<branch>            # a REAL branch — this is the load-bearing part
+node scripts/forge-pr.mjs open --head <branch> --title "…" --body-file <path>   # prints PR number + URL
 
-ORIGIN="$(git remote get-url origin)"; PROTO="${ORIGIN%%://*}"; HOST="${ORIGIN#*://}"; HOST="${HOST%%/*}"
-TOKEN="$(printf 'protocol=%s\nhost=%s\n\n' "$PROTO" "$HOST" | git credential fill | sed -n 's/^password=//p')"
-curl -sS -X POST "$PROTO://$HOST/api/v1/repos/jumbleknot/mcm/pulls" \
-  -H "Authorization: token $TOKEN" -H "Content-Type: application/json" \
-  -d '{"head":"<branch>","base":"main","title":"…","body":"…"}'      # expect 201
+# later, once you have read CI for exactly this head:
+node scripts/forge-pr.mjs merge <N> --expect-head <full-sha>                    # prints the merge sha
 ```
+
+`open` refuses a head that isn't a branch on the forge, so an AGit head can't get in. `merge` acts
+only when all of these hold:
+
+- the PR head equals `--expect-head`, so nothing pushed after you looked gets merged;
+- `ci-status status --sha` exits 0 for that head (this needs `MCM_FORGE_TOKEN`);
+- the forge reports the PR as mergeable.
+
+It then sends `head_commit_id`, so the forge enforces the same pin again, and deletes the branch.
+Whether to merge is still the operator's call; the script only does the mechanics.
+
+**Don't type a `git credential fill` command.** On 2026-11-19 a session reused a copy with
+`protocol=https` hard-coded. Origin is `http://`, and the forge on :3000 speaks only HTTP.
+
+- The helper returned an empty password.
+- The host's Git Credential Manager reported *"The handshake failed due to an unexpected packet
+  format"*.
+- The session told the operator their credential helper was broken.
+
+The real fault was the scheme it had typed. `scripts/lib/forge-credential.mjs` reads the scheme and
+host from origin. If the helper returns nothing, it fails immediately and names the
+`protocol=… host=…` it asked for, instead of handing back an empty token that later shows up as a
+401. Other scripts that need the write credential import that module rather than copying the recipe.
 
 **`POST /pulls` works from a session** — measured 2026-08-01, four consecutive `201 Created`
 (#125, #127, #128, #129). If it answers
