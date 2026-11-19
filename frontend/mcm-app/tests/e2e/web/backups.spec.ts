@@ -22,6 +22,11 @@ const S3_BUCKET = process.env['BACKUP_TEST_S3_BUCKET'] ?? 'mcm-backups-test';
 const S3_ACCESS_KEY = process.env['BACKUP_TEST_S3_ACCESS_KEY'] ?? 'mcmbackuptest';
 const S3_SECRET = process.env['BACKUP_TEST_S3_SECRET_KEY'] ?? '';
 
+const BRING_UP =
+  'Bring them up with: docker compose -p mcm --env-file ' +
+  'infrastructure-as-code/docker/stacks/mcm.env -f ' +
+  'infrastructure-as-code/docker/backups/compose.yaml up -d';
+
 const unique = () => `e2e-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 
 // Feature 073 T061. BACKUP_TICK_SECRET lives in `.env.local`, NOT `.env.e2e.local` — and
@@ -79,13 +84,12 @@ test.describe('Backup destinations (feature 073)', () => {
   // The correction matters more than the fact. Acting on the stale note, this session reported
   // "a green app-e2e is not evidence that backups work" — which had stopped being true, and
   // would have had a reviewer discount a signal that was real.
+  const requireTargets = process.env['E2E_REQUIRE_BACKUP_TARGETS'] === '1';
   const targetsMissing = S3_SECRET === '';
-  if (targetsMissing && process.env['E2E_REQUIRE_BACKUP_TARGETS'] === '1') {
+  if (targetsMissing && requireTargets) {
     throw new Error(
       'E2E_REQUIRE_BACKUP_TARGETS=1 but BACKUP_TEST_S3_SECRET_KEY is unset — the backup ' +
-        'destinations are not up. Bring them up with: docker compose -p mcm --env-file ' +
-        'infrastructure-as-code/docker/stacks/mcm.env -f ' +
-        'infrastructure-as-code/docker/backups/compose.yaml up -d',
+        `destinations are not up. ${BRING_UP}`,
     );
   }
   test.skip(
@@ -93,6 +97,59 @@ test.describe('Backup destinations (feature 073)', () => {
     'BACKUP_TEST_S3_SECRET_KEY is unset — the backup destinations are not up. This is a SKIP, ' +
       'not a pass. Set E2E_REQUIRE_BACKUP_TARGETS=1 to make it a failure.',
   );
+
+  // A SET SECRET IS NOT A RUNNING TARGET (item #981). A `.env.local` copied from another checkout
+  // carries the secret while the compose file above was never brought up here, and then all seven
+  // tests failed on `backup-destination-list` never appearing — an instrument error that reads as
+  // an application defect. So reachability is PROBED, once per worker, before any test runs.
+  //
+  // The probe goes THROUGH THE BFF (the unsaved-draft form of destinations/test), not straight at
+  // S3_ENDPOINT: that address is the name the BFF CONTAINER resolves, which the Playwright process
+  // cannot, and the BFF is the hop whose reachability the tests depend on. A draft persists
+  // nothing. Any non-`ok` outcome — refused, timed out, a URL-guard 400, a wrong secret — means
+  // the tests below cannot pass, so it skips (or, required, fails) and says why.
+  test.beforeAll(async ({ playwright, workerStorageState }, testInfo) => {
+    const api = await playwright.request.newContext({
+      storageState: workerStorageState,
+      ignoreHTTPSErrors: testInfo.project.use.ignoreHTTPSErrors ?? false,
+    });
+    let unreachable: string | null = null;
+    try {
+      const res = await api.post(`${BASE}/bff-api/backups/destinations/test`, {
+        data: {
+          type: 's3',
+          label: 'e2e-reachability-probe',
+          endpoint: S3_ENDPOINT,
+          bucket: S3_BUCKET,
+          accessKeyId: S3_ACCESS_KEY,
+          secret: S3_SECRET,
+        },
+        timeout: 15000,
+      });
+      // A refused address is a 400 problem document rather than `{ ok: false }` — and an
+      // UNRESOLVABLE host lands there too, which is the usual signature of the target being down.
+      const body = await res.json().catch(() => null);
+      if (!res.ok()) {
+        const detail = [body?.title, body?.detail].filter(Boolean).join(': ');
+        unreachable = `the BFF answered HTTP ${res.status()} to the probe${detail ? ` — ${detail}` : ''}`;
+      } else if (body?.ok !== true) unreachable = body?.reason ?? 'the probe did not report ok';
+    } catch (err) {
+      unreachable = `the probe request failed: ${(err as Error).message.split('\n')[0]}`;
+    } finally {
+      await api.dispose();
+    }
+    if (unreachable === null) return;
+
+    const why =
+      `the S3 backup destination ${S3_ENDPOINT} is not usable from the BFF (${unreachable}). ` +
+      BRING_UP;
+    if (requireTargets) throw new Error(`E2E_REQUIRE_BACKUP_TARGETS=1 but ${why}`);
+    test.skip(
+      true,
+      `BACKUP_TEST_S3_SECRET_KEY is set, but ${why} This is a SKIP, not a pass. Set ` +
+        'E2E_REQUIRE_BACKUP_TARGETS=1 to make it a failure.',
+    );
+  });
 
   // Each worker has its OWN user (054 US4), but that user persists across runs — so a spec that
   // failed before reaching its delete step leaves a destination behind, and the next run sees
