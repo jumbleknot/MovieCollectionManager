@@ -173,6 +173,10 @@ jobs:
               # `pnpm nx up-agents-prod` (agent-stack.mjs) at the "bring up containerized agent"
               # step, so the script it deploys with was outside its own gate.
               - 'scripts/agent-stack.mjs'              # app-e2e deploys the agent stack with this
+              # Item #535: the same gap one level up. app-e2e and dast run `pnpm nx up-agents-prod
+              # infrastructure-as-code`, and that target is DEFINED here — so a change to how it
+              # deploys must run them. Asserted by app-ci-lockfile-filter.guard.test.mjs.
+              - 'infrastructure-as-code/project.json'
               - 'scripts/gen-ci-env.mjs'               # mints the env the E2E stacks come up on
               - 'scripts/gen-dev-secrets.mjs'          # mints the secrets those stacks authenticate with
               - 'scripts/mc-service-integration-guard.mjs'  # a gate that runs INSIDE app-e2e

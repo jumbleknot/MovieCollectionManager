@@ -114,7 +114,7 @@ describe('server-held tokens (feature 085 US6, real stack)', () => {
     expect(await getUserSessions(member.userId)).toEqual([]);
   });
 
-  it('a pre-rollout client holding only the old token cookies is refused and cleared, never migrated (AS-6, FR-022)', async () => {
+  it('a pre-rollout client holding only the old token cookies is refused, never migrated (AS-6)', async () => {
     const { accessToken } = await getTestTokens(member.username, member.password);
     const res = await bff.get('/bff-api/auth/user', {
       headers: { Cookie: `mcm_access_token=${accessToken}; mcm_session_id=${randomUUID()}` },
@@ -123,9 +123,7 @@ describe('server-held tokens (feature 085 US6, real stack)', () => {
     const cleared = ((res.headers['set-cookie'] as string[] | undefined) ?? []).map(
       (c) => c.split('=')[0],
     );
-    expect(cleared).toEqual(
-      expect.arrayContaining(['mcm_session_id', 'mcm_access_token', 'mcm_refresh_token']),
-    );
+    expect(cleared).toEqual(['mcm_session_id']);
   });
 
   it("a session holding another member's sealed tokens is refused and ended (FR-006 by construction)", async () => {

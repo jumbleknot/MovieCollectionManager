@@ -174,15 +174,13 @@ describe('POST /bff-api/auth/login — the client receives only the session refe
     });
   });
 
-  it('sets only mcm_session_id, and clears the two retired token cookies (US6 AS-1)', async () => {
+  it('sets only mcm_session_id, and nothing else (US6 AS-1)', async () => {
     const res = await POST(makeRequest({ code: 'c', codeVerifier: 'v', redirectUri: 'r' }));
     expect(res.status).toBe(200);
     const setCookies = res.headers.getSetCookie();
-    const live = setCookies.filter((c) => !/Max-Age=0/.test(c));
-    expect(live).toHaveLength(1);
-    expect(live[0]).toMatch(/^mcm_session_id=session-new;/);
-    const cleared = setCookies.filter((c) => /Max-Age=0/.test(c)).map((c) => c.split('=')[0]);
-    expect(cleared.sort()).toEqual(['mcm_access_token', 'mcm_refresh_token']);
+    expect(setCookies).toHaveLength(1);
+    expect(setCookies[0]).toMatch(/^mcm_session_id=session-new;/);
+    expect(setCookies[0]).not.toMatch(/Max-Age=0/);
   });
 
   it('no response header carries the access or refresh token', async () => {

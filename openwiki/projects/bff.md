@@ -252,11 +252,11 @@ to know before changing a handler:
   `mcm_session_id` reference, scoped to `Path=/`, `HttpOnly`, `SameSite=Strict`, `Secure` outside
   development, with `Max-Age` equal to the absolute session lifetime. The access and refresh tokens
   the BFF exchanges the authorization code for are sealed beside the session in Redis (AES-256-GCM,
-  bound to the session id and its owner) and never leave the server. Two pre-085 cookies
-  (`mcm_access_token`, `mcm_refresh_token`) are still *cleared* — each at its own original `Path`,
-  the refresh one at `/bff-api/auth/refresh` — because a browser declines a clear whose attributes
-  do not match the cookie it is removing, but nothing reads them and a session carrying only them is
-  refused rather than migrated.
+  bound to the session id and its owner) and never leave the server. The two pre-085 cookies
+  (`mcm_access_token`, `mcm_refresh_token`) are never read, and a session carrying only them is
+  refused rather than migrated. They were also *cleared* at their original `Path`s until every
+  client had passed one absolute session lifetime after the 085 rollout; item #906 removed those
+  clears.
 - **`GET /bff-api/auth/init` is the redirect-URI reconciliation, and it is unauthenticated by
   design.** The client root layout calls it once on app mount, best-effort. It passes
   `ensureClientRedirectUris()` the *complete* list this client needs — the web PKCE callback, the
@@ -971,7 +971,8 @@ The client-side view of the same layer, and the header contract's tests, are on 
 - **Cookies, not tokens, cross the wire to the client.** The BFF sets exactly one `HttpOnly`,
   `SameSite=Strict` cookie — the opaque `mcm_session_id` — and client code never sees a raw JWT. The
   client Axios instance sends no `Authorization` header at all and relies on `withCredentials: true`.
-  Every `401` also clears the two retired pre-085 token cookies, each at its original `Path`.
+  A `401` clears only that cookie; the clears of the two retired pre-085 token cookies were removed
+  by item #906.
 - **The shipped image carries a runtime closure of ~81 packages out of the ~1600 production ones — and the build gate enforces it.**
   `pnpm deploy --prod` materializes ~1600 packages because they are genuine `dependencies` of
   `mcm-app`, but they are dependencies of the web bundle, which Metro already compiled into `dist/`

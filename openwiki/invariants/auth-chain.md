@@ -118,7 +118,9 @@ Source: `specs/085-bff-auth-fail-closed/` (spec, plan, research R1–R11, data m
 - **Sign-in redirect registration retries until Keycloak confirms it.** `ensureClientRedirectUris`
   records "done" only when nothing was missing or the `PUT` returned `2xx` (item #753).
 - **Pre-rollout clients sign in again once.** The retired `mcm_access_token` / `mcm_refresh_token`
-  cookies are never read. Every `401` clears them at their original Paths (FR-022).
+  cookies are never read. Every `401` cleared them at their original Paths (FR-022) until one absolute
+  session lifetime after the 085 rollout; those clears were removed by item #906, so a `401`, login
+  and logout now emit only the `mcm_session_id` clear or set.
 
 ## Gotchas
 
