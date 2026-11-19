@@ -1,11 +1,11 @@
 ---
 type: Runbook
 title: "Spec Kit: this repository's customisations, and upgrading it"
-description: The one inventory of every way the repository changes or adds to GitHub Spec Kit — the tasks-template override carrying the doc-impact sweep, the required tests and the Verify RED / Verify GREEN checkpoint format it shows, the four registered local edits (the /speckit-tasks skill's and the Copilot tasks agent's "tests are required" rule, /speckit-converge appending its tasks in that format, and /speckit-taskstoissues sending tasks to the Forgejo backlog), the constitution, the git and agent-context extension hooks, and the three CLI version pins — plus who owns which file, the order of preference for a new customisation, the guard that fails when any of them is lost or a Spec Kit-owned file is edited without being registered, its ten failure codes, the upgrade procedure, and the /speckit-constitution gap.
+description: The one inventory of every way the repository changes or adds to GitHub Spec Kit — the tasks-template override carrying the doc-impact sweep, the required tests and the Verify RED / Verify GREEN checkpoint format it shows, the three registered local edits (the /speckit-tasks skill's and the Copilot tasks agent's "tests are required" rule, and /speckit-converge appending its tasks in that format), the project-owned /speckit-taskstoissues skill that sends tasks to the Forgejo backlog, the constitution, the git and agent-context extension hooks, and the three CLI version pins — plus who owns which file, the order of preference for a new customisation, the guard that fails when any of them is lost or a Spec Kit-owned file is edited without being registered, its twelve failure codes, the upgrade procedure, and the known gaps (/speckit-constitution, the frozen Copilot files).
 resource: docs/runbooks/spec-kit.md
-resource-sha256: 655b40bc8da6d775819308bdde2b6b07e08bfc17f12e38d10b3b0d58d6f3d2a7
+resource-sha256: 35bb22c6bbce18540ec9f8cb0a9abdc6275175a677dedf66dbfcf19a5eda2cab
 tags: [spec-kit, sdd, templates, guardrails, upgrade, runbook]
-timestamp: 2026-11-18T11:32:51.167Z
+timestamp: 2026-11-19T00:40:29.169Z
 ---
 
 # Spec Kit: this repository's customisations, and upgrading it
@@ -45,12 +45,16 @@ a core template.
    Convergence tasks as RED/GREEN pairs, with a Doc-impact sweep task for a gap that renames or
    removes an identifier, instead of upstream's one-line tasks.
 3. **`/speckit-taskstoissues` → Forgejo** (`.claude/skills/speckit-taskstoissues/SKILL.md`, feature
-   049): files tasks through `scripts/backlog.mjs` instead of GitHub issues, as the other registered
-   local edit. The 0.11.2 → 0.16.5 upgrade overwrote it once.
+   049): files tasks through `scripts/backlog.mjs` instead of GitHub issues. The 0.11.2 → 0.16.5
+   upgrade overwrote it once. **Project-owned since 1.4.2** (item #1066): upstream moved
+   `taskstoissues` out of core into the optional `github` extension, and the upgrade deleted the
+   skill as a stale managed file. It was restored and kept, rather than adopting a GitHub-targeted
+   extension and forking its command.
 4. **The constitution**, **the extension hooks** (the `git` extension's branch creation and
    auto-commits, which run even when marked optional; the `agent-context` extension's rewrite of
    AGENTS.md's `SPECKIT` region; converge has `before_`/`after_converge` hooks like the rest, off in
-   `git-config.yml` like every event) and **three CLI version pins** that must move together.
+   `git-config.yml` like every event, and re-added by hand because reinstalling the `git` extension
+   drops them) and **three CLI version pins** that must move together.
 
 ## The guard
 
@@ -64,23 +68,34 @@ a core template.
   unregistered difference fails `unregistered-edit`. A registered edit that matches upstream again,
   or that lost its marker string, fails `local-edit-reverted`. A registered file no manifest lists
   fails `registry-stale`.
+- **Project-owned files** (former Spec Kit files, the `PROJECT_OWNED` list): one that is missing or
+  lost its marker fails `project-file-lost`; one a manifest lists again, so the next `--force` would
+  overwrite it, fails `project-file-managed`.
 - **Inventory:** `inventory-stale` fails if the runbook does not name the override, the TDD
-  template and every registered edit, so the list cannot fall behind the guard.
+  template, every registered edit and every project-owned file, so the list cannot fall behind the
+  guard.
 
 The fork point on the override's line 1 is written only by `--record`, which refuses an override
 that lost the sweep or the TDD sample.
 
 **Upgrade procedure**, in one PR from a worktree: install the new CLI, run
-`specify integration upgrade claude --force` (and `copilot`), bump the three pins, run the gate, re-apply each
-`local-edit-reverted` file from git (merging what upstream added), merge any `core-changed` diff into
-the override, `--record`, then re-run the gate and its tests. The managed-file comparison replaces
+`specify integration upgrade claude --force` (which also deletes files that dropped out of the
+manifest), bump the three pins, reinstall the bundled `git` and `agent-context` extensions with
+`specify extension add <name> --force` (re-add the converge hooks and restore the Copilot files it
+deletes), run the gate, re-apply each `local-edit-reverted` file from git (merging what upstream
+added), restore any `project-file-lost` file, merge any `core-changed` diff into the override,
+`--record`, then re-run the gate and its tests. The managed-file comparison replaces
 the old manual hunt for local edits before `--force`.
 
 ## Gotchas
 
 - **`/speckit-constitution` checks the core tasks template**, not the override. After an amendment,
   check the override by hand.
+- **The Copilot files are frozen.** Copilot is not an installed integration (its manifest is a 0.5.0
+  leftover), so `specify integration upgrade copilot` fails "not installed" and nothing refreshes
+  `.github/agents/`. Installing it properly would refresh them and overwrite the Copilot edit.
 - **The core template says to delete every sample task.** The override's `EXCEPTION` note keeps the
   sweep, the close-out task and the RED/GREEN fields. Keep that note when re-merging an upgrade.
 - **Adding an edit to a Spec Kit-owned file is a two-part change**: a `LOCAL_EDITS` entry in the gate
-  (with a marker upstream lacks) and a row in the runbook's table, in the same PR.
+  (with a marker upstream lacks) and a row in the runbook's table, in the same PR. A file Spec Kit
+  stops managing moves to `PROJECT_OWNED` instead.

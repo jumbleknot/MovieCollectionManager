@@ -3,10 +3,10 @@ type: Runbook
 title: Developer environment setup (host toolchain)
 description: How to provision a host development machine for MovieCollectionManager — the toolchain versions the repository pins (Node 26 and its floor, pnpm at the `packageManager` version, Rust, Python/uv, Android SDK) and the companion tools (RTK output compressor, OpenWiki) — as an alternative to the devcontainer, including how the OpenWiki generator's version is held in step across the toolchain image, CI and a host install.
 resource: docs/runbooks/dev-environment-setup.md
-resource-sha256: aa61285e540e0473fad10ab34e7fc526a18f241d2e23e2482afdc77a916800a9
+resource-sha256: 387b78d6ecf867bf5f5a7d1d6662d3fa907d4b992121c3f90fceef2ecf10df47
 tags: [setup, toolchain, host, runbook, openwiki]
 generated: { by: "openwiki/0.7.1", at: "2026-11-03T01:23:06.490Z" }
-timestamp: 2026-11-15T18:43:57.061Z
+timestamp: 2026-11-19T00:40:29.281Z
 ---
 
 # Developer environment setup (host toolchain)

@@ -2,9 +2,9 @@
   "schema_version": "1.0",
   "extensions": {
     "git": {
-      "version": "1.0.0",
+      "version": "1.0.5",
       "source": "local",
-      "manifest_hash": "sha256:9731aa8143a72fbebfdb440f155038ab42642517c2b2bdbbf67c8fdbe076ed79",
+      "manifest_hash": "sha256:57082e8d6bafa628f2dc21dd8c5f863c1d2025c86dcd16a9b41e2b53989bf0aa",
       "enabled": true,
       "priority": 10,
       "registered_commands": {
@@ -14,54 +14,24 @@
           "speckit.git.remote",
           "speckit.git.initialize",
           "speckit.git.commit"
-        ],
-        "copilot": [
-          "speckit.git.feature",
-          "speckit.git.validate",
-          "speckit.git.remote",
-          "speckit.git.initialize",
-          "speckit.git.commit"
         ]
       },
-      "registered_skills": [
-        "speckit-git-feature",
-        "speckit-git-validate",
-        "speckit-git-remote",
-        "speckit-git-initialize",
-        "speckit-git-commit"
-      ],
-      "installed_at": "2026-05-19T03:14:25.771734+00:00"
+      "registered_skills": [],
+      "installed_at": "2026-11-19T00:32:46.339565+00:00"
     },
     "agent-context": {
-      "version": "1.0.0",
+      "version": "1.0.3",
       "source": "local",
-      "manifest_hash": "sha256:9a1dc02d2d0139bb03860392ecacef79183be2c442feda2f9ccaa4e5907b1e47",
+      "manifest_hash": "sha256:790fe14ee139490b46d25ebdc37964b9e620e88c65d92ba21e6bdf5274ea7a81",
       "enabled": true,
       "priority": 10,
       "registered_commands": {
-        "agy": [
-          "speckit.agent-context.update"
-        ],
         "claude": [
-          "speckit.agent-context.update"
-        ],
-        "codex": [
-          "speckit.agent-context.update"
-        ],
-        "copilot": [
-          "speckit.agent-context.update"
-        ],
-        "opencode": [
-          "speckit.agent-context.update"
-        ],
-        "zed": [
           "speckit.agent-context.update"
         ]
       },
-      "registered_skills": [
-        "speckit-agent-context-update"
-      ],
-      "installed_at": "2026-06-19T02:45:57.265733+00:00"
+      "registered_skills": [],
+      "installed_at": "2026-11-19T00:32:47.008438+00:00"
     }
   }
 }
