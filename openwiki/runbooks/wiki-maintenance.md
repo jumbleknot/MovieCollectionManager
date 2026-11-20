@@ -3,10 +3,10 @@ type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
 description: The derived summary of how the openwiki/ bundle is kept current since feature 098 — the coding session's duty to refresh a derived page in the same PR as its source, the source fingerprint and the V17 check that blocks a stale page, G14's single-human-written-file rule, the retired Claims bookkeeping and unattended machinery, and the generator's remaining role as a manual, dispatch-only rebuild of operator-named pages — with that rebuild's provider table and env-scoping rule, its locked install and release-age cooldown, its job deadline and exit codes, the per-page verification and restore machinery, the single long-lived proposal, the canonical-home rule, the provenance stamp, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
-resource-sha256: 169db09fc773b59ec97f204f1a45c9a7e02fa15cc3eb8c9103df7b236a4c1658
+resource-sha256: 8e680cb731e7038831c20bb4b420fe54a3d8cd19433775c0078c4d63296ea607
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
-timestamp: 2026-11-17T01:23:25.657Z
+timestamp: 2026-11-20T03:37:42.482Z
 ---
 
 

@@ -688,7 +688,9 @@ here, in the runbook, dated and with its run number.
 
 **Do not write prose into `AGENTS.md`** expecting a later run to relocate it. That file is the index
 every assistant reads, and a gate fails on content beyond its index and its three machine-managed
-regions (G8). `CLAUDE.md` is only a shim that imports it, and a gate (G15) fails on anything added there. The rejected
+regions (G8), and on a line over 650 characters or a file over 18,000 outside those regions (G16) —
+a gate bullet holds its rule, its trap and a link, and the story goes in the linked document.
+`CLAUDE.md` is only a shim that imports it, and a gate (G15) fails on anything added there. The rejected
 alternative — grow the instruction file and clean up later — is recorded in `INSTRUCTIONS.md` §7.
 
 ### Protected passages

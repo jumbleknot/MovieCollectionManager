@@ -277,7 +277,9 @@ canonical home it already had.
 
 **Do not write prose into `AGENTS.md` and expect a later run to relocate it.** That file
 is the index every assistant reads; a check fails on content beyond its index and its machine-managed
-regions. `CLAUDE.md` is only a shim that imports it, and a gate (G15) fails on anything added there.
+regions (G8), and on a line or a file over its size budget (G16): an entry keeps its rule, its trap
+and a link, and the story behind it goes in the linked document. `CLAUDE.md` is only a shim that
+imports it, and a gate (G15) fails on anything added there.
 
 ### A learning that corrects what is written: rewrite it in place
 
