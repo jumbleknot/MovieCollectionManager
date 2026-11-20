@@ -58,6 +58,20 @@ def _as_int(value: Any) -> int | None:
         return None
 
 
+def _full_title_in(low: str, options: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
+    """The option whose full title the (lower-cased) reply contains, MOST SPECIFIC first, or None.
+
+    Longest title first, so a short bare title that is merely a prefix of others ("Avatar") cannot
+    shadow the longer one the user actually named ("Avatar: The Way of Water"). Length-guarded so a
+    1–3 char title can't false-match a common substring (e.g. "a"/"up" inside an off-topic reply).
+    """
+    for option in sorted(options, key=lambda o: -len(str(o.get("title") or ""))):
+        title = str(option.get("title") or "").lower()
+        if len(title) >= 4 and title in low:
+            return option
+    return None
+
+
 def resolve_option(text: str, options: Sequence[dict[str, Any]]) -> dict[str, Any] | None:
     """Resolve a disambiguation pick against the offered options — deterministically (no LLM).
 
@@ -80,6 +94,12 @@ def resolve_option(text: str, options: Sequence[dict[str, Any]]) -> dict[str, An
             matches = [o for o in options if _as_int(o.get("year")) == year]
             if len(matches) == 1:
                 return matches[0]
+            if len(matches) > 1:
+                # Item #941: a year several options share NARROWS the pick but cannot decide it.
+                # Only a full title typed back can choose among them; otherwise re-ask (FR-014).
+                # Falling through used to let the bare-title step below return a film from a
+                # DIFFERENT year ("Avatar (2022)" → the 2009 "Avatar").
+                return _full_title_in(low, matches)
     # 2. An option label typed (or tapped) back that differs ONLY by surrounding whitespace or
     #    case. This runs BEFORE the substring step for two reasons. First, the substring step
     #    cannot express it: an option label carrying a trailing space is LONGER than the trimmed
@@ -94,14 +114,10 @@ def resolve_option(text: str, options: Sequence[dict[str, Any]]) -> dict[str, An
         for option in options:
             if str(option.get("title") or "").strip().casefold() == normalized:
                 return option
-    # 3. A full option title typed back. Try the MOST SPECIFIC (longest) title first so a short
-    #    bare title that is merely a prefix of others ("Avatar") cannot shadow the longer one the
-    #    user actually named ("Avatar: The Way of Water"). Length-guarded so a 1–3 char title can't
-    #    false-match a common substring (e.g. "a"/"up" inside an off-topic reply).
-    for option in sorted(options, key=lambda o: -len(str(o.get("title") or ""))):
-        title = str(option.get("title") or "").lower()
-        if len(title) >= 4 and title in low:
-            return option
+    # 3. A full option title typed back, most specific first (see _full_title_in).
+    titled = _full_title_in(low, options)
+    if titled is not None:
+        return titled
     # 4. Ordinal word.
     for word, idx in _ORDINALS.items():
         if re.search(rf"\b{re.escape(word)}\b", low):

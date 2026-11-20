@@ -68,15 +68,27 @@ appId: com.grumpyrobot.mcmapp
 
 # KEY assertion (bug-1 regression): the card shows the 2022 film, not the 2009 one.
 # render-movie-card-title must contain "The Way of Water" (distinguishes the two).
-- assertVisible:
-    id: "render-movie-card-title"
-- assertVisible:
-    text: ".*The Way of Water.*"
+# WAIT, not a bare assertVisible (item #530): the container being visible does not mean its children
+# are laid out ON SCREEN yet — the async poster above them moves them when it resolves, and a bare
+# assertVisible samples once. Bounded at 15 s; the container is already there.
+# The text checks wait too: each is a separate sample of the same moving layout.
+- extendedWaitUntil:
+    visible:
+      id: "render-movie-card-title"
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      text: ".*The Way of Water.*"
+    timeout: 15000
 # The year badge must show 2022.
-- assertVisible:
-    id: "render-movie-card-year"
-- assertVisible:
-    text: ".*2022.*"
+- extendedWaitUntil:
+    visible:
+      id: "render-movie-card-year"
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      text: ".*2022.*"
+    timeout: 15000
 
 # Enrich-only: no approval card shown (no write, no collection target).
 - assertNotVisible:

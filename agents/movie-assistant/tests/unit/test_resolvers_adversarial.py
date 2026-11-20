@@ -70,6 +70,48 @@ def test_resolve_option_long_title_with_year_beats_prefix() -> None:
     assert "Fire and Ash" in result["title"]
 
 
+# Item #941 (FR-014): a year several options share narrows the pick but must not decide it. Mirrors
+# the live TMDB result for "Avatar" on 2026-11-06: three 2022 films, and a bare "Avatar" from 2009.
+SHARED_YEAR_OPTIONS: list[dict[str, Any]] = [
+    {"sourceId": "tmdb:19995", "title": "Avatar", "year": 2009},
+    {"sourceId": "tmdb:76600", "title": "Avatar: The Way of Water", "year": 2022},
+    {"sourceId": "tmdb:900001", "title": "Whispering Avatar", "year": 2022},
+    {
+        "sourceId": "tmdb:900002",
+        "title": "Avatar: The Deep Dive - A Special Edition of 20/20",
+        "year": 2022,
+    },
+    {"sourceId": "tmdb:83533", "title": "Avatar: Fire and Ash", "year": 2025},
+]
+
+
+@pytest.mark.parametrize("reply", ["Avatar (2022)", "the 2022 one", "2022"])
+def test_resolve_option_shared_year_without_separating_title_reasks(reply: str) -> None:
+    """A year three options share, with no title that tells them apart, re-asks (None) rather than
+    falling through to the bare-title match and returning the 2009 "Avatar" — item #941."""
+    assert resolve_option(reply, SHARED_YEAR_OPTIONS) is None
+
+
+@pytest.mark.parametrize(
+    "reply,expected_id",
+    [
+        ("Avatar: The Way of Water (2022)", "tmdb:76600"),
+        ("Whispering Avatar (2022)", "tmdb:900001"),
+        ("Avatar: Fire and Ash (2025)", "tmdb:83533"),  # unique year: unchanged path
+        ("Avatar (2009)", "tmdb:19995"),  # unique year: unchanged path
+    ],
+)
+def test_resolve_option_shared_year_full_title_still_resolves(reply: str, expected_id: str) -> None:
+    """When the full title AND the year together name one option, it resolves — item #941."""
+    result = resolve_option(reply, SHARED_YEAR_OPTIONS)
+    assert result is not None and result["sourceId"] == expected_id
+
+
+def test_resolve_option_shared_year_title_from_another_year_reasks() -> None:
+    """A title typed with a year it does not have names no option: re-ask, never guess."""
+    assert resolve_option("Avatar: Fire and Ash (2022)", SHARED_YEAR_OPTIONS) is None
+
+
 def test_resolve_option_bare_avatar_resolves_to_bare_avatar_option() -> None:
     """A bare 'avatar' reply (no year, no qualifier) should resolve to the bare Avatar (2009).
 

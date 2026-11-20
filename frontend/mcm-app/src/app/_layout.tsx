@@ -10,7 +10,7 @@ import '@/assistant-polyfills';
 
 import React, { useEffect } from 'react';
 import { LogBox } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, ThemeProvider as NavigationThemeProvider } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { TamaguiProvider } from '@tamagui/core';
 import { useFonts } from 'expo-font';
@@ -31,6 +31,7 @@ import { ThemeProvider, useTheme } from '@/hooks/use-theme';
 import { AuthProvider } from '@/hooks/use-auth';
 import { UiStateProvider } from '@/hooks/use-ui-state';
 import { AssistantDataSyncProvider } from '@/hooks/use-assistant-data-sync';
+import { navigationTheme } from '@/utils/navigation-theme';
 
 // Suppress known dev-mode-only warnings that trigger the Expo warning banner and
 // obscure E2E test tappable areas at the bottom of the screen.
@@ -91,7 +92,12 @@ function ThemedApp(): React.JSX.Element {
                   relaunches) the dock + a still-valid agent session showed over the login screen.
                   The UiState/DataSync/Auth providers stay here so both the routes and the (app)-mounted
                   dock can read them. */}
-              <Stack screenOptions={{ headerShown: false }} />
+              {/* Item #243: without this, every navigator paints its screen container with React
+                  Navigation's LIGHT default (rgb(242,242,242)) whatever the app theme. Keyed on the
+                  same `theme` as Tamagui, so a runtime switch repaints it too. */}
+              <NavigationThemeProvider value={navigationTheme(theme)}>
+                <Stack screenOptions={{ headerShown: false }} />
+              </NavigationThemeProvider>
             </AssistantDataSyncProvider>
           </UiStateProvider>
         </AuthProvider>

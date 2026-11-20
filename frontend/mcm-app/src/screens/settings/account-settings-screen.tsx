@@ -43,7 +43,18 @@ const ERROR_MESSAGES: Record<string, string> = {
   failed: 'Something went wrong and your account was not deleted. Please try again.',
   challenge:
     'We could not start the deletion, so your account has not been deleted. Please try again.',
+  // Item #955: the route's deliberate 409 (delete-challenge+api.ts). Retrying can never succeed,
+  // so say what will: another administrator. Written here rather than echoed from the response,
+  // so no server-supplied text is ever rendered (every other failure stays generic).
+  lastAdmin:
+    'Your account has not been deleted: you are the only administrator. Give another account the administrator role before deleting this one.',
 };
+
+/** The only failure whose cause the user can act on is the last-administrator refusal (409). */
+function challengeErrorKey(err: unknown): 'lastAdmin' | 'challenge' {
+  const status = (err as { response?: { status?: unknown } } | null)?.response?.status;
+  return status === 409 ? 'lastAdmin' : 'challenge';
+}
 
 export function AccountSettingsScreen(): React.JSX.Element {
   const theme = useTheme();
@@ -64,9 +75,9 @@ export function AccountSettingsScreen(): React.JSX.Element {
       const { deleted } = await deletion.start();
       setConfirming(false);
       if (deleted) router.replace('/account-deleted');
-    } catch {
+    } catch (err) {
       setConfirming(false);
-      setChallengeError(ERROR_MESSAGES['challenge']!);
+      setChallengeError(ERROR_MESSAGES[challengeErrorKey(err)]!);
     }
   }
 

@@ -18,7 +18,6 @@
 
 import React from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
-import { useTheme } from '@tamagui/core';
 import { Slot } from 'expo-router';
 import { SettingsNav } from '@/components/settings/settings-nav';
 
@@ -30,25 +29,14 @@ import { SettingsNav } from '@/components/settings/settings-nav';
 const SIDE_BY_SIDE_MIN_WIDTH = 768;
 
 export default function SettingsLayout(): React.JSX.Element {
-  const theme = useTheme();
   const { width } = useWindowDimensions();
   const sideBySide = width >= SIDE_BY_SIDE_MIN_WIDTH;
 
   return (
-    /* The explicit background is NOT redundant with (app)/_layout.tsx, and that was measured.
-       React Navigation paints its own screen container with its LIGHT default
-       (`DefaultTheme.colors.background` = rgb(242,242,242)) because the app passes it no theme.
-       Every screen happens to cover that container by painting its own background, so it was
-       invisible until this layout put navigation chrome INSIDE the container without painting —
-       which showed as a bright band between the app bar and the content in dark mode.
-       Backlog item #243 fixes the cause (a React Navigation ThemeProvider); this paints over it
-       until then, and item #243's acceptance criteria require REMOVING this line. */
-    <View
-      style={[
-        sideBySide ? styles.containerRow : styles.container,
-        { backgroundColor: theme.background?.val },
-      ]}
-    >
+    /* No background of its own: the navigator container behind it is painted with the app theme
+       by the root layout's React Navigation ThemeProvider (item #243). Before that existed it was
+       React Navigation's light default, and this layout painted over it. */
+    <View style={sideBySide ? styles.containerRow : styles.container}>
       <View style={sideBySide ? styles.navRail : styles.navStacked}>
         <SettingsNav compact={!sideBySide} />
       </View>

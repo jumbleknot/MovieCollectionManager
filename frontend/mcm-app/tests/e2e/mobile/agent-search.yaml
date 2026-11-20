@@ -69,10 +69,17 @@ appId: com.grumpyrobot.mcmapp
     visible:
       id: "render-movie-card"
     timeout: 150000
-- assertVisible:
-    id: "render-movie-card-url"
-- assertVisible:
-    id: "render-movie-card-add"
+# WAIT, not a bare assertVisible (item #530): the container being visible does not mean its children
+# are laid out ON SCREEN yet — the async poster above them moves them when it resolves, and a bare
+# assertVisible samples once. Bounded at 15 s; the container is already there.
+- extendedWaitUntil:
+    visible:
+      id: "render-movie-card-url"
+    timeout: 15000
+- extendedWaitUntil:
+    visible:
+      id: "render-movie-card-add"
+    timeout: 15000
 - assertNotVisible:
     id: "approval-request"
 
