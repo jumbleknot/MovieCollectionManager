@@ -309,6 +309,15 @@ this arrangement exists to avoid. **Nothing leaves the gate without a tier that 
   list, two of them `@gate`; they surfaced only from a red CI run. **A green that survives a change
   to the thing under test proves nothing** — when you change a flow, grep for every caller of the
   shared helper, not just the files the plan named.
+- **Run the tiers your DIFF touches, not the ones you remember.** CI's `affected` job once caught
+  eight ruff findings in Python because `nx test movie-assistant` had been run locally and
+  `nx lint movie-assistant` never was. Derive every target (test, lint, typecheck, integration) from
+  the changed paths; a tier you did not think of is a tier that did not run.
+- **A guard that fails because you changed what it protects is UPDATED at the cause, never
+  deleted.** Raising the Playwright worker ceiling broke `workers <= cap - 3`, a guard that existed
+  only because every worker shared one user. It now asserts the new premise — that setup mints an
+  identity per worker — so it still fails if that regresses. A guard removed for being inconvenient
+  is the regression it was written to catch.
 - **Golden tests are the model-cost-bearing surface.** All intent mapping, dedup, and resolution logic
   is pure code and unit/property tested at zero model cost; only actual model *decisions* (intent
   classification, phrasing) are exercised by the golden cassette suite, keeping the expensive tier

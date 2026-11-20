@@ -259,7 +259,8 @@ passages:
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
     # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: its closing pointer named a CLAUDE.md section that no longer exists (CLAUDE.md is an index); it now names where that content lives.
-    fingerprint: "sha256:7a54326defb584c49ee1d5f3d4f6770a2285dfa31ee1177e410553b0047fc9e4"
+    # Re-fingerprinted 2026-11-20 (AGENTS.md trim) — passage gained two gotchas relocated from AGENTS.md's gates, whose evidence (eight ruff findings; the `workers <= cap - 3` guard) left the index. Previous: sha256:7a54326defb584c49ee1d5f3d4f6770a2285dfa31ee1177e410553b0047fc9e4
+    fingerprint: "sha256:53c6bd68c9d38a119215d04f15bd875ba3ed2ed05cda62051e8f231bdb00b7c0"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "process/feature-test-scope.md"

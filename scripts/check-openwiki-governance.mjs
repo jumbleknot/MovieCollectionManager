@@ -23,7 +23,7 @@
 //   * a relocated load-bearing passage cannot be silently reworded or dropped by a later refresh
 //     (G5–G7) — the protection manifest is the authority, not the concept;
 //   * the instruction file cannot quietly re-grow, and every surface pointing into the bundle resolves
-//     (G8–G10; the instruction file has been AGENTS.md since the CLAUDE.md → AGENTS.md inversion, with
+//     (G8–G10, and G16 bounds its size; the instruction file has been AGENTS.md since the CLAUDE.md → AGENTS.md inversion, with
 //     CLAUDE.md held to a shim that imports it, G15); and every concept declares whether it is canonical or a summary (G11), because the
 //     rule for where a new learning goes is undecidable otherwise.
 //
@@ -82,6 +82,20 @@ const MANAGED_REGIONS = [
   [/<!--\s*SPECKIT START\s*-->/i, /<!--\s*SPECKIT END\s*-->/i],
   [/<!--\s*OPENWIKI:START\s*-->/i, /<!--\s*OPENWIKI:END\s*-->/i],
 ];
+
+/**
+ * G16: the size budget of the instruction file, outside the managed regions. Every assistant loads
+ * this file into its context on every session, so its size is a recurring cost, and G8 alone did not
+ * bound it: a line passes G8 by carrying a link, however long the prose before that link. The gates
+ * grew to ~1,900 characters each that way and the file to ~40 KB, until a trim halved it (2026-11-20).
+ *
+ * A line holds a rule, its trap, and a link; the story behind the rule belongs in the linked doc. The
+ * file total is set ~15% above the trimmed size, so a new index entry fits but a regrowth does not.
+ * Raising either is a deliberate act in this file, never a quiet one. Counted in UTF-16 code units
+ * (`String.length`), not bytes — a byte count over-reports every em-dash by two.
+ */
+const INSTRUCTION_LINE_MAX = 650;
+const INSTRUCTION_TOTAL_MAX = 18000;
 
 const DOC_PATH = /\.(md|markdown)$/i;
 
@@ -466,6 +480,19 @@ export function validate(root) {
       add('G8', INSTRUCTION_FILE, `line ${i + 1} is prose beyond the index and the machine-managed regions: "${line.trim().slice(0, 70)}…". The index holds subject → concept links; the content itself belongs in the concept. Without this rule the file silently re-grows and the trim is undone within weeks`);
     }
 
+    // ── G16: the size budget (see INSTRUCTION_LINE_MAX) ──
+    let total = 0;
+    for (const [i, line] of lines.entries()) {
+      if (managed.has(i)) continue;
+      total += line.length;
+      if (line.length > INSTRUCTION_LINE_MAX) {
+        add('G16', INSTRUCTION_FILE, `line ${i + 1} is ${line.length} characters, over the ${INSTRUCTION_LINE_MAX} budget: "${line.trim().slice(0, 70)}…". Keep the rule, its trap and the link; move the story into the linked doc`);
+      }
+    }
+    if (total > INSTRUCTION_TOTAL_MAX) {
+      add('G16', INSTRUCTION_FILE, `holds ${total} characters outside the managed regions, over the ${INSTRUCTION_TOTAL_MAX} budget. Every session loads this file; trim an entry to its rule, trap and link before raising INSTRUCTION_TOTAL_MAX`);
+    }
+
     for (const target of linksIn(lines.filter((_, i) => !managed.has(i)).join('\n'))) {
       if (!existsSync(join(root, target.split('#')[0]))) {
         add('G9', INSTRUCTION_FILE, `index entry points at \`${target}\`, which does not exist. An index that can rot silently is worse than no index — a reader trusts it`);
@@ -586,6 +613,11 @@ function selftest() {
   scenario('g7', (f) => { f['openwiki/area/a.md'] = concept(PASSAGE, 'CLAUDE.md'); }, 'G7');
   scenario('g8', (f) => { f['AGENTS.md'] += '\nA paragraph of prose, which is how the file re-grows.\n'; }, 'G8');
   scenario('g9', (f) => { f['AGENTS.md'] = f['AGENTS.md'].replace('a.md](openwiki/area/a.md)', 'gone.md](openwiki/area/gone.md)'); }, 'G9');
+  scenario('g16-long-line', (f) => { f['AGENTS.md'] += `\n- **A gate** — ${'a story that belongs in the runbook '.repeat(20)}— [docs](openwiki/area/a.md)\n`; }, 'G16');
+  scenario('g16-total', (f) => { f['AGENTS.md'] += '\n- [An entry](openwiki/area/a.md) — short enough on its own\n'.repeat(400); }, 'G16');
+  scenario('g16-long-line-in-managed-region-is-exempt', (f) => {
+    f['AGENTS.md'] += `\n<!-- nx configuration start-->\n${'x'.repeat(INSTRUCTION_LINE_MAX + 50)}\n<!-- nx configuration end-->\n`;
+  }, null);
   scenario('g10', (f) => { f['opencode.json'] = '{"instructions": ["docs/moved-away.md"]}\n'; }, 'G10');
   scenario('g15-shim-missing', (f) => { f['CLAUDE.md'] = null; }, 'G15');
   scenario('g15-no-import', (f) => { f['CLAUDE.md'] = f['CLAUDE.md'].replace('@AGENTS.md', 'see AGENTS.md'); }, 'G15');
@@ -638,7 +670,7 @@ function selftest() {
     console.error(`✗ openwiki-governance gate --selftest FAILED:\n  ${fails.join('\n  ')}`);
     return 1;
   }
-  console.log('✓ openwiki-governance gate --selftest passed (G1–G4 policy declaration, G5–G7 passage protection incl. removal and derived-concept cases, G8–G10 index and assistant surfaces, G15 CLAUDE.md shim (missing, no import, content, managed region exempt), G11 concept classification, G12 authoritative-not-regenerate, G14 one human-written file per derived page, list-valued actor, whitespace-only drift tolerated, same-change fingerprint correction accepted, managed-region prose exempt, fail-closed on both governance files)');
+  console.log('✓ openwiki-governance gate --selftest passed (G1–G4 policy declaration, G5–G7 passage protection incl. removal and derived-concept cases, G8–G10 index and assistant surfaces, G16 instruction-file size budget (line, total, managed region exempt), G15 CLAUDE.md shim (missing, no import, content, managed region exempt), G11 concept classification, G12 authoritative-not-regenerate, G14 one human-written file per derived page, list-valued actor, whitespace-only drift tolerated, same-change fingerprint correction accepted, managed-region prose exempt, fail-closed on both governance files)');
   return 0;
 }
 
