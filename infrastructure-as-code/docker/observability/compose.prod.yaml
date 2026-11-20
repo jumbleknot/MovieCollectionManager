@@ -25,7 +25,7 @@ name: prod-observability
 services:
   # ── LangFuse v3 ───────────────────────────────────────────────────────────────────────────
   langfuse-web:
-    image: langfuse/langfuse:4.80.0@sha256:0814758db3db8e923f733be3884e7d7a9e3afd60568d874a610d78aae47476c5
+    image: langfuse/langfuse:4.82.0@sha256:e7fc2b170b29d522bb7e9b8881017cad8ac56212d785287e0f97811250d146a2
     container_name: langfuse-web
     restart: always
     depends_on:
@@ -91,7 +91,7 @@ services:
         max-file: "3"
 
   langfuse-worker:
-    image: langfuse/langfuse-worker:4.80.0@sha256:da9f618dd784219aa6508ab6941c4a89c4ef6fb429fb1734c4163df3baa8f1ca
+    image: langfuse/langfuse-worker:4.82.0@sha256:f06ca02f2dd600f55be3611184e0ade597b257b5413b8c60a1ad6b2bb06b8125
     container_name: langfuse-worker
     restart: always
     depends_on:
