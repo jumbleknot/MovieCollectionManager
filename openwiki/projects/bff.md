@@ -128,7 +128,7 @@ and RBAC only — it is a handshake read, so neither the cost gate nor the rate 
 ```mermaid
 flowchart TD
     A["POST /bff-api/agent/run"] --> B["requireAuth then requireMcUser"]
-    B --> C{"isBillableAgentRun operationName"}
+    B --> C{"isBillableAgentRun envelope method"}
     C -->|"handshake read"| H["rate limit and thread ownership only"]
     C -->|"billable"| D["resolveForRun user config"]
     D -->|"not runnable"| E["200 assistant_not_configured, no gateway call"]
@@ -148,10 +148,15 @@ response before the gateway is reached.*
 
 The ordering is the contract, and four rules carry it:
 
-- **Billability is decided by default-deny on the GraphQL `operationName`.** Only `availableAgents`
-  (the runtime-info fetch the dock issues on open), `loadAgentState` and `hello` are non-billable
-  reads; a missing, spoofed, non-string or unparseable `operationName` is treated as billable, so the
-  cost ceiling cannot be dodged by relabelling a run. The ceiling and the per-turn accrual apply only
+- **Billability is decided by default-deny on the single-endpoint envelope's `method`.** The client
+  runs CopilotKit with `useSingleEndpoint`, so every POST is a `{ method, params?, body? }` envelope
+  and the runtime dispatches on that same `method`. Only `info` (the runtime-info fetch the dock
+  issues on open), `agent/connect`, `agent/stop`, `trajectory/connect`, `resource/request` and
+  `inspector/metadata` are non-billable; `agent/run`, `agent/suggest` and any missing, unknown,
+  non-string or unparseable `method` are billable, so the cost ceiling cannot be dodged by
+  relabelling a run. (It keyed on a GraphQL `operationName` until item #806; the client stopped
+  sending one, which made every handshake billable and let a handshake eat the single-use import
+  handle again.) The ceiling and the per-turn accrual apply only
   to billable turns — gating the handshake would lock a user who is over budget out of even opening
   the dock — while the rate limit and the thread-ownership guard apply to **every** POST.
 - **An unconfigured user is short-circuited before anything costs money.** A billable run requires a

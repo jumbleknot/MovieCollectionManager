@@ -186,9 +186,9 @@ ceiling, and the BFF serialises just the four gateway-relevant fields.
 
 Gatekeeping for a billable run happens at the BFF, before any gateway call: a per-user request rate
 limit and a per-user/session cost ceiling (the personal `costLimitUsd` overrides the global
-default), a cross-user thread-ownership check, and the runnable-config check. Only the LLM run
-operation is billable — the CopilotKit handshake reads (`availableAgents`, `loadAgentState`,
-`hello`) run no model, so cost-gating them would lock an over-ceiling user out of merely *opening*
+default), a cross-user thread-ownership check, and the runnable-config check. Only a model run
+(`agent/run`, `agent/suggest`) is billable — the CopilotKit single-endpoint handshakes (`info`,
+`agent/connect`, `agent/stop`, and the trajectory, resource and inspector reads) run no model, so cost-gating them would lock an over-ceiling user out of merely *opening*
 the dock; the rate limit and thread guard still apply to every POST. The UI-snapshot and single-use
 import-file bridges key off the same "this request actually runs the graph" signal, because a
 handshake landing between an upload and the import turn would otherwise silently consume the

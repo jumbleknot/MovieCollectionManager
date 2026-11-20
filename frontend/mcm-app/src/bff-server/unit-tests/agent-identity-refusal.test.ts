@@ -103,7 +103,7 @@ const noHeaders = { entries: () => Object.entries({})[Symbol.iterator]() };
 
 /** A billable CopilotKit turn — the run that would execute assistant steps. */
 function billableRun(): Request {
-  const body = JSON.stringify({ operationName: 'generateCopilotResponse', variables: {} });
+  const body = JSON.stringify({ method: 'agent/run', params: { agentId: 'movie_assistant' } });
   return { headers: noHeaders, clone: () => ({ text: async () => body }) } as unknown as Request;
 }
 
