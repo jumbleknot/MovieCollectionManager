@@ -3,8 +3,9 @@
  *
  * The pending import-file handle is SINGLE-USE: `resolveImportFile` clears it after reading, so it
  * bridges to exactly the next import turn. The route must therefore consume it only for a BILLABLE
- * turn — a CopilotKit handshake POST (`availableAgents` the dock issues on open, `loadAgentState`,
- * `hello`) runs no graph and must leave the handle in place for the turn that follows.
+ * turn — a CopilotKit handshake POST (`info` the dock issues on open, `agent/connect`, `agent/stop`,
+ * …) runs no graph and must leave the handle in place for the turn that follows. Since item #806 the
+ * handshakes are single-endpoint `{ method }` envelopes, which is what these tests post.
  *
  * `isBillableAgentRun` is the REAL classifier (the same signal the runtime dispatches on); the
  * limiter's Redis-backed enforcement, the gateway client, and the CopilotKit runtime are mocked.
@@ -108,9 +109,13 @@ function mcUser(): UserProfile {
   };
 }
 
-/** A CopilotKit runtime POST carrying `operationName` — the signal the route classifies on. */
-function copilotPost(operationName: string): Request {
-  const body = JSON.stringify({ operationName, variables: {} });
+/** A single-endpoint CopilotKit envelope `{ method, params, body }` — what the client posts. */
+function copilotPost(method: string): Request {
+  const body = JSON.stringify({
+    method,
+    params: { agentId: 'movie_assistant' },
+    body: { threadId: 'thread-1', messages: [] },
+  });
   const req = {
     headers: { entries: () => Object.entries({})[Symbol.iterator]() },
     clone: () => ({ text: async () => body }),
@@ -144,10 +149,10 @@ beforeEach(() => {
 });
 
 describe('agent /run — the pending import-file handle is consumed by a turn, not by a handshake', () => {
-  it.each(['availableAgents', 'loadAgentState', 'hello'])(
-    'a %s handshake POST leaves the handle in place',
-    async (operationName) => {
-      await POST(copilotPost(operationName));
+  it.each(['info', 'agent/connect', 'agent/stop', 'trajectory/connect', 'resource/request'])(
+    'a %s handshake POST leaves the handle in place (item #806 regression of #284)',
+    async (method) => {
+      await POST(copilotPost(method));
 
       expect(mockClearAgentImportFile).not.toHaveBeenCalled();
       expect(importFilePassedToGateway()).toBeUndefined();
@@ -164,8 +169,8 @@ describe('agent /run — the pending import-file handle is consumed by a turn, n
   });
 
   it('upload → handshake → turn: the turn still receives the staged file', async () => {
-    await POST(copilotPost('availableAgents'));
-    await POST(copilotPost('generateCopilotResponse'));
+    await POST(copilotPost('agent/connect'));
+    await POST(copilotPost('agent/run'));
 
     expect(importFilePassedToGateway()).toEqual({
       handle: 'staged-handle',
@@ -175,13 +180,13 @@ describe('agent /run — the pending import-file handle is consumed by a turn, n
   });
 
   it('a billable turn consumes it exactly once — the next turn gets nothing', async () => {
-    await POST(copilotPost('generateCopilotResponse'));
+    await POST(copilotPost('agent/run'));
     expect(importFilePassedToGateway()).toEqual({
       handle: 'staged-handle',
       filename: 'movies.xlsx',
     });
 
-    await POST(copilotPost('generateCopilotResponse'));
+    await POST(copilotPost('agent/run'));
     expect(importFilePassedToGateway()).toBeUndefined();
     expect(mockClearAgentImportFile).toHaveBeenCalledTimes(1);
   });
@@ -207,13 +212,13 @@ describe('agent /run — the UI snapshot resolves on the same condition as the i
   });
 
   it('a handshake POST does not resolve the snapshot', async () => {
-    await POST(copilotPost('availableAgents'));
+    await POST(copilotPost('agent/connect'));
 
     expect(lastGatewayOptions()?.uiSnapshot).toBeUndefined();
   });
 
   it('a billable turn resolves the snapshot', async () => {
-    await POST(copilotPost('generateCopilotResponse'));
+    await POST(copilotPost('agent/run'));
 
     expect(lastGatewayOptions()?.uiSnapshot).toEqual({ screen: 'collections' });
   });

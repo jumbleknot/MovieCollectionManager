@@ -147,9 +147,9 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
       } catch {
         /* unreadable body → treated as a billable run (default-deny); undefined threadId */
       }
-      // Only the LLM run (generateCopilotResponse) is billable. The CopilotKit handshake reads
-      // (availableAgents = the runtime-info fetch the dock issues on OPEN, loadAgentState, hello)
-      // run no model and cost nothing — cost-gating them would lock a user who is over the ceiling
+      // Only a model run (`agent/run`, `agent/suggest`) is billable. The CopilotKit handshakes
+      // (`info` = the runtime-info fetch the dock issues on OPEN, `agent/connect`, `agent/stop`, …;
+      // item #806) run no model and cost nothing — cost-gating them would lock a user who is over the ceiling
       // out of even opening the dock (a cryptic runtime_info_fetch_failed) and burn budget on every
       // dock mount. The rate limit and the cross-user thread guard still apply to EVERY POST.
       billable = isBillableAgentRun(bodyText);
@@ -211,8 +211,9 @@ async function gated(req: Request, enforceLimits: boolean): Promise<Response> {
     // reaches the gateway with its file handle. Single-use — consumed here.
     //
     // Item #284: gated on `billable`, NOT on `enforceLimits`. Every POST sets `enforceLimits`,
-    // including the CopilotKit handshake reads (`availableAgents` — issued on dock OPEN —
-    // `loadAgentState`, `hello`). Under the old condition any handshake landing between the upload
+    // including the CopilotKit handshakes (`info` — issued on dock OPEN — `agent/connect`, …).
+    // Item #806: those were GraphQL op names once; the single-endpoint client sends `{ method }`
+    // envelopes, and a classifier still keyed on the op name made every handshake billable again. Under the old condition any handshake landing between the upload
     // and the import turn silently ATE the single-use handle, and the import turn then reached the
     // gateway with nothing: the assistant answered as though no spreadsheet had been uploaded, with
     // no error anywhere. Both bridges share the one condition so they cannot drift apart again.

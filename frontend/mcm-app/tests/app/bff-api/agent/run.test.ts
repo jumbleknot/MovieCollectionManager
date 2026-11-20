@@ -76,7 +76,9 @@ function makePost(): Parameters<typeof POST>[0] {
   return {
     url: 'http://localhost/bff-api/agent/run',
     headers: new Headers({ cookie: 'mcm_session_id=sid' }),
-    clone: () => ({ text: () => Promise.resolve('{"operationName":"generateCopilotResponse"}') }),
+    clone: () => ({
+      text: () => Promise.resolve('{"method":"agent/run","params":{"agentId":"movie_assistant"}}'),
+    }),
   } as unknown as Parameters<typeof POST>[0];
 }
 

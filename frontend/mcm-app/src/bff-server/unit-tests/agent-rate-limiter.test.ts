@@ -81,41 +81,65 @@ describe('recordAgentCost (accrues per-turn cost against the session budget)', (
   });
 });
 
-describe('isBillableAgentRun (cost-gates the LLM run, not the CopilotKit handshake reads)', () => {
-  // Only the LLM run (generateCopilotResponse) is billable; the CopilotKit handshake reads
-  // (availableAgents = runtime info / dock-open, loadAgentState, hello) run no model. Gating those
-  // by cost would lock a user who is over the ceiling out of even OPENING the dock.
-  const body = (operationName: unknown): string =>
-    JSON.stringify({ operationName, query: 'q', variables: {} });
+describe('isBillableAgentRun (cost-gates the model run, not the CopilotKit handshake)', () => {
+  // Item #806. The client runs CopilotKit in single-endpoint mode (`useSingleEndpoint`), so every
+  // POST is a `{ method, params?, body? }` envelope — the shapes below are the ones
+  // @copilotkit/core 1.87.1 builds (`createSingleRouteRequestInit`, `fetchRuntimeInfo`, the stop and
+  // resource helpers). Only `agent/run` and `agent/suggest` reach a model.
+  const envelope = (method: unknown, extra: Record<string, unknown> = {}): string =>
+    JSON.stringify({ method, ...extra });
 
-  it('classifies the LLM run as billable', () => {
-    expect(isBillableAgentRun(body('generateCopilotResponse'))).toBe(true);
+  it.each([
+    [
+      'agent/run',
+      { params: { agentId: 'movie_assistant' }, body: { threadId: 't', messages: [] } },
+    ],
+    ['agent/suggest', { params: { agentId: 'movie_assistant' }, body: { threadId: 't' } }],
+  ])('classifies %s (runs the model) as billable', (method, extra) => {
+    expect(isBillableAgentRun(envelope(method, extra))).toBe(true);
   });
 
-  it.each(['availableAgents', 'loadAgentState', 'hello'])(
-    'classifies the non-LLM handshake read %s as NOT billable',
-    (op) => {
-      expect(isBillableAgentRun(body(op))).toBe(false);
-    },
-  );
-
-  // DEFAULT-DENY: anything not positively a known non-LLM read is treated as billable so the cost
-  // ceiling can never be dodged by omitting, spoofing, or malforming the operation.
-  it('treats a missing operationName as billable (default-deny)', () => {
-    expect(isBillableAgentRun(JSON.stringify({ query: 'q' }))).toBe(true);
+  it.each([
+    ['info', {}],
+    ['agent/connect', { params: { agentId: 'movie_assistant' }, body: { threadId: 't' } }],
+    ['agent/stop', { params: { agentId: 'movie_assistant', threadId: 't' }, body: { runId: 'r' } }],
+    ['trajectory/connect', { params: { trajectoryId: 'tr' }, body: {} }],
+    ['resource/request', { params: { path: '/threads', httpMethod: 'GET' } }],
+    ['inspector/metadata', {}],
+  ])('classifies the handshake %s (no model) as NOT billable', (method, extra) => {
+    expect(isBillableAgentRun(envelope(method, extra))).toBe(false);
   });
 
-  it('treats an unknown operationName as billable (default-deny)', () => {
-    expect(isBillableAgentRun(body('somethingElse'))).toBe(true);
+  // DEFAULT-DENY: anything not positively a known no-model method is billable, so the cost ceiling
+  // can never be dodged by omitting, spoofing, or malforming the method.
+  it('treats a missing method as billable', () => {
+    expect(isBillableAgentRun(JSON.stringify({ params: {} }))).toBe(true);
   });
 
-  it('treats a non-string operationName as billable (default-deny)', () => {
-    expect(isBillableAgentRun(body({ a: 1 }))).toBe(true);
+  it('treats an unknown method as billable', () => {
+    expect(isBillableAgentRun(envelope('memories/recall'))).toBe(true);
+    expect(isBillableAgentRun(envelope('AGENT/CONNECT'))).toBe(true);
   });
 
-  it('treats malformed/empty JSON as billable (default-deny)', () => {
+  it('treats a non-string method as billable', () => {
+    expect(isBillableAgentRun(envelope({ a: 1 }))).toBe(true);
+    expect(isBillableAgentRun(envelope(['info']))).toBe(true);
+  });
+
+  it('treats malformed, empty, or non-object JSON as billable', () => {
     expect(isBillableAgentRun('not json')).toBe(true);
     expect(isBillableAgentRun('')).toBe(true);
+    expect(isBillableAgentRun('null')).toBe(true);
+    expect(isBillableAgentRun('"info"')).toBe(true);
+  });
+
+  it('no longer honours the retired GraphQL operationName (the runtime serves no GraphQL)', () => {
+    // copilotRuntimeNextJSAppRouterEndpoint mounts the single-route handler only, so a GraphQL
+    // `availableAgents` body is not a handshake any more — it is an unknown request: billable.
+    expect(isBillableAgentRun(JSON.stringify({ operationName: 'availableAgents' }))).toBe(true);
+    expect(
+      isBillableAgentRun(JSON.stringify({ operationName: 'hello', method: 'agent/run' })),
+    ).toBe(true);
   });
 });
 

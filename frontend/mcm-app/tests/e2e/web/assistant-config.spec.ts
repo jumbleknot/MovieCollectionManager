@@ -26,6 +26,10 @@ import { test, expect } from './fixtures/worker-session';
 import { type Page } from '@playwright/test';
 
 import { E2E_BASE_URL as BASE } from './setup/target';
+
+// A model run, in the single-endpoint envelope the CopilotKit client posts (`useSingleEndpoint`).
+// Billable (item #806); with no `body` the runtime rejects it before any gateway call.
+const BILLABLE_RUN = { method: 'agent/run', params: { agentId: 'movie_assistant' } };
 import {
   seedAgentConfig,
   clearAgentConfig,
@@ -158,10 +162,18 @@ test.describe('Assistant per-user config (feature 018)', () => {
 
       // A forced billable run short-circuits BEFORE any gateway/model call or cost accrual.
       const res = await page.request.post('/bff-api/agent/run', {
-        data: { operationName: 'generateCopilotResponse' },
+        data: BILLABLE_RUN,
       });
       expect(res.status()).toBe(200);
       expect(await res.json()).toMatchObject({ type: 'assistant_not_configured' });
+
+      // Item #806: the dock-open handshake (`info`) runs no model, so it is NOT billable and is not
+      // short-circuited for want of a config — it reaches the runtime, which answers with its info.
+      // When the classifier keyed on a GraphQL operationName the client never sends, every
+      // handshake was billable and got `assistant_not_configured` here.
+      const info = await page.request.post('/bff-api/agent/run', { data: { method: 'info' } });
+      expect(info.status()).toBe(200);
+      expect(await info.json()).not.toMatchObject({ type: 'assistant_not_configured' });
     },
   );
 
@@ -256,7 +268,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
       await gotoHome(page);
       await expect(page.locator('[data-testid="assistant-dock-toggle"]')).toHaveCount(0);
       const res = await page.request.post('/bff-api/agent/run', {
-        data: { operationName: 'generateCopilotResponse' },
+        data: BILLABLE_RUN,
       });
       expect(res.status()).toBe(200);
       expect(await res.json()).toMatchObject({ type: 'assistant_not_configured' });
@@ -302,7 +314,7 @@ test.describe('Assistant per-user config (feature 018)', () => {
       let status = 0;
       for (let i = 0; i < 5 && status !== 429; i++) {
         const res = await page.request.post('/bff-api/agent/run', {
-          data: { operationName: 'generateCopilotResponse' },
+          data: BILLABLE_RUN,
         });
         status = res.status();
       }

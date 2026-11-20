@@ -30,35 +30,52 @@ const REQUEST_ENDPOINT = 'agent-run';
 const USD_TO_MICROS = 1_000_000;
 
 /**
- * CopilotKit GraphQL handshake READS that run no model and therefore cost nothing: `availableAgents`
- * (the runtime-info fetch the dock issues on open), `loadAgentState`, and `hello` (health). The only
- * billable operation is the LLM run `generateCopilotResponse`.
+ * CopilotKit single-endpoint methods that run NO model and therefore cost nothing (item #806).
+ *
+ * The client runs CopilotKit with `useSingleEndpoint`, so every POST is a `{ method, params?, body? }`
+ * envelope, and the BFF mounts the runtime's single-route handler, which dispatches on that same
+ * `method` (`@copilotkit/runtime` `dispatchRoute`). Shapes as @copilotkit/core 1.87.1 builds them:
+ *
+ *   info                — runtime info, fetched when the dock opens
+ *   agent/connect       — reconnect to a thread; the runtime replays stored events (`runner.connect`)
+ *   agent/stop          — stop a run
+ *   trajectory/connect, resource/request, inspector/metadata — session, thread-resource and
+ *                         inspector reads
+ *
+ * `agent/run` and `agent/suggest` run the model and are billable, as is anything not listed here.
+ * The GraphQL `operationName` this used to key on (`availableAgents`, `loadAgentState`, `hello`) is
+ * never sent any more and the runtime serves no GraphQL, so that branch is gone.
  */
-const NON_BILLABLE_AGENT_OPS: ReadonlySet<string> = new Set([
-  'availableAgents',
-  'loadAgentState',
-  'hello',
+const NON_BILLABLE_AGENT_METHODS: ReadonlySet<string> = new Set([
+  'info',
+  'agent/connect',
+  'agent/stop',
+  'trajectory/connect',
+  'resource/request',
+  'inspector/metadata',
 ]);
 
 /**
- * Classify a CopilotKit runtime POST body as a billable LLM run (true) or a non-billable handshake
- * read (false) by its GraphQL `operationName` — the SAME signal the runtime dispatches on, so the
+ * Classify a CopilotKit runtime POST body as a billable model run (true) or a non-billable
+ * handshake (false) by its envelope `method` — the SAME signal the runtime dispatches on, so the
  * classification matches what actually executes.
  *
- * Security: DEFAULT-DENY. Only a body that POSITIVELY names a known non-LLM read is non-billable;
- * a missing, spoofed, non-string, or unparseable `operationName` is treated as billable so the cost
- * ceiling can never be dodged. (Labelling a run "availableAgents" cannot smuggle a turn — the
- * runtime would then execute the metadata resolver, not the model.) The cross-user thread-ownership
- * guard and rate limit are applied independently to EVERY POST and are not affected by this.
+ * Security: DEFAULT-DENY. Only a body that POSITIVELY names a known no-model method (exact match) is
+ * non-billable; a missing, unknown, differently cased or non-string `method`, a non-object body, or
+ * unparseable JSON is billable, so the cost ceiling can never be dodged. Labelling a run `info`
+ * cannot smuggle a turn — the runtime would then execute `info`, not the model. The cross-user
+ * thread-ownership guard and rate limit are applied independently to EVERY POST.
  */
 export function isBillableAgentRun(body: string): boolean {
-  let op: unknown;
+  let parsed: unknown;
   try {
-    op = (JSON.parse(body) as { operationName?: unknown } | null)?.operationName;
+    parsed = JSON.parse(body);
   } catch {
-    return true; // unparseable → treat as billable
+    return true; // unparseable → billable
   }
-  return !(typeof op === 'string' && NON_BILLABLE_AGENT_OPS.has(op));
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return true;
+  const method = (parsed as { method?: unknown }).method;
+  return !(typeof method === 'string' && NON_BILLABLE_AGENT_METHODS.has(method));
 }
 
 /** Window over which the per-user/session cost budget accrues, in seconds. */
