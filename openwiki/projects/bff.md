@@ -893,7 +893,9 @@ per request.
   unchanged — `'unsafe-eval'` and `'unsafe-inline'` stay deliberately absent, since permitting real
   eval app-wide would defeat the hardening. The arrangement is pinned by
   [`scripts/__tests__/single-zod-engine.guard.test.mjs`](../../scripts/__tests__/single-zod-engine.guard.test.mjs),
-  which asserts both that `@ag-ui/client`'s `@ag-ui/core` snapshot carries no zod 3 peer and that the
+  which asserts both that the browser's `@ag-ui/client` (the copy reachable from
+  `@copilotkit/react-native`; the BFF's `@copilotkit/runtime` keeps a zod 3 copy on purpose) has a
+  `@ag-ui/core` snapshot with no zod 3 peer, and that the
   panel's first import is the jitless module, and the web/native halves by
   [`src/utils/unit-tests/zod-jitless.test.ts`](../../frontend/mcm-app/src/utils/unit-tests/zod-jitless.test.ts),
   which counts real `Function` constructions with a control proving the counter can see a probe. The

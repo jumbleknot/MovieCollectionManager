@@ -16,9 +16,10 @@
 //   node scripts/sast-scan.mjs [--scope full|changed] [--base <ref>] [--only <scanner,...>] [--out <dir>]
 
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync, existsSync, readdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 // ONE retry mechanism for every network-dependent scanner (items #449, #495) — see below, and the
 // shared module's header for why it is shared rather than copied.
@@ -676,7 +677,7 @@ export function normalizePipAudit(native, agentSet, runtimeSet, map, project) {
   return out;
 }
 
-function auditOnePythonSurface({ project, dir }, map) {
+function auditOnePythonSurface({ project, dir }, map, cacheDir) {
   const surfaceDir = resolve(REPO_ROOT, dir);
   const agentSet = parseReqNames(uvExport(surfaceDir, []));             // this surface's full graph
   const runtimeSet = parseReqNames(uvExport(surfaceDir, ['--no-dev'])); // its OWN runtime subset (FR-002)
@@ -692,7 +693,7 @@ function auditOnePythonSurface({ project, dir }, map) {
   // the message below is NOT retried — transientOr classifies it as a real fault, so it still fails
   // on the first attempt rather than after the whole backoff budget.
   const native = retryTransient('pip-audit', () => {
-    const r = run('uv', ['run', '--no-sync', '--with', 'pip-audit', 'pip-audit', '--format', 'json', '-s', 'osv', '--progress-spinner', 'off'], { cwd: surfaceDir });
+    const r = run('uv', ['run', '--no-sync', '--with', 'pip-audit', 'pip-audit', '--format', 'json', '-s', 'osv', '--progress-spinner', 'off', ...pipAuditCacheArgs(cacheDir)], { cwd: surfaceDir });
     const out = `${r.stderr || ''}\n${r.stdout || ''}`;
     if (r.status !== 0 && r.status !== 1) {
       throw transientOr(`[pip-audit] ${project} failed (exit ${r.status}) — OSV unreachable, or the venv is not synced (run \`uv sync\` in ${dir}): ${(r.stderr || '').slice(-500)}`, out);
@@ -704,6 +705,17 @@ function auditOnePythonSurface({ project, dir }, map) {
     }
   });
   return { native, findings: normalizePipAudit(native, agentSet, runtimeSet, map, project) };
+}
+
+/**
+ * pip-audit's cache directory, passed explicitly. Without it pip-audit asks platformdirs for the user
+ * cache dir, and platformdirs >= 4.14.8 (2026-11-20) refuses one whose nearest existing ancestor is
+ * writable by another user. In the CI container that is `/root/.cache`, so every scan failed with
+ * `PermissionError: /root/.cache, writable by another user`. The flag skips platformdirs entirely, and
+ * mkdtemp creates the directory 0700, so the cache is private as platformdirs intends.
+ */
+export function pipAuditCacheArgs(cacheDir) {
+  return cacheDir ? ['--cache-dir', join(cacheDir, 'pip-audit')] : [];
 }
 
 function runPipAudit({ map }) {
@@ -718,11 +730,16 @@ function runPipAudit({ map }) {
 
   const natives = {};
   const findings = [];
-  for (const surface of PYTHON_SURFACES) {
-    // Any surface failing fails the WHOLE scan (FR-008). Three-of-four is never reported as success.
-    const out = auditOnePythonSurface(surface, map);
-    natives[surface.project] = out.native;
-    findings.push(...out.findings);
+  const cacheDir = mkdtempSync(join(tmpdir(), 'mcm-pip-audit-'));
+  try {
+    for (const surface of PYTHON_SURFACES) {
+      // Any surface failing fails the WHOLE scan (FR-008). Three-of-four is never reported as success.
+      const out = auditOnePythonSurface(surface, map, cacheDir);
+      natives[surface.project] = out.native;
+      findings.push(...out.findings);
+    }
+  } finally {
+    rmSync(cacheDir, { recursive: true, force: true });
   }
   return { native: natives, findings };
 }
