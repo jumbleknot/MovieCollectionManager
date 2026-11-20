@@ -28,6 +28,7 @@ import {
   buildFindingsReport,
   summarizeBlindedRules,
   isScanTarget,
+  pipAuditCacheArgs,
   ruleFixturePairs,
 } from '../sast-scan.mjs';
 
@@ -480,4 +481,15 @@ test('item #721: a ROOT pnpm override never yields lockfile advice for a nested 
   const f = (location) => ({ kind: 'sca', location, fixAvailable: '>=3.0.4' });
   assert.ok(adviseLever(f('braces@3.0.3'), overrides), 'control: the root finding DOES get advice');
   assert.equal(adviseLever(f('tools/openwiki-generator:braces@3.0.3'), overrides), null);
+});
+
+// platformdirs >= 4.14.8 refuses a user cache dir under a world-writable ancestor, which is what
+// `/root/.cache` is in the CI container: every pip-audit run died with a PermissionError (2026-11-20).
+test('pip-audit is given its own --cache-dir, so it never asks platformdirs for one', () => {
+  assert.deepEqual(pipAuditCacheArgs('/tmp/mcm-pip-audit-x'), ['--cache-dir', '/tmp/mcm-pip-audit-x/pip-audit']);
+  const src = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '..', 'sast-scan.mjs'), 'utf8');
+  const call = src.split('\n').find((line) => line.includes("'--with', 'pip-audit', 'pip-audit'"));
+  assert.ok(call, 'the pip-audit invocation was not found: this guard is reading the wrong thing');
+  assert.match(call, /\.\.\.pipAuditCacheArgs\(cacheDir\)/);
+  assert.match(src, /mkdtempSync\(join\(tmpdir\(\), 'mcm-pip-audit-'\)\)/);
 });

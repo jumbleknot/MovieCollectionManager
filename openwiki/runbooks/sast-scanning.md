@@ -3,10 +3,10 @@ type: Runbook
 title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: ab4a45f7ae49ffa237104c56568e56d156e1962adc2c21c9188009d55be7e8bb
+resource-sha256: 45ef1c5e840499a415e09277250c8119512ea5e3ba1a7bad12d30140f88e79ae
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-15T01:36:03.095Z
+timestamp: 2026-11-20T12:02:01.189Z
 ---
 
 # SAST & SCA static scanning
@@ -188,6 +188,10 @@ that job), not by flipping the whole tier.
   runtime classification. `uv sync` all four before a local run; an unsynced surface **fails** the
   scan, it is never silently skipped. CI provisions all four venvs. `pip-audit -r <requirements>` resolves
   an ephemeral venv (hangs >11 min, chokes on yanked versions) — do not use that form.
+- **pip-audit gets its own `--cache-dir`, a 0700 `mkdtemp` directory per scan.** `--with pip-audit`
+  is unpinned, and `platformdirs` 4.14.8 (2026-11-20) refuses a user cache dir under a world-writable
+  ancestor, which `/root/.cache` is in CI. Every scan failed with `PermissionError: /root/.cache, writable
+  by another user`, reported as `produced non-JSON output`. Do not pin `platformdirs` back instead.
 - **pip-audit findings are project-qualified; allowlist `locationPattern`s should be surface-anchored.**
   Since feature 068 each finding's location names its surface: `mcp-servers/web-api-mcp:click@8.5.0`,
   not `click@8.5.0`. An allowlist entry should normally be anchored:

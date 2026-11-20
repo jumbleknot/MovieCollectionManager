@@ -319,6 +319,12 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
   against the synced venv (~50 s) and intersects findings with the `uv export` dep-set to drop
   pip-audit's own injected deps. **CI must `uv sync` the agent layer first**, and a developer's venv must
   be synced for a local run.
+- **pip-audit gets its own `--cache-dir`, a `mkdtemp` (0700) directory per scan.** `--with pip-audit` is
+  unpinned, so its transitives move under us: `platformdirs` 4.14.8 (2026-11-20) refuses a user cache
+  dir whose nearest existing ancestor is writable by another user, and in the CI container that is
+  `/root/.cache`. Every scan failed with `PermissionError: /root/.cache, writable by another user`,
+  reported as `produced non-JSON output`. The flag keeps pip-audit away from platformdirs altogether.
+  Do not pin `platformdirs` back instead; that would undo a hardening fix to keep a shared cache.
 - **Keyless & fail-CLOSED (R7).** All rule/advisory data is fetched anonymously at scan time (Semgrep
   registry, RustSec DB, npm advisories, OSV/PyPI). If any fetch fails, that scanner **fails fast**
   (exit 1, `scanners[].error` recorded) rather than reporting a false clean. Residual: an upstream

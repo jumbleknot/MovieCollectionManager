@@ -4,9 +4,9 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
 tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: ab4a45f7ae49ffa237104c56568e56d156e1962adc2c21c9188009d55be7e8bb
+resource-sha256: 45ef1c5e840499a415e09277250c8119512ea5e3ba1a7bad12d30140f88e79ae
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
-timestamp: 2026-11-15T01:36:03.000Z
+timestamp: 2026-11-20T12:02:01.094Z
 ---
 
 # SAST & SCA static security scanning
@@ -438,6 +438,10 @@ a scan that happened to pass.
   -s osv`, and its findings are then intersected with the `uv export` dep-set so pip-audit's own
   ephemerally-injected dependencies never surface as findings. `--no-sync` is what makes "the venv is
   not synced" a real failure rather than a silent re-resolution.
+- **pip-audit gets its own `--cache-dir`, a 0700 `mkdtemp` directory per scan.** `--with pip-audit`
+  is unpinned, and `platformdirs` 4.14.8 (2026-11-20) refuses a user cache dir under a world-writable
+  ancestor, which `/root/.cache` is in CI. Every scan failed with `PermissionError: /root/.cache, writable
+  by another user`, reported as `produced non-JSON output`. Do not pin `platformdirs` back instead.
 
 - **pip-audit findings are project-qualified; allowlist `locationPattern`s should be surface-anchored.**
   Since feature 068 each finding's location names its surface: `mcp-servers/web-api-mcp:click@8.5.0`,
