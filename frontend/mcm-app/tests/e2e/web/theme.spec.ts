@@ -95,3 +95,55 @@ test.describe('Theme toggle + persistence', () => {
     await expect(page.getByTestId('theme-toggle')).toHaveAttribute('aria-label', DARK_LABEL);
   });
 });
+
+// Item #243: React Navigation paints each navigator's screen container with its own theme. With none
+// supplied that is its LIGHT default, rgb(242, 242, 242), whatever the app theme — a bright band in
+// dark mode wherever a layout does not paint over it. Walks every painted ancestor of a routed screen.
+const RN_LIGHT_DEFAULT = 'rgb(242, 242, 242)';
+const DS_LIGHT_BACKGROUND = 'rgb(253, 251, 255)'; // lightColors.background, #FDFBFF
+
+async function ancestorBackgrounds(page: Page, testId: string): Promise<string[]> {
+  return page.getByTestId(testId).evaluate((el) => {
+    const out: string[] = [];
+    for (let n: Element | null = el; n; n = n.parentElement) {
+      const bg = getComputedStyle(n).backgroundColor;
+      if (bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') out.push(bg);
+    }
+    return out;
+  });
+}
+
+test.describe('Navigator container follows the app theme (item #243)', () => {
+  test.afterEach(async ({ page }) => {
+    await page.evaluate(() => window.localStorage.removeItem('mcm.theme')).catch(() => {});
+  });
+
+  test('no ancestor of a routed screen keeps React Navigation’s light default, in either theme', async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/(app)/settings`);
+    const screen = page.getByTestId('settings-profile-screen');
+    await expect(screen).toBeVisible({ timeout: 30000 });
+    const toggle = page.getByTestId('theme-toggle');
+    await expect(toggle).toHaveAttribute('aria-label', DARK_LABEL);
+
+    // Dark (the default).
+    const dark = await ancestorBackgrounds(page, 'settings-profile-screen');
+    expect(dark.length, 'dark: at least one painted ancestor').toBeGreaterThan(0);
+    expect(dark, 'dark: a navigator container is painted with the light default').not.toContain(
+      RN_LIGHT_DEFAULT,
+    );
+
+    // Light, switched at runtime — no reload — so the container must repaint with the theme.
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-label', LIGHT_LABEL);
+    await expect
+      .poll(() => ancestorBackgrounds(page, 'settings-profile-screen'), {
+        message: 'light: the navigator container repaints with the design-system light surface',
+      })
+      .toContain(DS_LIGHT_BACKGROUND);
+    expect(await ancestorBackgrounds(page, 'settings-profile-screen')).not.toContain(
+      RN_LIGHT_DEFAULT,
+    );
+  });
+});

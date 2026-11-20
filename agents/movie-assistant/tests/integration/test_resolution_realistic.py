@@ -274,20 +274,30 @@ async def test_avatar_resolve_option_prefers_full_title_over_bare_prefix() -> No
         f"Options: {titles_lower}"
     )
 
-    # Also verify a year-bearing pick resolves correctly (year takes priority over title). This
-    # needs the year to name one option, and live TMDB decides that: it listed three 2022 "Avatar"
-    # films on 2026-11-06. A shared year is item #941's question, so it is not asserted either way
-    # here. test_resolve_option_bare_title_with_unique_year_picks_that_year always covers this path.
+    # Year-bearing picks, asserted whichever way live TMDB falls (it listed three 2022 "Avatar"
+    # films on 2026-11-06). The full title plus its year always names the film. A bare
+    # "Avatar (<year>)" names it only when no other option shares that year; when several do, the
+    # reply does not say which, so resolve_option must re-ask (None), never guess (item #941).
     way_of_water_year = way_of_water.get("year")
-    same_year = [o for o in options if str(o.get("year")) == str(way_of_water_year)]
-    if way_of_water_year and len(same_year) == 1:
-        year_chosen = resolve_option(f"Avatar ({way_of_water_year})", options)
-        assert year_chosen is not None, (
-            f"Year-bearing pick 'Avatar ({way_of_water_year})' returned None"
+    if way_of_water_year:
+        full_pick = f"{way_of_water.get('title')} ({way_of_water_year})"
+        full_chosen = resolve_option(full_pick, options)
+        assert full_chosen is not None and full_chosen.get("title") == way_of_water.get("title"), (
+            f"Full-title year pick {full_pick!r} resolved to {full_chosen!r}"
         )
-        assert (
-            str(year_chosen.get("title", "")).lower() == str(way_of_water.get("title", "")).lower()
-        ), f"Year-bearing pick resolved to wrong film: {year_chosen.get('title')!r}"
+
+        same_year = [o for o in options if str(o.get("year")) == str(way_of_water_year)]
+        year_chosen = resolve_option(f"Avatar ({way_of_water_year})", options)
+        if len(same_year) == 1:
+            assert year_chosen is not None and (
+                str(year_chosen.get("title", "")).lower()
+                == str(way_of_water.get("title", "")).lower()
+            ), f"Year-bearing pick resolved to wrong film: {year_chosen!r}"
+        else:
+            assert year_chosen is None, (
+                f"'Avatar ({way_of_water_year})' is shared by {len(same_year)} options but "
+                f"resolved to {year_chosen.get('title')!r} instead of re-asking (item #941)"
+            )
 
 
 # ── Test B — _match_movie against REAL seeded data ───────────────────────────

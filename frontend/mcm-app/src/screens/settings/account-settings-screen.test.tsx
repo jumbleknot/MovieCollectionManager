@@ -145,4 +145,54 @@ describe('AccountSettingsScreen', () => {
     await waitFor(() => expect(screen.getByTestId('account-delete-error')).toBeTruthy());
     expect(mockReplace).not.toHaveBeenCalled();
   });
+
+  // Item #955: the route's deliberate 409 says what to do; "Please try again" never works there.
+  function axiosLikeError(status: number, data: unknown): Error {
+    return Object.assign(new Error(`Request failed with status code ${status}`), {
+      isAxiosError: true,
+      response: { status, data },
+    });
+  }
+
+  async function confirmDeletion(): Promise<void> {
+    await render(<AccountSettingsScreen />);
+    await fireEvent.press(screen.getByTestId('account-delete-button'));
+    await fireEvent.press(screen.getByTestId('account-delete-confirm'));
+    await waitFor(() => expect(screen.getByTestId('account-delete-error')).toBeTruthy());
+  }
+
+  it('explains the only-administrator refusal (409) instead of asking the user to retry', async () => {
+    mockStart.mockRejectedValue(
+      axiosLikeError(409, {
+        type: 'about:blank',
+        title: 'You are the only administrator',
+        status: 409,
+        detail: 'Give another account the administrator role before deleting this one.',
+      }),
+    );
+
+    await confirmDeletion();
+
+    expect(screen.getByText(/only administrator/i)).toBeTruthy();
+    expect(screen.getByText(/another account the administrator role/i)).toBeTruthy();
+    expect(screen.getByText(/has not been deleted/i)).toBeTruthy();
+    expect(screen.queryByText(/please try again/i)).toBeNull();
+  });
+
+  it('keeps every other failure generic and reveals none of its detail', async () => {
+    mockStart.mockRejectedValue(
+      axiosLikeError(503, {
+        type: 'about:blank',
+        title: 'Could not start account deletion',
+        status: 503,
+        detail: 'keycloak-service:8080 refused the connection',
+      }),
+    );
+
+    await confirmDeletion();
+
+    expect(screen.getByText(/could not start the deletion/i)).toBeTruthy();
+    expect(screen.queryByText(/keycloak-service/i)).toBeNull();
+    expect(screen.queryByText(/only administrator/i)).toBeNull();
+  });
 });
