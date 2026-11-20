@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM rust:alpine3.21@sha256:9e38a08af73070394175ad53ac210f01f40a7a61575c67481cb4b1360e33df4b AS build
+FROM rust:alpine3.21@sha256:9ebb58cb22e0b1d959d5cb58de06e8e45b67760c80eaccaf8b7bbc4dfc6c1be9 AS build
 
 # Install build dependencies (perl + make needed to compile vendored OpenSSL from source)
 RUN apk add --no-cache musl-dev perl make

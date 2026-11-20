@@ -765,7 +765,7 @@ jobs:
       # can carry an older global pnpm, and nested workspaces run on the installed one.
       - name: Verify pnpm matches packageManager
         run: bash scripts/ci-log-step.sh app-e2e-check-pnpm-version node scripts/check-pnpm-version.mjs
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6
         with: { distribution: temurin, java-version: '17' }
       # `packages:` is pinned EXPLICITLY, and the value is load-bearing. The action's own default WAS
       # `tools platform-tools` (v3's action.yml), and `tools` — the LEGACY SDK Tools
