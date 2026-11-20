@@ -364,7 +364,8 @@ that job), not by flipping the whole tier.
   Hermes' evaluation behaviour was never measured — while `web-security-headers.js` keeps
   `'unsafe-eval'` out of `script-src` and records that a new `eval` violation on this path is a
   **finding, not a known line**. `scripts/__tests__/single-zod-engine.guard.test.mjs` pins both halves
-  (that every `@ag-ui/client` lockfile snapshot resolves a `(zod@4…)` copy of `@ag-ui/core`, and that
+  (that every `@ag-ui/client` lockfile snapshot reachable from `@copilotkit/react-native` resolves a
+  `(zod@4…)` copy of `@ag-ui/core`, and that
   the panel's first import line is `import '@/utils/zod-jitless';`), because the app works either way
   and only the browser logs the extra violation; `src/utils/unit-tests/zod-jitless.test.ts` counts real
   `Function` constructions with a control run proving the counter can see a probe, so a zero from the
