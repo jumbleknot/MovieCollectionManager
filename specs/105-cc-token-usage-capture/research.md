@@ -248,7 +248,7 @@ configured **by hand**: a realm file applies only at realm creation
   waits on Keycloak when a valid token is cached. A failed fetch is treated like an unreachable store
   (spool + back-off). The token and secret never reach a log, argv or stdout.
 - **Verifying**: PostgREST does not fetch keys from a URL, so a run-once container
-  `dev-usage-jwks-fetch` (upstream curl image, pinned) fetches
+  `dev-usage-jwks-init` (upstream curl image, pinned) fetches
   `http://keycloak-service:8080/realms/grumpyrobot/protocol/openid-connect/certs` over
   `backend-network` (Docker DNS — never `localhost`, `openwiki/gotchas/docker-internal-dns.md`) into a
   shared volume before PostgREST starts; PostgREST reads it with `PGRST_JWT_SECRET=@/jwks/jwks.json`,
@@ -272,11 +272,20 @@ checks signature, `aud` and `exp`.
 
 **Decision**: every file in `infrastructure-as-code/docker/dev-usage/schema/` is **idempotent**
 (`CREATE … IF NOT EXISTS`, `CREATE OR REPLACE VIEW`, `ALTER … ADD COLUMN IF NOT EXISTS`, role grants
-re-runnable). A run-once container `dev-usage-schema-apply` (the same pinned Postgres image, `psql`)
+re-runnable). A run-once container `dev-usage-schema-init` (the same pinned Postgres image, `psql`)
 applies every file in name order on **every** deploy, after Postgres is healthy and before PostgREST
 starts; PostgREST is then told to reload its schema cache. `docker-entrypoint-initdb.d` is not used,
 because it runs only on an empty volume. The integration target uses the same container, so the test
 exercises the deploy path, and a test applies the schema twice and asserts nothing changes.
+
+**Implementation note (T028/T030, 2026-11-21)**: the two run-once services are named
+`dev-usage-schema-init` and `dev-usage-jwks-init` (planned as `…-schema-apply` / `…-jwks-fetch`), because
+the prod restart-policy gate (`scripts/check-prod-restart-policy.mjs`) exempts a one-shot service from
+`restart: always` only by an `-init`/`-seed` name. The JWKS fetch uses `wget` from the same pinned
+Postgres image rather than a separate curl image (one fewer pin). PostgREST needs `PGRST_SERVER_HOST=0.0.0.0`
+for its `--ready` health check, and its role claim is the v16 JSONPath `$.role`. The local stack runs its
+own Keycloak (same image, `ci-realm.json`) as compose project `dev-usage-it` instead of the auth stack,
+whose fixed external volume and container names would collide on a shared Docker daemon.
 
 ## R20. Running the store tests in CI (`/speckit-analyze` G1)
 

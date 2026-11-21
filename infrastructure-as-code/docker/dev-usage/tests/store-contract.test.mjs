@@ -71,7 +71,7 @@ const snapshotCatalog = () => [
 
 it('the schema applied a second time changes nothing', async () => {
   const before = snapshotCatalog();
-  docker(['run', '--rm', '--no-deps', 'dev-usage-schema-apply']);
+  docker(['run', '--rm', '--no-deps', 'dev-usage-schema-init']);
   assert.equal(snapshotCatalog(), before);
 });
 

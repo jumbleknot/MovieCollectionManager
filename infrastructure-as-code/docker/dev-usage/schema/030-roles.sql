@@ -1,5 +1,5 @@
 -- Feature 105 roles (FR-014; research R10, R18). Idempotent: roles are created only when absent and
--- their passwords re-set on every apply, from psql variables the schema-apply service passes:
+-- their passwords re-set on every apply, from psql variables the dev-usage-schema-init service passes:
 --   -v authenticator_password=… -v reader_password=…
 --
 --   authenticator  PostgREST's login; NOINHERIT, can only SET ROLE to usage_writer.

@@ -201,3 +201,23 @@ run_directory = "infrastructure-as-code/docker/vault"
 file_paths = ["compose.prod.yaml"]
 env_file_path = ".env.prod"                      # no secret — a dormant Vault has no root token in env
 
+
+[[stack]]
+name = "prod-dev-usage"                          # feature 105 — Claude Code token usage store (Postgres + PostgREST :19040)
+deploy = true
+after = ["prod-auth"]                             # dev-usage-jwks-init fetches the realm's signing keys from keycloak-service
+[stack.config]
+server = "Local"
+linked_repo = "mcm-repo"
+branch = "main"
+run_directory = "infrastructure-as-code/docker/dev-usage"
+file_paths = ["compose.prod.yaml"]
+env_file_path = ".env.prod"                      # Komodo writes the three Postgres passwords below here
+environment = """
+DEV_USAGE_PG_PASSWORD=[[DEV_USAGE_PG_PASSWORD]]
+DEV_USAGE_AUTHENTICATOR_PASSWORD=[[DEV_USAGE_AUTHENTICATOR_PASSWORD]]
+DEV_USAGE_READER_PASSWORD=[[DEV_USAGE_READER_PASSWORD]]
+"""
+# ↑ All three Variables are NEW (docs/runbooks/dev-usage.md): the superuser, PostgREST's `authenticator`
+#   login, and Grafana's `usage_reader` login (read by prod-observability from US3). Create them, and the
+#   external volume `dev-usage-postgres-data`, BEFORE the first deploy.

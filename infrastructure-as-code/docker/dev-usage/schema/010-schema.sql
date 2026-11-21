@@ -1,5 +1,5 @@
 -- Feature 105 — Claude Code token usage store. Applied in name order on EVERY deploy by the run-once
--- `dev-usage-schema-apply` service (research R19), so every statement here must be idempotent.
+-- `dev-usage-schema-init` service (research R19), so every statement here must be idempotent.
 CREATE SCHEMA IF NOT EXISTS usage;
 
 DO $$
