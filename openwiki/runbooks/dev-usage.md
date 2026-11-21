@@ -3,9 +3,9 @@ type: Runbook
 title: Claude Code token usage capture (prod-dev-usage)
 description: How every dev-container Claude Code session ships per-session, per-turn and per-tool token counts — never content — through committed lifecycle hooks and scripts/cc-usage.mjs to the tailnet-only prod-dev-usage store (Postgres + PostgREST on 19040, Keycloak client-credentials tokens), the operator setup that turns it on, what doctor reports, and the traps — best-effort SessionEnd, the per-session lock and spool order, the JWKS fetched only at deploy, and not-configured meaning do nothing.
 resource: docs/runbooks/dev-usage.md
-resource-sha256: a6dd269debdcae89ad8d2e5473bc8f965cf4eed3e316e3ee38ba7d41624a7533
+resource-sha256: 858667c071f093fa492ce811a2f26cac86fb442d12c3b925ac9d3f3d884963d9
 tags: [claude-code, usage, tokens, postgrest, keycloak, devcontainer, runbook]
-timestamp: 2026-11-21T16:34:53.598Z
+timestamp: 2026-11-21T17:36:14.183Z
 ---
 
 # Claude Code token usage capture (prod-dev-usage)
@@ -37,8 +37,9 @@ rotation, restore and the format-drift procedure.
 - **Ships are ordered per session.** Turn and tool rows are cumulative upserts, so every ship (Stop,
   SessionEnd, sweep, spool replay) runs under that session's lock and replays its spool oldest first.
   Otherwise an old batch could regress newer rows.
-- **The store learns Keycloak's keys only at deploy.** PostgREST cannot fetch a JWKS URL, so a run-once
-  container fetches it into a volume. After a signing-key rotation, `doctor` says `store rejects token`
+- **The store learns Keycloak's keys only when PostgREST starts.** PostgREST cannot fetch a JWKS URL, so
+  an init container fetches it into a volume. Like every prod init, it then idles under
+  `restart: always` behind a ready marker, because Komodo counts an exited container as unhealthy. After a signing-key rotation, `doctor` says `store rejects token`
   until the stack is redeployed.
 - **Production's realm is hand-configured.** The client in `prod-realm.json` applies only to a fresh
   realm. The running realm needs the console steps.

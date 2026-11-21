@@ -52,10 +52,13 @@ services:
       timeout: 3s
       retries: 30
 
-  # Applies every schema file in name order (each is idempotent, research R19), then tells PostgREST
-  # to reload its schema cache. The same command runs on every production deploy.
+  # Applies every schema file in name order (each is idempotent, research R19), tells PostgREST to
+  # reload its schema cache, touches a ready marker and then IDLES (`restart: always`), as every prod
+  # init does (prod-reboot-resilience §2c): Komodo counts an exited container as unhealthy, and a
+  # restart (a reboot, or `compose restart`) re-applies. The same command runs in production.
   dev-usage-schema-init:
     image: postgres:18.6-alpine3.23@sha256:f1031bf693d8d60b0a0380c51a3510607c7a93c7c1d18bf7af94a3a8dbeb40b8
+    restart: always
     depends_on:
       dev-usage-postgres: { condition: service_healthy }
     environment:
@@ -70,17 +73,28 @@ services:
     entrypoint: ["sh", "-ec"]
     command:
       - |
+        rm -f /tmp/ready
         for f in /schema/*.sql; do
           echo "applying $${f##*/}"
           psql -v ON_ERROR_STOP=1 -q -v authenticator_password="$$AUTHENTICATOR_PASSWORD" -v reader_password="$$READER_PASSWORD" -f "$$f"
         done
         psql -v ON_ERROR_STOP=1 -q -c "NOTIFY pgrst, 'reload schema'"
-    restart: "no"
+        touch /tmp/ready
+        echo 'schema applied — idling so Komodo counts the stack healthy'
+        exec sleep infinity
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/ready"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+      start_period: 5s
 
   # PostgREST cannot fetch signing keys from a URL, so this fetches the realm's JWKS into a volume
-  # before PostgREST starts (research R18). Retries: in production Keycloak lives in another stack.
+  # before PostgREST starts (research R18), then idles like schema-init. Retries: in production Keycloak
+  # lives in another stack, and a restart (e.g. a reboot) refetches.
   dev-usage-jwks-init:
     image: postgres:18.6-alpine3.23@sha256:f1031bf693d8d60b0a0380c51a3510607c7a93c7c1d18bf7af94a3a8dbeb40b8
+    restart: always
     depends_on:
       dev-usage-keycloak: { condition: service_healthy }
     environment:
@@ -90,21 +104,30 @@ services:
     entrypoint: ["sh", "-ec"]
     command:
       - |
+        rm -f /tmp/ready
         for i in $$(seq 1 60); do
           if wget -qO /jwks/jwks.json.tmp "$$JWKS_URL" && grep -q '"keys"' /jwks/jwks.json.tmp; then
-            mv /jwks/jwks.json.tmp /jwks/jwks.json && echo "jwks fetched" && exit 0
+            mv /jwks/jwks.json.tmp /jwks/jwks.json
+            touch /tmp/ready
+            echo 'jwks fetched — idling so Komodo counts the stack healthy'
+            exec sleep infinity
           fi
           sleep 5
         done
         echo "jwks fetch failed" >&2
         exit 1
-    restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/ready"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+      start_period: 5s
 
   dev-usage-postgrest:
     image: postgrest/postgrest:v16.5@sha256:1347d7552b88f17832912c06afbf7c43209af6eeeb60834b04aae12c9bd9d5cc
     depends_on:
-      dev-usage-schema-init: { condition: service_completed_successfully }
-      dev-usage-jwks-init: { condition: service_completed_successfully }
+      dev-usage-schema-init: { condition: service_healthy }
+      dev-usage-jwks-init: { condition: service_healthy }
     environment:
       PGRST_DB_URI: "postgres://authenticator:${DEV_USAGE_AUTHENTICATOR_PASSWORD:?minted by tests/run-integration.mjs}@dev-usage-postgres:5432/dev_usage"
       PGRST_DB_SCHEMAS: usage

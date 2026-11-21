@@ -281,7 +281,9 @@ exercises the deploy path, and a test applies the schema twice and asserts nothi
 **Implementation note (T028/T030, 2026-11-21)**: the two run-once services are named
 `dev-usage-schema-init` and `dev-usage-jwks-init` (planned as `…-schema-apply` / `…-jwks-fetch`), because
 the prod restart-policy gate (`scripts/check-prod-restart-policy.mjs`) exempts a one-shot service from
-`restart: always` only by an `-init`/`-seed` name. The JWKS fetch uses `wget` from the same pinned
+`restart: always` only by an `-init`/`-seed` name. Both inits then follow the prod init shape (prod-reboot-resilience §2c): touch a ready marker and
+`exec sleep infinity` under `restart: always`, with PostgREST gating on their health checks. Komodo
+counts an exited container as unhealthy, and a reboot re-applies the schema and refetches the keys. The JWKS fetch uses `wget` from the same pinned
 Postgres image rather than a separate curl image (one fewer pin). PostgREST needs `PGRST_SERVER_HOST=0.0.0.0`
 for its `--ready` health check, and its role claim is the v16 JSONPath `$.role`. The local stack runs its
 own Keycloak (same image, `ci-realm.json`) as compose project `dev-usage-it` instead of the auth stack,

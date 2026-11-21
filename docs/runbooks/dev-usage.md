@@ -170,8 +170,9 @@ id, capped at 1 MB and rotated once). It never holds a token or a host name.
 
 ## 5. Keycloak signing-key rotation
 
-PostgREST holds the realm's public keys from the last deploy (`dev-usage-jwks-init`). After a rotation
-in Keycloak, new tokens are refused until the stack refetches: **redeploy `prod-dev-usage`** in Komodo.
+PostgREST reads the realm's public keys once, when it starts, from the file `dev-usage-jwks-init` fetched
+(that init refetches on every deploy and every restart, then idles). After a rotation in Keycloak, new
+tokens are refused until PostgREST restarts on fresh keys: **redeploy `prod-dev-usage`** in Komodo.
 Meanwhile `doctor` shows `store rejects token` and capture spools. Nothing is lost while the spool and
 the transcripts last.
 

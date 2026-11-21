@@ -69,9 +69,22 @@ const snapshotCatalog = () => [
   psql("SELECT grantee, table_name, privilege_type FROM information_schema.role_table_grants WHERE table_schema = 'usage' ORDER BY 1, 2, 3"),
 ].join('\n----\n');
 
+// The re-apply goes through a RESTART of the idling init, the same path a host reboot takes.
 it('the schema applied a second time changes nothing', async () => {
   const before = snapshotCatalog();
-  docker(['run', '--rm', '--no-deps', 'dev-usage-schema-init']);
+  const id = docker(['ps', '-q', 'dev-usage-schema-init']).trim();
+  assert.ok(id, 'dev-usage-schema-init is not running');
+  const started = () => spawnSync('docker', ['inspect', '-f', '{{.State.StartedAt}}', id], { encoding: 'utf8' }).stdout.trim();
+  const health = () => spawnSync('docker', ['inspect', '-f', '{{.State.Health.Status}}', id], { encoding: 'utf8' }).stdout.trim();
+  const firstStart = started();
+  docker(['restart', 'dev-usage-schema-init']);
+  let ok = false;
+  for (let i = 0; i < 60 && !ok; i++) {
+    await new Promise((r) => setTimeout(r, 1000));
+    ok = started() !== firstStart && health() === 'healthy';
+  }
+  assert.ok(ok, `schema-init did not come back healthy after a restart (health: ${health()})`);
+  assert.match(docker(['logs', '--since', firstStart, 'dev-usage-schema-init']), /applying 040-us1-views\.sql[\s\S]*schema applied/);
   assert.equal(snapshotCatalog(), before);
 });
 
