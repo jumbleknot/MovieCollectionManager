@@ -11,11 +11,11 @@ is an **error**, never silently ignored (AGENTS.md "check the instrument").
 | `MCM_USAGE_INGEST_URL` | no | Base URL of the store's HTTP interface (tailnet) |
 | `MCM_USAGE_TOKEN_URL` | no | Keycloak realm token endpoint (tailnet) |
 | `MCM_USAGE_CLIENT_SECRET` | no | Secret of client `dev-usage-capture`. Read from the environment only, sent only in the token request body, never logged, never in argv |
-
-Any of the three unset → **not configured**: hooks parse nothing and spool nothing (the transcripts stay
-the source; the first sweep after configuration catches up), and `doctor` reports `not configured`.
 | `CLAUDE_CONFIG_DIR` | no | Defaults to `~/.claude` |
 | `CC_USAGE_SHIP_INTERVAL_S` | no | Default `900` (FR-011). Tests lower it |
+
+Any of the first three unset → **not configured**: hooks parse nothing and spool nothing (the transcripts stay
+the source; the first sweep after configuration catches up), and `doctor` reports `not configured`.
 
 ## `hook` (invoked by Claude Code only)
 
@@ -30,7 +30,7 @@ Stdin fields read: `hook_event_name` (`SessionStart` | `Stop` | `SessionEnd`), `
 | --- | --- |
 | `SessionStart` | Write the by-cwd marker. If the sweep lock is free and the last sweep was more than 15 min ago: sweep every `projects/*/` transcript with unshipped bytes, batch by batch. Flush the spool. |
 | `Stop` | If the last ship of this session was less than `CC_USAGE_SHIP_INTERVAL_S` ago: **exit** with no parsing and no network. Otherwise ship this session's new bytes. |
-| `SessionEnd` | Ship this session's tail, record `end_reason`, collect outcomes for each feature the session's turns touched, if due. Bounded by the hook timeout. |
+| `SessionEnd` | Ship this session's tail, record `end_reason`, collect outcomes for each feature the session's turns touched, if due and if at least 3 s of the hook timeout remain (otherwise the next sweep collects them). A run killed by the timeout loses nothing: offsets advance only after a confirmed send, so the next sweep re-derives the unsent range. |
 
 **Invariants** (each has a guard test):
 
@@ -46,7 +46,7 @@ Stdin fields read: `hook_event_name` (`SessionStart` | `Stop` | `SessionEnd`), `
 | `sessions [--since 7d] [--feature f] [--branch b] [--spec n] [--activity a] [--area x]` | One row per session; with a feature filter, the session's tokens **attributed to that feature** beside its total | GET |
 | `feature <branch\|spec:NNN\|feature_id> [--all]` | One feature: kind, spec, PR state, contributing sessions (count and list), turns, tokens by type, main vs subagent, weighted, activity mix, outcomes (`tasks: n/a` for a feature without a task list). A branch with several features (reused name) shows the open one; `--all` lists them all | GET |
 | `features [--since 30d] [--kind spec\|no-spec] [--state open\|merged\|all]` | One row per feature, plus a final `no feature` row | GET |
-| `trend --by week\|activity\|feature\|spec\|area [--since 8w]` | One row per bucket | GET |
+| `trend --by week\|area\|activity\|feature\|spec [--since 8w]` | One row per bucket (`activity`, `feature`, `spec` from US3) | GET |
 | `compare <a> <b>` | Side by side; `a`/`b` are session ids, feature ids, `branch:<name>`, `spec:NNN`, or `YYYY-MM-DD..YYYY-MM-DD` | GET |
 | `findings [--all]` | Open findings with rule, evidence, sample size, suggestion, watch metric; `not enough data` below thresholds | GET |
 | `accept <finding_id>` / `reject <finding_id>` | Confirms the status change | PATCH |

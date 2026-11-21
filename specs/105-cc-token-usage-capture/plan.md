@@ -37,7 +37,7 @@ subagent file layout and the per-worktree project directories the design depends
 
 **Performance Goals**: a `Stop` hook that does not ship exits in < 1 s (SC-005; precedent: an existing plugin Stop hook runs at p50 90 ms); `usage now` answers in < 5 s (SC-006); the first backfill of ~170 MB proceeds file by file without slowing the starting session
 
-**Constraints**: hooks always exit 0 and print nothing; no content leaves the container; ingest URL and token only from the environment; at most one ship per session per 15 min plus one at session end; at most one sweep per container per 15 min; correct under concurrent sessions
+**Constraints**: hooks always exit 0 and print nothing; no content leaves the container; store URL, token-endpoint URL and client secret only from the environment (the cached token only in a 0600 file); at most one ship per session per 15 min plus one at session end; at most one sweep per container per 15 min; correct under concurrent sessions
 
 **Scale/Scope**: one developer, ≤ 5 concurrent sessions, roughly 30–60 sessions and a few thousand turns a month; 172 MB of transcripts on the volume today
 
@@ -62,7 +62,7 @@ subagent file layout and the per-worktree project directories the design depends
 | Backend-service principles (Rust, four-layer Clean Architecture, OpenAPI) | Not applicable | No first-party backend service is written; PostgREST is an upstream component whose interface is the SQL schema. The script still keeps pure modules (parse, label, rules) apart from IO (ship, state, http) |
 | Package manager (pnpm only) | Pass | No dependency added to any lockfile; the oracle runs via `pnpm dlx` on demand |
 | Nx as task runner | Pass | New targets on the `infrastructure-as-code` project: `cc-usage-oracle`, `dev-usage-integration` (names verified free) |
-| Wiki same-PR refresh | Pass (tracked) | `published-port-reservation`, `infrastructure-stacks`, `secrets-management` and the devcontainer runbook page refreshed in the same PR; the new runbook gets a concept page |
+| Wiki same-PR refresh | Pass (tracked) | `published-port-reservation`, `prod-reboot-resilience`, `infrastructure-stacks`, `devcontainer`, `devcontainer-sandbox` and `repository` pages refreshed in the same PR (`secrets-management` cites ADR-0001, which is unchanged); the new runbook gets a concept page |
 | Doc-impact sweep | Pass (tracked) | Run at `/speckit-tasks`; known terms: "three ports", the `VARS` list, the stack list, the naming-gate contexts |
 
 ## Project Structure
@@ -167,7 +167,7 @@ other prod stack.
 
 Follows the spec's priorities. Each step is usable on its own, and data accumulates from step 2.
 
-1. **Spike** (no repo change): confirm the open items in research R6, R7, R12 and R14 in the live container; record the results in research.md.
+1. **Spike** (no repo change): confirm the open items in research R6, R7, R12, R14 and R18 in the live container; record the results in research.md.
 2. **P1 capture**: parser, privacy guard, local state, shipping, hooks, store stack, env plumbing, backup, runbook, oracle check. Exit: SC-001 to SC-005, SC-009.
 3. **P2 in-session**: skill and interactive commands. Exit: SC-006.
 4. **P3 attribution**: labelling, feature attribution and identity, feature outcomes, weights, views (`v_feature_totals` and the conservation invariant), `feature`/`features` commands, Grafana dashboard. Exit: SC-007, SC-010, SC-011.

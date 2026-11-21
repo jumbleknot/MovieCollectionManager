@@ -82,7 +82,7 @@ single clear "unreachable" line.
 
 1. **Given** two sessions running at once, **When** each asks for "this session so far", **Then** each sees only its own numbers.
 2. **Given** a session in progress, **When** the developer asks for "now", **Then** they see tokens by type, current context size, the largest tool outputs, the subagent share, and a comparison with the median of the developer's recent sessions when history exists — narrowed to sessions of the same kind of work once activity labels exist (Story 3).
-3. **Given** history in the store, **When** the developer asks for recent sessions filtered by branch, spec, activity or repository area, or for a trend by week, activity, spec or area, **Then** the answer is a fixed-width table capped at a few rows, with a full machine-readable form available on request.
+3. **Given** history in the store, **When** the developer asks for recent sessions filtered by branch, spec, activity or repository area, or for a trend by week, activity, spec or area, **Then** the answer is a fixed-width table capped at a few rows, with a full machine-readable form available on request. (Filtering and trends by activity and spec need Story 3's labels and features and arrive with it.)
 4. **Given** the developer explicitly asks to sync, **When** the sync runs, **Then** the current session is shipped immediately regardless of the normal shipping cap. The capability never syncs on its own initiative.
 5. **Given** the developer asks for capture health, **When** the check runs, **Then** it reports the time of the last successful ship, the depth of the local queue, and any transcript with unshipped data.
 6. **Given** the usage capability is not invoked, **When** a session runs, **Then** it adds nothing to the session's context.
@@ -169,8 +169,8 @@ sessions, findings show its before/after on both the target metric and its quali
 **Capture (Story 1)**
 
 - **FR-001**: The system MUST capture token usage for every Claude Code session run in the dev container, triggered by the coding tool itself, with no manual action at session start or end. Sessions run directly on the Windows host are out of scope.
-- **FR-002**: Capture MUST record, per session: start and end time, platform, starting worktree and branch, tool version, models used, token totals for each of the four reported types (input, output, cache write, cache read) split into main session and subagents, turn count, compaction count, end reason, and capture status.
-- **FR-003**: Capture MUST record, per turn: time, duration, idle gap before it, tokens by type, context size, model; and per tool within a turn: tool name, command family (first word of a shell command only), call count, result size, whether output was compressed by the token-compression layer, and the top-level repository area touched. File paths MUST NOT be stored; per-file measures such as the re-read rate are computed inside the container and only their counts are shipped.
+- **FR-002**: Capture MUST record, per session: start and end time, entry point (the editor extension or command line the session ran in), starting worktree and branch, tool version, models used, token totals for each of the four reported types (input, output, cache write, cache read) split into main session and subagents, turn count, compaction count, end reason, and capture status.
+- **FR-003**: Capture MUST record, per turn: time, duration, idle gap before it, tokens by type, context size, model; and per tool within a turn: tool name, command family (first word of a shell command only), call count, result size, and whether output was compressed by the token-compression layer; and per turn the top-level repository areas its tools touched. File paths MUST NOT be stored; per-file measures such as the re-read rate are computed inside the container and only their counts are shipped.
 - **FR-004**: Capture MUST record skill invocations per session (skill name, count, first turn).
 - **FR-005**: Each session MUST carry a capture status of complete, partial or not captured. Missing data MUST be reported as not captured, never as zero.
 - **FR-006**: Capture MUST catch up any transcript data not yet shipped, including sessions that ended without a clean exit and sessions from before the feature existed, on the next session start.
@@ -222,9 +222,9 @@ sessions, findings show its before/after on both the target metric and its quali
 
 ### Key Entities *(include if feature involves data)*
 
-- **Session**: One Claude Code session. Times, platform, starting worktree and branch, tool version, models, token totals by type (main vs subagent), turn and compaction counts, end reason, capture status, optional manual tag. Contributes to zero, one or several features through its turns.
-- **Turn**: One user prompt and all the work done in response. Time, duration, idle gap, tokens by type, context size, model, activity label, feature (or "no feature") and the rule that attributed it. Belongs to a session.
-- **Tool use**: Aggregated use of one tool within one turn. Tool name, command family, call count, result size, compression flag, repository area. Belongs to a turn.
+- **Session**: One Claude Code session. Times, entry point, starting worktree and branch, tool version, models, token totals by type (main vs subagent), turn and compaction counts, end reason, capture status, optional manual tag. Contributes to zero, one or several features through its turns.
+- **Turn**: One user prompt and all the work done in response. Time, duration, idle gap, tokens by type, context size, model, repository areas touched, activity label, feature (or "no feature") and the rule that attributed it. Belongs to a session.
+- **Tool use**: Aggregated use of one tool within one turn. Tool name, command family, call count, result size, compression flag. Belongs to a turn.
 - **Skill use**: One skill's invocations within a session. Skill name, count, first turn.
 - **Feature**: One piece of work on a branch, identified by branch name plus the pull request it ends in (or branch name and first-seen date before a pull request exists). Optional spec. Outcomes: commits, lines changed, tasks completed (only with a task list), pull request and merge state, CI runs red and green, backlog items closed. Has many turns, from one or more sessions; its metrics are the sum of those turns.
 - **Finding**: One rule hit in an analysis run. Rule, evidence, sample size, recommendation, status, metric before and after; an accepted finding is an experiment with a start date and baseline.

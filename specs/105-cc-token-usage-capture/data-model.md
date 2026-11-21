@@ -65,7 +65,7 @@ toward two features.
 | `activity_rule` | text | The rule id that fired, for auditing rules |
 | `feature_id` | text null | FK → `features`; null means "no feature" (main-branch work) |
 | `attribution_rule` | enum `worktree` \| `worktree-majority` \| `inherited` \| `session-branch` \| `main` | How `feature_id` was decided (FR-036; order in "Feature attribution") |
-| `areas` | text[] | Top-level repository areas touched |
+| `areas` | text[] | Top-level repository areas the turn's tools touched (FR-003). Captured from US1; per turn, not per tool |
 | `rereads` | int | Files read more than 3 times in the session, counted in the container; only the count ships |
 
 ### `tool_use` — one row per session, turn and tool (and command family)
@@ -199,6 +199,7 @@ never shipped.
                           │  └── later sweep finds more bytes ── (stays partial until clean end)
                           └── swept > 24 h after last line, no SessionEnd ──▶ partial [no-session-end]
 not_captured: a session known only from a subagent meta file or outcome link, with no main transcript
+              (ships with zero model calls and is never shown as a zero total)
 ```
 
 A `complete` session reverts to `partial` if a re-parse finds format drift. A gap is never stored as a
