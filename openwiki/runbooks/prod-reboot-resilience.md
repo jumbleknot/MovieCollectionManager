@@ -3,10 +3,10 @@ type: Runbook
 title: Prod reboot resilience
 description: Why a rootless-Docker production homelab did not come back clean after a host reboot, the two rounds of fixes — bind address, keyfile idempotency, reserved-range ports, restart policy and periphery root — that made recovery hands-off, why prod's one-shot inits idle on `sleep infinity` behind a readiness marker, plus the validation reboot on record and the host-operation rules that keep it that way.
 resource: docs/runbooks/prod-reboot-resilience.md
-resource-sha256: adb389f4b7b968aad804f5f060e3bb8e018dc8b074ceb4dc6090d26b743f01fd
+resource-sha256: 28d57498b0d60cd4b03ab6c228ee32565a1b92ec9db956bc85fb657f7a0f4390
 tags: [production, reboot, resilience, rootless-docker, komodo, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T11:59:39.645Z
+timestamp: 2026-11-21T17:37:25.916Z
 ---
 
 # Prod reboot resilience
@@ -60,7 +60,8 @@ Three repo/deploy-side fixes, all committed so a ResourceSync deploy reproduces 
   `Up` with an empty Ports column and nothing listening. Only a `0.0.0.0` bind or a full rootless-daemon
   restart *after* the tailnet interface exists recovers it — a plain container restart does not. Tailnet-only
   exposure is preserved by the host firewall's default-deny-inbound posture, which is now load-bearing:
-  the three published ports are Keycloak admin, LangFuse web and Grafana/otel-lgtm, all in the
+  the four published ports are Keycloak admin, LangFuse web, Grafana/otel-lgtm and, since feature 105,
+  the Claude Code usage store's PostgREST (`19040`), all in the
   [prod-reserved range](../invariants/published-port-reservation.md) (see the runbook's §2a, and the
   `#PROD` port comments in
   [`keycloak/compose.prod.yaml`](../../infrastructure-as-code/docker/keycloak/compose.prod.yaml) and
@@ -138,12 +139,13 @@ The two remediations defeated each other. The drain unit stops every container t
 starts. So the drain marked containers stopped, and the policy then refused to bring them back on boot.
 Proven on Docker 29.6.0: a `docker stop` plus a user-daemon restart leaves an `unless-stopped` container
 `Exited`, while an otherwise-identical `restart: always` container comes back `Up`. Every service in every
-prod compose now declares `restart: always` (27 services across the seven `compose.prod.yaml` files), and
+prod compose now declares `restart: always` (31 services across the eight `compose.prod.yaml` files), and
 every host-managed compose — Forgejo, Komodo itself, cloudflared, and the host side services (the
-monitoring stack plus the RustFS Nx-cache object store) — was set to `always` as host state. The three
+monitoring stack plus the RustFS Nx-cache object store) — was set to `always` as host state. The five
 one-shot containers — `agent-audit-init` (provisions the write-only audit user), `langfuse-rustfs-init`
-(creates LangFuse's object-store bucket) and `unleash-seed` (seeds the default-off flags) — provision
-idempotently and then `exec sleep infinity`, so they too declare `restart: always` and stay eligible for
+(creates LangFuse's object-store bucket), `unleash-seed` (seeds the default-off flags), and feature 105's
+`dev-usage-schema-init` (applies the usage store's idempotent schema) and `dev-usage-jwks-init` (fetches
+Keycloak's signing keys for PostgREST) — provision idempotently and then `exec sleep infinity`, so they too declare `restart: always` and stay eligible for
 the daemon's start-at-boot rather than exiting and being counted unhealthy
 ([`observability/compose.prod.yaml`](../../infrastructure-as-code/docker/observability/compose.prod.yaml),
 [`opensearch/compose.prod.yaml`](../../infrastructure-as-code/docker/opensearch/compose.prod.yaml)). That
@@ -198,10 +200,11 @@ merged to `main` and Komodo has synced, the operator redeploys `prod-auth`, rebo
 then verifies **every** checklist row *without starting anything by hand* — hands-off recovery is the
 whole point, so a row satisfied by a manual `docker start` or `docker network connect` has failed.
 
-The eleven rows cover, in substance: every prod container **and** every host-managed container
+The twelve rows cover, in substance: every prod container **and** every host-managed container
 (`Up`, via `restart: always`); Mongo and Vault healthy with `RestartCount=0` and no exit-127; periphery's
-root on real disk with the git checkout present; the three admin/UI ports reachable over the tailnet and
-shown bound to `0.0.0.0` in the Ports column; those same three ports refused from off-tailnet; Forgejo
+root on real disk with the git checkout present; the three admin/UI ports reachable over the tailnet, and
+the usage store's PostgREST answering `401` to a request without a token; all four shown bound to
+`0.0.0.0` in the Ports column; those same four ports refused from off-tailnet; Forgejo
 answering; and the app loading collections end-to-end. Pass means all rows on the *first* boot; any
 failing row is a defect to fix before the round closes, and a reboot that lands dirty is recovered with
 the ordering below.
@@ -336,8 +339,8 @@ procedure.
   defeat each other. Every prod and host-managed compose service is `restart: always`; do not reintroduce
   `unless-stopped` on a prod service expecting a reboot to bring it back.
 - **A one-shot container in a prod compose idles instead of exiting.** Komodo counts any exited
-  container as unhealthy, so the three shipped one-shots — `agent-audit-init`, `langfuse-rustfs-init`
-  and `unleash-seed` — provision idempotently, then `exec sleep infinity`, and declare `restart: always`
+  container as unhealthy, so the five shipped one-shots — `agent-audit-init`, `langfuse-rustfs-init`,
+  `unleash-seed`, `dev-usage-schema-init` and `dev-usage-jwks-init` — provision idempotently, then `exec sleep infinity`, and declare `restart: always`
   like every other service. The restart-policy gate's `no`/`on-failure` exemption for init/seed names is
   therefore currently unused in prod: a one-shot that really exits `0` satisfies the gate but reports the
   whole stack unhealthy, and giving it `always` would restart-loop it. The idling shape is not left to
@@ -424,8 +427,8 @@ failure:
   allowed only for genuine one-shot containers whose names match the init/seed/`rs-init`/`createbucket`
   pattern, since `always` would restart-loop them
   ([`check-prod-restart-policy.mjs`](../../scripts/check-prod-restart-policy.mjs)). That exemption is
-  narrow by construction and currently unused in production: all 27 services in the seven prod composes
-  declare `always`, the three init/seed containers included, because they idle instead of exiting. It is
+  narrow by construction and currently unused in production: all 31 services in the eight prod composes
+  declare `always`, the five init/seed containers included, because they idle instead of exiting. It is
   not untested — the gate's `--selftest` exercises it with planted one-shot names
   (`langfuse-rustfs-init`, `mc-service-store-mongo-rs-init`, `object-store-createbucket`) — and the only
   `restart: "no"` on a service in a tracked compose file today is the **dev**

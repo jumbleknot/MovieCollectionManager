@@ -83,17 +83,18 @@ Residual risk: Tailscale deliberately enables TSO/GSO on its tun, so the unit an
 
 **Root cause.** The rootless Docker daemon starts at boot **before** `tailscaled`, so rootlesskit never learns the tailnet IPv4. A published port scoped to `<tailnet-ip>:host:container` then **silently fails to bind** — the container shows `Up` with an **empty Ports column** and nothing listening. A container restart does not fix it; only a `0.0.0.0` bind or a full rootless-daemon restart (after tailscaled is up) does. Ports already on `0.0.0.0` were unaffected (that is why Forgejo on `0.0.0.0:3000` stayed reachable while every tailnet-IP-bound admin UI did not).
 
-**Fix (committed).** The three (and only) tailnet-IP-scoped published ports bind `0.0.0.0` — on **prod-reserved ports** in `19000–19099` (feature 029, below):
+**Fix (committed).** The four (and only) tailnet-only published ports bind `0.0.0.0` — on **prod-reserved ports** in `19000–19099` (feature 029, below; the fourth, `19040`, arrived with feature 105):
 
 | Service | File | Port |
 | --- | --- | --- |
 | Keycloak admin | `infrastructure-as-code/docker/keycloak/compose.prod.yaml` | `19099:8080` |
 | LangFuse web | `infrastructure-as-code/docker/observability/compose.prod.yaml` | `19030:3000` |
 | Grafana / otel-lgtm | `infrastructure-as-code/docker/observability/compose.prod.yaml` | `19002:3000` |
+| Claude Code usage store (PostgREST) | `infrastructure-as-code/docker/dev-usage/compose.prod.yaml` | `19040:3000` |
 
 **Exposure is unchanged.** The host **`ufw` default-deny on all non-tailnet inbound** is what keeps these ports tailnet-only — a `0.0.0.0` bind is still only reachable over the tailnet. This ufw posture is now **load-bearing**; do not relax it. (Verify: `sudo ufw status verbose` shows default deny incoming + the tailnet allow rule.)
 
-**Why the prod-reserved range (feature 029, 2026-07-06 outage).** **Prod and the CI runner share one host**, under two rootless daemons publishing into the **same host port space**, so a `0.0.0.0` prod bind collides with any CI bind on the same port number. Feature 028 first bound Keycloak admin at `0.0.0.0:8099`, which overlapped the CI app-e2e Keycloak's `127.0.0.1:8099`: whenever a CI Keycloak was up (a leftover CI stack held it for 6h) prod keycloak couldn't bind on redeploy → crash-loop → **prod-auth down**. The three prod admin ports therefore live in the **prod-reserved range `19000–19099`** (Keycloak `19099`, LangFuse `19030`, Grafana `19002`) — disjoint from every CI/dev port, enforced by `scripts/check-prod-ci-port-collision.mjs` (a required guardrail). The admin console is `http://<tailnet-host>:19099` (`KC_HOSTNAME_ADMIN`; it was `:8099` until feature 029 — update any bookmark); the public issuer is unaffected. CI also tears down its stacks on every run (`app-ci.yml` `app-e2e`, `if: always()`) so a leftover can't hold a port.
+**Why the prod-reserved range (feature 029, 2026-07-06 outage).** **Prod and the CI runner share one host**, under two rootless daemons publishing into the **same host port space**, so a `0.0.0.0` prod bind collides with any CI bind on the same port number. Feature 028 first bound Keycloak admin at `0.0.0.0:8099`, which overlapped the CI app-e2e Keycloak's `127.0.0.1:8099`: whenever a CI Keycloak was up (a leftover CI stack held it for 6h) prod keycloak couldn't bind on redeploy → crash-loop → **prod-auth down**. The prod published ports therefore live in the **prod-reserved range `19000–19099`** (Keycloak `19099`, LangFuse `19030`, Grafana `19002`, and since feature 105 the usage store's PostgREST `19040`) — disjoint from every CI/dev port, enforced by `scripts/check-prod-ci-port-collision.mjs` (a required guardrail). The admin console is `http://<tailnet-host>:19099` (`KC_HOSTNAME_ADMIN`; it was `:8099` until feature 029 — update any bookmark); the public issuer is unaffected. CI also tears down its stacks on every run (`app-ci.yml` `app-e2e`, `if: always()`) so a leftover can't hold a port.
 
 **Retired variables.** `KC_ADMIN_BIND_IP` is gone: it was only the bind prefix, the compose bind dropped it in feature 028, and `komodo/stacks.toml` stopped passing it to `prod-auth` on 2026-10-12 (item #727). Until then Komodo still wrote it into `.env.prod`, which the keycloak compose loads with `env_file:`, so it reached the container as a `KC_*` variable that names no Keycloak option. The admin **URL** uses the separate `KC_HOSTNAME_ADMIN`. `TS_ADMIN_IP` followed on 2026-10-13: no compose file had read it since feature 028 made the operator-UI binds `0.0.0.0`, and `komodo/stacks.toml` stopped passing it to `prod-observability`. No stack or compose file reads it now, and the operator has removed the Komodo Variable (recorded in `Phase-15-Operator-Checklist.md`; item #727).
 
@@ -105,7 +106,7 @@ Residual risk: Tailscale deliberately enables TSO/GSO on its tun, so the unit an
 
 ### 2c. Restart-policy coverage (US1/SC-007)
 
-Every service in every `*/compose.prod.yaml` (all 7 files) declares **`restart: always`** (27/27 at time of writing); the one-shot init containers idle on `sleep infinity` after an idempotent init so they too stay eligible. The host-managed composes are set to `always` as well (Part 5, RC#2).
+Every service in every `*/compose.prod.yaml` (all 8 files) declares **`restart: always`** (31/31 at time of writing, after feature 105 added `prod-dev-usage`'s four); the one-shot init containers idle on `sleep infinity` after an idempotent init so they too stay eligible. The host-managed composes are set to `always` as well (Part 5, RC#2).
 
 **Why `always`, never `unless-stopped` (feature 030, 2026-07-08 reboot failure).** `unless-stopped` does **not** restart a container that was in a *stopped* state when the daemon (re)starts — and the **Part-1 drain unit stops every container to `Exited (0)` on shutdown**, so the two would defeat each other: the drain marks containers stopped, and `unless-stopped` then declines to bring them back on boot. That was the direct cause of the 2026-07-08 failure (feature 028 had assumed `unless-stopped` meant "every prod container returns automatically after a reboot"). Proven on Docker **29.6.0** (see feature 030): a `docker stop` + `systemctl --user restart docker` leaves an `unless-stopped` container `Exited`, while an otherwise-identical `restart: always` container comes back `Up`. Do not reintroduce `unless-stopped` on any prod or host-managed service.
 
@@ -140,10 +141,11 @@ Perform **once** after a change to the reboot posture merges to `main` and Komod
 | 5 | Keycloak admin over the tailnet — `http://<tailnet-host>:19099` | reachable | SC-001 |
 | 6 | LangFuse web over the tailnet — `http://<tailnet-host>:19030` | reachable | SC-001 |
 | 7 | Grafana over the tailnet — `http://<tailnet-host>:19002` | reachable | SC-001 |
-| 8 | `docker ps` Ports column for the three above | shows `0.0.0.0:PORT->…`, **not** empty | SC-001 |
-| 9 | The three ports probed from **off-tailnet** | refused (ufw default-deny) | SC-004 |
-| 10 | Forgejo `http://<tailnet-host>:3000` | HTTP 200 | 030 |
-| 11 | App loads collections end-to-end (`https://mcm.${BASE_DOMAIN}`) + `auth.${BASE_DOMAIN}/realms/grumpyrobot/.well-known/openid-configuration` | 200, works, **zero** manual `docker network connect` | SC-003 |
+| 8 | Usage store PostgREST over the tailnet — `http://<tailnet-host>:19040/sessions?limit=1` **without** a token | HTTP 401 (reachable, and refuses anonymous requests) | 105 FR-014 |
+| 9 | `docker ps` Ports column for the four above | shows `0.0.0.0:PORT->…`, **not** empty | SC-001 |
+| 10 | The four ports probed from **off-tailnet** | refused (ufw default-deny) | SC-004 |
+| 11 | Forgejo `http://<tailnet-host>:3000` | HTTP 200 | 030 |
+| 12 | App loads collections end-to-end (`https://mcm.${BASE_DOMAIN}`) + `auth.${BASE_DOMAIN}/realms/grumpyrobot/.well-known/openid-configuration` | 200, works, **zero** manual `docker network connect` | SC-003 |
 
 **Pass = all rows pass on the first reboot, no manual `docker start`.** Any failing row is a defect to fix before closing the feature; if the reboot lands dirty, recover with the ordering in Part 5.
 

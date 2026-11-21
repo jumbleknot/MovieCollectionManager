@@ -1,12 +1,12 @@
 ---
 type: Convention
 title: Published-port reservation convention
-description: The prod-reserved 19000-19099 host-port range that keeps the three production admin/UI publishes (Keycloak admin 19099, LangFuse 19030, Grafana/otel-lgtm 19002) disjoint from the CI runner's ports on the same shared host, plus the gate that enforces it, the self-referencing URL vars a port move must update, the outage that motivates it, and why a grep for the retired bind-prefix variables finds gate selftest fixtures instead of live config.
+description: The prod-reserved 19000-19099 host-port range that keeps the four production publishes (Keycloak admin 19099, LangFuse 19030, Grafana/otel-lgtm 19002, and the Claude Code usage store's PostgREST 19040) disjoint from the CI runner's ports on the same shared host, plus the gate that enforces it, the self-referencing URL vars a port move must update, the outage that motivates it, and why a grep for the retired bind-prefix variables finds gate selftest fixtures instead of live config.
 resource: docs/runbooks/prod-reboot-resilience.md
-resource-sha256: adb389f4b7b968aad804f5f060e3bb8e018dc8b074ceb4dc6090d26b743f01fd
+resource-sha256: 28d57498b0d60cd4b03ab6c228ee32565a1b92ec9db956bc85fb657f7a0f4390
 tags: [ports, ci, production, collision, komodo, homelab]
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
-timestamp: 2026-11-10T11:59:39.634Z
+timestamp: 2026-11-21T17:37:32.723Z
 ---
 
 # Published-port reservation convention
@@ -16,9 +16,10 @@ homelab host**, publishing into the **same host port space**. A prod service bin
 collides with a CI/dev service binding the same port on `127.0.0.1` or `0.0.0.0` — and the collision
 manifests as a crash-loop on the *losing* side, not a clean bind error most engineers would expect.
 
-The convention: **every prod admin/UI published port lives in the reserved range `19000–19099`**
-(Keycloak admin `19099`, LangFuse `19030`, Grafana/otel-lgtm `19002`, all `0.0.0.0`, tailnet-only via
-firewall rules). CI/dev keeps its own separate, lower port numbers — the dev/CI Keycloak still
+The convention: **every prod published port lives in the reserved range `19000–19099`** — the
+admin/UI consoles (Keycloak admin `19099`, LangFuse `19030`, Grafana/otel-lgtm `19002`) and, since
+feature 105, the Claude Code usage store's token-authenticated PostgREST (`19040`) — all `0.0.0.0`,
+tailnet-only via firewall rules. CI/dev keeps its own separate, lower port numbers — the dev/CI Keycloak still
 publishes `127.0.0.1:8099`, the very number the prod admin console used until feature 029. The range
 also sits below the Linux ephemeral port range (`32768+`), so a reserved prod port can never be
 transiently grabbed by an outbound client connection. `scripts/check-prod-ci-port-collision.mjs` is the
@@ -34,13 +35,14 @@ flowchart TD
 
 Two rootless daemons publishing into one host port space — the reason a reserved range exists.
 
-Those three ports are the **only** published ports in production: every other service in the seven
+Those four ports are the **only** published ports in production: every other service in the eight
 `compose.prod.yaml` files is internal-only, reached by Docker DNS on a shared network
 (`backend-network`, `edge-network`, `mcm-bff-network`, `agent-audit-network`, plus the intra-stack
 `mc-service-network` and `movie-assistant-mcp-network` links; the intra-stack Keycloak↔Postgres
-`keycloak-network` is compose-managed). A **new** prod published port is assigned inside the same
-range, echoing the port it replaces (`8099 → 19099`, `3030 → 19030`, `3002 → 19002`), and the gate's
-failure message says exactly that.
+`keycloak-network` and the usage store's Postgres↔PostgREST `dev-usage-network` are compose-managed). A
+**new** prod published port is assigned inside the same range, echoing the port it replaces
+(`8099 → 19099`, `3030 → 19030`, `3002 → 19002`), or, for a port with no predecessor, a free number
+in the range (`19040`, feature 105); the gate's failure message says exactly that.
 
 Moving the admin/UI ports does **not** touch the public auth surface: the public issuer is the
 Cloudflare-tunnel hostname reaching `keycloak-service:8080` internally, and
@@ -50,7 +52,7 @@ issuer. No client or backend reconfiguration follows from a reserved-range port 
 ## What the gate checks
 
 - **File split.** Prod = the compose files under `infrastructure-as-code/docker/**` whose basename
-  ends `.prod.yaml` (the seven prod composes). CI/dev = everything else the gate discovers —
+  ends `.prod.yaml` (the eight prod composes). CI/dev = everything else the gate discovers —
   `compose.yaml`, `compose.ci.yaml`, `compose.agent-e2e.yaml`, `stacks/*.compose.yaml`. Discovery is
   two globs (`infrastructure-as-code/docker/**/compose*.yaml` plus
   `infrastructure-as-code/docker/stacks/*.compose.yaml`) and classification is by basename only, so a
@@ -87,7 +89,11 @@ must be updated in lockstep. Concretely, the two live secondary references today
   its host comes from `TAILNET_HOST`, which the `prod-observability` `environment` block of the same
   `stacks.toml` passes as `[[TAILNET_HOST]]` and the compose requires as `${TAILNET_HOST:?}`.
 
-Miss either and the port binds cleanly while the service serves a URL that points at the old port —
+A third, outside the repository: the usage store's `19040` is part of `MCM_USAGE_INGEST_URL` in the
+Sandbox VM's `~/.mcm-sandbox-env` (operator state, never committed, so no gate can see it). Moving that
+port means updating the file and recreating the dev container ([dev-usage runbook](../runbooks/dev-usage.md)).
+
+Miss any of them and the port binds cleanly while the service serves a URL that points at the old port —
 a working bind with a broken redirect, which no port-scan gate can see.
 
 That stack-TOML → compose coupling is **mechanically guarded**, which is what makes the port move
@@ -188,7 +194,7 @@ have been dead config.
   the ports a prod compose actually publishes are, and the reserved range as a whole is what keeps
   CI/dev out.
 
-Full incident narrative, the exact three reserved ports, the service/file/port bind table, and the
+Full incident narrative, the reserved ports, the service/file/port bind table, and the
 "Retired variables" record: [prod-reboot-resilience.md §2a](../../docs/runbooks/prod-reboot-resilience.md#2a-tailnet-ip-port-bind-race--bind-0000-us1).
 Related pages: [Infrastructure stacks](../projects/infrastructure-stacks.md),
 [Keycloak](../projects/keycloak.md),
