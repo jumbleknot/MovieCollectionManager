@@ -3,10 +3,10 @@ type: Process
 title: OpenWiki bundle generation and maintenance
 description: How this openwiki/ knowledge bundle is generated, refreshed and gated since feature 098 — the coding session refreshes a derived page in the same PR as its source with the free wiki-refresh tool, the required okf-lint and okf-governance gates (V17 blocking a stale summary), the wiki-update and wiki-maintain Nx targets that remain only for a manual rebuild of operator-named pages, the load-bearing generator settings (output cap, telemetry opt-out, WIKI_RUN_MESSAGE), how CI and the dev container pin the generator and its optional Mermaid parser, and why the two gates are required merge contexts while the paid rebuild deliberately is not.
 resource: infrastructure-as-code/project.json
-resource-sha256: bf22310b6960c48d8e74a45161536bb4c77dfcbafaf04450628baad5bc30c6f0
+resource-sha256: 6a019ceaacf6e1992fc50740d375651797dc5f7c875f61515b2058afb82d67db
 tags: [openwiki, okf, documentation, ci, maintenance]
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
-timestamp: 2026-11-17T01:23:24.750Z
+timestamp: 2026-11-21T16:33:40.272Z
 ---
 
 # OpenWiki bundle generation and maintenance

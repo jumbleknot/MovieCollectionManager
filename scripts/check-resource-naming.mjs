@@ -64,8 +64,6 @@ const APPROVED_NETWORKS = new Set([
   // Feature 025 (prod control-tower): dedicated isolation network for the append-only audit sink
   // (FR-001) — only agent-audit-opensearch + the gateway/BFF consumers join it (opensearch/compose.prod.yaml).
   'agent-audit-network',
-  // Feature 105: private link between the usage store's Postgres and PostgREST (dev-usage/compose*.yaml).
-  'dev-usage-network',
 ]);
 // A `name:` carrying a compose-project prefix (`<project>_<name>`) or the auto `mcm_` form.
 const LEGACY_NAME_RE = /_/;
@@ -221,10 +219,9 @@ function selftest() {
   };
   const cases = [
     {
-      what: 'feature 105: the dev-usage context (volume, containers, network) is admitted',
+      what: 'feature 105: the dev-usage context (volume, containers) is admitted',
       doc: {
         volumes: { data: { name: 'dev-usage-postgres-data' } },
-        networks: { internal: { name: 'dev-usage-network' } },
         services: {
           'dev-usage-postgres': { container_name: 'dev-usage-postgres' },
           'dev-usage-postgrest': { container_name: 'dev-usage-postgrest' },

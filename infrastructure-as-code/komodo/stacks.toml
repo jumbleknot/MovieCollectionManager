@@ -220,4 +220,4 @@ DEV_USAGE_READER_PASSWORD=[[DEV_USAGE_READER_PASSWORD]]
 """
 # ↑ All three Variables are NEW (docs/runbooks/dev-usage.md): the superuser, PostgREST's `authenticator`
 #   login, and Grafana's `usage_reader` login (read by prod-observability from US3). Create them, and the
-#   external volume `dev-usage-postgres-data`, BEFORE the first deploy.
+#   external volumes `dev-usage-postgres-data` and `dev-usage-jwks-data`, BEFORE the first deploy.

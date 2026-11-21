@@ -92,6 +92,7 @@
 - [CI self-serve diagnostics](openwiki/runbooks/ci-diagnostics.md) — `ci-status.mjs`, superseded vs failed
 - [DAST scanning (OWASP ZAP)](openwiki/runbooks/dast-scanning.md)
 - [Developer environment setup (host toolchain)](openwiki/runbooks/dev-environment-setup.md)
+- [Claude Code token usage capture](openwiki/runbooks/dev-usage.md) — hooks → `scripts/cc-usage.mjs` → `prod-dev-usage`; `doctor`
 - [Containerized dev environment](openwiki/runbooks/devcontainer.md) — DinD path, kept only for the Android emulator; the Sandbox microVM manual is [devcontainer-sandbox.md](docs/runbooks/devcontainer-sandbox.md)
 - [Doc drift: the doc-impact sweep and the quarterly audit](openwiki/runbooks/doc-drift.md)
 - [E2E testing (BFF container modes & flakiness diagnosis)](openwiki/runbooks/e2e-testing.md)

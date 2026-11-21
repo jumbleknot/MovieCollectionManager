@@ -1,12 +1,12 @@
 ---
 type: Architecture
 title: Infrastructure-as-code stacks (local Compose + production Komodo)
-description: How the four named local Docker Compose stacks (auth, mcm, audit, observability) and the seven production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
+description: How the four named local Docker Compose stacks (auth, mcm, audit, observability) and the eight production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
-resource-sha256: c5d11493ce9778e7a002785b78d0fb4bcabdd8a8855cb13a61e339e091de241e
+resource-sha256: 039ac79f413f84e3dfd1aec5ca9729b72ce4201e7bc8c84c8370d093bb4d50ff
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-10T03:37:28.061Z
+timestamp: 2026-11-21T16:34:48.458Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -112,10 +112,12 @@ Compose.
 
 ## Production stacks (Komodo ResourceSync)
 
-`infrastructure-as-code/komodo/stacks.toml` holds seven `[[stack]]` blocks that a Komodo ResourceSync
+`infrastructure-as-code/komodo/stacks.toml` holds eight `[[stack]]` blocks that a Komodo ResourceSync
 diff-applies: the four core application stacks — `prod-auth`, `prod-mc-service`, `prod-mcm-bff`,
 `prod-movie-assistant` — plus three support stacks added when feature 025 landed the production Control
-Tower: `prod-audit`, `prod-observability`, `prod-vault`.
+Tower: `prod-audit`, `prod-observability`, `prod-vault` — plus `prod-dev-usage` (feature 105), the
+Claude Code token usage store: Postgres + PostgREST on 19040, which is no part of the application
+([its runbook](../runbooks/dev-usage.md)).
 
 Deploy order is declared by `after`, and `deploy = true` + `after = [...]` makes the sync *deploy* as
 well as apply, in that dependency order:
@@ -126,6 +128,7 @@ flowchart LR
   MC --> BFF["prod-mcm-bff"]
   BFF --> AGENTS["prod-movie-assistant (agents last)"]
   AUTH --> VAULT["prod-vault"]
+  AUTH --> USAGE["prod-dev-usage"]
   BFF --> OBS["prod-observability (ordering only)"]
   AUDIT["prod-audit (independent root)"]
 ```
@@ -135,7 +138,8 @@ to it.
 
 The reasons that carry weight: `prod-mc-service` waits on `prod-auth` because mc-service fetches
 Keycloak's JWKS; `prod-movie-assistant` comes last because `spreadsheet-mcp` needs `prod-mcm-bff`'s
-`mcm-bff-network` and Redis; `prod-vault` hangs off `prod-auth` because it is logically in the auth
+`mcm-bff-network` and Redis; `prod-dev-usage` waits on `prod-auth` because its run-once `dev-usage-jwks-init` fetches the realm's
+signing keys from `keycloak-service`; `prod-vault` hangs off `prod-auth` because it is logically in the auth
 tier while living in its own block (its `file_paths` are `run_directory`-relative and the Vault compose
 sits under `docker/vault/`); and `prod-observability`'s edge is ordering only, keeping a clean graph
 rather than expressing a hard dependency. `prod-audit` is a root — independent, highest value, simplest.
@@ -148,7 +152,7 @@ Each `[stack.config]` block names the Komodo Periphery `server`, a `linked_repo`
 `run_directory` and `file_paths` pointing at that component's `compose.prod.yaml`, an
 `env_file_path = ".env.prod"` (gitignored) into which Komodo writes the interpolated `environment`, and
 an `environment = """…"""` block whose values are masked Variable tokens `[[NAME]]`, resolved at deploy
-time. All seven blocks name the same Periphery `server = "Local"`, the same `linked_repo = "mcm-repo"`
+time. All eight blocks name the same Periphery `server = "Local"`, the same `linked_repo = "mcm-repo"`
 and the same `branch = "main"`, so one ResourceSync reconciles the whole production topology on one
 host. Nothing host-shaped or secret-shaped is committed: the git host lives in a separately
 bootstrapped Komodo `Repo` resource referenced by name, and the production domain, tailnet host and
@@ -158,7 +162,7 @@ wrapped around a `[[TAILNET_HOST]]` token — because the scrub rule is about to
 not about keeping the block purely symbolic.
 
 A production stack also never creates its own infrastructure. Every named volume a `compose.prod.yaml`
-mounts is `external: true` with an explicit `name:`, and so is every `networks:` entry except one,
+mounts is `external: true` with an explicit `name:`, and so is every `networks:` entry except two,
 because the networks and volumes are created by hand on the prod host as part of the one-time setup
 ([prod control tower](../runbooks/prod-control-tower.md)). Compose never creates an external resource, so
 a deploy that references a missing one aborts up front — `external volume "…" not found` — creates
@@ -192,15 +196,21 @@ and the one-time cutover on a host still carrying the pre-029 external net is
 `docker network rm keycloak-network` after a `prod-auth` destroy. See
 [prod reboot resilience](../runbooks/prod-reboot-resilience.md).
 
-Exposure is the other half of that contract, and it is deliberately tiny: only three host ports are
-published anywhere in production, and all three are operator surfaces bound plainly to `0.0.0.0` rather
-than to the tailnet IP — `prod-observability` publishes LangFuse web (`19030:3000`) and Grafana inside
-`otel-lgtm` (`19002:3000`), and `prod-auth` publishes the Keycloak admin console (`19099:8080`). The
+The second exception follows the same reasoning: `prod-dev-usage`'s `dev-usage-network: {}` carries only
+its intra-stack link between `dev-usage-postgres` and `dev-usage-postgrest`, so Compose owns it as
+`prod-dev-usage_dev-usage-network`. Its two volumes are external like everyone else's.
+
+Exposure is the other half of that contract, and it is deliberately tiny: only four host ports are
+published anywhere in production, all bound plainly to `0.0.0.0` rather than to the tailnet IP —
+`prod-observability` publishes LangFuse web (`19030:3000`) and Grafana inside `otel-lgtm`
+(`19002:3000`), `prod-auth` publishes the Keycloak admin console (`19099:8080`), and `prod-dev-usage`
+publishes the usage store's PostgREST (`19040:3000`, feature 105), which refuses any request without a
+Keycloak token. The
 `0.0.0.0` bind is forced rather than chosen: the rootless daemon starts before `tailscaled` at boot, so a
 `${TS_ADMIN_IP}:host:container` publish silently fails to bind (rootlesskit never learns the tailnet IP,
 the container ends up with no ports and nothing listens), and tailnet-only exposure is preserved instead
 by the host firewall's default-deny on non-tailnet inbound. Everything else stays unpublished and is
-reached by internal DNS, including `otel-lgtm`'s OTLP `4317`/`4318` and OPA's `8181`. All three published
+reached by internal DNS, including `otel-lgtm`'s OTLP `4317`/`4318` and OPA's `8181`. All four published
 ports sit in the prod-reserved `19000–19099` range so they cannot collide with the CI runner's own
 LangFuse, Grafana or Keycloak on the shared host.
 
@@ -283,6 +293,9 @@ are declared:
   `additional_env_files`, so it is the fourth stack that receives no committed digest file (the other
   three being `prod-auth`, `prod-audit` and `prod-observability`) — all four are upstream-image stacks
   that nothing in CI builds.
+- **`prod-dev-usage`** (`docker/dev-usage`) — `DEV_USAGE_PG_PASSWORD`, `DEV_USAGE_AUTHENTICATOR_PASSWORD`,
+  `DEV_USAGE_READER_PASSWORD`, all three new with feature 105; no `additional_env_files`, so a fifth
+  upstream-image stack with no committed digest file.
 
 The block that grew most recently is `prod-mcm-bff`'s: feature 073's production enablement (item #843
 follow-up, 2026-10-25) added `BACKUP_CREDENTIAL_ENC_KEY`, `BACKUP_TICK_SECRET` and

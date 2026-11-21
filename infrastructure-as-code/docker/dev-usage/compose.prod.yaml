@@ -82,7 +82,7 @@ services:
     environment:
       JWKS_URL: http://keycloak-service:8080/realms/grumpyrobot/protocol/openid-connect/certs
     volumes:
-      - jwks:/jwks
+      - dev-usage-jwks-data:/jwks
     entrypoint: ["sh", "-ec"]
     command:
       - |
@@ -121,7 +121,7 @@ services:
       # An explicit address: `postgrest --ready` (the health check) refuses the default `!4` and `*`.
       PGRST_SERVER_HOST: "0.0.0.0"
     volumes:
-      - jwks:/jwks:ro
+      - dev-usage-jwks-data:/jwks:ro
     logging:
       driver: json-file
       options:
@@ -137,13 +137,19 @@ services:
       start_period: 10s
 
 networks:
-  dev-usage-network:
-    name: dev-usage-network
+  # Compose-managed (no `name:`, not external), like prod-auth's keycloak-network: it carries only the
+  # intra-stack Postgres link, and letting Compose own it attaches every member atomically on each
+  # `up`. Grafana and the JWKS fetch use the shared external backend-network.
+  dev-usage-network: {}
   backend-network:
     external: true
 
+# Both external, created once by the operator (docs/runbooks/dev-usage.md §3.3): a production stack
+# never creates its own volumes, so a missing one aborts the deploy before any container changes.
 volumes:
   dev-usage-postgres-data:
     external: true
     name: dev-usage-postgres-data
-  jwks: {}
+  dev-usage-jwks-data:
+    external: true
+    name: dev-usage-jwks-data
