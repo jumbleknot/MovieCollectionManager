@@ -24,7 +24,15 @@ node scripts/cc-usage.mjs hook        # event JSON on stdin
 ```
 
 Stdin fields read: `hook_event_name` (`SessionStart` | `Stop` | `SessionEnd`), `session_id`,
-`transcript_path`, `cwd`, `reason` (SessionEnd). Unknown fields ignored.
+`transcript_path`, `cwd`, `reason` (SessionEnd). Unknown fields ignored — including `Stop`'s
+`last_assistant_message`, which is content and is never read (research "Spike results" (a)). The
+session id comes from stdin only: `CLAUDE_SESSION_ID` is not set in the hook environment. A
+`transcript_path` that does not exist is nothing to do (a failed `claude` invocation still fires
+`SessionStart` and `SessionEnd`).
+
+`SessionEnd` is **best effort**: a killed process (and, by extension, a VM idle-stop) fires none
+(Spike results (e), (f)). Nothing depends on it; the `SessionStart` sweep and the 24 h
+`inferred-stale` rule recover every session it misses.
 
 | Event | Behaviour |
 | --- | --- |

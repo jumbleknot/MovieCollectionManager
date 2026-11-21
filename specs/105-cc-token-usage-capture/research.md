@@ -89,7 +89,7 @@ per-turn cost budget (SC-005).
 The hook reads the event from stdin (`hook_event_name`, `session_id`, `transcript_path`, `cwd`,
 `reason`) and never trusts the newest-file heuristic (FR-019).
 
-**Still unverified → task T-spike** (first implementation task, before any test is written):
+**Verified by T001 (2026-11-21) → [Spike results](#spike-results) (a)–(f)**; originally listed as unverified:
 `SessionEnd` behaviour when the VM idle-stops; `Stop` on an interrupted turn; `$CLAUDE_PROJECT_DIR`
 resolving to the worktree in a worktree session; that project hooks merge with the user-level RTK
 `PreToolUse` hook rather than replacing it. The design does not depend on any of these: the
@@ -98,7 +98,7 @@ resolving to the worktree in a worktree session; that project hooks merge with t
 ## R7. Session identity inside the skill
 
 **Measured**: `CLAUDE_SESSION_ID` appears in the binary (substitution support present).
-**Still unverified → T-spike**: that `${CLAUDE_SESSION_ID}` is substituted in a *project* skill body.
+**Verified by T001 → [Spike results](#spike-results) (g)**: `${CLAUDE_SESSION_ID}` is substituted in a *project* skill body, so the fallback below is not needed.
 **Fallback if not**: the skill instructs Claude to pass the session id it can read from the hook-written
 marker `~/.claude/usage/state/by-cwd/<hash(cwd)>.json` **only when exactly one live session matches the
 cwd**, otherwise to ask — never to guess (FR-019).
@@ -160,7 +160,7 @@ says so, and nothing fails.
 
 **Decision**: no allowlist file change. If the ingest host equals the forge host the existing rule
 covers it; if the sandbox policy is per host *and* port, the operator adds the port with
-`sbx policy allow network` (runbook step). **T-spike** records which applies.
+`sbx policy allow network` (runbook step). **T001 result → [Spike results](#spike-results) (h)**: both layers are per host, not per port.
 
 ## R13. Repository gates the new stack must satisfy
 
@@ -180,7 +180,7 @@ covers it; if the sandbox policy is per host *and* port, the operator adds the p
 statusline wrapper (`cc-usage.mjs statusline`) records the latest `rate_limits` snapshot to local state
 and prints whatever the user's existing statusline command prints, so it never displaces a personal
 statusline. Not enabled in committed settings. Per-activity limit burn is derived from successive
-snapshots. **T-spike** confirms the field is populated on this plan.
+snapshots. **T001 result → [Spike results](#spike-results) (i)**: populated on this plan.
 
 ## R15. Outcomes
 
@@ -264,7 +264,7 @@ on every hook (needless load and a hard dependency on `prod-auth` for every ship
 request through the public `auth.` hostname (would add a gated domain to the egress policy; the tailnet
 endpoint needs nothing new).
 
-**To verify in T001**: that the realm token endpoint answers on the tailnet port that publishes
+**Verified by T001 → [Spike results](#spike-results) (j)**; the original question was: that the realm token endpoint answers on the tailnet port that publishes
 Keycloak (19099), and that the `iss` it stamps (the public hostname) is irrelevant to PostgREST, which
 checks signature, `aud` and `exp`.
 
@@ -294,3 +294,60 @@ filter includes `infrastructure-as-code/docker/**` and `infrastructure-as-code/p
 dev-usage change also triggers the full app E2E. That cost is **accepted**, not engineered away:
 excluding the path needs `predicate-quantifier: every`, which would change how every other pattern in
 the `app` list matches, and dev-usage changes are rare after this feature.
+
+## Spike results
+
+T001, 2026-11-21, Claude Code 2.1.327. Run in the feature worktree with a temporary, gitignored
+`.claude/settings.local.json` (removed afterwards) whose hooks appended hook stdin **key names** and a
+few scalar fields to `$CLAUDE_CONFIG_DIR/usage/spike.ndjson`; sessions were headless `claude -p`
+(haiku) plus one interactive run under a pty for the statusline. The main-checkout run used
+`claude -p --settings <scratch file>` so the shared checkout's settings were never touched. No
+content was recorded.
+
+- **(a) stdin fields** — every event: `session_id`, `transcript_path`, `cwd`, `scratchpad_dir`,
+  `hook_event_name`. `SessionStart` adds `source` (`startup` observed) and, interactively, `model`.
+  `Stop` adds `prompt_id`, `permission_mode`, `effort`, `stop_hook_active`, `last_assistant_message`
+  (**content — never read by the hook**), `background_tasks`, `session_crons`. `SessionEnd` adds
+  `prompt_id` (when a turn ran) and `reason` (`other` for a headless exit and for SIGINT). Every field
+  contracts/cli.md reads is present under the name it uses.
+- **(b) key spellings** — `"async": true` on `SessionStart`/`Stop` and `"timeout": 10` on `SessionEnd`
+  are accepted (no settings error; all three hooks fired). contracts/hooks-and-skill.md unchanged.
+- **(c) `$CLAUDE_PROJECT_DIR`** — worktree session: the worktree root
+  (`/home/coder/worktrees/105-cc-token-usage-capture`); main-checkout session: `/workspaces/mcm`. A
+  worktree session therefore runs **its own checkout's** `scripts/cc-usage.mjs`, from the same commit
+  as the `.claude/settings.json` that registered the hook, so the two never disagree.
+- **(d) coexistence with the user-level RTK hook** — a project `PreToolUse` (matcher `Bash`) hook
+  fired and RTK's own counter (`rtk gain`, "Total commands") moved 649 → 650 for the same call: the
+  project and user hook lists merge; neither replaces the other.
+- **(e) `Stop` on an interrupted turn** — not cleanly observed headlessly: the model backgrounded the
+  long command, so `Stop` fired before the SIGINT. SIGINT to a headless session produced `SessionEnd`
+  (`reason: other`) and no further `Stop`. Interactive Esc is not drivable from the shell. The design
+  does not depend on it: an unshipped tail is caught by `SessionEnd` or the next sweep.
+- **(f) `SessionEnd` after a VM idle-stop** — not reproducible from inside the VM (it would end this
+  session). Closest observation: an interactive session whose pty was killed fired **no**
+  `SessionEnd`. Treat `SessionEnd` as **best effort**; the `SessionStart` sweep with the 24 h
+  `inferred-stale` rule (T016) is the backstop, as designed.
+- **(g) `${CLAUDE_SESSION_ID}` in a project skill body** — substituted: a project skill whose body was
+  `SID=${CLAUDE_SESSION_ID}` returned the same id the hooks received. The by-cwd fallback of R7 is not
+  needed by the skill; the marker stays as a `doctor` aid only. `CLAUDE_SESSION_ID` is **not**
+  present in the hook process environment; the hook takes the id from stdin.
+- **(h) sandbox network policy** — **per host, not per port**, in both layers: the in-VM firewall
+  accepts on `--match-set allowed-domains dst` with no `--dport` (`.devcontainer/init-firewall.sh`),
+  and `gen-egress-policy.mjs --format sbx-policy` emits `allow network <domain>` with no port.
+  Observed: an HTTP request to the forge host on the Keycloak port 19099 succeeded from the container.
+  So when the ingest and token URLs use the forge host, **no** policy change is needed; a different
+  host would need both `sbx policy allow network <host>` and the in-VM allowlist (runbook step).
+- **(i) statusline `rate_limits`** — populated on this plan from the second render (after the first
+  API response; absent on the very first render): `rate_limits.five_hour` and `rate_limits.seven_day`,
+  each `{ used_percentage, resets_at }`. Other statusline keys include `cost`, `context_window`,
+  `prompt_cache`, `exceeds_200k_tokens`.
+- **(j) Keycloak over the tailnet** — `GET http://<forge host>:19099/realms/grumpyrobot/.well-known/openid-configuration`
+  → 200 over plain HTTP; `grant_types_supported` includes `client_credentials`; the discovery
+  `issuer` is the public `https` hostname, **not** the tailnet host the request used, so tokens carry
+  that `iss` regardless of the route — irrelevant to PostgREST, which checks signature, `aud` and
+  `exp` only. A client-credentials `POST` to the token endpoint for `dev-usage-capture` with a dummy
+  secret → `401 invalid_client`: the endpoint answers over the tailnet, and the client does not exist
+  in production yet (operator step). A real token's claims are proven against the CI realm by T027.
+- **Also observed** — a `claude` invocation that fails argument parsing still fires `SessionStart` and
+  `SessionEnd` with a `transcript_path` that need not exist: the hook must treat a missing transcript
+  as nothing to do (already a T015 case).
