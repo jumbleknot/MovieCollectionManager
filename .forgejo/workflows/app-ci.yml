@@ -147,6 +147,7 @@ jobs:
       app: ${{ steps.filter.outputs.app }}
       mobile: ${{ steps.filter.outputs.mobile }}
       cargo: ${{ steps.filter.outputs.cargo }}
+      dev-usage: ${{ steps.filter.outputs.dev-usage }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
@@ -247,6 +248,16 @@ jobs:
               - 'Cargo.lock'
               - '**/Cargo.toml'
               - 'rust-toolchain.toml'
+            # Feature 105 (research R20): the Claude Code usage store — its stack, schema and tests, the
+            # script that ships to it, and the realm files that define its Keycloak client. Selects
+            # `dev-usage-integration`. Deliberately NOT added to `app`: `infrastructure-as-code/docker/**`
+            # already sends a stack change through app-e2e, and excluding it there would need
+            # `predicate-quantifier: every`, which changes how every other `app` pattern matches.
+            dev-usage:
+              - 'infrastructure-as-code/docker/dev-usage/**'
+              - 'scripts/cc-usage.mjs'
+              - 'scripts/lib/cc-usage/**'
+              - 'infrastructure-as-code/docker/keycloak/*-realm.json'
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
@@ -556,6 +567,64 @@ jobs:
           docker compose -p mcm -f infrastructure-as-code/docker/stacks/mcm.compose.yaml \
             down -v --remove-orphans || true
           CI_LOG_STEP
+      # Feature 042 — see `mc-service-checks`' identical step.
+      - name: Publish failure digest
+        if: always()
+        continue-on-error: true
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
+          CI_DIGEST_JOB_STATUS: ${{ job.status }}
+        run: node scripts/ci-failure-digest.mjs
+
+  # Feature 105 (research R20) — the usage store's integration tier: real Postgres + PostgREST + a
+  # throwaway Keycloak importing ci-realm.json, brought up and torn down by the Nx target itself
+  # (compose project `dev-usage-it`, no fixed container or volume names, so it cannot collide with the
+  # auth stack on this persistent runner). MCM_REQUIRE_LIVE_STACK=1: a stack that fails to come up is
+  # a FAILURE, never a skip. Whether it becomes a required check is recorded in docs/runbooks/dev-usage.md.
+  dev-usage-integration:
+    needs: [changes]
+    if: ${{ needs.changes.outputs.dev-usage == 'true' }}
+    runs-on: kvm
+    timeout-minutes: 20
+    env:
+      # No calibrated row in scripts/ci-step-ceilings.tsv yet; measure once enough runs exist:
+      #     node scripts/ci-status.mjs durations --job dev-usage-integration --runs 40
+      CI_STEP_TIMEOUT_SECONDS: '900'
+      DOCKER_HOST: unix:///run/user/1001/docker.sock
+      MCM_REQUIRE_LIVE_STACK: '1'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Docker CLI (host runner talks to the ci rootless daemon)
+        run: |
+          bash scripts/ci-log-step.sh dev-usage-it-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
+          if ! command -v docker >/dev/null 2>&1; then
+            curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz \
+              | tar xz -C /usr/local/bin --strip-components=1 docker/docker
+          fi
+          if ! docker info >/dev/null 2>&1; then
+            echo "::error::the ci rootless daemon is not reachable at DOCKER_HOST=$DOCKER_HOST (see app-e2e's identical step)."
+            exit 1
+          fi
+          CI_LOG_STEP
+      - name: Install latest Docker Compose plugin
+        run: |
+          bash scripts/ci-log-step.sh dev-usage-it-install-latest-docker bash -e /dev/stdin <<'CI_LOG_STEP'
+          mkdir -p ~/.docker/cli-plugins
+          curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+            -o ~/.docker/cli-plugins/docker-compose
+          chmod +x ~/.docker/cli-plugins/docker-compose
+          docker compose version
+          CI_LOG_STEP
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 26.13.1, cache: pnpm }
+      - name: Verify pnpm matches packageManager
+        run: bash scripts/ci-log-step.sh dev-usage-it-check-pnpm-version node scripts/check-pnpm-version.mjs
+      - name: Install dependencies
+        run: bash scripts/ci-log-step.sh dev-usage-it-install-dependencies pnpm install --frozen-lockfile
+      - name: Usage store integration tests (Postgres + PostgREST + Keycloak, torn down by the target)
+        run: bash scripts/ci-log-step.sh dev-usage-integration pnpm nx dev-usage-integration infrastructure-as-code
       # Feature 042 — see `mc-service-checks`' identical step.
       - name: Publish failure digest
         if: always()
