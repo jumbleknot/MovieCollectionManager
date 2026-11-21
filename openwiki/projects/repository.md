@@ -727,9 +727,10 @@ on the VM *before* the container is created — and passed to the container with
 an option on this path, because the sandbox is routinely entered by `ssh mcm.sbx` + `docker exec`,
 which `remoteEnv` does not reach. The generator sources `~/.mcm-sandbox-env` as a shell and re-emits
 the bare `KEY=value` form, because `docker --env-file` does no quote processing and would otherwise
-deliver values wrapped in literal apostrophes. Five names are covered
+deliver values wrapped in literal apostrophes. Six names are covered
 (`MCM_ANTHROPIC_API_KEY`, `MCM_FIREWORKS_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`,
-`MCM_FORGE_ISSUE_TOKEN`). The one residue that does not go away is that the values remain visible in
+`MCM_FORGE_ISSUE_TOKEN`, and feature 105's `MCM_USAGE_CLIENT_SECRET` — the Keycloak secret the Claude
+Code usage hooks trade for a store token). The one residue that does not go away is that the values remain visible in
 `docker inspect <container>` — inherent, since `docker exec` must be able to see them.
 
 Two consequences when you change the config: **`devcontainer up` does not recreate the container

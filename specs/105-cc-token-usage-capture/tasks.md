@@ -327,7 +327,7 @@ counter-metrics. Rules are active only after two weeks of data; the spec closes 
   - **Done when**: the page lists eight stacks and records its fingerprint.
 - [x] T070 [P] Add `MCM_USAGE_INGEST_URL` and `MCM_USAGE_TOKEN_URL` (forwarded via `${localEnv}`) and `MCM_USAGE_CLIENT_SECRET` (via the env file) to `docs/runbooks/devcontainer.md` (heading at ~141 and the bullets at ~232–245, with "any of the three unset → capture is not configured: nothing is captured or spooled and nothing fails; the first sweep after they are set catches up"), then refresh `openwiki/runbooks/devcontainer.md` (~166, ~202).
   - **Done when**: both pages list the three variables and the wiki fingerprint is recorded.
-- [ ] T071 [P] Add `MCM_USAGE_CLIENT_SECRET` to the credential lists in `docs/runbooks/devcontainer-sandbox.md` (~170–172, ~691, ~766 example), then refresh `openwiki/runbooks/devcontainer-sandbox.md` (~234) and `openwiki/projects/repository.md` (~724–732).
+- [x] T071 [P] Add `MCM_USAGE_CLIENT_SECRET` to the credential lists in `docs/runbooks/devcontainer-sandbox.md` (~170–172, ~691, ~766 example), then refresh `openwiki/runbooks/devcontainer-sandbox.md` (~234) and `openwiki/projects/repository.md` (~724–732).
   - **Done when**: the three lists name the client secret and both wiki fingerprints are recorded.
 - [ ] T072 **Close-out re-search**: re-run every T002 search; every hit in a document that states current procedure now reflects four ports, eight prod compose files, the `prod-dev-usage` stack, the new backup step and the three new variables, or is justified in this task.
   - **Done when**: this task lists the re-run command and one line per remaining hit with its disposition.
