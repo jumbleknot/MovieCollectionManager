@@ -321,7 +321,7 @@ counter-metrics. Rules are active only after two weeks of data; the spec closes 
   - **Done when**: no "three" port statement remains on either page; `pnpm nx okf-governance infrastructure-as-code` exits 0.
 - [x] T067 [P] Update `docs/runbooks/prod-reboot-resilience.md` — the published-port table at ~86 gains `19040`, the post-reboot checks gain "PostgREST over the tailnet `http://<tailnet-host>:19040` → 401 without a token" and check 9 becomes four ports — then refresh `openwiki/runbooks/prod-reboot-resilience.md` (service and compose-file counts at ~141, ~204, ~427).
   - **Done when**: both files name four ports and eight prod compose files; the wiki page's fingerprint is recorded.
-- [ ] T068 [P] Update `docs/runbooks/Server-Setup-Runbook.md`: the ResourceSync stack list (~954), the Backups dump table (~1128–1150, a `dev-usage` row), the published-port survivability list (~1412, a `19040` item) and the stack table (~1431).
+- [x] T068 [P] Update `docs/runbooks/Server-Setup-Runbook.md`: the ResourceSync stack list (~954), the Backups dump table (~1128–1150, a `dev-usage` row), the published-port survivability list (~1412, a `19040` item) and the stack table (~1431).
   - **Done when**: each of the four places names `prod-dev-usage`/`19040`/the dump, and any wiki page citing this runbook is refreshed (T064).
 - [ ] T069 [P] Add `prod-dev-usage` to `openwiki/projects/infrastructure-stacks.md` (stack list ~118, dependency diagram ~128 — `prod-dev-usage` deploys after `prod-auth` (`after`, for the JWKS fetch) — and the `dev-usage` naming context), refreshing from its sources.
   - **Done when**: the page lists eight stacks and records its fingerprint.

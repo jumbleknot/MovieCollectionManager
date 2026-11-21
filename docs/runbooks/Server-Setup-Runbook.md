@@ -951,7 +951,8 @@ server shows connected (Periphery driving the prod rootless daemon).
 token, §6.5) and register the `komodo-git-read` token as the Git provider. The prod stacks are not
 defined by hand: a **ResourceSync** reconciles them from `infrastructure-as-code/komodo/stacks.toml`
 (`branch = main`) — `prod-auth`, `prod-mc-service`, `prod-mcm-bff`, `prod-movie-assistant`,
-`prod-audit`, `prod-observability`, `prod-vault`. Note the sync's **"Execute Sync" webhook** URL; it
+`prod-audit`, `prod-observability`, `prod-vault`, `prod-dev-usage` (feature 105, the Claude Code usage
+store; its one-time steps are in [dev-usage.md](dev-usage.md)). Note the sync's **"Execute Sync" webhook** URL; it
 is the Forgejo Actions variable `KOMODO_WEBHOOK_URL`.
 
 > **Komodo's webhook is a git-style redeploy, not a digest body.** It validates the branch in a
@@ -1108,15 +1109,15 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 **The most important phase — one 1 TB SSD is a single point of failure.**
 
 > **Not the same thing as the in-app backups.** This phase is the **operator's host-level disaster
-> recovery**: a restic snapshot of every service's data (Forgejo, Komodo, Keycloak, agent-db and both
-> Mongos) to a remote the operator controls. Feature 073's **per-user collection backups**
+> recovery**: a restic snapshot of every service's data (Forgejo, Komodo, Keycloak, agent-db, the
+> Claude Code usage store and both Mongos) to a remote the operator controls. Feature 073's **per-user collection backups**
 > ([backups.md](backups.md)) are an application feature: each user exports their own collections to
 > S3-compatible or WebDAV storage *they* own, scheduled by the BFF and restorable only as new
 > collections. Neither replaces the other — a user's own backup does not protect the host, and the
 > host snapshot cannot be restored per user.
 
 - **Backups (restic or Borg), scheduled + encrypted + offsite (3-2-1):**
-  - `mongodump` the replica set; `pg_dump` each Postgres (Forgejo, Keycloak, agent-db, Komodo).
+  - `mongodump` the replica set; `pg_dump` each Postgres (Forgejo, Keycloak, agent-db, dev-usage, Komodo).
   - Snapshot Forgejo's data (repos, DB, config; the registry is rebuildable and excluded, see As-built below), Komodo config, and the **prod Keycloak realm export**.
   - Push at least one copy offsite (Backblaze B2 / S3 — cheap).
   - **Test restores on a schedule** — a backup you haven't restored isn't a backup.
@@ -1136,6 +1137,7 @@ The architecture's `otel-lgtm` (Grafana/Prometheus/Loki/Tempo), LangFuse, and Op
 >   | `komodo` | `pg_dumpall --globals-only` (roles), then `pg_dump --exclude-table-data=cron.job_run_details` for each database `psql` lists (only `postgres` on 2026-10-28). Credentials come from `~/komodo/compose.env`; the password reaches `docker exec` by name, never in argv | ends `-- PostgreSQL database dump complete` | 1 MiB; **maximum 500 MB**, above which it alerts `komodo-oversize` and still uploads |
 >   | `keycloak` | `docker exec … pg_dump` over the container socket | ends `-- PostgreSQL database dump complete` | 50 KiB |
 >   | `agent-db` | the same | the same | **1 byte** — `agent_db` has no tables by design (the gateway checkpoints in memory) |
+>   | `dev-usage` | `docker exec dev-usage-postgres … pg_dump -Fc` (feature 105: the Claude Code usage store; restore in [dev-usage.md](dev-usage.md) §7) | starts with the `PGDMP` magic | 1 KiB — an empty schema already dumps to more |
 >   | `mc-service-mongo` | `docker exec … mongodump --archive --gzip`, URI read live from the app container | `gzip -t` | 100 KiB |
 >   | `bff-mongo` | the same | `gzip -t` | 1 KiB |
 >   | `release-apks` | every file of every `mcm-app-android` version, read from the forge's generic-package API with `~/backup/forge-package-token` (mode 600, **`read:package` only**), as an uncompressed tar of `release-apks/<version>/<file>` | `tar -tf` | 10 MiB |
@@ -1409,7 +1411,7 @@ A kernel-upgrade reboot on 2026-07-05 hard-killed the rootless containers and ex
 
 These live in the repo (config-as-code) or are applied by a Komodo redeploy, so they survive future deploys:
 
-1. ✅ **Tailnet-IP bind survivability, box-wide** (feature 028, ports moved by feature 029). Every published prod port in `infrastructure-as-code/docker/*/compose.prod.yaml` binds `0.0.0.0` (plain `HOST:CONTAINER`, tailnet-only via ufw default-deny) and sits in the prod-reserved 19000–19099 range: Keycloak admin **19099** (was 8099), LangFuse **19030**, Grafana **19002**. Ordering the rootless user manager after `tailscaled` is optional defense-in-depth only — see [prod-reboot-resilience.md](prod-reboot-resilience.md) Part 1.
+1. ✅ **Tailnet-IP bind survivability, box-wide** (feature 028, ports moved by feature 029). Every published prod port in `infrastructure-as-code/docker/*/compose.prod.yaml` binds `0.0.0.0` (plain `HOST:CONTAINER`, tailnet-only via ufw default-deny) and sits in the prod-reserved 19000–19099 range: Keycloak admin **19099** (was 8099), LangFuse **19030**, Grafana **19002**, and (feature 105) the usage store's PostgREST **19040**, which refuses any request without a Keycloak token. Ordering the rootless user manager after `tailscaled` is optional defense-in-depth only — see [prod-reboot-resilience.md](prod-reboot-resilience.md) Part 1.
 2. ✅ **Grafana / otel-lgtm** — `infrastructure-as-code/docker/observability/compose.prod.yaml` binds `"19002:3000"` (Komodo `prod-observability`).
 3. ✅ **mc-service Mongo keyfile idempotency** — `infrastructure-as-code/docker/mc-service/mongo-entrypoint.sh` runs `rm -f "$KEYFILE_PATH"` before writing the keyfile (feature 028), covered by `mongo-entrypoint.test.sh`.
 4. ✅ **Keycloak `backend-network` durability** — the `prod-auth` compose declares `backend-network` (and `edge-network`) on `keycloak-service`; the re-attach is a Komodo `prod-auth` redeploy, not a manual `docker network connect` ([prod-reboot-resilience.md](prod-reboot-resilience.md) Part 3).
@@ -1428,7 +1430,7 @@ The first **validation reboot** (2026-07-08) did not come back clean and exposed
 | Komodo (CD) | prod | `http://server.tailnet.ts.net:9120` |
 | RustFS (Nx cache) | prod | no UI — console disabled; S3 API on `:9000`, consumed on loopback by `nx-cache` (feature 080) |
 | CI Forgejo runner | ci | (no UI — status in Forgejo) |
-| MCM production stack | prod | Komodo ResourceSync stacks from `infrastructure-as-code/komodo/stacks.toml`: `prod-auth` → `prod-mc-service` → `prod-mcm-bff` → `prod-movie-assistant` (+ `prod-audit`/`prod-observability`/`prod-vault`); local-dev equivalent: named stacks under `stacks/` (feature 020), `auth` + `mcm` (+ `audit`/`observability`), `up-auth` → `up-mcm` |
+| MCM production stack | prod | Komodo ResourceSync stacks from `infrastructure-as-code/komodo/stacks.toml`: `prod-auth` → `prod-mc-service` → `prod-mcm-bff` → `prod-movie-assistant` (+ `prod-audit`/`prod-observability`/`prod-vault`/`prod-dev-usage`); local-dev equivalent: named stacks under `stacks/` (feature 020), `auth` + `mcm` (+ `audit`/`observability`), `up-auth` → `up-mcm` |
 | Public app (BFF) | prod | `https://mcm.${BASE_DOMAIN}` (Cloudflare Tunnel) |
 | Public auth (Keycloak) | prod | `https://auth.${BASE_DOMAIN}` (Cloudflare Tunnel) |
 | Caddy (reverse proxy/TLS) | — | not deployed: cloudflared reaches the services directly (10.A; 10.C is the optional alternative) |

@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: 322b230bb7552070802f5914de454b36654f366c1d4421919c9a8bf7b4efc6c2
+resource-sha256: 3c4c0c806679f1fd64bf6b578cf516eed92a5d2e6752dc3960d0de6aa1810a13
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-15T01:49:43.591Z
+timestamp: 2026-11-21T17:38:17.807Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -125,11 +125,12 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   as a directory and the Mongo and Vault containers die with `not a directory` (exit 127). Bootstrap
   the persistent root here so a rebuild cannot reintroduce the tmpfs default; the failure and its
   fix are recorded in [Prod reboot resilience](./prod-reboot-resilience.md).
-  The prod stacks are not defined by hand: one **ResourceSync** reconciles the seven
+  The prod stacks are not defined by hand: one **ResourceSync** reconciles the eight
   `[[stack]]` blocks in `infrastructure-as-code/komodo/stacks.toml` (`branch = main`) and, because
   each carries `deploy = true` + `after = [...]`, *deploys* them too in dependency order
   (`prod-auth → prod-mc-service → prod-mcm-bff → prod-movie-assistant`, plus `prod-audit`,
-  `prod-observability` and `prod-vault`). The four core stacks were created manually during Phase 15
+  `prod-observability`, `prod-vault` and, since feature 105, `prod-dev-usage`, the Claude Code usage
+  store). The four core stacks were created manually during Phase 15
   and the `prod-app → prod-mcm-bff` rename was done by hand, so the sync **adopts** them in place — a
   config diff, not a create-from-scratch — which is why the first apply is previewed as a diff.
 - **10 — Public ingress, TLS and DNS.** Pick exactly one ingress model. The confirmed one is direct
@@ -207,8 +208,9 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
     [`infrastructure-as-code/backup/backup.sh`](../../infrastructure-as-code/backup/backup.sh), so it
     is reviewed and the host copy is checked against the repository rather than drifting. The same
     obligation is what put the Nx-cache store's config directory on the `restic backup` path list.
-    The list is now **eight** dumps — `forge-db`, `forge-data`, `komodo`, `keycloak`, `agent-db`,
-    `mc-service-mongo`, `bff-mongo` and `release-apks` — each written through `run_dump` so that one
+    The list is now **nine** dumps — `forge-db`, `forge-data`, `komodo`, `keycloak`, `agent-db`,
+    `dev-usage` (feature 105's usage store, `pg_dump -Fc`), `mc-service-mongo`, `bff-mongo` and
+    `release-apks` — each written through `run_dump` so that one
     failure cannot skip the rest, each checked in its own format against a minimum and against last
     night's size, and each verdict recorded in a `dump-manifest.tsv` that travels **inside** the
     snapshot. Two of the eight carry a shape that needs explaining: `forge-data` is an **uncompressed**
