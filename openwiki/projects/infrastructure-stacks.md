@@ -138,7 +138,7 @@ to it.
 
 The reasons that carry weight: `prod-mc-service` waits on `prod-auth` because mc-service fetches
 Keycloak's JWKS; `prod-movie-assistant` comes last because `spreadsheet-mcp` needs `prod-mcm-bff`'s
-`mcm-bff-network` and Redis; `prod-dev-usage` waits on `prod-auth` because its run-once `dev-usage-jwks-init` fetches the realm's
+`mcm-bff-network` and Redis; `prod-dev-usage` waits on `prod-auth` because its `dev-usage-jwks-init` fetches the realm's
 signing keys from `keycloak-service`; `prod-vault` hangs off `prod-auth` because it is logically in the auth
 tier while living in its own block (its `file_paths` are `run_directory`-relative and the Vault compose
 sits under `docker/vault/`); and `prod-observability`'s edge is ordering only, keeping a clean graph
@@ -492,11 +492,15 @@ no gate in this section reads it; [Prod host backup](./backup.md) owns that subj
 `check-naming` Nx target — enforces the `<context>-<role>-<engine>` grammar on every declared volume
 name, external network name and `container_name`, requires `container_name == service key`, permits
 only the BFF to carry the `mcm-` qualifier, and forbids re-introducing a retired service key as a
-network alias so a missed reference fails loudly instead of silently resolving.
+network alias so a missed reference fails loudly instead of silently resolving. Its contexts are a
+fixed list; feature 105 added `dev-usage` (`dev-usage-postgres-data`, `dev-usage-postgrest`, …), and
+the gate's `--selftest` proves the near-miss `devusage-*` is still rejected.
 `scripts/check-no-inline-secrets.mjs` asserts the structural property that no *discovered* compose file
 holds a literal credential: every secret-shaped key, password-bearing URL, and
 command/healthcheck/entrypoint auth literal must be a pure `${VAR}` / `${VAR:?msg}` reference, and an
-inline `${VAR:-default}` *fails* because it re-leaks plaintext. The secret gate runs in the `naming`
+inline `${VAR:-default}` *fails* because it re-leaks plaintext. One value-aware exception: PostgREST's
+`PGRST_JWT_SECRET=@/path` is a file reference (the usage store points it at Keycloak's public JWKS), so
+it passes, while a literal in that same key still fails. The secret gate runs in the `naming`
 job as `--selftest` then scan, so a detector that quietly stopped flagging cannot report green; the
 naming gate has no selftest and is run straight as `--section=all`, and `scripts/preflight.mjs`
 reproduces both locally (the secret gate as selftest-then-scan, the naming gate plain). `.gitignore`

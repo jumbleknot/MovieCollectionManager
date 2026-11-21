@@ -3,10 +3,10 @@ type: Runbook
 title: Containerized dev environment (devcontainer — Docker Desktop / DinD path)
 description: The RETAINED Docker Desktop / Docker-in-Docker dev container — kept solely for Android emulator support via /dev/kvm, while the Docker Sandbox microVM is the primary environment. Summarizes the two-tier isolation model, the thin Dockerfile layer and its measured ~13 GB copy-up cost, the canonical egress allowlist behind the in-container firewall (its schema, exclusions and fatal-precondition design), the in-container dev-ollama helper, the MCM_-prefixed credential rule (Anthropic and Fireworks), and the worktree, DinD-lock, pnpm-store and Android-KVM traps.
 resource: docs/runbooks/devcontainer.md
-resource-sha256: 8d65048da0969f9e45e8fcd96c36fb714f16b61448eba1691d76bc036ce158e7
+resource-sha256: a646c6156f87ddda54456f2bbe0f3345d48c9c26325674183e73429c77f2cb47
 tags: [devcontainer, docker, security, isolation, runbook, android]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-17T03:42:47.597Z
+timestamp: 2026-11-21T17:39:21.263Z
 ---
 
 # Containerized dev environment (devcontainer — Docker Desktop / DinD path)
@@ -163,7 +163,8 @@ and reads committed files.
   (`dev.containers.mountWaylandSocket: false`); the Docker credential-helper injection is already
   fixed in committed config (`containerEnv.DOCKER_CONFIG`) — don't remove that fix.
 - **A host env var forwarded via `${localEnv}` (`MCM_ANTHROPIC_API_KEY`, `MCM_DEVCONTAINER_IMAGE`,
-  `FORGE_REGISTRY_HOST`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN`) is read from
+  `FORGE_REGISTRY_HOST`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN`, and feature 105's
+  `MCM_USAGE_INGEST_URL` / `MCM_USAGE_TOKEN_URL`) is read from
   the VS Code process's own environment at launch time.** Setting it after VS Code is already running
   does nothing — VS Code must be relaunched with the value already present, then the container
   recreated. `setx` alone is not enough; fully quit VS Code and relaunch from a shell where the
@@ -200,7 +201,9 @@ and reads committed files.
   canonical allowlist for model traffic only, and the `fireworks.ai` website FQDN is deliberately not
   covered. **This key is not in this path's `containerEnv`** — it travels only on the sandbox path,
   where `.devcontainer/gen-container-secrets-env.sh` emits it into the `--env-file` from
-  `~/.mcm-sandbox-env` alongside the four older credentials.
+  `~/.mcm-sandbox-env` alongside the four older credentials. Feature 105's `MCM_USAGE_CLIENT_SECRET`
+  follows the same rule, so on this path Claude Code usage capture stays **not configured** (the hooks
+  do nothing; `node scripts/cc-usage.mjs doctor` names the missing value).
 - **Credentials must not be listed in `containerEnv` — that is not "environment for the container",
   it is an ENV instruction in the generated Dockerfile-with-features.** Measured 2026-09-19 on the
   derived image: the credential values were present in `Config.Env` and in **3 history layers**, a
