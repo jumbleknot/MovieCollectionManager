@@ -352,7 +352,8 @@ counter-metrics. Rules are active only after two weeks of data; the spec closes 
   - **Done when**: every command exits 0 with 0 skipped, and the affected-project list is recorded here.
 - [ ] T074 Run quickstart.md §1–§3 in the worktree, and §4–§6 after the stack is deployed and the env is set (operator steps in `docs/runbooks/dev-usage.md`).
   - **Done when**: each section's expected outcome is observed and noted here with the date.
-- [ ] T075 **Open the PR** from a real branch (`git push origin HEAD:105-cc-token-usage-capture`, then `node scripts/forge-pr.mjs open`, per `docs/runbooks/ci-diagnostics.md`). Tick this task in the branch's LAST commit and quote the branch, the PR number and that commit's sha. CI evidence is never recorded here: the run ids, the `ci-status.mjs` verdict and the merge sha go in the PR's closing comment, posted with `MCM_FORGE_ISSUE_TOKEN`.
+- [x] T075 **Open the PR** from a real branch (`git push origin HEAD:105-cc-token-usage-capture`, then `node scripts/forge-pr.mjs open`, per `docs/runbooks/ci-diagnostics.md`). Tick this task in the branch's LAST commit and quote the branch, the PR number and that commit's sha. CI evidence is never recorded here: the run ids, the `ci-status.mjs` verdict and the merge sha go in the PR's closing comment, posted with `MCM_FORGE_ISSUE_TOKEN`.
+  **Opened 2026-11-21**: PR #1091 from branch `105-cc-token-usage-capture`; this tick is the branch's last commit (its sha is quoted in the PR's closing comment).
 - [ ] T076 After two weeks of captured data: run `findings`, accept at least one, and after further sessions confirm its before/after (SC-008). Record the finding id and dates in the PR's closing comment or a follow-up backlog item; the spec's status moves to Done only then.
   - **Done when**: SC-008 is met and recorded.
 
