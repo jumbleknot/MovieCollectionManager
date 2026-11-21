@@ -37,10 +37,12 @@ OUT="${MCM_CONTAINER_SECRETS_ENV:-$HOME/.mcm-devcontainer-secrets.env}"
 
 # The four credentials that were in containerEnv, plus MCM_FIREWORKS_API_KEY (2026-09-27, the
 # OpenWiki provider trial on Fireworks AI — mapped to FIREWORKS_API_KEY only at the point of use, the
-# same rule as MCM_ANTHROPIC_API_KEY). An unprovisioned one is reported below, never fatal.
+# same rule as MCM_ANTHROPIC_API_KEY), plus MCM_USAGE_CLIENT_SECRET (feature 105: the Keycloak secret
+# of client dev-usage-capture, which the Claude Code usage hooks trade for a short-lived store token)
+# — seven in all. An unprovisioned one is reported below, never fatal.
 # FORGE_REGISTRY_HOST is deliberately NOT here: it is a hostname, not a secret, and stays in
 # containerEnv where it is harmless.
-VARS="MCM_ANTHROPIC_API_KEY MCM_FIREWORKS_API_KEY TMDB_API_KEY MCM_FORGE_TOKEN MCM_FORGE_ISSUE_TOKEN"
+VARS="MCM_ANTHROPIC_API_KEY MCM_FIREWORKS_API_KEY TMDB_API_KEY MCM_FORGE_TOKEN MCM_FORGE_ISSUE_TOKEN MCM_USAGE_CLIENT_SECRET"
 
 # Create it private BEFORE writing, never after: a chmod that follows the write leaves a window in
 # which the credentials are world-readable on a multi-user box.

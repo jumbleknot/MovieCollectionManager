@@ -1,0 +1,11 @@
+{
+  "agentType": "Explore",
+  "isBuiltIn": true,
+  "launchedWithDefaults": true,
+  "description": "SENTINEL-description-6",
+  "toolUseId": "toolu_D1",
+  "spawnDepth": 1,
+  "requestShape": "default",
+  "requestNonInteractive": false,
+  "finished": true
+}

@@ -742,5 +742,5 @@ rehearsal record and completion note are in
 Langfuse 4.68 minor's scan, allowlist re-key, dev rehearsal and production run are recorded (the 4.72.0
 bump that discharged those allowlist entries, item #895, is recorded in the runbook and the allowlist's
 own history) — and the
-stack-level view of the same seven Komodo stacks is in
+stack-level view of the same eight Komodo stacks is in
 [Infrastructure stacks](../projects/infrastructure-stacks.md).

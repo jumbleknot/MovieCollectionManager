@@ -117,6 +117,7 @@ function host(t, { overrides = [], keycloakBytes = 381023, extraFixtures = [], p
     komodoDb: sqlDump(join(fx, 'komodo-db.sql'), 1 * MIB),
     keycloak: sqlDump(join(fx, 'keycloak.sql'), keycloakBytes),
     agentDb: sqlDump(join(fx, 'agent-db.sql'), 670),
+    devUsage: pgCustomDump(join(fx, 'dev-usage.dump'), 8 * KIB),
     mcMongo: gzDump(join(fx, 'mc.gz'), 200 * KIB),
     bffMongo: gzDump(join(fx, 'bff.gz'), 3 * KIB),
   };
@@ -129,6 +130,7 @@ function host(t, { overrides = [], keycloakBytes = 381023, extraFixtures = [], p
     ...packageFixtures(fx),
     { cmd: 'docker', match: ['keycloak-store-postgres'], stdoutFile: files.keycloak },
     { cmd: 'docker', match: ['movie-assistant-store-postgres'], stdoutFile: files.agentDb },
+    { cmd: 'docker', match: ['dev-usage-postgres'], stdoutFile: files.devUsage },
     { cmd: 'docker', match: ['mc-service-store-mongo'], stdoutFile: files.mcMongo },
     { cmd: 'docker', match: ['mcm-bff-store-mongo'], stdoutFile: files.bffMongo },
     {
@@ -180,6 +182,17 @@ function manifestRows(text) {
   assert.deepEqual(header, ['name', 'file', 'bytes', 'min_bytes', 'max_bytes', 'format', 'prev_bytes', 'verdict']);
   return Object.fromEntries(rows.map((r) => [r[0], Object.fromEntries(header.map((h, i) => [h, r[i]]))]));
 }
+
+// ── Feature 105 (FR-013): the Claude Code usage store is in the nightly backup ─────────────────────
+
+test('the dev-usage database is dumped nightly, in pg_dump custom format (feature 105)', (t) => {
+  assert.match(SOURCE, /^run_dump dev-usage \$\(\(\d+ \* [KM]IB\)\) - pg-custom dev-usage\.dump -- dump_postgres dev-usage-postgres -Fc$/m, 'no dev-usage dump step');
+  const h = host(t);
+  const r = h.run();
+  assert.equal(r.status, 0, r.stderr);
+  assert.ok(dockerCalls(h).some((c) => c.argv.join(' ').includes('dev-usage-postgres')), 'dev-usage-postgres was never dumped');
+  assert.equal(manifestRows(stagingOf(h).manifest)['dev-usage'].verdict, 'ok');
+});
 
 // ── FR-003: one failing dump never skips the others ────────────────────────────────────────────
 

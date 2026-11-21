@@ -58,7 +58,7 @@ literal, and never a `${VAR:-literal}` default, since a default *is* a leaked va
 
 ## Production: masked Komodo Variables
 
-Komodo Variables are the one sanctioned production mechanism (ADR-0001). The seven prod stacks are
+Komodo Variables are the one sanctioned production mechanism (ADR-0001). The eight prod stacks are
 config-as-code in [stacks.toml](../../infrastructure-as-code/komodo/stacks.toml): each `[[stack]]`
 declares `env_file_path = ".env.prod"` (gitignored, `chmod 600`) and an `environment = """…"""`
 block whose values are masked Variable tokens `[[NAME]]`. Komodo interpolates that block into

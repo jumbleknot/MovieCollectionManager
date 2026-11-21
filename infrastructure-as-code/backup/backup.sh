@@ -25,7 +25,7 @@ STATE="$BACKUP_DIR/state"
 ALERT="$BACKUP_DIR/backup-alert.sh"
 LAST_GOOD="$STATE/last-good.tsv"
 PACKAGE_TOKEN_FILE="$BACKUP_DIR/forge-package-token"   # read:package only (R10)
-DUMPS="forge-db forge-data komodo keycloak agent-db mc-service-mongo bff-mongo release-apks"
+DUMPS="forge-db forge-data komodo keycloak agent-db dev-usage mc-service-mongo bff-mongo release-apks"
 SHRINK_ALERT_PCT=50   # a dump under half of last good night's size alerts (FR-003b)
 FORGE_OWNER=jumbleknot
 APK_PACKAGE=mcm-app-android
@@ -219,10 +219,10 @@ for x in json.load(open(sys.argv[1])):
 KIB=1024
 MIB=$((1024 * KIB))
 
-echo "[1/8] Forgejo database dump (pg_dump custom format)..."
+echo "[1/9] Forgejo database dump (pg_dump custom format)..."
 run_dump forge-db $((1 * MIB)) - pg-custom forge-db.dump -- dump_postgres forgejo-forgejo-db-1 -Fc
 
-echo "[2/8] Forgejo data (uncompressed, without CI artifacts, packages, indexes or scratch)..."
+echo "[2/9] Forgejo data (uncompressed, without CI artifacts, packages, indexes or scratch)..."
 # BusyBox tar 1.37 in the image (2026-10-28): --exclude before the named members. Uncompressed on
 # purpose: restic de-duplicates an unchanged file, never a gzip stream (R7).
 run_dump forge-data $((10 * MIB)) - tar forge-data.tar -- \
@@ -231,27 +231,30 @@ run_dump forge-data $((10 * MIB)) - tar forge-data.tar -- \
   --exclude=gitea/indexers --exclude=gitea/queues --exclude=gitea/tmp --exclude=gitea/log \
   --exclude=gitea/sessions gitea git
 
-echo "[3/8] Komodo Postgres dump (without pg_cron run history)..."
+echo "[3/9] Komodo Postgres dump (without pg_cron run history)..."
 # Maximum 500 MB: the run history's return alerts instead of silently re-inflating the dump.
 run_dump komodo $((1 * MIB)) 500000000 pg-plain komodo-postgres.sql -- dump_komodo
 
-echo "[4/8] Keycloak Postgres dump..."
+echo "[4/9] Keycloak Postgres dump..."
 run_dump keycloak $((50 * KIB)) - pg-plain keycloak-postgres.sql -- dump_postgres keycloak-store-postgres
 
-echo "[5/8] Agent-db Postgres dump..."
+echo "[5/9] Agent-db Postgres dump..."
 # Minimum 1 byte: agent_db has no tables by design (the gateway checkpoints in memory).
 run_dump agent-db 1 - pg-plain agent-db-postgres.sql -- dump_postgres movie-assistant-store-postgres
 
-echo "[6/8] MongoDB dumps (mc-service movie data + BFF agent config)..."
+echo "[6/9] Dev-usage Postgres dump (Claude Code token usage store, feature 105)..."
+run_dump dev-usage $((1 * KIB)) - pg-custom dev-usage.dump -- dump_postgres dev-usage-postgres -Fc
+
+echo "[7/9] MongoDB dumps (mc-service movie data + BFF agent config)..."
 run_dump mc-service-mongo $((100 * KIB)) - gzip mc-service-mongo.archive.gz -- \
   dump_mongo mc-service MC_DB_URL mc-service-store-mongo
 run_dump bff-mongo $((1 * KIB)) - gzip bff-mongo.archive.gz -- \
   dump_mongo mcm-bff-service MONGO_URL mcm-bff-store-mongo
 
-echo "[7/8] Release APKs (the mcm-app-android package)..."
+echo "[8/9] Release APKs (the mcm-app-android package)..."
 run_dump release-apks $((10 * MIB)) - tar release-apks.tar -- dump_release_apks
 
-echo "[8/8] restic backup (dumps + all compose/.env config)..."
+echo "[9/9] restic backup (dumps + all compose/.env config)..."
 RESTIC_FAILED=""
 restic backup --tag homelab \
   "$STAGE" \

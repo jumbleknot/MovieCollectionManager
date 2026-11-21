@@ -169,8 +169,8 @@ inert — and the recreate that "didn't work" sends you looking at the wrong thi
 
 ⚠️ **The credentials are passed with `--env-file`, so `devcontainer up` echoes only the file path —
 but `docker inspect <container>` still shows every value in clear text** — `MCM_ANTHROPIC_API_KEY`,
-`TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN` (see
-`.devcontainer/gen-container-secrets-env.sh`). Treat that output as credential material: never paste
+`MCM_FIREWORKS_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN` and (feature 105)
+`MCM_USAGE_CLIENT_SECRET` (the `VARS` list in `.devcontainer/gen-container-secrets-env.sh`). Treat that output as credential material: never paste
 it into an issue, a chat, or a transcript.
 
 **Hold the VM shell open for the whole build.** The idle-stop above fires ~30 s after the last
@@ -688,9 +688,11 @@ If that digest is the old one, stop; nothing after it matters. A genuine re-pin 
 all-CACHED, because the layers above the new base must rebuild.
 
 ⚠️ **`docker inspect` on the new container shows every credential in clear text** — `MCM_ANTHROPIC_API_KEY`,
-`TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN` (`devcontainer up` itself echoes only the
-`--env-file` path, see §9). Treat that output as credential material: do not paste it into an issue,
-a chat, or a transcript, and rotate all four if you already have.
+`MCM_FIREWORKS_API_KEY`, `TMDB_API_KEY`, `MCM_FORGE_TOKEN`, `MCM_FORGE_ISSUE_TOKEN` and
+`MCM_USAGE_CLIENT_SECRET` (`devcontainer up` itself echoes only the `--env-file` path, see §9). Treat
+that output as credential material: do not paste it into an issue, a chat, or a transcript, and rotate
+every one that was exposed if you already have (the usage client secret is regenerated on the
+`dev-usage-capture` client's Credentials tab, [dev-usage.md](dev-usage.md) §3.1).
 
 Afterwards, confirm from **inside** the new container — the pin is not the proof, the tool is:
 

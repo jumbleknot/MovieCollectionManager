@@ -1,0 +1,179 @@
+# Feature 105 — the Claude Code token usage store, PRODUCTION (Komodo stack `prod-dev-usage`,
+# infrastructure-as-code/komodo/stacks.toml). Operator steps: docs/runbooks/dev-usage.md.
+#
+#   dev-usage-postgres      the store (schema `usage`), on the persistent external volume; also on
+#                           backend-network so Grafana (prod-observability) reads its views as usage_reader
+#   dev-usage-schema-init   on every deploy and every restart: applies schema/*.sql in name order (each
+#                           file is idempotent, research R19) and tells PostgREST to reload its schema cache
+#   dev-usage-jwks-init     on every deploy and every restart: fetches the grumpyrobot realm's signing keys
+#                           from keycloak-service over backend-network (Docker DNS — never localhost,
+#                           gotchas/docker-internal-dns) into a volume, because PostgREST cannot fetch a
+#                           JWKS URL itself (research R18). After a Keycloak signing-key rotation, REDEPLOY
+#                           this stack: PostgREST reads the file only when it starts.
+#   Both inits then touch a ready marker and IDLE under `restart: always`, the shape every prod init has
+#   (prod-reboot-resilience §2c): Komodo counts an exited container as unhealthy, and PostgREST gates on
+#   their health checks rather than on `service_completed_successfully`.
+#   dev-usage-postgrest     the HTTP interface; the ONLY published port, 19040 (reserved range, tailnet-only
+#                           by host firewall). Every request needs a Keycloak token for client
+#                           dev-usage-capture (aud dev-usage, role usage_writer); there is no anonymous role.
+#
+# Secrets come from .env.prod, which Komodo writes from Variables (ADR-0001); none is committed.
+# The local/integration twin is compose.yaml beside this file (same images, same commands).
+name: prod-dev-usage
+
+services:
+  dev-usage-postgres:
+    image: postgres:18.6-alpine3.23@sha256:f1031bf693d8d60b0a0380c51a3510607c7a93c7c1d18bf7af94a3a8dbeb40b8
+    container_name: dev-usage-postgres
+    restart: always
+    volumes:
+      - dev-usage-postgres-data:/var/lib/postgresql
+    environment:
+      # POSTGRES_USER/DB/PASSWORD are also what backup.sh's dump_postgres reads in this container.
+      POSTGRES_USER: dev_usage
+      POSTGRES_DB: dev_usage
+      POSTGRES_PASSWORD: "${DEV_USAGE_PG_PASSWORD:?set the Komodo Variable DEV_USAGE_PG_PASSWORD}"
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "5"
+    networks:
+      - dev-usage-network
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dev_usage -d dev_usage"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  dev-usage-schema-init:
+    image: postgres:18.6-alpine3.23@sha256:f1031bf693d8d60b0a0380c51a3510607c7a93c7c1d18bf7af94a3a8dbeb40b8
+    container_name: dev-usage-schema-init
+    restart: always
+    depends_on:
+      dev-usage-postgres: { condition: service_healthy }
+    environment:
+      PGHOST: dev-usage-postgres
+      PGUSER: dev_usage
+      PGDATABASE: dev_usage
+      PGPASSWORD: "${DEV_USAGE_PG_PASSWORD:?set the Komodo Variable DEV_USAGE_PG_PASSWORD}"
+      AUTHENTICATOR_PASSWORD: "${DEV_USAGE_AUTHENTICATOR_PASSWORD:?set the Komodo Variable DEV_USAGE_AUTHENTICATOR_PASSWORD}"
+      READER_PASSWORD: "${DEV_USAGE_READER_PASSWORD:?set the Komodo Variable DEV_USAGE_READER_PASSWORD}"
+    volumes:
+      - ./schema:/schema:ro
+    entrypoint: ["sh", "-ec"]
+    command:
+      - |
+        rm -f /tmp/ready
+        for f in /schema/*.sql; do
+          echo "applying $${f##*/}"
+          psql -v ON_ERROR_STOP=1 -q -v authenticator_password="$$AUTHENTICATOR_PASSWORD" -v reader_password="$$READER_PASSWORD" -f "$$f"
+        done
+        psql -v ON_ERROR_STOP=1 -q -c "NOTIFY pgrst, 'reload schema'"
+        touch /tmp/ready
+        echo 'schema applied — idling so Komodo counts the stack healthy'
+        exec sleep infinity
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "2"
+    networks:
+      - dev-usage-network
+
+  dev-usage-jwks-init:
+    image: postgres:18.6-alpine3.23@sha256:f1031bf693d8d60b0a0380c51a3510607c7a93c7c1d18bf7af94a3a8dbeb40b8
+    container_name: dev-usage-jwks-init
+    restart: always
+    environment:
+      JWKS_URL: http://keycloak-service:8080/realms/grumpyrobot/protocol/openid-connect/certs
+    volumes:
+      - dev-usage-jwks-data:/jwks
+    entrypoint: ["sh", "-ec"]
+    command:
+      - |
+        rm -f /tmp/ready
+        for i in $$(seq 1 60); do
+          if wget -qO /jwks/jwks.json.tmp "$$JWKS_URL" && grep -q '"keys"' /jwks/jwks.json.tmp; then
+            mv /jwks/jwks.json.tmp /jwks/jwks.json
+            touch /tmp/ready
+            echo 'jwks fetched — idling so Komodo counts the stack healthy'
+            exec sleep infinity
+          fi
+          sleep 5
+        done
+        echo "jwks fetch failed" >&2
+        exit 1
+    healthcheck:
+      test: ["CMD-SHELL", "test -f /tmp/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "1m"
+        max-file: "2"
+    networks:
+      - backend-network
+
+  dev-usage-postgrest:
+    image: postgrest/postgrest:v16.5@sha256:1347d7552b88f17832912c06afbf7c43209af6eeeb60834b04aae12c9bd9d5cc
+    container_name: dev-usage-postgrest
+    restart: always
+    depends_on:
+      dev-usage-schema-init: { condition: service_healthy }
+      dev-usage-jwks-init: { condition: service_healthy }
+    ports:
+      - "19040:3000"
+    environment:
+      PGRST_DB_URI: "postgres://authenticator:${DEV_USAGE_AUTHENTICATOR_PASSWORD:?set the Komodo Variable DEV_USAGE_AUTHENTICATOR_PASSWORD}@dev-usage-postgres:5432/dev_usage"
+      PGRST_DB_SCHEMAS: usage
+      PGRST_JWT_SECRET: "@/jwks/jwks.json"
+      PGRST_JWT_AUD: dev-usage
+      PGRST_JWT_ROLE_CLAIM_KEY: "$$.role"       # PostgREST 16 JSONPath ($$ escapes compose interpolation)
+      PGRST_ADMIN_SERVER_PORT: "3001"
+      # An explicit address: `postgrest --ready` (the health check) refuses the default `!4` and `*`.
+      PGRST_SERVER_HOST: "0.0.0.0"
+    volumes:
+      - dev-usage-jwks-data:/jwks:ro
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "5"
+    networks:
+      - dev-usage-network
+    healthcheck:
+      test: ["CMD", "postgrest", "--ready"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+networks:
+  # Compose-managed (no `name:`, not external), like prod-auth's keycloak-network: it carries only the
+  # intra-stack Postgres link, and letting Compose own it attaches every member atomically on each
+  # `up`. Grafana and the JWKS fetch use the shared external backend-network.
+  dev-usage-network: {}
+  backend-network:
+    external: true
+
+# Both external, created once by the operator (docs/runbooks/dev-usage.md §3.3): a production stack
+# never creates its own volumes, so a missing one aborts the deploy before any container changes.
+volumes:
+  dev-usage-postgres-data:
+    external: true
+    name: dev-usage-postgres-data
+  dev-usage-jwks-data:
+    external: true
+    name: dev-usage-jwks-data

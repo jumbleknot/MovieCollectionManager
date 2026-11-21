@@ -138,7 +138,7 @@ committed config.
    `containerEnv.DOCKER_CONFIG=/home/coder/.docker-dind` (a clean dir) so the inner DinD docker CLI
    ignores that helper. No action needed; just don't remove it.
 
-### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, MCM_ANTHROPIC_API_KEY, TMDB_API_KEY, MCM_FORGE_TOKEN, MCM_FORGE_ISSUE_TOKEN)
+### Host env vars forwarded via `${localEnv}` (MCM_DEVCONTAINER_IMAGE, FORGE_REGISTRY_HOST, MCM_ANTHROPIC_API_KEY, TMDB_API_KEY, MCM_FORGE_TOKEN, MCM_FORGE_ISSUE_TOKEN, MCM_USAGE_INGEST_URL, MCM_USAGE_TOKEN_URL)
 
 `devcontainer.json` forwards a few HOST env vars into the container (build arg + `containerEnv`) via
 `${localEnv:VAR}` so no host-sensitive value enters git. **The extension reads them from the VS Code
@@ -246,6 +246,17 @@ already in its environment*, and the container recreated.
   credentials. Unset → empty → a local `wiki-maintain.mjs --pages` rebuild on the Fireworks provider
   exits 2 naming the missing credential. `--dry-run` needs no credential. CI uses its own secret,
   `FIREWORKS_API_WIKI_MAINTAIN`.
+- **`MCM_USAGE_INGEST_URL`, `MCM_USAGE_TOKEN_URL`, `MCM_USAGE_CLIENT_SECRET`**: Claude Code token usage
+  capture (feature 105). The two URLs are `${localEnv}` forwards: the usage store's PostgREST and
+  Keycloak's realm token endpoint, both tailnet addresses, so topology that is never committed. The
+  client secret of the Keycloak client `dev-usage-capture` is **not** a forward, and like
+  `MCM_FIREWORKS_API_KEY` it exists only on the Sandbox path, where
+  `.devcontainer/gen-container-secrets-env.sh` writes it into the `--env-file`. **On this DinD path
+  capture therefore stays not configured**, by design. **Any of the three unset → capture is not
+  configured**: the committed hooks capture and spool
+  nothing, nothing fails, and the first sweep after all three are set catches up from the transcripts
+  still on the volume. `node scripts/cc-usage.mjs doctor` reports which is missing. Operator steps:
+  [dev-usage.md](dev-usage.md).
 
 **Setup (Windows) — the two gotchas that bite here** (identical for `MCM_ANTHROPIC_API_KEY`, `TMDB_API_KEY` and both `MCM_FORGE_*` tokens)**:**
 

@@ -1,0 +1,13 @@
+{
+  "$comment": "Relative token weights for feature 105 (data-model.md `token_weights`; FR-026): each ratio is that token type's list price divided by the uncached input price, so input = 1. Used ONLY to weight usage for comparison, never as a bill. Figures are Claude Opus 5.5 list prices ($4 input, $20 output per MTok; cache reads $0.20 per MTok, an Opus 5.5 exception to the usual 0.1x; 5-minute cache writes 1.25x and 1-hour cache writes 2x the input price), read from the public pricing page on the asOf date. Pushed to the store with `node scripts/cc-usage.mjs weights push`; update asOf with every change.",
+  "asOf": "2026-11-21",
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing (read 2026-11-21)",
+  "model": "claude-opus-5-5",
+  "ratios": {
+    "input": 1,
+    "output": 5,
+    "cache_read": 0.05,
+    "cache_write_5m": 1.25,
+    "cache_write_1h": 2
+  }
+}

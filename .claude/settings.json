@@ -16,5 +16,16 @@
   "enabledPlugins": {
     "nx@nx-claude-plugins": true,
     "building-react-native-apps@callstack-agent-skills": true
+  },
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "async": true, "command": "node \"$CLAUDE_PROJECT_DIR/scripts/cc-usage.mjs\" hook" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "async": true, "command": "node \"$CLAUDE_PROJECT_DIR/scripts/cc-usage.mjs\" hook" }] }
+    ],
+    "SessionEnd": [
+      { "hooks": [{ "type": "command", "timeout": 10, "command": "node \"$CLAUDE_PROJECT_DIR/scripts/cc-usage.mjs\" hook" }] }
+    ]
   }
 }

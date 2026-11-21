@@ -45,6 +45,14 @@ function isAllowlistedKey(key) {
   );
 }
 
+// A secret-shaped key whose VALUE is a reference to a file, not the secret itself. Value-aware on
+// purpose, so a literal in the same key is still caught:
+//   PGRST_JWT_SECRET=@/abs/path → PostgREST reads its JWT verification keys from that file. Feature
+//   105 points it at the Keycloak realm's PUBLIC signing keys (a JWKS) fetched into a volume.
+function isFileReference(key, value) {
+  return String(key).toUpperCase() === 'PGRST_JWT_SECRET' && /^@\/[A-Za-z0-9._/-]+$/.test(String(value).trim());
+}
+
 // A value is a PURE interpolation reference: ${VAR} or ${VAR:?message}. The :?-message may contain
 // anything except a closing brace. A ${VAR:-default} / ${VAR:+x} form is intentionally NOT matched
 // (an inline default re-introduces a literal — spec AC2).
@@ -125,7 +133,7 @@ function scanDoc(file, doc) {
     // environment: secret-shaped keys must be pure ${VAR}; any value may carry a password URL.
     for (const [key, value] of envEntries(def.environment)) {
       if (SECRET_KEY.test(key) && !isAllowlistedKey(key)) {
-        if (!PURE_REF.test(value.trim())) {
+        if (!PURE_REF.test(value.trim()) && !isFileReference(key, value)) {
           fail(file, `${svc}.environment.${key}`, `secret-shaped key holds a literal (must be \${${key}:?…})`);
         }
       }
@@ -193,6 +201,9 @@ function selftest() {
     ['clean requirepass ${VAR}', { services: { x: { command: ['redis-server', '--requirepass', '${R:?m}'] } } }, false],
     ['allowlisted _FILE', { services: { x: { environment: { POSTGRES_PASSWORD_FILE: '/run/secrets/pw' } } } }, false],
     ['allowlisted _USER', { services: { x: { environment: { POSTGRES_USER: 'langfuse' } } } }, false],
+    ['PostgREST JWKS file reference', { services: { x: { environment: { PGRST_JWT_SECRET: '@/jwks/jwks.json' } } } }, false],
+    ['planted PostgREST JWT secret literal', { services: { x: { environment: { PGRST_JWT_SECRET: 'hunter2hunter2hunter2hunter2hunter2' } } } }, true],
+    ['an @path on another secret key', { services: { x: { environment: { API_SECRET: '@/run/x' } } } }, true],
   ];
   const fails = [];
   for (const [label, doc, expect] of cases) {
