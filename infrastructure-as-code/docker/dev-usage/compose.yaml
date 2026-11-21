@@ -26,6 +26,12 @@ services:
       AGENT_GATEWAY_CLIENT_SECRET: "${DEV_USAGE_IT_OTHER_CLIENT_SECRET:?minted by tests/run-integration.mjs}"
     volumes:
       - realm:/opt/keycloak/data/import:ro
+    # Answers to production's name, so dev-usage-jwks-init fetches from the SAME URL as in prod
+    # (pinned by scripts/__tests__/dev-usage-compose.guard.test.mjs). The alias lives only on this
+    # project's own network, so it cannot collide with a real keycloak-service elsewhere on the daemon.
+    networks:
+      default:
+        aliases: [keycloak-service]
     ports:
       - "127.0.0.1::8080"
     healthcheck:
@@ -78,7 +84,7 @@ services:
     depends_on:
       dev-usage-keycloak: { condition: service_healthy }
     environment:
-      JWKS_URL: http://dev-usage-keycloak:8080/realms/grumpyrobot/protocol/openid-connect/certs
+      JWKS_URL: http://keycloak-service:8080/realms/grumpyrobot/protocol/openid-connect/certs
     volumes:
       - jwks:/jwks
     entrypoint: ["sh", "-ec"]

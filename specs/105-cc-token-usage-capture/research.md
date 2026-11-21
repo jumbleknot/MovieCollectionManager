@@ -285,7 +285,8 @@ the prod restart-policy gate (`scripts/check-prod-restart-policy.mjs`) exempts a
 Postgres image rather than a separate curl image (one fewer pin). PostgREST needs `PGRST_SERVER_HOST=0.0.0.0`
 for its `--ready` health check, and its role claim is the v16 JSONPath `$.role`. The local stack runs its
 own Keycloak (same image, `ci-realm.json`) as compose project `dev-usage-it` instead of the auth stack,
-whose fixed external volume and container names would collide on a shared Docker daemon.
+whose fixed external volume and container names would collide on a shared Docker daemon. That Keycloak answers to the alias `keycloak-service` on the project network, so the JWKS fetch
+uses production's URL (guarded by `scripts/__tests__/dev-usage-compose.guard.test.mjs`).
 
 ## R20. Running the store tests in CI (`/speckit-analyze` G1)
 
