@@ -131,6 +131,13 @@
     // `FORGE_REGISTRY_HOST` on the host (setx) exactly like MCM_DEVCONTAINER_IMAGE. Unset → empty →
     // init-firewall skips it cleanly (no forge access, but the container still comes up).
     "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}",
+    // Feature 105 — the Claude Code token usage store (PostgREST) and the Keycloak realm token
+    // endpoint, both TAILNET URLs injected at runtime from the host env and NEVER committed (FR-015,
+    // topology-scrub). Not secrets (the client secret travels in the --env-file path instead), but
+    // topology. Unset → capture is "not configured": the hooks do nothing and `node
+    // scripts/cc-usage.mjs doctor` says so. Operator steps: docs/runbooks/dev-usage.md.
+    "MCM_USAGE_INGEST_URL": "${localEnv:MCM_USAGE_INGEST_URL}",
+    "MCM_USAGE_TOKEN_URL": "${localEnv:MCM_USAGE_TOKEN_URL}",
     // Feature 075: local `MODEL_PROVIDER=anthropic` runs get the cached-tier supervisor, the same
     // burst-shaped saving CI takes. INERT on the Ollama default — the `ANTHROPIC_` prefix means it
     // is only read when that provider is active, so the dev-container default (self-hosted Ollama)

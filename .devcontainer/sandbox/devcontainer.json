@@ -318,6 +318,13 @@
     "CLAUDE_CONFIG_DIR": "/home/coder/.claude",
 
     "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}",
+    // Feature 105 — the Claude Code token usage store (PostgREST) and the Keycloak realm token
+    // endpoint, both TAILNET URLs injected at runtime from the host env and NEVER committed (FR-015,
+    // topology-scrub). Not secrets (the client secret travels in the --env-file path instead), but
+    // topology. Unset → capture is "not configured": the hooks do nothing and `node
+    // scripts/cc-usage.mjs doctor` says so. Operator steps: docs/runbooks/dev-usage.md.
+    "MCM_USAGE_INGEST_URL": "${localEnv:MCM_USAGE_INGEST_URL}",
+    "MCM_USAGE_TOKEN_URL": "${localEnv:MCM_USAGE_TOKEN_URL}",
 
     // ⚠️ DELIBERATELY **NOT** NAMED `ANTHROPIC_API_KEY`. This is a cost control, not cosmetics.
     //
@@ -367,7 +374,8 @@
     // Generator + the measurements: .devcontainer/gen-container-secrets-env.sh
 
     // ⚠️ "localEnv" here is the SANDBOX SHELL that runs `devcontainer up`, not Windows. Those six
-    // values are provisioned into the VM by the D-07 fallback and must be sourced BEFORE the up:
+    // values (eight since feature 105 added the two MCM_USAGE_* URLs above; its client secret rides
+    // the --env-file) are provisioned into the VM by the D-07 fallback and must be sourced BEFORE the up:
     //     set -a; . ~/.mcm-sandbox-env; set +a
     // Nothing may rely on them riding the SSH session: since v0.37.1 SSH does not forward
     // credential env vars unless ssh.acceptEnv is configured. Measured 2026-08-16 — a bare
