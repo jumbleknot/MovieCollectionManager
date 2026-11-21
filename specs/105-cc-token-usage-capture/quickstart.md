@@ -7,7 +7,7 @@ contracts and the data model are in [contracts/](contracts/) and [data-model.md]
 
 - Unit tiers: nothing beyond the dev container's Node.
 - Integration tier: Docker available (the dev container's DinD path or the CI runner).
-- Live validation: the `prod-dev-usage` stack deployed, `MCM_USAGE_INGEST_URL` / `MCM_USAGE_INGEST_TOKEN` set in the container (runbook `docs/runbooks/dev-usage.md`).
+- Live validation: the `prod-dev-usage` stack deployed, the `dev-usage-capture` client in the production realm, and `MCM_USAGE_INGEST_URL` / `MCM_USAGE_TOKEN_URL` / `MCM_USAGE_CLIENT_SECRET` set in the container (runbook `docs/runbooks/dev-usage.md`).
 
 ## 1. Unit and guard tests (CI tier)
 
@@ -36,7 +36,7 @@ the oracle produces no diff.
 MCM_REQUIRE_LIVE_STACK=1 pnpm nx dev-usage-integration infrastructure-as-code
 ```
 
-Expected: the stack comes up from `compose.yaml`; upserts are idempotent (re-posting a batch leaves row
+Expected: the stack comes up from `compose.yaml` with the CI Keycloak; the schema applies twice with no change; a Keycloak-issued token for `dev-usage-capture` is accepted and a token for any other client is refused; upserts are idempotent (re-posting a batch leaves row
 counts unchanged); `DELETE` is refused; a request without a token is refused; views return the totals
 of the posted rows. With `MCM_REQUIRE_LIVE_STACK=1`, a missing Docker fails the run instead of skipping.
 
@@ -47,6 +47,7 @@ of the posted rows. With `MCM_REQUIRE_LIVE_STACK=1`, a missing Docker fails the 
 3. Start two sessions at once in two worktrees; work in both; end both. `doctor` clean again; `usage sessions --since 1d` lists both once each.
 4. Leave a session idle until the sandbox VM stops; start a new session later. That earlier session appears with status `partial [no-session-end]`, its turns present.
 5. Check the transcript's `stop_hook_summary` lines: the `cc-usage.mjs hook` entries show `durationMs` < 1000 on non-shipping turns.
+6. Survival (SC-009): note `features --since 30d` and the row counts from `sessions --since 30d --json`. Rebuild the dev container, then recreate the sandbox (`sbx rm` + create, per `docs/runbooks/devcontainer-sandbox.md`) and restore the env. After one new session, the counts for the older sessions are unchanged and `doctor` is clean.
 
 ## 5. In-session questions (SC-006)
 

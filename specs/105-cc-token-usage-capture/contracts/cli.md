@@ -8,8 +8,12 @@ is an **error**, never silently ignored (AGENTS.md "check the instrument").
 
 | Variable | Required | Meaning |
 | --- | --- | --- |
-| `MCM_USAGE_INGEST_URL` | no | Base URL of the store's HTTP interface. Unset → spool only; `doctor` reports `not configured` |
-| `MCM_USAGE_INGEST_TOKEN` | no | Bearer credential. Read from the environment only, sent only as an `Authorization` header, never logged, never in argv |
+| `MCM_USAGE_INGEST_URL` | no | Base URL of the store's HTTP interface (tailnet) |
+| `MCM_USAGE_TOKEN_URL` | no | Keycloak realm token endpoint (tailnet) |
+| `MCM_USAGE_CLIENT_SECRET` | no | Secret of client `dev-usage-capture`. Read from the environment only, sent only in the token request body, never logged, never in argv |
+
+Any of the three unset → **not configured**: hooks parse nothing and spool nothing (the transcripts stay
+the source; the first sweep after configuration catches up), and `doctor` reports `not configured`.
 | `CLAUDE_CONFIG_DIR` | no | Defaults to `~/.claude` |
 | `CC_USAGE_SHIP_INTERVAL_S` | no | Default `900` (FR-011). Tests lower it |
 
@@ -32,13 +36,13 @@ Stdin fields read: `hook_event_name` (`SessionStart` | `Stop` | `SessionEnd`), `
 
 - Exit code is **always 0**. Stdout is **always empty** (SessionStart stdout would enter Claude's context).
 - Stderr is empty on every expected path; unexpected errors go to `cc-usage.log`, not stderr.
-- Network calls: connect timeout 2 s, total 5 s; any failure writes `backoff` and spools the batch.
+- Network calls (token endpoint and store): connect timeout 2 s, total 5 s; any failure writes `backoff` and spools the batch, within the 50 MB spool cap (data-model.md "Local state").
 
 ## Interactive commands (invoked by the `usage` skill or a human)
 
 | Command | Output (default: fixed-width, ≤ 10 rows; `--json` for full) | Network |
 | --- | --- | --- |
-| `now --session <id>` | Tokens by type, context now, top 5 tool outputs by bytes, subagent share; median of same-activity sessions when reachable | Optional GET |
+| `now --session <id>` | Tokens by type, context now, top 5 tool outputs by bytes, subagent share; the median of recent sessions when reachable, narrowed to the same activity once labels exist (US3) | Optional GET |
 | `sessions [--since 7d] [--feature f] [--branch b] [--spec n] [--activity a] [--area x]` | One row per session; with a feature filter, the session's tokens **attributed to that feature** beside its total | GET |
 | `feature <branch\|spec:NNN\|feature_id> [--all]` | One feature: kind, spec, PR state, contributing sessions (count and list), turns, tokens by type, main vs subagent, weighted, activity mix, outcomes (`tasks: n/a` for a feature without a task list). A branch with several features (reused name) shows the open one; `--all` lists them all | GET |
 | `features [--since 30d] [--kind spec\|no-spec] [--state open\|merged\|all]` | One row per feature, plus a final `no feature` row | GET |
@@ -48,7 +52,7 @@ Stdin fields read: `hook_event_name` (`SessionStart` | `Stop` | `SessionEnd`), `
 | `accept <finding_id>` / `reject <finding_id>` | Confirms the status change | PATCH |
 | `sync --session <id>` | Ships this session now, ignoring the interval, resets the timer | POST |
 | `tag --session <id> <label>` | Confirms | PATCH |
-| `doctor` | Last successful ship, spool depth, back-off state, transcripts with unshipped bytes, `configured` yes/no | Optional GET |
+| `doctor` | Last successful ship, spool depth and any spool drops, back-off state, token state (`valid until …` / `client credential rejected` / `store rejects token`), transcripts with unshipped bytes, `configured` yes/no | Optional GET |
 | `statusline` | Opt-in. Reads statusline JSON on stdin, stores `rate_limits` locally, then execs the command in `CC_USAGE_STATUSLINE_NEXT` and prints its output | none |
 | `oracle-check` | Compares parser totals on the fixtures with the committed ccusage oracle; exit 1 on any mismatch | none |
 

@@ -1,7 +1,9 @@
 # Data model: Claude Code token usage (feature 105)
 
-All tables live in one schema, `usage`, in the dedicated store (research R10). The capture credential's
-role `usage_writer` has `INSERT, UPDATE, SELECT` on every table and `SELECT` on every view; it has no
+All tables live in one schema, `usage`, in the dedicated store (research R10). The schema is applied by
+idempotent SQL on every deploy (research R19), so a column or view added later reaches a running store.
+Requests are authenticated by Keycloak-issued tokens (research R18) whose role claim is `usage_writer`,
+which has `INSERT, UPDATE, SELECT` on every table and `SELECT` on every view; it has no
 `DELETE`, `TRUNCATE` or DDL right (FR-014). Every write is an upsert on the natural key below, so
 re-shipping is harmless (FR-008). **Totals are never stored as counters**: session- and turn-level
 sums are views over `model_calls`.
@@ -62,7 +64,7 @@ toward two features.
 | `activity` | text | One label (see Labelling), or `unclassified` |
 | `activity_rule` | text | The rule id that fired, for auditing rules |
 | `feature_id` | text null | FK → `features`; null means "no feature" (main-branch work) |
-| `attribution_rule` | enum `worktree` \| `worktree-majority` \| `session-branch` \| `inherited` \| `main` | How `feature_id` was decided (FR-036) |
+| `attribution_rule` | enum `worktree` \| `worktree-majority` \| `inherited` \| `session-branch` \| `main` | How `feature_id` was decided (FR-036; order in "Feature attribution") |
 | `areas` | text[] | Top-level repository areas touched |
 | `rereads` | int | Files read more than 3 times in the session, counted in the container; only the count ships |
 
@@ -178,8 +180,8 @@ Per turn, in order; first match wins, and the rule's name is stored in `turns.at
 | --- | --- | --- |
 | 1 | `worktree` | All tool calls that name a path (Read, Edit, Write, Grep, Glob, and Bash `cd`/`git -C`) resolve to one git worktree → that worktree's current branch |
 | 2 | `worktree-majority` | Several worktrees → the one with the most tool calls; ties go to the one touched last |
-| 3 | `session-branch` | No path → the transcript's `gitBranch` for that turn |
-| 4 | `inherited` | No tool call at all → the previous turn's feature in the same session |
+| 3 | `inherited` | No path-bearing tool call (no tool call at all, or only path-less calls) and an earlier turn exists → the previous turn's feature in the same session |
+| 4 | `session-branch` | No path-bearing tool call and **no earlier turn** → the transcript's `gitBranch` for that turn |
 | — | `main` | The decided branch is the main branch → `feature_id` null ("no feature") |
 
 Worktree → branch is resolved in the container (`git -C <worktree> rev-parse --abbrev-ref HEAD`,
@@ -228,7 +230,8 @@ Under `$CLAUDE_CONFIG_DIR/usage/`, on the persistent volume:
 | `state/<sessionId>.json` | Byte offset per file (main + each subagent), last ship time, incremental summary for `usage now`. Written to a temp name and renamed; an offset never moves backwards. |
 | `state/by-cwd/<hash>.json` | Live-session marker for the skill fallback (research R7) |
 | `state/worktrees.json` | Worktree → branch cache, and branch → open `feature_id` cache, for attribution |
-| `spool/<pid>-<ts>.ndjson` | Unshipped batches; a flusher claims one by renaming to `.claimed-<pid>` and deletes only after a 2xx |
+| `spool/<pid>-<ts>.ndjson` | Unshipped batches; a flusher claims one by renaming to `.claimed-<pid>` and deletes only after a 2xx. Written **only when the store is configured** (FR-010). Capped at **50 MB** total: on overflow the oldest files are deleted first, and each drop is recorded in `spool-drops.json` (session id, byte range, time) for `doctor`; the sweep re-derives a dropped range from its transcript while it exists |
+| `token.json` | Cached Keycloak access token and its `exp` (mode 0600). Refreshed only within 60 s of expiry; never logged (research R18) |
 | `locks/sweep.lock` | Sweep lock with a short expiry |
 | `backoff` | Timestamp; while fresh, hooks skip the network |
 | `ratelimits.json` | Latest statusline `rate_limits` snapshot (opt-in, research R14) |

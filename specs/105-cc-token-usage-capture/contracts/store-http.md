@@ -1,8 +1,25 @@
 # Contract: the store's HTTP interface
 
 PostgREST over the `usage` schema (research R10). Base URL = `MCM_USAGE_INGEST_URL`. Every request
-carries `Authorization: Bearer <MCM_USAGE_INGEST_TOKEN>`; the token's `role` claim is `usage_writer`.
-No anonymous role is configured: a request without a valid token is rejected (FR-014).
+carries `Authorization: Bearer <access token>`, a Keycloak token for client `dev-usage-capture`
+obtained and cached as below; its `role` claim is `usage_writer` and its `aud` is `dev-usage`.
+PostgREST verifies signature, `aud` and `exp` against the realm's JWKS. No anonymous role is
+configured: a request without a valid token is rejected (FR-014).
+
+## Token acquisition (research R18)
+
+```text
+POST $MCM_USAGE_TOKEN_URL                       # realm token endpoint, over the tailnet
+Content-Type: application/x-www-form-urlencoded
+grant_type=client_credentials&client_id=dev-usage-capture&client_secret=$MCM_USAGE_CLIENT_SECRET
+→ 200 { access_token, expires_in, … }
+```
+
+The secret travels only in the request body (never argv, never a URL). The token is cached in
+`token.json` (0600) and reused until 60 s before expiry. Outcomes: `401/400` from the token endpoint →
+`doctor` reports `client credential rejected`; `401` from the store with a fresh token → `doctor`
+reports `store rejects token` (likely a signing-key rotation; redeploy the stack); network failure →
+spool and back-off, as for the store.
 
 ## Writes (capture)
 

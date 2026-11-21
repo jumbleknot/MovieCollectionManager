@@ -13,7 +13,9 @@ Claude Code lifecycle hooks committed in `.claude/settings.json` run a zero-depe
 activity, attributes each turn to a feature (any non-main branch, with or without a spec, resolved
 from the worktree the turn worked in — so feature metrics are exact sums across every contributing
 session), and upserts the records over HTTP to a new homelab stack, `prod-dev-usage` (Postgres +
-PostgREST, upstream images, tailnet-only port 19040). A `usage` project skill fronts the same script
+PostgREST, upstream images, tailnet-only port 19040), authenticated by short-lived tokens that
+Keycloak issues to a dedicated service-account client and the script caches until expiry. A `usage`
+project skill fronts the same script
 for in-session questions, a Grafana dashboard in the existing `otel-lgtm` reads the same views, and a
 rules module turns per-activity baselines into findings tracked as experiments. Phase 0 measurement
 ([research.md](research.md)) confirmed the transcript fields, the duplicate-line behaviour, the
@@ -50,8 +52,9 @@ subagent file layout and the per-worktree project directories the design depends
 | Behavior-descriptive identifiers | Pass | `cc-usage.mjs`, `parse-transcript.mjs`, `label-activity.mjs`, `ship-records.mjs`; requirement ids only in comments |
 | TDD (NON-NEGOTIABLE) | Pass | Every implementation task is preceded by a test task with Verify RED / Verify GREEN commands (`docs/templates/feature-test-tasks-template.md`) |
 | Test Type Integrity | Pass | Unit tests use fixture transcripts and an injected `fetch`; the store contract is tested against a **real** Postgres + PostgREST; nothing in the integration tier mocks the store |
-| Security: secrets | Pass | Token via the `--env-file` path (`gen-container-secrets-env.sh`) and Komodo Variables (ADR-0001); never in git, argv or logs |
-| Security: authentication for internal data | Pass with deviation | Signed JWT on every request, role without DELETE — but not OIDC-issued; see Complexity Tracking |
+| Security: classification | Pass | Usage records are classified **internal** (spec Assumptions): tailnet-only, token-authenticated, no content |
+| Security: secrets | Pass | The client secret via the `--env-file` path (`gen-container-secrets-env.sh`), stack secrets as Komodo Variables (ADR-0001); never in git, argv or logs; the cached token is 0600 and never logged |
+| Security: authentication for internal data | Pass | Every request carries a Keycloak-issued OAuth2/OIDC access token (client-credentials grant, client `dev-usage-capture`), verified by PostgREST against the realm's JWKS (research R18). Changed from a self-signed JWT after `/speckit-analyze` finding C1 |
 | Logging: structured, no sensitive data | Pass | `cc-usage.log` is JSON lines with UTC timestamp, level, service `cc-usage`, session id as correlation id; never the token, host names or content; size-capped and rotated |
 | Logging: never degrade the host process | Pass | Every hook path exits 0; logging failures are swallowed |
 | Docker-native ops | Pass | Upstream images, health checks, `restart: always`, json-file log rotation, a local `compose.yaml` beside `compose.prod.yaml` |
@@ -99,6 +102,7 @@ scripts/
 │   ├── efficiency-rules.mjs              # pure: baseline rows → findings
 │   ├── local-state.mjs                   # offsets, atomic rename, sweep lock, spool claim, back-off
 │   ├── ship-records.mjs                  # upsert batches over fetch; spool on failure
+│   ├── obtain-access-token.mjs           # client-credentials grant; cached token; refresh near expiry
 │   ├── collect-feature-outcomes.mjs      # git, tasks.md (spec features only), forge API
 │   └── render-table.mjs                  # fixed-width output, host redaction
 └── __tests__/
@@ -111,14 +115,29 @@ scripts/
     ├── cc-usage-oracle.test.mjs           # parser totals vs committed ccusage oracle
     ├── cc-usage-rules.test.mjs
     ├── cc-usage-settings.guard.test.mjs   # pins the hooks block
+    ├── cc-usage-local-state.test.mjs      # offsets, locks, spool claim and cap, back-off
+    ├── cc-usage-ship.test.mjs             # upsert protocol, spool on failure
+    ├── cc-usage-token.test.mjs            # token acquisition, caching, refresh, failure modes
+    ├── cc-usage-sweep.test.mjs            # all project dirs, backfill, stale sessions
+    ├── cc-usage-doctor.test.mjs
+    ├── cc-usage-render.test.mjs
+    ├── cc-usage-query.test.mjs            # now, sessions, trend, compare, sync, tag
+    ├── cc-usage-skill.guard.test.mjs
+    ├── cc-usage-feature-identity.test.mjs
+    ├── cc-usage-outcomes.test.mjs
+    ├── cc-usage-feature-query.test.mjs
+    ├── cc-usage-findings.test.mjs
+    ├── cc-usage-statusline.test.mjs
     └── fixtures/cc-usage/                 # synthetic transcripts + ccusage-oracle.json
 
 infrastructure-as-code/
 ├── docker/dev-usage/
-│   ├── compose.yaml                      # local/integration: same images, ephemeral volume
-│   ├── compose.prod.yaml                 # Komodo stack; publishes 19040; joins backend-network for Grafana
-│   ├── schema/                           # ordered SQL: schema, tables, roles, views
-│   └── tests/store-contract.test.mjs     # integration: real Postgres + PostgREST
+│   ├── compose.yaml                      # local/integration: same services, ephemeral volume, CI Keycloak
+│   ├── compose.prod.yaml                 # Komodo stack: postgres, schema-apply, jwks-fetch, postgrest (19040); backend-network
+│   ├── schema/                           # ordered, IDEMPOTENT SQL applied on every deploy (research R19)
+│   └── tests/store-contract.test.mjs     # integration: real Postgres + PostgREST + Keycloak-issued tokens
+├── docker/keycloak/
+│   ├── ci-realm.json, dev-realm.json, prod-realm.json   # + client dev-usage-capture (fresh realms)
 ├── docker/observability/
 │   ├── compose.prod.yaml                 # + Grafana datasource/dashboard provisioning mount
 │   └── grafana/                          # datasource (usage_reader role) + dashboard JSON
@@ -126,10 +145,12 @@ infrastructure-as-code/
 ├── komodo/stacks.toml                    # + prod-dev-usage stack
 └── project.json                          # + cc-usage-oracle, dev-usage-integration targets
 
+.forgejo/workflows/app-ci.yml             # + dev-usage paths output and dev-usage-integration job (research R20)
+
 .devcontainer/
-├── gen-container-secrets-env.sh          # + MCM_USAGE_INGEST_TOKEN in VARS
-├── devcontainer.json                     # + MCM_USAGE_INGEST_URL via ${localEnv}
-└── sandbox/devcontainer.json             # + MCM_USAGE_INGEST_URL via ${localEnv}
+├── gen-container-secrets-env.sh          # + MCM_USAGE_CLIENT_SECRET in VARS
+├── devcontainer.json                     # + MCM_USAGE_INGEST_URL, MCM_USAGE_TOKEN_URL via ${localEnv}
+└── sandbox/devcontainer.json             # + the same two
 
 scripts/check-resource-naming.mjs         # admit the dev-usage context (premise change, rule kept)
 
@@ -156,8 +177,9 @@ Follows the spec's priorities. Each step is usable on its own, and data accumula
 
 Documented in `docs/runbooks/dev-usage.md`; none blocks merging:
 
-- Create the Komodo Variables `DEV_USAGE_PG_PASSWORD`, `DEV_USAGE_JWT_SECRET` and `DEV_USAGE_READER_PASSWORD`, then sign the capture token with one documented command.
-- Add `MCM_USAGE_INGEST_URL` and `MCM_USAGE_INGEST_TOKEN` to `~/.mcm-sandbox-env` on the sandbox host and recreate the container.
+- Create the client `dev-usage-capture` in the production realm in the Keycloak console (service account on, token lifespan 3600 s, hardcoded claim `role = usage_writer`, audience `dev-usage`), because production's realm is configured by hand; copy its generated secret.
+- Create the Komodo Variables `DEV_USAGE_PG_PASSWORD` and `DEV_USAGE_READER_PASSWORD`.
+- Add `MCM_USAGE_INGEST_URL`, `MCM_USAGE_TOKEN_URL` and `MCM_USAGE_CLIENT_SECRET` to `~/.mcm-sandbox-env` on the sandbox host and recreate the container.
 - Allow the endpoint in the sandbox network policy if the spike shows the policy is per port.
 - Open 19040 to the tailnet in the host firewall, as for 19002, 19030 and 19099.
 
@@ -165,5 +187,4 @@ Documented in `docs/runbooks/dev-usage.md`; none blocks merging:
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 | --- | --- | --- |
-| Internal data protected by a long-lived signed JWT, not an OAuth2/OIDC-issued token (constitution: Authentication Required For Internal & Sensitive) | The client is a background hook with no user present and a 10 s budget at `SessionEnd`; the records hold no content; the role cannot delete | Keycloak client credentials would add a token round trip and a second secret to every hook, and would make capture depend on `prod-auth` being up — trading a reliable capture path for an issuer the data's classification does not need |
 | `prod-observability` compose gains a provisioning mount for a datasource in another stack | Grafana already runs there, and FR-027 puts the dashboard on the existing instance | A second Grafana in `prod-dev-usage` duplicates a component and a published port for one dashboard |
