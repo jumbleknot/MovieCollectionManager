@@ -211,6 +211,16 @@
         "description": "MANUAL rebuild of operator-named derived pages (features 044/078/098) — PAID: pass --args=\"--pages runbooks/x.md,projects/y.md\" (add --dry-run to print the run messages and invoke nothing). Routine freshness is NOT this target: since feature 098 the coding session that changes a page's source refreshes the page with node scripts/wiki-refresh.mjs in the same PR, and the required okf check (V17) blocks a stale one. A canonical, unknown or missing-source page is refused with exit 2 before anything is spent. Each slice invokes the generator through `wiki-update`, with the provider chosen by MCM_WIKI_PROVIDER (CI: fireworks, keyed by FIREWORKS_API_KEY or MCM_FIREWORKS_API_KEY; the anthropic default takes ANTHROPIC_API_KEY or MCM_ANTHROPIC_API_KEY). ALWAYS invoke through this target (or the wiki-maintain workflow) rather than calling the generator yourself: it verifies every page by what actually landed in the working tree, by bundle conformance and governance, and records each landed page's source fingerprint — never trusting the generator's exit status (feature 043 measured 12 minutes of paid work, one index.md written, exit 0, reported as success). In CI, WIKI_JOB_DEADLINE stops a running generator before the job's window ends. Exit 0 = every named page landed; 1 = one did not (they are listed); 2 = refused before any spend. See docs/runbooks/wiki-maintenance.md."
       }
     },
+    "cc-usage-oracle": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node scripts/lib/cc-usage/write-oracle.mjs",
+        "cwd": "{workspaceRoot}"
+      },
+      "metadata": {
+        "description": "ON DEMAND, never in CI (feature 105, research R8): regenerate scripts/__tests__/fixtures/cc-usage/ccusage-oracle.json by running the reference tool ccusage at an exact pinned version via `pnpm dlx` against the SYNTHETIC fixture transcripts (CLAUDE_CONFIG_DIR = the fixture folder, never the real transcripts). Not run in CI because a per-run dlx fetch would add a network dependency to the guardrail job and a devDependency would drag ccusage's tree into every install; CI compares the parser with the committed oracle instead (cc-usage-oracle.test.mjs). Re-run after changing the fixtures and review the diff."
+      }
+    },
     "okf-lint": {
       "executor": "nx:run-commands",
       "options": {

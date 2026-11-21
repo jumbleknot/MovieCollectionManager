@@ -1,0 +1,19 @@
+{
+  "$comment": "Fake worktree → branch and .specify/feature.json map for the attribution tests (feature 105, US3).",
+  "worktrees": {
+    "/workspaces/mcm": {
+      "branch": "main",
+      "featureJson": null
+    },
+    "/home/coder/worktrees/feat-a": {
+      "branch": "feat-a",
+      "featureJson": null
+    },
+    "/home/coder/worktrees/docs-b": {
+      "branch": "docs-b",
+      "featureJson": {
+        "feature_directory": "specs/107-docs-b"
+      }
+    }
+  }
+}
