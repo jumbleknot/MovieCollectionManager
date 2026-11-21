@@ -181,7 +181,7 @@ Documented in `docs/runbooks/dev-usage.md`; none blocks merging:
 - Create the Komodo Variables `DEV_USAGE_PG_PASSWORD` and `DEV_USAGE_READER_PASSWORD`.
 - Add `MCM_USAGE_INGEST_URL`, `MCM_USAGE_TOKEN_URL` and `MCM_USAGE_CLIENT_SECRET` to `~/.mcm-sandbox-env` on the sandbox host and recreate the container.
 - Allow the endpoint in the sandbox network policy if the spike shows the policy is per port.
-- Open 19040 to the tailnet in the host firewall, as for 19002, 19030 and 19099.
+- No per-port firewall rule: the host allows all of tailscale0 (Server-Setup Phase 2), which already covers 19040; the runbook has a check.
 
 ## Complexity Tracking
 

@@ -78,7 +78,7 @@ example `openssl rand -hex 24` on the prod host, pasted into the UI and not into
 
 The `prod-dev-usage` block in `infrastructure-as-code/komodo/stacks.toml` already references them.
 
-### 3.3 The data volume and the firewall rule (prod host, `sudo machinectl shell prod@`)
+### 3.3 The two volumes, and a firewall check (prod host, `sudo machinectl shell prod@`)
 
 ```bash
 docker volume create dev-usage-postgres-data
@@ -89,9 +89,17 @@ docker volume ls --format '{{.Name}}' | grep -c '^dev-usage-'
 Expected: the two names echoed by `create`, then `2`. Both volumes are `external`: a production stack
 never creates its own, so a deploy without them aborts before changing any container.
 
-Open **19040** to the tailnet in the host firewall, exactly as for 19002, 19030 and 19099
-([Server-Setup-Runbook.md](Server-Setup-Runbook.md), published-port survivability). Nothing else may
-reach it.
+**No port rule is needed for 19040.** The host firewall is default-deny inbound with one blanket
+allow on the tailnet interface ([Server-Setup-Runbook.md](Server-Setup-Runbook.md), "Open the firewall
+to the tailnet"), which is how 19002, 19030 and 19099 are reachable too. Confirm that is still the
+shape, from your admin login (not inside the `prod@` shell; ufw needs sudo):
+
+```bash
+sudo ufw status | grep -E 'Status|tailscale0'
+```
+
+Expected: `Status: active`, then `Anywhere on tailscale0 ALLOW Anywhere` (and its `(v6)` twin), with
+no public allow for 19040. A per-port `ufw allow 19040` would expose it publicly; do not add one.
 
 ### 3.4 Deploy
 
@@ -102,7 +110,7 @@ the stack. Then, from the dev container, a request **without** a token must be r
 curl -s -o /dev/null -w '%{http_code}\n' "http://<tailnet-host>:19040/sessions?limit=1"
 ```
 
-Expected: `401`. A `000` means the firewall rule or the stack is missing. A `200` would mean an anonymous
+Expected: `401`. A `000` means the stack is not up or the dev container cannot reach the host (§3.5, network policy). A `200` would mean an anonymous
 role exists, which it must not; stop and investigate.
 
 ### 3.5 The dev container's three values
