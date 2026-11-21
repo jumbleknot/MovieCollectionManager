@@ -3,9 +3,9 @@ type: Runbook
 title: Claude Code token usage capture (prod-dev-usage)
 description: How every dev-container Claude Code session ships per-session, per-turn and per-tool token counts — never content — through committed lifecycle hooks and scripts/cc-usage.mjs to the tailnet-only prod-dev-usage store (Postgres + PostgREST on 19040, Keycloak client-credentials tokens), the operator setup that turns it on, what doctor reports, and the traps — best-effort SessionEnd, the per-session lock and spool order, the JWKS fetched only at deploy, and not-configured meaning do nothing.
 resource: docs/runbooks/dev-usage.md
-resource-sha256: 5509072d088a6ca7c3faece10b1d98234e395316efa5f82f477d47232fb5a436
+resource-sha256: e5159d43f3c653b2d6c4438fd7028372974e1e28dccc77d63564e9718e1b80f5
 tags: [claude-code, usage, tokens, postgrest, keycloak, devcontainer, runbook]
-timestamp: 2026-11-21T20:21:26.562Z
+timestamp: 2026-11-21T20:22:14.136Z
 ---
 
 # Claude Code token usage capture (prod-dev-usage)
@@ -15,8 +15,9 @@ Feature 105. Three hooks committed in `.claude/settings.json` (`SessionStart`, `
 reduces them to names, counts and sizes, and upserts them over HTTP to the `prod-dev-usage` Komodo stack:
 Postgres (schema `usage`) behind PostgREST, published on **19040**, tailnet-only. Every request carries a
 short-lived Keycloak token for the service-account client `dev-usage-capture`, cached in the container
-until 60 s before it expires. The runbook has the one-time operator setup, the `doctor` reference, key
-rotation, restore and the format-drift procedure.
+until 60 s before it expires. The runbook has the one-time operator setup (ending with a reinstall of the host backup copies,
+which do not dump the store until then), the `doctor` reference, key rotation, restore and the
+format-drift procedure.
 
 ## Load-bearing gotchas
 

@@ -160,6 +160,26 @@ Expected after the first `SessionStart`: `configured: yes`, a `last ship` time, 
 and `unshipped:` shrinking to `none` as the first sweep backfills the volume (about 170 MB, file by
 file). Deploying this is what starts the two-week baseline the findings in US4 need.
 
+### 3.7 Reinstall the host backup (prod host, after 3.4)
+
+The host runs **copies** of the backup scripts, so the new dump step (`[6/9]`) does nothing until
+they are reinstalled from the merged `main`: follow
+[infrastructure-as-code/backup/README.md](../../infrastructure-as-code/backup/README.md) "Install or
+update", step 3, exactly as written. Do it **after** the stack is up: the step dumps
+`dev-usage-postgres`, and with that container missing it fails the whole run and raises a backup
+alert. Then run one backup by hand rather than waiting for the timer. A whole run takes 8-10
+minutes, so start it without blocking and poll for at most 20:
+
+```bash
+systemctl --user start --no-block homelab-backup.service
+for i in $(seq 1 120); do systemctl --user is-active -q homelab-backup.service || break; sleep 10; done
+systemctl --user show -p Result homelab-backup.service
+journalctl --user -u homelab-backup --since '-30min' --no-pager | grep -E 'dev-usage: [0-9]+ bytes'
+```
+
+Expected: `Result=success`, then one `dev-usage: N bytes` line. A `Result=` other than `success`
+also opens a backup alert in the backlog; the journal says which step failed.
+
 ## 4. `doctor`, line by line
 
 | Line | Meaning | If wrong |
