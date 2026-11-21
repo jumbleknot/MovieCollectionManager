@@ -44,7 +44,12 @@ session id comes from stdin only: `CLAUDE_SESSION_ID` is not set in the hook env
 
 - Exit code is **always 0**. Stdout is **always empty** (SessionStart stdout would enter Claude's context).
 - Stderr is empty on every expected path; unexpected errors go to `cc-usage.log`, not stderr.
-- Network calls (token endpoint and store): connect timeout 2 s, total 5 s; any failure writes `backoff` and spools the batch, within the 50 MB spool cap (data-model.md "Local state").
+- Network calls (token endpoint and store): connect timeout 2 s (measured to the response headers, since Node's built-in `fetch` has no separate connect timeout), total 5 s; any failure writes `backoff` and spools the batch, within the 50 MB spool cap (data-model.md "Local state").
+- Everything that ships a session's records — `Stop`, `SessionEnd`, a sweep, a spool replay — runs under
+  that session's lock (`locks/session-<id>.lock`) and replays the session's spool oldest first before
+  sending anything newer. Turn and tool rows are cumulative upserts, so this order is what stops an old
+  batch from regressing them. A process that finds the lock held skips the session; the next sweep
+  catches it up.
 
 ## Interactive commands (invoked by the `usage` skill or a human)
 

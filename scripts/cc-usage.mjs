@@ -4,12 +4,15 @@
 // Zero runtime dependencies: Node built-ins and the global fetch. Arguments go through
 // scripts/lib/argv-contract.mjs, so an unknown flag is exit 2, never a silently-ignored token.
 //
+//   node scripts/cc-usage.mjs hook                       (Claude Code only; event JSON on stdin)
+//   node scripts/cc-usage.mjs doctor
 //   node scripts/cc-usage.mjs oracle-check [--fixtures <dir>]
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ArgvError, dieOnArgvError, partitionArgsWithValues, wantsHelp } from './lib/argv-contract.mjs';
 import { isMain } from './lib/is-main.mjs';
+import { doctorLines, runHook } from './lib/cc-usage/capture.mjs';
 import { sessionTotals } from './lib/cc-usage/transcript-files.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -18,12 +21,26 @@ const DEFAULT_FIXTURES = join(HERE, '__tests__', 'fixtures', 'cc-usage');
 export const USAGE = `usage: node scripts/cc-usage.mjs <command> [flags]
 
 commands:
+  hook                              invoked by Claude Code's SessionStart / Stop / SessionEnd hooks; always exit 0, prints nothing
+  doctor                            capture health: configured, last ship, spool, back-off, token state, unshipped transcripts
   oracle-check [--fixtures <dir>]   compare parser totals on the fixtures with the committed ccusage oracle; exit 1 on any mismatch
 `;
 
 const COMMANDS = {
+  hook: { run: hook },
+  doctor: { run: (_p, io) => { io.out(doctorLines().join('\n')); return 0; } },
   'oracle-check': { withValues: ['--fixtures'], run: oracleCheck },
 };
+
+/** Exit 0 and print nothing on EVERY path — a hook must never disturb the session (contracts/cli.md). */
+async function hook() {
+  let stdin = '';
+  try {
+    stdin = readFileSync(0, 'utf8');
+  } catch { /* no stdin */ }
+  await runHook(stdin);
+  return 0;
+}
 
 function oracleCheck({ values }, io) {
   const dir = values.get('--fixtures') ?? DEFAULT_FIXTURES;
@@ -63,7 +80,10 @@ export async function main(argv, io = { out: (s) => console.log(s), err: (s) => 
   return cmd.run(parsed, io);
 }
 
-if (isMain(import.meta.url)) {
+if (isMain(import.meta.url) && process.argv[2] === 'hook') {
+  // The hook path bypasses argument checking and every error report: nothing may reach stdout/stderr.
+  hook().catch(() => {}).finally(() => { process.exitCode = 0; });
+} else if (isMain(import.meta.url)) {
   main(process.argv.slice(2)).then(
     (code) => { process.exitCode = code; },
     (err) => {
