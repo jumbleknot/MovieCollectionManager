@@ -5,6 +5,7 @@
 // only the BFF carries the `mcm-` qualifier, and no removed `ollama`/`agent-mcp` objects remain.
 //
 // Usage: node scripts/check-resource-naming.mjs [--section=volumes|networks|containers|ollama|all]
+//        node scripts/check-resource-naming.mjs --selftest   (planted names; proves the rules bite)
 // Exits non-zero with the offending file + token on any violation in the selected section(s).
 
 import { readFileSync, globSync } from 'node:fs';
@@ -16,7 +17,8 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 // Feature 025 (prod control-tower): `vault` prefix admits the dormant Vault raft volume
 // `vault-store-data`; `agent-audit-opensearch-data` already matches via the existing `agent` prefix.
-const VOLUME_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent|observability|vault)-[a-z0-9]+(-[a-z0-9]+)*-data$/;
+// Feature 105: `dev-usage` admits the Claude Code usage store (`dev-usage-postgres-data`).
+const VOLUME_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent|observability|vault|dev-usage)-[a-z0-9]+(-[a-z0-9]+)*-data$/;
 // FR-007 relaxed form: multi-volume vendor stacks (LangFuse) may end in -logs under the observability context.
 const VOLUME_OBS_LOGS_RE = /^observability-[a-z0-9]+(-[a-z0-9]+)*-logs$/;
 // Feature 071 / item #439 — the audit sink needs a SNAPSHOT-REPOSITORY volume, and it must NOT live inside
@@ -27,7 +29,8 @@ const VOLUME_OBS_LOGS_RE = /^observability-[a-z0-9]+(-[a-z0-9]+)*-logs$/;
 const VOLUME_SNAPSHOTS_RE = /^agent-[a-z0-9]+(-[a-z0-9]+)*-snapshots$/;
 // Feature 020 — container_name == service key == <component>[-<role>-<technology>].
 // Components are the owning subsystems (extend here when a new subsystem is added).
-const IDENTIFIER_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent-audit|opa|unleash|vault)(-[a-z0-9]+)*$/;
+// Feature 105: `dev-usage` is the Claude Code usage store's subsystem (prod-dev-usage stack).
+const IDENTIFIER_RE = /^(keycloak|mc-service|mcm-bff|movie-assistant|agent-audit|opa|unleash|vault|dev-usage)(-[a-z0-9]+)*$/;
 // Rule 3 (vendor bundle) + Rule 3b (auxiliary / bundle-member): exempt from the format check,
 // but still required to keep container_name == service key. See contracts/naming-convention.md.
 const NAME_ALLOWLIST = new Set([
@@ -61,6 +64,8 @@ const APPROVED_NETWORKS = new Set([
   // Feature 025 (prod control-tower): dedicated isolation network for the append-only audit sink
   // (FR-001) — only agent-audit-opensearch + the gateway/BFF consumers join it (opensearch/compose.prod.yaml).
   'agent-audit-network',
+  // Feature 105: private link between the usage store's Postgres and PostgREST (dev-usage/compose*.yaml).
+  'dev-usage-network',
 ]);
 // A `name:` carrying a compose-project prefix (`<project>_<name>`) or the auto `mcm_` form.
 const LEGACY_NAME_RE = /_/;
@@ -203,6 +208,51 @@ function checkOllama(file, text, doc) {
     }
   }
 }
+
+// --selftest: run the volume/network/container rules over PLANTED compose documents, so a change to a
+// regex is proven to admit what it should and still reject what it should (feature 105, T029).
+function selftest() {
+  const run = (doc) => {
+    const before = violations.length;
+    checkVolumes('selftest', doc);
+    checkNetworks('selftest', doc);
+    checkContainers('selftest', doc);
+    return violations.splice(before);
+  };
+  const cases = [
+    {
+      what: 'feature 105: the dev-usage context (volume, containers, network) is admitted',
+      doc: {
+        volumes: { data: { name: 'dev-usage-postgres-data' } },
+        networks: { internal: { name: 'dev-usage-network' } },
+        services: {
+          'dev-usage-postgres': { container_name: 'dev-usage-postgres' },
+          'dev-usage-postgrest': { container_name: 'dev-usage-postgrest' },
+        },
+      },
+      expected: 0,
+    },
+    {
+      what: 'feature 105: a near-miss devusage-* context is still rejected',
+      doc: {
+        volumes: { data: { name: 'devusage-postgres-data' } },
+        services: { 'devusage-postgrest': { container_name: 'devusage-postgrest' } },
+      },
+      expected: 2,
+    },
+  ];
+  let bad = 0;
+  for (const c of cases) {
+    const got = run(c.doc);
+    const ok = got.length === c.expected;
+    if (!ok) bad += 1;
+    console.log(`${ok ? '✓' : '✗'} ${c.what} — ${got.length} violation(s), expected ${c.expected}`);
+    if (!ok) for (const v of got) console.log(`    ${v.token}: ${v.reason}`);
+  }
+  process.exit(bad ? 1 : 0);
+}
+
+if (process.argv.includes('--selftest')) selftest();
 
 const sections = parseArgs(process.argv.slice(2));
 const files = composeFiles();
