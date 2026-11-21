@@ -96,10 +96,10 @@ Repository-root paths as in [plan.md](plan.md) Project Structure: `scripts/`, `s
   - **Verify RED**: `node --test scripts/__tests__/cc-usage-privacy.guard.test.mjs` → expected: failing — `AssertionError: sentinel SENTINEL-… found in shipped batch`
 - [x] T009 Implement `scripts/lib/cc-usage/privacy-shape.mjs`: an explicit **allowlist** per table of the columns in `data-model.md` (anything else is dropped, not escaped), applied by the shipper to every batch (prerequisite: T008 verified RED).
   - **Verify GREEN**: `node --test scripts/__tests__/cc-usage-privacy.guard.test.mjs scripts/__tests__/cc-usage-parse.test.mjs` → expected: 0 failures, 0 skipped
-- [ ] T010 [P] Write the oracle cross-check test in `scripts/__tests__/cc-usage-oracle.test.mjs`: for every session in `ccusage-oracle.json`, the parser's totals for input, output, cache write and cache read equal the oracle's exactly; and a CLI test that `node scripts/cc-usage.mjs oracle-check` exits 0 on the fixtures and 1 when one fixture's usage is altered in a temp copy.
+- [x] T010 [P] Write the oracle cross-check test in `scripts/__tests__/cc-usage-oracle.test.mjs`: for every session in `ccusage-oracle.json`, the parser's totals for input, output, cache write and cache read equal the oracle's exactly; and a CLI test that `node scripts/cc-usage.mjs oracle-check` exits 0 on the fixtures and 1 when one fixture's usage is altered in a temp copy.
   - **Scenarios covered**: SC-002; FR-017
   - **Verify RED**: `node --test scripts/__tests__/cc-usage-oracle.test.mjs` → expected: the CLI cases failing — `cc-usage.mjs: no such command oracle-check` (or the entry file missing)
-- [ ] T011 Create `scripts/cc-usage.mjs` with argument parsing through `scripts/lib/argv-contract.mjs` (unknown flag → exit 2) and the `oracle-check` command (prerequisite: T010 verified RED).
+- [x] T011 Create `scripts/cc-usage.mjs` with argument parsing through `scripts/lib/argv-contract.mjs` (unknown flag → exit 2) and the `oracle-check` command (prerequisite: T010 verified RED).
   - **Verify GREEN**: `node --test scripts/__tests__/cc-usage-oracle.test.mjs` → expected: 0 failures, 0 skipped
 
 **Checkpoint**: parsing is exact, matches the reference tool, and cannot leak content.
