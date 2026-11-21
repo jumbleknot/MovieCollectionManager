@@ -115,7 +115,7 @@ homelab store, automatically, safely under concurrency and offline.
 
 ### Tests for User Story 1 (REQUIRED — TDD checkpoint format) ⚠️
 
-- [ ] T012 [P] [US1] Write `scripts/__tests__/cc-usage-local-state.test.mjs` for `scripts/lib/cc-usage/local-state.mjs` (stub first) using a temp `CLAUDE_CONFIG_DIR`: offsets written via temp-file-and-rename and never moved backwards; the sweep lock is taken once, refused while fresh, and reclaimable after expiry; a spool file is claimed by rename and removed only after a confirmed send; the spool never exceeds 50 MB — on overflow the oldest files go first and each drop is recorded in `spool-drops.json`; nothing is spooled when capture is not configured; a fresh back-off marker suppresses network use; the log file is size-capped and rotated (data-model.md "Local state").
+- [x] T012 [P] [US1] Write `scripts/__tests__/cc-usage-local-state.test.mjs` for `scripts/lib/cc-usage/local-state.mjs` (stub first) using a temp `CLAUDE_CONFIG_DIR`: offsets written via temp-file-and-rename and never moved backwards; the sweep lock is taken once, refused while fresh, and reclaimable after expiry; a spool file is claimed by rename and removed only after a confirmed send; the spool never exceeds 50 MB — on overflow the oldest files go first and each drop is recorded in `spool-drops.json`; nothing is spooled when capture is not configured; a fresh back-off marker suppresses network use; the log file is size-capped and rotated (data-model.md "Local state").
   - **Scenarios covered**: US1-AC4 (offline queueing), US1-AC5 (overlap safety); FR-009, FR-010
   - **Verify RED**: `node --test scripts/__tests__/cc-usage-local-state.test.mjs` → expected: every test failing — `Error: not implemented`
 - [ ] T013 [P] [US1] Write `scripts/__tests__/cc-usage-ship.test.mjs` for `scripts/lib/cc-usage/ship-records.mjs` with an **injected** `fetch` (unit tier): `POST` per table with `Prefer: resolution=merge-duplicates,return=minimal` and the `on_conflict` keys and batch caps of contracts/store-http.md; parents (`sessions`, `features`) before children; `Authorization: Bearer` carries the token from `obtain-access-token.mjs` (injected), and neither the token nor the client secret ever appears in the log or in any thrown message; a failure mid-ship spools the whole batch and writes back-off; connect timeout 2 s, total 5 s.
@@ -145,7 +145,7 @@ homelab store, automatically, safely under concurrency and offline.
 
 ### Implementation for User Story 1
 
-- [ ] T021 [US1] Implement `scripts/lib/cc-usage/local-state.mjs` (prerequisite: T012 verified RED).
+- [x] T021 [US1] Implement `scripts/lib/cc-usage/local-state.mjs` (prerequisite: T012 verified RED).
   - **Verify GREEN**: `node --test scripts/__tests__/cc-usage-local-state.test.mjs` → expected: 0 failures, 0 skipped
 - [ ] T022 [US1] Implement `scripts/lib/cc-usage/obtain-access-token.mjs` on the global `fetch` and `local-state.mjs` (prerequisite: T014 verified RED; depends on T021).
   - **Verify GREEN**: `node --test scripts/__tests__/cc-usage-token.test.mjs` → expected: 0 failures, 0 skipped
