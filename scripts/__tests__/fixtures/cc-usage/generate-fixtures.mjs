@@ -116,8 +116,10 @@ export function generate() {
     toolResults(A, '2026-11-10T09:32:00.000Z', [
       ['toolu_A4r1', 'SENTINEL-tool-output-6'], ['toolu_A4r2', 'SENTINEL-tool-output-7'],
       ['toolu_A4r3', 'SENTINEL-tool-output-8'], ['toolu_A4r4', 'SENTINEL-tool-output-9'],
-      ['toolu_A4', 'SENTINEL-tool-output-10'],
-    ], { toolUseResult: { agentId: 'x', agentType: 'Explore', persistedOutputSize: 4096, interrupted: false } }),
+    ]),
+    // One result per line, as real transcripts write them: persistedOutputSize is this result's size.
+    toolResults(A, '2026-11-10T09:32:01.000Z', [['toolu_A4', 'SENTINEL-tool-output-10']],
+      { toolUseResult: { agentId: 'x', agentType: 'Explore', persistedOutputSize: 4096, interrupted: false } }),
     assistant(A, '2026-11-10T09:32:10.000Z', 'msg_A5', 'req_A5', [{ type: 'text', text: 'SENTINEL-text-2' }], usage(2, 40, 0, 0, 20300), { attributionSkill: 'speckit-plan' }),
     wake(A, '2026-11-10T09:40:00.000Z', 4),
     assistant(A, '2026-11-10T09:40:05.000Z', 'msg_A6', 'req_A6', [{ type: 'text', text: 'SENTINEL-text-3' }], usage(4, 10, 100, 0, 20340)),
