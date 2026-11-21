@@ -1,19 +1,19 @@
 ---
 type: Service
 title: Prod host backup (restic) and its failure alerting
-description: The nightly restic snapshot of the prod host — eight per-service dumps (the forge split into a database dump and an uncompressed data tar, plus the release APKs), per-dump format/minimum/shrink checks, the on-disk staging requirement, Komodo's scheduler-history purge, tag-grouped retention, the two independent alerting paths (OnFailure on a failed or hung run, and a separate 6-hourly staleness check that reads the newest snapshot from the repository itself) that make a silent failure visible, and the quarterly restore drill that is the only proof a backup can be restored — with the 2026-10-31 drill's passing row against the post-spec-084 forge format.
+description: The nightly restic snapshot of the prod host — nine per-service dumps (the forge split into a database dump and an uncompressed data tar, plus the release APKs), per-dump format/minimum/shrink checks, the on-disk staging requirement, Komodo's scheduler-history purge, tag-grouped retention, the two independent alerting paths (OnFailure on a failed or hung run, and a separate 6-hourly staleness check that reads the newest snapshot from the repository itself) that make a silent failure visible, and the quarterly restore drill that is the only proof a backup can be restored — with the 2026-10-31 drill's passing row against the post-spec-084 forge format.
 tags: [backups, restic, systemd, disaster-recovery, alerting, forgejo, homelab]
 resource: infrastructure-as-code/backup/README.md
-resource-sha256: 16afc46930f33a637218991530b68b2fcb852df8029a2209229b2c4e6c25c094
+resource-sha256: 380ecb15adc7d541677d3df66770cd32c32396cfa86f163d716dd4e7c383cb51
 generated: { by: "openwiki/0.7.1", at: "2026-11-02T10:14:55.121Z" }
-timestamp: 2026-11-10T03:37:28.044Z
+timestamp: 2026-11-21T20:45:16.437Z
 ---
 
 # Prod host backup (restic) and its failure alerting
 
 **Not the same thing as the in-app backups.** This page is the operator's **host-level disaster
 recovery**: one restic snapshot of every stateful service on the prod host (Forgejo, Komodo, Keycloak,
-agent-db and both Mongo instances), the service config directories, and the release APKs a rebuild
+agent-db, the Claude Code usage store (feature 105) and both Mongo instances), the service config directories, and the release APKs a rebuild
 cannot reproduce — pushed to a remote the operator controls. Feature 073's per-user **collection
 backups** are an application feature — each member exports their own collections to S3-compatible or
 WebDAV storage *they* own, scheduled by the BFF — and they have their own page,
@@ -37,8 +37,8 @@ read live from a compose env file or a running container, so **the script holds 
 
 1. **Staging on disk.** A staging directory is created under `~/backup/` and removed on exit. This is
    not cosmetic — see the staging gotcha below.
-2. **Eight dumps, each through `run_dump`**: `forge-db`, `forge-data`, `komodo`, `keycloak`,
-   `agent-db`, `mc-service-mongo`, `bff-mongo`, `release-apks`. Each writes one file into the staging
+2. **Nine dumps, each through `run_dump`**: `forge-db`, `forge-data`, `komodo`, `keycloak`,
+   `agent-db`, `dev-usage`, `mc-service-mongo`, `bff-mongo`, `release-apks`. Each writes one file into the staging
    directory, is checked in its own format against a per-dump minimum size, and is compared against its
    size in the last good run.
 3. **A manifest that travels inside the snapshot.** `dump-manifest.tsv` records, per dump, the file,
@@ -190,7 +190,7 @@ non-600 token file, unset `MCM_FORGE_URL`), **4** the forge API call failed. Cod
   acknowledged once rather than accepted forever. **The threshold is never raised instead.** Only a
   fully good run rewrites `last-good.tsv` — a failed run must not become the baseline — and a run with
   no previous manifest records `compare=skipped` in the manifest rather than silently skipping. The
-  dump names to ack are the eight above; the old `forge` name is refused.
+  dump names to ack are the nine above; the old `forge` name is refused.
 - **Komodo's dump size and the retention job are two halves of one problem.** The dump excluding
   `cron.job_run_details` keeps last night's *snapshot* small; `komodo-cron-retention.sql` keeps the
   *table* small. Installing the job drops the dump from about 2 GB, so the README pairs it with a

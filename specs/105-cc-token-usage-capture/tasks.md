@@ -313,7 +313,7 @@ counter-metrics. Rules are active only after two weeks of data; the spec closes 
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T064 Run `node scripts/wiki-refresh.mjs --stale` and refresh every page it reports (the `--diff` then edit then `--record` loop of `.claude/skills/wiki-refresh/SKILL.md`), beyond the pages T066–T071 already name.
+- [x] T064 Run `node scripts/wiki-refresh.mjs --stale` and refresh every page it reports (the `--diff` then edit then `--record` loop of `.claude/skills/wiki-refresh/SKILL.md`), beyond the pages T066–T071 already name.
   - **Done when**: `node scripts/wiki-refresh.mjs --stale` reports nothing and `pnpm nx okf-lint infrastructure-as-code` exits 0.
 - [ ] T065 [P] Add the stack's data-tier note to `docs/runbooks/dev-usage.md` (restore drill steps for the dev-usage dump) and link the runbook from `infrastructure-as-code/docker/dev-usage/` with a short `README.md`.
   - **Done when**: both files exist and link each other.
@@ -329,8 +329,25 @@ counter-metrics. Rules are active only after two weeks of data; the spec closes 
   - **Done when**: both pages list the three variables and the wiki fingerprint is recorded.
 - [x] T071 [P] Add `MCM_USAGE_CLIENT_SECRET` to the credential lists in `docs/runbooks/devcontainer-sandbox.md` (~170–172, ~691, ~766 example), then refresh `openwiki/runbooks/devcontainer-sandbox.md` (~234) and `openwiki/projects/repository.md` (~724–732).
   - **Done when**: the three lists name the client secret and both wiki fingerprints are recorded.
-- [ ] T072 **Close-out re-search**: re-run every T002 search; every hit in a document that states current procedure now reflects four ports, eight prod compose files, the `prod-dev-usage` stack, the new backup step and the three new variables, or is justified in this task.
+- [x] T072 **Close-out re-search**: re-run every T002 search; every hit in a document that states current procedure now reflects four ports, eight prod compose files, the `prod-dev-usage` stack, the new backup step and the three new variables, or is justified in this task.
   - **Done when**: this task lists the re-run command and one line per remaining hit with its disposition.
+  **Re-run (2026-11-21)**: the T002 command and every T002 term, plus `seven stacks`, `seven prod`, `three published`, `eight dumps`, `three (and only)`, `[N/8]`, a regex for "(three|four|…|nine) (prod )?(stacks|compose|dumps|ports)", and the dump list `agent-db … mc-service-mongo`. Zero hits remain for `three ports`, `27 services`, `[1/8]`, `seven \`compose.prod.yaml\``.
+  **Fixed in this task** (current statements T002 did not list):
+  - `infrastructure-as-code/backup/README.md:162`: the `--ack-shrink` dump-name list lacked `dev-usage` → added; `openwiki/projects/backup.md` (description, :16, :40-41, :193) now nine dumps, refreshed and recorded
+  - `openwiki/invariants/secrets-management.md:61`: "The seven prod stacks" → eight
+  - `openwiki/projects/index.md:9`: "the seven production Komodo ResourceSync stacks" → eight
+  - `openwiki/runbooks/prod-control-tower.md:745`: "the same seven Komodo stacks" → eight
+  - (before this task, during the operator walkthrough) `docs/runbooks/dev-usage.md` §3.3: there is no per-port firewall rule, since the host allows all of `tailscale0`; §3.7 added, reinstalling the host backup copies after the deploy. `plan.md` aligned.
+  **Remaining hits, no change**:
+  - `openwiki/decisions/adr-0001-prod-secrets-management.md:17,44,89`: "all seven", "All seven declare": a decision record's state at decision time
+  - `docs/runbooks/prod-control-tower.md:4,25,70`, `openwiki/runbooks/prod-control-tower.md:4,14,39,45`, `openwiki/runbooks/index.md:19`: "the three … support stacks": the control tower's own three, which `prod-dev-usage` is not part of
+  - `docs/runbooks/Phase-15-Operator-Checklist.md`, `openwiki/runbooks/phase-15-operator-checklist.md:49,65,71`: the dated Phase 15 bring-up
+  - `docs/runbooks/Server-Setup-Runbook.md:1210,1212`, `openwiki/runbooks/server-setup.md:184`, `openwiki/projects/backup.md:296`: "the three dumps that matter most": the restore drill's chosen subset, unchanged
+  - `openwiki/projects/backup.md:54,61,65,128,362`: the six→eight history heading, the forge-data tar's eight `--exclude`s, a dated measurement
+  - `docs/runbooks/local-dev.md:37`, `dev-environment-setup.md:273`, `openwiki/architecture/system-overview.md:106,250`, `openwiki/projects/stacks.md:18`, `openwiki/runbooks/phase-15…:49`, `renovate.md:957`, `openwiki/runbooks/renovate.md:302,560`: the four LOCAL compose stacks or other compose sets; dev-usage's local compose is integration-only, not a named local stack
+  - `docs/runbooks/devcontainer-sandbox.md:768`: the 2026-09-19 image-leak measurement (history)
+  - `docs/runbooks/prod-control-tower.md:761`, `openwiki/runbooks/prod-control-tower.md:64` (`VOLUME_RE`), `openwiki/projects/infrastructure-stacks.md:492` (`<context>-<role>-<engine>`): as in T002
+  - every other `19099`, `stacks.toml`, `backup.sh`, `gen-container-secrets-env`, `MCM_FORGE_ISSUE_TOKEN`, `ensure-rtk-hook`, `.claude/settings.json` hit: either already names the feature-105 item (checked: every line listing 19099 with 19030/19002 also reaches 19040; every credential list reaches `MCM_USAGE_CLIENT_SECRET`) or is about the mechanism alone, as dispositioned in T002
 - [ ] T073 Run the gates the diff touches (AGENTS.md "run the tiers your diff touches"): `node --test scripts/__tests__/*.test.mjs` (watch the skip count), `MCM_REQUIRE_LIVE_STACK=1 pnpm nx dev-usage-integration infrastructure-as-code`, `node scripts/cc-usage.mjs oracle-check`, `pnpm nx okf-lint infrastructure-as-code`, `pnpm nx okf-governance infrastructure-as-code`, `node scripts/check-resource-naming.mjs`, `node scripts/check-prod-restart-policy.mjs`, `node scripts/check-prod-ci-port-collision.mjs`, then the cheap pre-push target of `infrastructure-as-code/project.json`; record `pnpm nx show projects --affected` to confirm no app project is affected (so the consuming-app E2E regression is not in scope — this feature touches no app code; if any app project appears, run its E2E per `openwiki/invariants/feature-validation-checklist.md`).
   - **Done when**: every command exits 0 with 0 skipped, and the affected-project list is recorded here.
 - [ ] T074 Run quickstart.md §1–§3 in the worktree, and §4–§6 after the stack is deployed and the env is set (operator steps in `docs/runbooks/dev-usage.md`).

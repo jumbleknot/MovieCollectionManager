@@ -159,5 +159,5 @@ When a dump is meant to get much smaller (data deliberately deleted, or a new ex
 next run to accept it once:
 
 ```bash
-~/backup/backup.sh --ack-shrink <dump>   # forge-db forge-data komodo keycloak agent-db mc-service-mongo bff-mongo release-apks
+~/backup/backup.sh --ack-shrink <dump>   # forge-db forge-data komodo keycloak agent-db dev-usage mc-service-mongo bff-mongo release-apks
 ```
