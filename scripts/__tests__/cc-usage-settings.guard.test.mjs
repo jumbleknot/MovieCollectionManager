@@ -1,6 +1,6 @@
 // Guard (feature 105; US1-AC1, FR-001): the committed .claude/settings.json carries exactly the three
 // capture hooks of contracts/hooks-and-skill.md (key spellings confirmed by T001, research "Spike
-// results" (b)), and the plugin keys that were there before stay as they were.
+// results" (b)), and the plugin keys are exactly the intended set.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -23,14 +23,15 @@ test('no statusline is committed (the usage statusline is opt-in, research R14)'
   assert.equal(settings.statusLine, undefined);
 });
 
-test('the pre-existing plugin keys are unchanged from main', () => {
-  // Snapshot of origin/main's values when feature 105 added the hooks block (2026-11-21).
+test('the plugin keys are exactly the intended set', () => {
+  // Snapshot of origin/main's values when feature 105 added the hooks block (2026-11-21), minus the
+  // Nx plugin, removed 2026-11-22: an unpinned third-party marketplace with zero calls across 73
+  // measured sessions (host + dev container). A plugin added or removed here must update this list
+  // in the same change, so no marketplace slips into every contributor's session unreviewed.
   assert.deepEqual(settings.extraKnownMarketplaces, {
-    'nx-claude-plugins': { source: { source: 'github', repo: 'nrwl/nx-ai-agents-config' } },
     'callstack-agent-skills': { source: { source: 'github', repo: 'callstackincubator/agent-skills' } },
   });
   assert.deepEqual(settings.enabledPlugins, {
-    'nx@nx-claude-plugins': true,
     'building-react-native-apps@callstack-agent-skills': true,
   });
   assert.deepEqual(Object.keys(settings).sort(), ['enabledPlugins', 'extraKnownMarketplaces', 'hooks']);

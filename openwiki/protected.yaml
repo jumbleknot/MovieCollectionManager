@@ -207,7 +207,8 @@ passages:
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
     # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: its closing pointer named a CLAUDE.md section that no longer exists (CLAUDE.md is an index); it now names where that content lives.
     # Re-fingerprinted 2026-11-22 (constitution v2.12.0) — passage-corrected: it said "CI and policy get targets", but every guardrails job has always run its gates and `node --test scripts/__tests__` with plain node. The passage now names that as the constitution's sanctioned exception (repository scripts direct in CI; product operations still through Nx).
-    fingerprint: "sha256:e5d753e1a66a910bc4e9e32f8ccdc3da8d5c69c8fc6f38e321a5af86d48438fc"
+    # Re-fingerprinted 2026-11-22 (Nx Claude plugin removed) — passage-corrected: it told agents to reach for the `nx-workspace` and `nx-generate` skills, which came from the Nx Claude Code plugin; that plugin is removed (zero calls across 73 measured sessions), so the passage now names the `pnpm nx show` / `graph` / `g` commands those skills wrapped.
+    fingerprint: "sha256:710b6e9ec2cea291e7c34c50ccae16b517d47efeb375dd234380dcb750374b65"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/package-manager-enforcement.md"
