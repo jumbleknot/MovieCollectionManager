@@ -1,0 +1,94 @@
+name: Proposal
+about: A feature idea captured before it has a spec — the input to /speckit-specify.
+title: "Proposal: "
+labels:
+  - type/proposal
+  - status/proposal-draft
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Filed by a human or by Claude Desktop's proposal-intake session — the sections below are the same
+        either way. A proposal says WHAT and WHY, never HOW: no tech stack, libraries or file paths.
+        Draft = `status/proposal-draft`. Ready = `status/needs-spec`. Closed when `specs/NNN-*/` exists.
+  - type: input
+    id: feature-name
+    attributes:
+      label: Proposed feature name
+      description: Two to four words. Becomes the basis of the spec folder slug.
+      placeholder: Import export spreadsheet
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is wrong or missing today, for whom, and how we know.
+    validations:
+      required: true
+  - type: textarea
+    id: proposed-value
+    attributes:
+      label: Proposed value
+      description: What gets better if this ships, and for whom.
+    validations:
+      required: true
+  - type: textarea
+    id: personas
+    attributes:
+      label: Personas involved
+      description: Who uses it, who is affected by it, who decides.
+    validations:
+      required: true
+  - type: textarea
+    id: goals-success
+    attributes:
+      label: Goals and success definition
+      description: The goals, then the checkable conditions — success criteria and "done when".
+      value: |
+        **Goals**
+        -
+
+        **Success criteria / done when**
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+  - type: textarea
+    id: rough-scope
+    attributes:
+      label: Rough scope
+      description: What is in, including any important functional and non-functional requirements.
+      value: |
+        **Functional**
+        -
+
+        **Non-functional**
+        -
+    validations:
+      required: true
+  - type: textarea
+    id: open-questions
+    attributes:
+      label: Open questions
+      description: Anything known to be undecided. "None known" is a valid answer.
+    validations:
+      required: false
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: What this explicitly does not cover.
+    validations:
+      required: false
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: Also apply the matching `priority/*` label. p1 = do next.
+      options:
+        - p1
+        - p2
+        - p3
+    validations:
+      required: true
