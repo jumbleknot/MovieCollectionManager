@@ -361,6 +361,8 @@ export function summarizeSession({ sessionId, projectDir, main, subagents = [], 
   const m = parseTranscript(main, initialState(), { sessionId, projectDir });
   const reasons = [...m.state.reasons];
   const modelCalls = [...m.records.modelCalls];
+  // Session-wide dedup (T077): a forked subagent repeats its parent's calls under the same message id.
+  const claimed = new Set(modelCalls.map((c) => c.message_id));
   for (const s of subagents) {
     if (!s.transcript) {
       if (!reasons.includes('subagent-transcript-missing')) reasons.push('subagent-transcript-missing');
@@ -369,7 +371,7 @@ export function summarizeSession({ sessionId, projectDir, main, subagents = [], 
     const parentTurn = m.state.agentSpawns[s.meta?.toolUseId] ?? null;
     const r = parseTranscript(s.transcript, initialState(), { sessionId, projectDir, agentId: s.agentId, parentTurn });
     for (const why of r.state.reasons) if (!reasons.includes(why)) reasons.push(why);
-    modelCalls.push(...r.records.modelCalls);
+    modelCalls.push(...r.records.modelCalls.filter((c) => !claimed.has(c.message_id) && claimed.add(c.message_id)));
   }
   return {
     session: {

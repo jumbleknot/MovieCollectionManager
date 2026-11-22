@@ -142,6 +142,11 @@ export async function shipSession(cfg, { projectDir, sessionId }, how = {}) {
     cfg.traceEvent(`parse ${sessionId}`);
     const opts = { sessionId, projectDir };
     const records = { modelCalls: [], turns: [], toolUse: [], skillUse: [] };
+    // Model calls are deduped SESSION-wide (T077): a forked subagent's transcript repeats its parent's
+    // assistant lines with the same message id, and the parser dedups only within one file. Every id
+    // any of this session's transcripts already emitted is claimed; the first (main) keeps the call.
+    const claimed = new Set(Object.values(st.files).flatMap((f) => f?.seen ?? []));
+    const unclaimed = (calls) => calls.filter((c) => !claimed.has(c.message_id) && claimed.add(c.message_id));
     const mainBuf = readOrNull(mainPath);
     let mainSession = null;
     const range = { file: 'main', from: st.files.main?.offset ?? 0, to: null };
@@ -150,7 +155,7 @@ export async function shipSession(cfg, { projectDir, sessionId }, how = {}) {
       st.files.main = r.state;
       mainSession = r.records.session;
       range.to = r.state.offset;
-      records.modelCalls.push(...r.records.modelCalls);
+      records.modelCalls.push(...unclaimed(r.records.modelCalls));
       records.turns.push(...r.records.turns);
       records.toolUse.push(...r.records.toolUse);
       records.skillUse.push(...r.records.skillUse);
@@ -168,7 +173,7 @@ export async function shipSession(cfg, { projectDir, sessionId }, how = {}) {
       const key = `agent-${s.agentId}`;
       const r = parseTranscript(tbuf, st.files[key] ?? initialState(), { ...opts, agentId: s.agentId, parentTurn });
       st.files[key] = r.state;
-      records.modelCalls.push(...r.records.modelCalls);
+      records.modelCalls.push(...unclaimed(r.records.modelCalls));
       for (const why of r.state.reasons) add(why);
     }
 

@@ -30,9 +30,25 @@ class ShipError extends Error {}
  *          sessionId: string, range?: object, now?: number, spoolOnFailure?: boolean}} opts
  * @returns {Promise<{ok: boolean, spooled: boolean, reason?: string}>}
  */
+/**
+ * One row per `on_conflict` key, first occurrence wins. Postgres refuses an upsert that touches one
+ * row twice in a statement (SQLSTATE 21000), which PostgREST returns as a 500. This also lets a batch
+ * spooled before the session-wide dedup (T077) replay.
+ */
+function uniqueByConflictKey(table, rows) {
+  const cols = ON_CONFLICT[table].split(',');
+  const seen = new Set();
+  return rows.filter((row) => {
+    const k = JSON.stringify(cols.map((c) => row[c] ?? null));
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
 export async function sendBatches(batches, { configDir, ingestUrl, fetch = globalThis.fetch, getToken, sessionId, range = null, now = Date.now(), spoolOnFailure = true }) {
   const shaped = {};
-  for (const t of TABLE_ORDER) if (batches[t]?.length) shaped[t] = shapeRows(t, batches[t]);
+  for (const t of TABLE_ORDER) if (batches[t]?.length) shaped[t] = uniqueByConflictKey(t, shapeRows(t, batches[t]));
   try {
     let token;
     try {

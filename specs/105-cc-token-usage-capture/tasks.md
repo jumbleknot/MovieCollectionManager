@@ -357,6 +357,13 @@ counter-metrics. Rules are active only after two weeks of data; the spec closes 
 - [ ] T076 After two weeks of captured data: run `findings`, accept at least one, and after further sessions confirm its before/after (SC-008). Record the finding id and dates in the PR's closing comment or a follow-up backlog item; the spec's status moves to Done only then.
   - **Done when**: SC-008 is met and recorded.
 
+### Post-deploy fix (found by the first production sweep, 2026-11-22)
+
+- [x] T077 **A forked subagent repeats parent model calls.** The first production sweep got `store 500` (Postgres `21000`, "ON CONFLICT DO UPDATE command cannot affect row a second time") for a session whose `model_calls` batch held `msg_…` twice: once from the main transcript and once from a subagent's (agent `a2f…`). A forked subagent starts from a copy of the parent's context. The parser dedups per FILE, so the copy got through. The failed batch then blocked the session's spool, and every retry re-entered back-off. Fix in two layers: (a) `shipSession` dedups model calls SESSION-wide, across main and every subagent transcript; the first occurrence (main) keeps the attribution. (b) `sendBatches` collapses rows sharing an `on_conflict` key within one table's batch (first wins), so an already-spooled batch also replays. The fake store now rejects such a batch the way PostgREST does.
+  - **Verify RED**: `node --test scripts/__tests__/cc-usage-ship.test.mjs scripts/__tests__/cc-usage-fork-dedup.test.mjs`. The new tests fail: a duplicate key is sent, the fork copy is shipped and the fake store 500s.
+  - **Verify GREEN**: the same command, then all of `scripts/__tests__/cc-usage-*.test.mjs` and `node scripts/cc-usage.mjs oracle-check`, 0 skipped.
+  - **Known residue**: rows shipped before the fix, where a fork copy landed in a LATER batch than its main row, upserted over that row. Tokens are not double counted (primary key `(session_id, message_id)`), but the call's `agent_id` and `turn_seq` point at the subagent.
+
 ---
 
 ## Dependencies & Execution Order

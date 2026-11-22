@@ -204,6 +204,12 @@ also opens a backup alert in the backlog; the journal says which step failed.
 | `token: store rejects token` | Keycloak issued a token, but PostgREST refused it (401) | Almost always a signing-key rotation, see §5 |
 | `unshipped: N transcripts — …` | Transcripts with bytes not yet shipped | Normal right after a session; persistent means the hooks are not running or are in back-off |
 
+A `ship failed` line in the log with `reason: store 500` means the database refused a batch. The
+spooled copy is replayed first on that session's every ship, so the same 500 restarts the back-off
+each time and no session ships until it is fixed. Replay the spool file by hand to read PostgREST's
+error. The first such case (2026-11-22, SQLSTATE `21000`) was a forked subagent repeating its
+parent's model calls under the same message id, fixed by session-wide dedup (tasks.md T077).
+
 The structured log is `$CLAUDE_CONFIG_DIR/usage/cc-usage.log` (JSON lines, session id as correlation
 id, capped at 1 MB and rotated once). It never holds a token or a host name.
 

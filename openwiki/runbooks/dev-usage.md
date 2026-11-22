@@ -3,9 +3,9 @@ type: Runbook
 title: Claude Code token usage capture (prod-dev-usage)
 description: How every dev-container Claude Code session ships per-session, per-turn and per-tool token counts — never content — through committed lifecycle hooks and scripts/cc-usage.mjs to the tailnet-only prod-dev-usage store (Postgres + PostgREST on 19040, Keycloak client-credentials tokens), the operator setup that turns it on, what doctor reports, and the traps — best-effort SessionEnd, the per-session lock and spool order, the JWKS fetched only at deploy, and not-configured meaning do nothing.
 resource: docs/runbooks/dev-usage.md
-resource-sha256: a96577b8738680ab2eea718290c09db90270df7c64775fe6da1246d9ddbd7b5b
+resource-sha256: 3d419de3b0cbec364587facd3fa0b16871909776df44eb4d89ed3d8521796846
 tags: [claude-code, usage, tokens, postgrest, keycloak, devcontainer, runbook]
-timestamp: 2026-11-22T00:16:45.441Z
+timestamp: 2026-11-22T00:24:20.537Z
 ---
 
 # Claude Code token usage capture (prod-dev-usage)
@@ -38,6 +38,10 @@ format-drift procedure.
 - **Ships are ordered per session.** Turn and tool rows are cumulative upserts, so every ship (Stop,
   SessionEnd, sweep, spool replay) runs under that session's lock and replays its spool oldest first.
   Otherwise an old batch could regress newer rows.
+- **Model calls are deduped per SESSION, not per file.** A forked subagent's transcript repeats its
+  parent's calls under the same message id. A batch holding both copies is a Postgres `21000` (`store
+  500`), and its spooled copy then blocks the session at every retry. So the first occurrence (main)
+  claims the call, and `sendBatches` also sends one row per conflict key (T077).
 - **The store learns Keycloak's keys only when PostgREST starts.** PostgREST cannot fetch a JWKS URL, so
   an init container fetches it into a volume. Like every prod init, it then idles under
   `restart: always` behind a ready marker, because Komodo counts an exited container as unhealthy. After a signing-key rotation, `doctor` says `store rejects token`

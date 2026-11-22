@@ -48,9 +48,17 @@ export async function startFakeStore({ failTables = [] } = {}) {
         return;
       }
       const keys = (u.searchParams.get('on_conflict') ?? '').split(',');
+      const rows = JSON.parse(body);
+      // PostgREST/Postgres refuse an upsert that touches one key twice in a statement (SQLSTATE 21000).
+      const batchKeys = rows.map((row) => keys.map((c) => JSON.stringify(row[c])).join('|'));
+      if (new Set(batchKeys).size !== batchKeys.length) {
+        res.writeHead(500, { 'content-type': 'application/json' });
+        res.end(JSON.stringify({ code: '21000', message: 'ON CONFLICT DO UPDATE command cannot affect row a second time' }));
+        return;
+      }
       const t = tables.get(table) ?? new Map();
       tables.set(table, t);
-      for (const row of JSON.parse(body)) {
+      for (const row of rows) {
         const k = keys.map((c) => JSON.stringify(row[c])).join('|');
         t.set(k, { ...(t.get(k) ?? {}), ...row });
       }
