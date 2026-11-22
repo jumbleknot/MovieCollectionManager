@@ -104,28 +104,35 @@ no public allow for 19040. A per-port `ufw allow 19040` would expose it publicly
 ### 3.4 Deploy
 
 Komodo → ResourceSync → refresh, review the diff (one new stack, `prod-dev-usage`), apply, then deploy
-the stack. Then, from the dev container, a request **without** a token must be refused:
+the stack. Then, from the dev container, a request **without** a token must be refused. The store
+runs on the forge's host, so take the host name from the forge remote rather than typing it (a
+`<tailnet-host>` pasted as written makes curl print `000`, which reads exactly like "unreachable"):
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' "http://<tailnet-host>:19040/sessions?limit=1"
+H=$(git -C /workspaces/mcm remote get-url origin | sed -E 's#^[a-z]+://([^@/]*@)?([^:/]+).*#\2#')
+curl -s -o /dev/null -w '%{http_code}\n' "http://$H:19040/sessions?limit=1"
 ```
 
-Expected: `401`. A `000` means the stack is not up or the dev container cannot reach the host (§3.5, network policy). A `200` would mean an anonymous
-role exists, which it must not; stop and investigate.
+Expected: `401` (PostgREST's `PGRST302`, "Anonymous access is disabled"). A `000` means the stack is
+not up, the host name is wrong (`echo "$H"`), or the dev container cannot reach the host (§3.5,
+network policy). A `200` would mean an anonymous role exists, which it must not; stop and investigate.
 
 ### 3.5 The dev container's three values
 
 In the Sandbox VM (`ssh mcm.sbx`), add to `~/.mcm-sandbox-env`. First the two URLs. They are topology,
-not secrets, but are never committed:
+not secrets, but are never committed. First bring the VM's checkout up to the merge (the VM has no
+pager, so `git log` needs `--no-pager`), and take the host name from the forge remote as in 3.4:
 
 ```bash
+git -C /workspaces/mcm pull -q --ff-only && git --no-pager -C /workspaces/mcm log --oneline -1
+H=$(git -C /workspaces/mcm remote get-url origin | sed -E 's#^[a-z]+://([^@/]*@)?([^:/]+).*#\2#')
 cp ~/.mcm-sandbox-env ~/.mcm-sandbox-env.bak
 printf 'MCM_USAGE_INGEST_URL=http://%s:19040\nMCM_USAGE_TOKEN_URL=http://%s:19099/realms/grumpyrobot/protocol/openid-connect/token\n' \
-  "<tailnet-host>" "<tailnet-host>" >> ~/.mcm-sandbox-env
-grep -c '^MCM_USAGE_' ~/.mcm-sandbox-env
+  "$H" "$H" >> ~/.mcm-sandbox-env
+grep -c '^MCM_USAGE_' ~/.mcm-sandbox-env; grep -c '<tailnet-host>' ~/.mcm-sandbox-env
 ```
 
-Expected: `2`. Then the secret, as **one line on its own** (not part of a pasted block). Paste the
+Expected: the merge commit (or later), then `2`, then `0`. Then the secret, as **one line on its own** (not part of a pasted block). Paste the
 secret, press Enter. Nothing echoes:
 
 ```bash
@@ -138,7 +145,8 @@ Check without printing it:
 grep -c '^MCM_USAGE_' ~/.mcm-sandbox-env; sed -n 's/^MCM_USAGE_CLIENT_SECRET=//p' ~/.mcm-sandbox-env | tr -d '\n' | wc -c
 ```
 
-Expected: `3`, then the secret's length (32 for a Keycloak-generated secret). Recreate the container as
+Expected: `3`, then the secret's length: non-zero (86 for a secret Keycloak 26 generated, measured
+2026-11-22; `0` means the paste did not land). Recreate the container as
 in [devcontainer-sandbox.md §2](devcontainer-sandbox.md) ("Recreating the DEV CONTAINER", with
 `set -a; . ~/.mcm-sandbox-env; set +a` first). `gen-container-secrets-env.sh` carries the secret into
 the `--env-file`, and the two URLs arrive through `containerEnv`.
@@ -172,12 +180,15 @@ minutes, so start it without blocking and poll for at most 20:
 
 ```bash
 systemctl --user start --no-block homelab-backup.service
-for i in $(seq 1 120); do systemctl --user is-active -q homelab-backup.service || break; sleep 10; done
+sleep 2; for i in $(seq 1 120); do [ "$(systemctl --user show -p ActiveState --value homelab-backup.service)" = activating ] || break; sleep 10; done
 systemctl --user show -p Result homelab-backup.service
 journalctl --user -u homelab-backup --since '-30min' --no-pager | grep -E 'dev-usage: [0-9]+ bytes'
 ```
 
-Expected: `Result=success`, then one `dev-usage: N bytes` line. A `Result=` other than `success`
+Expected: `Result=success`, then one `dev-usage: N bytes` line. A oneshot unit is `activating`, not
+`active`, while it runs, so the loop waits on that state (`is-active` would end it at once and the
+`Result` shown would be the previous run's). No `dev-usage:` line means the run you see is not the new
+one: re-run the last two commands after a few minutes. A `Result=` other than `success`
 also opens a backup alert in the backlog; the journal says which step failed.
 
 ## 4. `doctor`, line by line
