@@ -57,6 +57,10 @@ jobs:
         with:
           # The gate diffs against the push's `before` sha, which a depth-1 clone does not contain.
           fetch-depth: 0
+      # Pin Node (item #992): without this the job runs the runner's implicit Node, not the repo's —
+      # check-toolchain-consistency.mjs rule 4 fails a Node-running job that has no setup-node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 26.13.1 }
 
       # Build only when something the image is built from changed. A package.json push that does not
       # move `packageManager` ends here, green. Any other event, or anything the gate cannot

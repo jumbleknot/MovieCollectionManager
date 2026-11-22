@@ -5,11 +5,12 @@
 #
 # ACTION-LIGHT by design: `uses:` is kept to actions mirrored on the instance's default action
 # registry, so this workflow runs on the homelab runner WITHOUT pointing action resolution at
-# github. That is currently `actions/checkout` in every job, `actions/upload-artifact` in `sast`,
-# and `actions/setup-node` in `renovate-config`. This sentence previously said "the only `uses:` is
+# github. That is currently `actions/checkout` and `actions/setup-node` in every job, and
+# `actions/upload-artifact` in `sast`. This sentence previously said "the only `uses:` is
 # `actions/checkout`" and had been false since `sast` gained its artifact upload — a claim standing
 # in for a property, which is the shape this repository is repeatedly bitten by. It is a
-# description, not a rule: what is load-bearing is the MIRRORED registry, not the count. Toolchain setup is plain shell on the `node:22-bookworm` runner image: pnpm via
+# description, not a rule: what is load-bearing is the MIRRORED registry, not the count. The runner image is `node:22-bookworm`, but no job runs on its Node: each pins
+# Node 26 with setup-node first (item #992; check-toolchain-consistency.mjs rule 4). The rest is plain shell: pnpm via
 # scripts/install-pnpm.sh (exactly package.json `packageManager`; no corepack, item #992), uv via its installer. Path scoping from the original
 # separate workflows is intentionally dropped — all three gate jobs run over the whole tree on every
 # PR and every push to `main` (they are cheap and keyless; running unconditionally is strictly safer
@@ -64,6 +65,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # Pin Node (item #992): without this the job runs the runner's implicit Node, not the repo's —
+      # check-toolchain-consistency.mjs rule 4 fails a Node-running job that has no setup-node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 26.13.1 }
       - name: Validate the scanner detects planted keys (and clean tree passes)
         run: bash scripts/ci-log-step.sh secret-scan-validate-scanner-detects node scripts/secret-scan.mjs --selftest
       - name: Scan committed files for credential-shaped strings
@@ -96,6 +101,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # Pin Node (item #992): without this the job runs the runner's implicit Node, not the repo's —
+      # check-toolchain-consistency.mjs rule 4 fails a Node-running job that has no setup-node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 26.13.1 }
       - name: Install pnpm (version from package.json packageManager; Node 26 has no corepack)
         run: bash scripts/ci-log-step.sh naming-install-pnpm sh scripts/install-pnpm.sh
       - name: Install JS dependencies
@@ -228,6 +237,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # Pin Node (item #992): without this the job runs the runner's implicit Node, not the repo's —
+      # check-toolchain-consistency.mjs rule 4 fails a Node-running job that has no setup-node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 26.13.1 }
       # The gate imports `yaml` (a root dependency, as several other check-* gates do), so this job
       # needs the workspace installed exactly like `naming` does. Without it the gate dies on
       # ERR_MODULE_NOT_FOUND before running a single check — a job that fails for its own missing
@@ -274,6 +287,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # Pin Node (item #992): without this the job runs the runner's implicit Node, not the repo's —
+      # check-toolchain-consistency.mjs rule 4 fails a Node-running job that has no setup-node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 26.13.1 }
       - name: Install pnpm (version from package.json packageManager; Node 26 has no corepack)
         run: bash scripts/ci-log-step.sh agent-gates-install-pnpm sh scripts/install-pnpm.sh
       - name: Install uv
@@ -334,6 +351,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+      # Pin Node (item #992): without this the job runs the runner's implicit Node, not the repo's —
+      # check-toolchain-consistency.mjs rule 4 fails a Node-running job that has no setup-node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 26.13.1 }
       - name: Ensure the PR base ref is available for the changed-files diff
         if: ${{ github.event_name == 'pull_request' }}
         env:
@@ -477,7 +498,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       # renovate@44 raised `engines.node` to ^24.11.0 INSIDE the pinned major, and the runner
       # container ships Node 22 — the #160 shape, which reddened every renovate run for four days
-      # because that job had no setup-node either. 24.19.0 is what renovate.yml's own job pins;
+      # because that job had no setup-node either. 26.13.1 is what renovate.yml's own job pins;
       # renovate-workflow.guard.test.mjs asserts the two stay equal, so the validator can never end
       # up certifying a config against a runtime the real run does not have.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7

@@ -654,7 +654,7 @@ The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once con
 
 > **`ubuntu-latest` here is `node:22-bookworm`, so GitHub-hosted-runner recipes do not transfer**
 > (item #457). The label above maps `ubuntu-latest` to a plain Node image — **not** a
-> GitHub-hosted Ubuntu runner. Two consequences bite copied workflow snippets:
+> GitHub-hosted Ubuntu runner. Three consequences bite copied workflow snippets:
 >
 > * **There is no `sudo`.** The container process is already root, so `sudo` is both absent and
 >   unnecessary. A copied `sudo …` line dies on its first word with `sudo: command not found`, and
@@ -671,7 +671,15 @@ The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once con
 >   To free real disk from a job, prune the **daemon** (`docker image prune -af`), which needs no
 >   privileges and is what `app-e2e`, `dast` and `build-deploy` all do.
 >
-> `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` fails any workflow step that invokes `sudo`.
+> * **Its Node is 22, not the repo's.** A job with no `actions/setup-node` runs the image's Node 22
+>   while every pin says 26 — measured 2026-11-22 on five `guardrails` jobs (`node --test
+>   scripts/__tests__` among them), `wiki-maintain` and three more, all green on the wrong major. The
+>   `kvm` host's own Node is just as implicit. Every Node-running job therefore pins setup-node
+>   before its first Node use; only `scripts/install-pnpm.sh` may precede it (setup-node's
+>   `cache: pnpm` needs pnpm on PATH).
+>
+> `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` fails any workflow step that invokes `sudo`;
+> `scripts/check-toolchain-consistency.mjs` (rule 4) fails a Node-running job with no pinned setup-node.
 
 > **The `kvm` label — host execution for the emulator and image-building jobs (feature 023 `app-ci`).**
 > Besides `ubuntu-latest`, the runner must also register a **host-type** label defined as

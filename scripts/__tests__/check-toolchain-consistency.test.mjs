@@ -732,3 +732,72 @@ test('(nm6) the success line NAMES the Node-major relation it just proved', () =
   assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
   assert.match(r.stdout, /Node major/i, `the success line does not mention the Node-major relation: ${r.stdout}`);
 });
+
+// --- (in) a Node-running job with NO setup-node runs the runner's implicit Node (2026-11-22) -------
+//
+// Rule 4 compares the pins it can read, and a job with no setup-node pins nothing — so five
+// guardrails jobs (among them `node --test scripts/__tests__`), wiki-maintain and three more ran on the
+// `ubuntu-latest` image's Node 22 while every pin said 26, and the gate passed. `ubuntu-latest` is
+// `docker://node:22-bookworm` per docs/runbooks/Server-Setup-Runbook.md; `kvm` is the host's own Node.
+
+const SETUP_NODE = '      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7\n        with: { node-version: 26.13.1, cache: pnpm }\n';
+const wfJob = (runsOn, steps) => `on: push\njobs:\n  gate:\n    runs-on: ${runsOn}\n    steps:\n      - uses: actions/checkout@abc\n${steps}`;
+const implicitFindings = (root) => findDrift(root).filter((f) => /setup-node/.test(f.problem) && /job `/.test(f.problem));
+const inRepo = (runsOn, steps) => repo({ pkg: PKG, workflows: { 'g.yml': wfJob(runsOn, steps) } });
+
+test('(in1) THE BUG: an ubuntu-latest job running node with no setup-node fails, naming the image Node', () => {
+  const d = implicitFindings(inRepo('ubuntu-latest', '      - run: bash scripts/ci-log-step.sh x node scripts/gate.mjs\n'));
+  assert.equal(d.length, 1, JSON.stringify(d));
+  assert.equal(d[0].file, '.forgejo/workflows/g.yml');
+  assert.equal(d[0].line, 3, 'the finding points at the job key');
+  assert.match(d[0].problem, /node:22-bookworm/);
+  assert.match(d[0].problem, /`gate`/);
+});
+
+test('(in2) a kvm host job running pnpm with no setup-node fails too — the host Node is just as implicit', () => {
+  const d = implicitFindings(inRepo('kvm', '      - run: pnpm install --frozen-lockfile\n'));
+  assert.equal(d.length, 1);
+  assert.match(d[0].problem, /kvm:host/);
+});
+
+test('(in3) Node used BEFORE setup-node fails; install-pnpm.sh is the one step allowed there (cache: pnpm)', () => {
+  assert.equal(implicitFindings(inRepo('ubuntu-latest', `      - run: node scripts/a.mjs\n${SETUP_NODE}`)).length, 1);
+  assert.equal(implicitFindings(inRepo('ubuntu-latest', `      - run: bash scripts/ci-log-step.sh p sh scripts/install-pnpm.sh\n${SETUP_NODE}      - run: pnpm install\n`)).length, 0);
+});
+
+test('(in4) install-pnpm.sh with no setup-node at all fails — the exception needs the setup-node it precedes', () => {
+  assert.equal(implicitFindings(inRepo('ubuntu-latest', '      - run: sh scripts/install-pnpm.sh\n')).length, 1);
+});
+
+test('(in5) a setup-node with no node-version fails — it installs a major rule 4 cannot check', () => {
+  const d = implicitFindings(inRepo('ubuntu-latest', '      - uses: actions/setup-node@abc\n      - run: node a.mjs\n'));
+  assert.equal(d.length, 1);
+  assert.match(d[0].problem, /node-version/);
+});
+
+test('(in6) the controls: setup-node first is clean, and a job that never runs Node needs none', () => {
+  assert.equal(implicitFindings(inRepo('ubuntu-latest', `${SETUP_NODE}      - run: node a.mjs\n`)).length, 0);
+  // `npm` in an echo sentence and `node:` in an image name are not Node use; neither is a comment.
+  assert.equal(implicitFindings(inRepo('ubuntu-latest', '      - run: |\n          echo "and npm, which the next step runs"\n          docker run --rm node:26 true\n          # node scripts/x.mjs\n')).length, 0);
+});
+
+test('(in7) a setup-node on the wrong major is still rule 4\'s major finding — presence alone does not pass', () => {
+  const root = repo({
+    pkg: PKG,
+    dockerfiles: { 'frontend/mcm-app/Dockerfile': 'FROM node:26.13.1-alpine3.23\n' },
+    workflows: { 'g.yml': wfJob('ubuntu-latest', '      - uses: actions/setup-node@abc\n        with: { node-version: 24.22.2 }\n      - run: node a.mjs\n') },
+  });
+  const d = findDrift(root);
+  assert.equal(implicitFindings(root).length, 0);
+  assert.ok(d.some((f) => /Node major 24/.test(f.problem)), JSON.stringify(d));
+});
+
+test('(in8) THE REAL REPO has no Node-running job on an implicit Node', () => {
+  assert.deepEqual(implicitFindings(resolve(HERE, '..', '..')), []);
+});
+
+test('(in9) the success line NAMES the setup-node relation it just proved', () => {
+  const r = spawnSync('node', [GATE], { encoding: 'utf8' });
+  assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+  assert.match(r.stdout, /every Node-running job pins its Node with setup-node/);
+});
