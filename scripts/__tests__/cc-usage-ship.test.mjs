@@ -76,6 +76,16 @@ test('batch caps: 1,200 model calls go as 500 + 500 + 200', () => withDir(async 
   assert.deepEqual(rec.calls.filter((c) => c.table === 'model_calls').map((c) => c.rows.length), [500, 500, 200]);
 }));
 
+test('rows sharing an on_conflict key are sent once per batch, first wins (Postgres 21000; T077)', () => withDir(async (dir) => {
+  const rec = recorder();
+  const r = records(3);
+  r.modelCalls.push({ ...r.modelCalls[1], agent_id: 'fork-copy', turn_seq: 9 });
+  await shipRecords(r, opts(dir, rec));
+  const sent = rec.calls.filter((c) => c.table === 'model_calls').flatMap((c) => c.rows);
+  assert.deepEqual(sent.map((x) => x.message_id), ['msg_0', 'msg_1', 'msg_2']);
+  assert.equal(sent[1].agent_id, null, 'the first occurrence is kept');
+}));
+
 test('every batch goes through the privacy allowlist', () => withDir(async (dir) => {
   const rec = recorder();
   const r = records();
