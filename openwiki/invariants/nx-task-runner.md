@@ -1,7 +1,7 @@
 ---
 type: Convention
 title: Nx as the universal task runner
-description: Why nearly every build/test/lint/deploy command across the polyglot monorepo goes through Nx rather than the underlying tool directly, the executors that bridge Nx to cargo, pytest, and Docker Compose, and the one measured exception — interactive tools whose arguments vary per invocation.
+description: Why nearly every build/test/lint/deploy command across the polyglot monorepo goes through Nx rather than the underlying tool directly, the executors that bridge Nx to cargo, pytest, and Docker Compose, the measured exception for interactive tools whose arguments vary per invocation, and the constitutional one for repository scripts run directly in CI.
 tags: [nx, monorepo, tooling, build]
 timestamp: 2026-07-26T20:11:56+00:00
 ---
@@ -35,8 +35,16 @@ measured reason — see the first gotcha below.
   `node scripts/…` — today `ci-status.mjs`, `gen-dev-secrets.mjs` and `gen-dev-env.mjs`, and feature
   049's backlog tool is specified the same way for the same reason. Nothing escapes the gate by taking
   that route: their unit tests still run inside Nx, because `pnpm nx preflight infrastructure-as-code`
-  runs `scripts/__tests__`. When in doubt, ask who types the command — CI and policy get targets,
-  humans and agents typing varying flags do not.
+  runs `scripts/__tests__`. When in doubt, ask who types the command — policy and product operations
+  get targets, humans and agents typing varying flags do not.
+- **CI runs the repository's own scripts directly too — a constitutional exception, not drift.** Every
+  `guardrails` job invokes its gates (`node scripts/check-*.mjs`, `node scripts/secret-scan.mjs`),
+  the failure digest and `node --test scripts/__tests__/*.test.mjs` with plain `node`; a ~60 s graph
+  computation per step would multiply the cheapest jobs' runtime many times over. Constitution v2.12.0
+  (Monorepo Build Tool) sanctions exactly this — `scripts/` tooling and its `scripts/__tests__` MAY run
+  directly in CI — and nothing wider: every product test, lint, build, e2e and deploy (anything under
+  `backend/`, `frontend/`, `agents/`, `mcp-servers/`, `infrastructure-as-code/`) still runs through its
+  Nx target. Precedent: [specs/061](../../specs/061-playwright-image-pin-gate/plan.md), Complexity Tracking.
 - **Even a single test run goes through Nx first**, using `--` argument passthrough
   (`pnpm nx test mcm-app -- --testNamePattern "..."`). The Maestro mobile-E2E wrapper script is a
   separate exception from the interactive-tool class above — it exists only because the `e2e:mobile`

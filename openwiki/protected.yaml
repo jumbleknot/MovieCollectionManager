@@ -206,7 +206,8 @@ passages:
     # rewrite is normalizeLinks() in scripts/openwiki-links.mjs, which moves nothing but the
     # target inside `](…)`. A `passage-corrected` event, which this entry's policy permits.
     # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: its closing pointer named a CLAUDE.md section that no longer exists (CLAUDE.md is an index); it now names where that content lives.
-    fingerprint: "sha256:91cc6dec36551199f7495d113bb65146edeb5d2b66c800bc98b0c6cbe779290c"
+    # Re-fingerprinted 2026-11-22 (constitution v2.12.0) — passage-corrected: it said "CI and policy get targets", but every guardrails job has always run its gates and `node --test scripts/__tests__` with plain node. The passage now names that as the constitution's sanctioned exception (repository scripts direct in CI; product operations still through Nx).
+    fingerprint: "sha256:e5d753e1a66a910bc4e9e32f8ccdc3da8d5c69c8fc6f38e321a5af86d48438fc"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/package-manager-enforcement.md"
