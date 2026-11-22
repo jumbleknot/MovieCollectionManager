@@ -887,12 +887,24 @@ async function main(argv) {
   return EXIT.ok;
 }
 
+/**
+ * Exit with `code` WITHOUT calling process.exit() while fetch sockets may still be closing. On Windows,
+ * process.exit() in that state aborts with `Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`
+ * (exit 0xC0000409, or 127 under Git Bash) although the output was correct; callers branch on the
+ * code, so it must survive. Same pattern as ci-status.mjs `exitWith`: set exitCode, let the loop
+ * drain, and keep an unref'd fallback timer that only fires if a handle refuses to close.
+ */
+function exitWith(code) {
+  process.exitCode = code;
+  setTimeout(() => process.exit(code), 2000).unref();
+}
+
 const invokedDirectly = process.argv[1] && process.argv[1].endsWith('backlog.mjs');
 if (invokedDirectly) {
   main(process.argv.slice(2))
-    .then((code) => process.exit(code))
+    .then((code) => exitWith(code))
     .catch((e) => {
       emit(e instanceof BacklogError ? e.message : `Unexpected: ${e?.stack ?? e}`);
-      process.exit(e instanceof BacklogError ? e.code : EXIT.unexpected);
+      exitWith(e instanceof BacklogError ? e.code : EXIT.unexpected);
     });
 }
