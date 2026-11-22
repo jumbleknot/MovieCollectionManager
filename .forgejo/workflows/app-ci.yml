@@ -150,6 +150,10 @@ jobs:
       dev-usage: ${{ steps.filter.outputs.dev-usage }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # Pin Node (item #992): without this the job runs the runner's implicit Node, not the repo's —
+      # check-toolchain-consistency.mjs rule 4 fails a Node-running job that has no setup-node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 26.13.1 }
       - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4
         id: filter
         with:
@@ -2276,6 +2280,10 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
+      # Pin Node (item #992): without this the job runs the runner's implicit Node, not the repo's —
+      # check-toolchain-consistency.mjs rule 4 fails a Node-running job that has no setup-node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 26.13.1 }
 
       # Defense-in-depth: app-ci is green by construction (this job `needs:` its jobs), but cd-deploy is
       # meant to gate on guardrails too. guardrails is a separate, fast workflow that has long since

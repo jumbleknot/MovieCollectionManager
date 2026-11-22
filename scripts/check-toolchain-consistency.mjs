@@ -42,6 +42,10 @@
 //      #992). Renovate proposes the major on two separate tracks and each half passes rule 1 alone;
 //      the Playwright image picks its own Node, so app-ci passes `EXPECTED_NODE_MAJOR` into it and
 //      scripts/run-playwright-in-image.sh checks the image's real Node against it at run time.
+//      A job that runs Node with NO setup-node pins nothing and would be invisible to that
+//      comparison, so every Node-running job must have a pinned setup-node before its first Node
+//      use (scripts/install-pnpm.sh excepted) — else it runs on the runner's implicit Node, the
+//      `ubuntu-latest` image's node:22-bookworm or the kvm host's own (collectImplicitNodeJobs).
 //
 // Deliberately NOT checked: that a pin is the newest available. This gate is about internal
 // agreement, which is offline-checkable and deterministic; "is there a newer Node" is Renovate's
@@ -57,7 +61,7 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseAllDocuments } from 'yaml';
+import { parseAllDocuments, parseDocument, LineCounter } from 'yaml';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -674,6 +678,103 @@ export function findNodeMajorDrift(root = REPO_ROOT, nodePins = null) {
   return compareNodeMajors(pins, expectations);
 }
 
+/**
+ * Where a job gets its Node when no setup-node runs, per runner label (docs/runbooks/Server-Setup-Runbook.md,
+ * the `--label` flags on the runner's ExecStart). Used only to word the finding: the rule below holds for
+ * EVERY label, because no label in this repo provides a Node the gate can read.
+ */
+export const RUNNER_IMPLICIT_NODE = {
+  'ubuntu-latest': 'the runner container image node:22-bookworm',
+  kvm: "the CI host's own Node (kvm:host)",
+};
+
+/**
+ * A `run:` line that executes Node — directly, or through pnpm/npm/npx/corepack — in COMMAND position:
+ * line start, after `;` `&&` `||` `|` `(` `$(` or a backtick, after a shell keyword or `VAR=x` prefixes,
+ * or as the command `scripts/ci-log-step.sh <name>` wraps. Command position matters: the word `npm` in
+ * an `echo "…"` sentence is prose (prod-apk has exactly that), and reading it as Node use is a gate
+ * failing loudly on a false premise. Comment lines never count.
+ */
+const CMD_PREFIX = String.raw`(?:(?:if|then|else|elif|do|exec|time|!|env|timeout\s+\S+)\s+)*(?:[A-Za-z_][A-Za-z0-9_]*=\S*\s+)*`;
+const NODE_CMD = String.raw`(?:node|pnpm|npx|npm|corepack)(?=\s|$|\))`;
+const RUNS_NODE = new RegExp(
+  String.raw`(?:(?:^|[;&|(\x60]|\$\()\s*${CMD_PREFIX}${NODE_CMD})|(?:ci-log-step\.sh\s+\S+\s+${CMD_PREFIX}${NODE_CMD})`,
+);
+/** The one step allowed to run before setup-node: setup-node's `cache: pnpm` needs pnpm on PATH already. */
+const PNPM_BOOTSTRAP = /\bscripts\/install-pnpm\.sh\b/;
+
+const runsNode = (run) =>
+  typeof run === 'string' && run.split('\n').some((l) => !/^\s*#/.test(l) && (RUNS_NODE.test(l) || PNPM_BOOTSTRAP.test(l)));
+
+/**
+ * Rule 4's blind spot: a job that runs Node with NO setup-node pins nothing, so the major comparison above
+ * never sees it — and it runs on whatever Node the runner happens to carry. Measured 2026-11-22: five
+ * guardrails jobs (including `node --test scripts/__tests__`), wiki-maintain, two `changes` jobs and
+ * trigger-cd ran on the `ubuntu-latest` image's Node 22 while every pin in the repo said 26, and
+ * devcontainer-image ran on the host's. The gate passed, because an absent pin is not a disagreeing one.
+ *
+ * So: every job that runs node/pnpm/npm/npx/corepack MUST have an `actions/setup-node` step with an
+ * explicit `node-version:` (whose major the comparison above then holds to the repo's), and that step
+ * MUST come before the job's first Node use. The single exception is scripts/install-pnpm.sh placed
+ * before it — setup-node's `cache: pnpm` runs `pnpm store path`, so pnpm must already be on PATH, and
+ * once setup-node has run, pnpm's `#!/usr/bin/env node` resolves to the pinned Node.
+ *
+ * @returns {{file:string,line:number,problem:string}[]}
+ */
+export function collectImplicitNodeJobs(text, file) {
+  const location = posixLocation(file);
+  const lineCounter = new LineCounter();
+  const doc = parseDocument(text, { lineCounter });
+  const jobs = doc.get('jobs', true);
+  if (!jobs || !Array.isArray(jobs.items)) return [];
+
+  const findings = [];
+  for (const pair of jobs.items) {
+    const id = String(pair.key?.value ?? pair.key);
+    const job = pair.value?.toJSON?.() ?? null;
+    const steps = Array.isArray(job?.steps) ? job.steps : [];
+    const line = pair.key?.range ? lineCounter.linePos(pair.key.range[0]).line : 1;
+
+    const setupAt = steps.findIndex((s) => /(^|\/)setup-node@/.test(String(s?.uses ?? '')));
+    const firstUse = steps.findIndex((s, i) => runsNode(s?.run) && !(setupAt > i && PNPM_BOOTSTRAP.test(s.run)));
+    if (firstUse === -1) continue;
+
+    const labels = [job['runs-on']].flat().map(String);
+    const implicit = labels.map((l) => RUNNER_IMPLICIT_NODE[l]).find(Boolean) ?? "the runner's own Node";
+    const use = steps[firstUse].name ? `step "${steps[firstUse].name}"` : `step ${firstUse + 1}`;
+
+    if (setupAt === -1) {
+      findings.push({
+        file: location, line,
+        problem:
+          `job \`${id}\` runs Node (${use}) with NO actions/setup-node, so it runs on ${implicit} — a Node no pin ` +
+          'declares and rule 4 cannot see (item #992). Add the pinned setup-node step with the repo\'s ' +
+          'node-version right after checkout (after scripts/install-pnpm.sh only if it uses `cache: pnpm`).',
+      });
+    } else if (steps[setupAt]?.with?.['node-version'] === undefined) {
+      findings.push({
+        file: location, line,
+        problem: `job \`${id}\`'s setup-node names no \`node-version:\`, so the major it installs is not a pin rule 4 can check — pin it explicitly.`,
+      });
+    } else if (firstUse < setupAt) {
+      findings.push({
+        file: location, line,
+        problem:
+          `job \`${id}\` runs Node (${use}) BEFORE its setup-node step, so that step runs on ${implicit}. ` +
+          'Move setup-node up; only scripts/install-pnpm.sh may precede it.',
+      });
+    }
+  }
+  return findings;
+}
+
+/** @returns {{file:string,line:number,problem:string}[]} */
+export function findImplicitNodeJobs(root = REPO_ROOT) {
+  return filesToScan(root)
+    .filter((rel) => rel.startsWith('.forgejo/workflows/'))
+    .flatMap((rel) => collectImplicitNodeJobs(readFileSync(join(root, rel), 'utf8'), rel));
+}
+
 /** @returns {{file:string,line:number,problem:string}[]} */
 export function findDrift(root = REPO_ROOT) {
   const pkgPath = join(root, 'package.json');
@@ -715,6 +816,7 @@ export function findDrift(root = REPO_ROOT) {
   findings.push(...findLockstepPinDrift(root));
   findings.push(...findPlaywrightPinDrift(root));
   findings.push(...findNodeMajorDrift(root));
+  findings.push(...findImplicitNodeJobs(root));
   return findings;
 }
 
@@ -729,10 +831,10 @@ function runScan() {
   if (findings.length) {
     console.error(`✗ toolchain-consistency gate FAILED: ${findings.length} pin(s) disagree:`);
     for (const f of findings) console.error(`  ${f.file}:${f.line} — ${f.problem}`);
-    console.error('\nEvery Node pin must satisfy package.json `engines.node`, the pnpm version is single-sourced by the ROOT `packageManager` and declared nowhere else, the packages Renovate moves as one unit (nx, @nx/*, @playwright/test) are pinned exactly with @nx/* equal to nx, the Playwright image tag must name the version pnpm-lock.yaml resolves, and the Node images, every setup-node and the Playwright image (EXPECTED_NODE_MAJOR) must share ONE Node major.');
+    console.error('\nEvery Node pin must satisfy package.json `engines.node`, the pnpm version is single-sourced by the ROOT `packageManager` and declared nowhere else, the packages Renovate moves as one unit (nx, @nx/*, @playwright/test) are pinned exactly with @nx/* equal to nx, the Playwright image tag must name the version pnpm-lock.yaml resolves, and the Node images, every setup-node and the Playwright image (EXPECTED_NODE_MAJOR) must share ONE Node major — with every Node-running job on a pinned setup-node, never the runner\'s implicit Node.');
     process.exit(1);
   }
-  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced and declared in the root manifest only; nx agrees with nx.json installation.version; every lockstep package is pinned exactly and @nx/* equals nx; the Playwright image tag matches the lockfile; the images, every setup-node and the Playwright image share ONE Node major)');
+  console.log('✓ toolchain-consistency gate passed (every Node pin satisfies engines.node; pnpm is single-sourced and declared in the root manifest only; nx agrees with nx.json installation.version; every lockstep package is pinned exactly and @nx/* equals nx; the Playwright image tag matches the lockfile; the images, every setup-node and the Playwright image share ONE Node major; every Node-running job pins its Node with setup-node)');
 }
 
 function selftest() {
@@ -802,13 +904,29 @@ function selftest() {
   t('THE BUG: setup-node on 26 while the shipped image is on 24 is REJECTED', compareNodeMajors([nodePin('frontend/mcm-app/Dockerfile', '24.22.2'), nodePin('a.yml', '26.13.1')], noPlaywright).length === 1);
   t('a Playwright image expected on another major is REJECTED', compareNodeMajors([nodePin('frontend/mcm-app/Dockerfile', '26.13.1')], { expected: [{ file: 'app-ci.yml', line: 1, value: '24' }], missing: [] }).length === 1);
   t('a Playwright run with no expectation is REJECTED', compareNodeMajors([nodePin('frontend/mcm-app/Dockerfile', '26.13.1')], { expected: [], missing: [{ file: 'app-ci.yml', line: 1 }] }).length === 1);
+  // The implicit-Node blind spot (2026-11-22). The REJECTIONS are the cases worth running.
+  const SN = '      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1\n        with: { node-version: 26.13.1, cache: pnpm }\n';
+  const job = (runsOn, steps) => `jobs:\n  j:\n    runs-on: ${runsOn}\n    steps:\n      - uses: actions/checkout@abc\n${steps}`;
+  const implicit = (runsOn, steps) => collectImplicitNodeJobs(job(runsOn, steps), 'x.yml');
+  t('THE BUG: an ubuntu-latest job running node with no setup-node is REJECTED', implicit('ubuntu-latest', '      - run: node scripts/gate.mjs\n').length === 1);
+  t('the finding names the image Node it would run on', /node:22-bookworm/.test(implicit('ubuntu-latest', '      - run: node scripts/gate.mjs\n')[0]?.problem ?? ''));
+  t('a kvm host job running pnpm with no setup-node is REJECTED', implicit('kvm', '      - run: bash scripts/ci-log-step.sh x pnpm install --frozen-lockfile\n').length === 1);
+  t('node used BEFORE setup-node is REJECTED', implicit('ubuntu-latest', `      - run: node scripts/gate.mjs\n${SN}`).length === 1);
+  t('setup-node with no node-version is REJECTED', implicit('ubuntu-latest', '      - uses: actions/setup-node@abc\n      - run: node x.mjs\n').length === 1);
+  t('install-pnpm.sh before setup-node (cache: pnpm) is allowed', implicit('ubuntu-latest', `      - run: sh scripts/install-pnpm.sh\n${SN}      - run: pnpm install\n`).length === 0);
+  t('install-pnpm.sh with no setup-node at all is REJECTED', implicit('ubuntu-latest', '      - run: sh scripts/install-pnpm.sh\n').length === 1);
+  t('setup-node first is clean', implicit('ubuntu-latest', `${SN}      - run: node scripts/gate.mjs\n`).length === 0);
+  t('a job that never runs Node needs no setup-node', implicit('ubuntu-latest', '      - run: echo hi\n      - run: docker run node:26 true\n').length === 0);
+  t('`npm` in an echo sentence is prose, not Node use', implicit('ubuntu-latest', '      - run: |\n          echo "and npm, which the step below runs"\n').length === 0);
+  t('node inside $( ) and after && is Node use', implicit('ubuntu-latest', '      - run: X=$(node -p 1) && true\n').length === 1 && implicit('ubuntu-latest', '      - run: true && pnpm -v\n').length === 1);
+  t('a COMMENTED node line is not Node use', implicit('ubuntu-latest', '      - run: |\n          # node scripts/x.mjs\n          echo hi\n').length === 0);
   t('the expectation is read per step', collectPlaywrightNodeExpectations('      - run: |\n          docker run -e EXPECTED_NODE_MAJOR=26 \\\n            mcr.microsoft.com/playwright:v1.65.0-noble \\\n      - run: |\n          docker run \\\n            mcr.microsoft.com/playwright:v1.65.0-noble \\\n', 'x.yml').missing.length === 1);
 
   if (fails.length) {
     console.error('✗ toolchain-consistency --selftest FAILED:\n  - ' + fails.join('\n  - '));
     process.exit(1);
   }
-  console.log('✓ toolchain-consistency --selftest passed (floor comparison, pin extraction, comment immunity, Playwright drift rejection, lockstep exact-pin rejection, Node-major split rejection)');
+  console.log('✓ toolchain-consistency --selftest passed (floor comparison, pin extraction, comment immunity, Playwright drift rejection, lockstep exact-pin rejection, Node-major split rejection, implicit-Node job rejection)');
 }
 
 // Same guard idiom as check-override-consistency.mjs / check-sast-findings.mjs, and here it is not

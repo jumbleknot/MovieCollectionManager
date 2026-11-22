@@ -95,6 +95,10 @@ jobs:
       infra: ${{ steps.filter.outputs.infra }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # Pin Node (item #992): without this the job runs the runner's implicit Node, not the repo's —
+      # check-toolchain-consistency.mjs rule 4 fails a Node-running job that has no setup-node.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with: { node-version: 26.13.1 }
       # PULL REQUESTS ONLY. dorny derives its diff base from the PR event; on any other event it
       # falls back to `github.event.repository.default_branch`, which this Forgejo does NOT put in
       # the payload → the action hard-errors ("requires 'base' input to be configured"). That killed
@@ -169,7 +173,7 @@ jobs:
         if: ${{ env.RUN_SCAN == 'true' }}
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
-          node-version: 26
+          node-version: 26.13.1
 
       - name: Install JS dependencies (the scanner + gate use the `yaml` package)
         if: ${{ env.RUN_SCAN == 'true' }}

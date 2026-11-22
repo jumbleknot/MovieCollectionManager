@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: 3c4c0c806679f1fd64bf6b578cf516eed92a5d2e6752dc3960d0de6aa1810a13
+resource-sha256: f97ad390d58a23444dcca44ca44f825b53118f793fd122354f08770350b45298
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-21T17:38:17.807Z
+timestamp: 2026-11-22T16:47:45.632Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -527,7 +527,7 @@ flowchart TD
 *The two keys: a report never deletes, and an apply needs both `mode: apply` in the committed config and the dispatch.*
 - **`ubuntu-latest` on this forge is `node:22-bookworm` — GitHub-hosted-runner recipes do not transfer
   (item #457).** The runner label maps `ubuntu-latest` to a plain Node image, not a GitHub-hosted
-  Ubuntu runner. Two consequences bite copied workflow snippets:
+  Ubuntu runner. Three consequences bite copied workflow snippets:
   - **There is no `sudo`.** The container process is already root, so `sudo` is absent and
     unnecessary. A copied `sudo …` line dies on its first word with `sudo: command not found`. If the
     step carries the customary `|| true`, it goes **green having done nothing**. That is what
@@ -543,6 +543,12 @@ flowchart TD
     real disk from a job, prune the rootless daemon** (`docker image prune -af`), which needs no
     privileges and is what `app-e2e`, `dast`, and `build-deploy` all do. `prod-apk` has no Docker CLI
     and builds no images, so it has nothing to prune.
+  - **Its Node is 22, not the repo's.** A job with no `actions/setup-node` runs the image's Node 22
+    while every pin says 26. Measured 2026-11-22 on five `guardrails` jobs (`node --test
+    scripts/__tests__` among them), `wiki-maintain` and three more, all green on the wrong major; the
+    `kvm` host's own Node is just as implicit. Every Node-running job pins setup-node before its first
+    Node use, and only `scripts/install-pnpm.sh` may precede it (setup-node's `cache: pnpm` needs pnpm
+    on PATH). `scripts/check-toolchain-consistency.mjs` (rule 4) fails a job that does not.
   - **The rewritten disk step is pinned in all three directions.**
     `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` fails *any* workflow step that invokes
     `sudo` (no runner here provides it); fails the disk step if it deletes
