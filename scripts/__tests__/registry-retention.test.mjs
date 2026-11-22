@@ -445,3 +445,33 @@ test('workflow: the schedule can never pass --apply, and protection reads full h
   assert.match(run.run, /registry-retention\.mjs \$\{RETENTION_ARGS:\+"\$RETENTION_ARGS"\}/);
   assert.match(JSON.stringify(run.env ?? {}), /secrets\.REGISTRY_CLEANUP_TOKEN/);
 });
+
+// ── feature 106: the evidence floor holds for EVERY evidence package, and the config covers both ────
+//
+// The package moved from the shared `ci-failures` to the repo-scoped `<repo>-ci-failures`. The floor
+// guarded the literal name `ci-failures`, so without this the NEW package — the one being written —
+// could be configured to keep a week and lose the evidence `ci-status durations` reads.
+
+test('config: an evidence package (`<repo>-ci-failures`) is held to the same floor as the legacy one', () => {
+  const floor = DEFAULT_DURATION_RUNS * countBundleJobs();
+  const short = baseConfig();
+  short.packages.push({ name: 'mcm-ci-failures', type: 'generic', keepDays: 30, keepNewest: floor });
+  assert.throws(() => loadConfig(yamlOf(short)), (e) => e instanceof ConfigError && /mcm-ci-failures/.test(e.message) && /evidenceWindowDays/.test(e.message));
+  const few = baseConfig();
+  few.packages.push({ name: 'mcm-ci-failures', type: 'generic', keepDays: 45, keepNewest: floor - 1 });
+  assert.throws(() => loadConfig(yamlOf(few)), (e) => e instanceof ConfigError && /mcm-ci-failures/.test(e.message) && e.message.includes(String(floor)));
+  // The control: a generic package that is NOT evidence keeps whatever window it likes.
+  const other = baseConfig();
+  other.packages.push({ name: 'mcm-scratch', type: 'generic', keepDays: 1, keepNewest: 1 });
+  assert.doesNotThrow(() => loadConfig(yamlOf(other)));
+});
+
+test('config: the committed config covers both evidence packages, with the same window', async () => {
+  const { bundlePackagesFor, isEvidencePackage } = await import('../ci-failure-digest.mjs');
+  const cfg = loadConfig(readFileSync(resolve(REPO_ROOT, CONFIG_PATH), 'utf8'));
+  const evidence = cfg.packages.filter((p) => isEvidencePackage(p.name));
+  assert.deepEqual(evidence.map((p) => p.name).sort(), [...bundlePackagesFor('mcm')].sort(),
+    'the retention config must list exactly the repo-scoped and the legacy evidence package');
+  const windows = new Set(evidence.map((p) => `${p.keepDays}/${p.keepNewest}`));
+  assert.equal(windows.size, 1, `the evidence packages keep different windows: ${[...windows].join(', ')}`);
+});

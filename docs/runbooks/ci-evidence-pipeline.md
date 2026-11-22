@@ -65,8 +65,10 @@ The digest is deliberately small. For a failure the excerpt cannot explain:
 node scripts/ci-status.mjs failure --pr 82 --full
 ```
 
-- Stored in the generic package registry as `ci-failures` / **`{runId}--{jobSlug}`** — **per run *and*
-  job**, so two jobs failing in one run keep separate bundles rather than overwriting each other.
+- Stored in the generic package registry as `<repo>-ci-failures` (here `mcm-ci-failures`; the shared
+  `ci-failures` until feature 106 — see ci-diagnostics.md, "Evidence package name") /
+  **`{runId}--{jobSlug}`** — **per run *and* job**, so two jobs failing in one run keep separate bundles
+  rather than overwriting each other.
 - **5 MB cap** — sized for **agent context**, not link time. (It was ≈40 s to retrieve while the
   tailnet was throttled to ~135 KB/s; post-fix that is under a second, so context is the only
   binding constraint.) Overflow trims the **largest source first**, keeps the
@@ -327,7 +329,7 @@ and `ci-status failure --sha` therefore show only the `guardrails` / `app-ci` co
 - **Find its per-job state** via `GET /actions/tasks` (filter `name` = `build-deploy` / `prod-apk`).
   `prod-apk` is non-blocking (nothing `needs` it — a flaky APK build never blocks the deploy).
 - **Read its failure digest** by fetching the bundle **directly by run + job**, not via a commit
-  status: `{server}/api/packages/{owner}/generic/ci-failures/<runId>--build-deploy/bundle.json.gz`
+  status: `{server}/api/packages/{owner}/generic/mcm-ci-failures/<runId>--build-deploy/bundle.json.gz`
   with `MCM_FORGE_TOKEN` (read:package). Every build/scan/promote/webhook/probe/rollback step is now
   wrapped with `ci-log-step.sh`, so the digest names the failing step + shows its output (before
   that it fell back to stale app-e2e evidence).

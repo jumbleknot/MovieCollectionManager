@@ -148,7 +148,8 @@ flowchart LR
   share container names on the one host. Its name falls under the protected `app-ci /
   mc-service-checks*` glob, so it blocks a merge with no branch-protection change, and `trigger-cd`
   needs it, so it blocks the deploy too. Pinned by the same guard test file. Adding a job that
-  publishes a failure digest also raises the `ci-failures` retention floor in
+  publishes a failure digest also raises the evidence retention floor (both `mcm-ci-failures` and,
+  while it drains, the legacy `ci-failures`; feature 106) in
   `infrastructure-as-code/forgejo/registry-retention.yaml` (runs × bundle-publishing jobs), and the
   registry-retention test fails until it is raised.
 - **A filter entry that is in `mobile` but not in `app` can never fire.** `mobile` gates only *steps

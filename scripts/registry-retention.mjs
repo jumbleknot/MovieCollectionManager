@@ -33,6 +33,7 @@ import { parse as parseYaml } from 'yaml';
 
 import { ArgvError, partitionArgsWithValues, wantsHelp } from './lib/argv-contract.mjs';
 import { DEFAULT_DURATION_RUNS } from './ci-status.mjs';
+import { isEvidencePackage } from './ci-failure-digest.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const CONFIG_PATH = 'infrastructure-as-code/forgejo/registry-retention.yaml';
@@ -55,7 +56,7 @@ const TOP_KEYS = new Set(['mode', 'owner', 'evidenceWindowDays', 'packages']);
 const PACKAGE_KEYS = new Set(['name', 'type', 'keepNewest', 'keepDays', 'keepAll', 'note']);
 const isCount = (n) => Number.isInteger(n) && n >= 0;
 
-/** Jobs that publish a `ci-failures` bundle, counted from the workflows (the durations sample is per job). */
+/** Jobs that publish an evidence bundle (`<repo>-ci-failures`), counted from the workflows (the durations sample is per job). */
 export function bundlePublishingJobs(dir = resolve(REPO_ROOT, '.forgejo/workflows')) {
   let n = 0;
   for (const f of readdirSync(dir).filter((x) => /\.ya?ml$/.test(x))) {
@@ -99,15 +100,18 @@ export function loadConfig(text, { bundleJobs = bundlePublishingJobs() } = {}) {
     for (const k of ['keepNewest', 'keepDays']) {
       if (p[k] !== undefined && !isCount(p[k])) throw new ConfigError(`${p.name}: ${k} must be a whole number`);
     }
-    if (p.name === 'ci-failures' && !p.keepAll) {
+    // Every EVIDENCE package — the legacy shared `ci-failures` and any repo-scoped `<repo>-ci-failures`
+    // (feature 106). Guarding only the literal legacy name would leave the package actually being
+    // written free to keep a week.
+    if (isEvidencePackage(p.name) && !p.keepAll) {
       // `ci-status durations` reads the last DEFAULT_DURATION_RUNS runs of a job from these bundles.
       const floor = DEFAULT_DURATION_RUNS * bundleJobs;
       if ((p.keepDays ?? 0) < cfg.evidenceWindowDays) {
-        throw new ConfigError(`ci-failures: keepDays ${p.keepDays ?? 0} is below evidenceWindowDays ${cfg.evidenceWindowDays}`);
+        throw new ConfigError(`${p.name}: keepDays ${p.keepDays ?? 0} is below evidenceWindowDays ${cfg.evidenceWindowDays}`);
       }
       if ((p.keepNewest ?? 0) < floor) {
         throw new ConfigError(
-          `ci-failures: keepNewest ${p.keepNewest ?? 0} is below ${floor} ` +
+          `${p.name}: keepNewest ${p.keepNewest ?? 0} is below ${floor} ` +
             `(${DEFAULT_DURATION_RUNS} durations runs × ${bundleJobs} bundle-publishing jobs)`,
         );
       }

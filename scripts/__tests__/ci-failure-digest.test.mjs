@@ -1851,3 +1851,110 @@ test('(#645e) every workflow step that writes ~/mcm-ci-last-failure stamps it wi
   }
   assert.ok(writers.length >= 2, `expected the app-e2e and dast writers, found: ${JSON.stringify(writers)}`);
 });
+
+// --- Feature 106: the evidence package is repo-scoped (`<repo>-ci-failures`) ------------------------
+//
+// BELAY, under the same owner, runs this digest too. One shared owner-level `ci-failures` package
+// meant one repository's prune deleting another's evidence and a job-name lookup returning the other
+// repository's bundle. The name is derived from the repository; the legacy name is read and pruned
+// only, during the transition (specs/106-repo-scoped-ci-failures/contracts/evidence-package.md).
+
+/** Record every request `httpApi` makes; answer from `respond(url, opts)` (default: 200, empty list). */
+function stubFetch(respond = () => ({ status: 200, body: [] })) {
+  const calls = [];
+  const original = globalThis.fetch;
+  globalThis.fetch = async (url, opts = {}) => {
+    calls.push({ url: String(url), method: opts.method ?? 'GET' });
+    const { status = 200, body = [] } = respond(String(url), opts) ?? {};
+    return new Response(status === 204 ? null : JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+  };
+  return { calls, restore: () => { globalThis.fetch = original; } };
+}
+
+test('(106a) bundle package: named per repository, lowercased, never empty', async () => {
+  const { bundlePackageFor, bundlePackagesFor, isEvidencePackage, LEGACY_BUNDLE_PACKAGE } = await digestModule();
+  assert.equal(bundlePackageFor('mcm'), 'mcm-ci-failures');
+  assert.equal(bundlePackageFor('BELAY'), 'belay-ci-failures');
+  assert.throws(() => bundlePackageFor(''), /repository/);
+  assert.throws(() => bundlePackageFor(undefined), /repository/);
+  assert.equal(LEGACY_BUNDLE_PACKAGE, 'ci-failures');
+  assert.deepEqual(bundlePackagesFor('mcm'), ['mcm-ci-failures', 'ci-failures']);
+  for (const n of ['ci-failures', 'mcm-ci-failures', 'belay-ci-failures']) assert.equal(isEvidencePackage(n), true, n);
+  for (const n of ['mcm-app-android', 'ci-failures-old', 'mcm-devcontainer']) assert.equal(isEvidencePackage(n), false, n);
+});
+
+test('(106b) bundle package: the shared constant is gone, so no caller can keep writing the legacy name', async () => {
+  const mod = await digestModule();
+  assert.equal('BUNDLE_PACKAGE' in mod, false);
+});
+
+test('(106c) repo-scoped upload: the bundle is PUT under <repo>-ci-failures, never ci-failures', async () => {
+  const { httpApi } = await digestModule();
+  const f = stubFetch(() => ({ status: 201, body: {} }));
+  try {
+    await httpApi({ base: 'https://forge.test/api/v1', owner: 'jumbleknot', repo: 'mcm', token: 't' })
+      .uploadBundle('7--app-e2e', 'bundle.json.gz', Buffer.from('x'));
+    await httpApi({ base: 'https://forge.test/api/v1', owner: 'jumbleknot', repo: 'BELAY', token: 't' })
+      .uploadBundle('7--app-e2e', 'bundle.json.gz', Buffer.from('x'));
+  } finally { f.restore(); }
+  assert.deepEqual(f.calls.map((c) => `${c.method} ${c.url}`), [
+    'PUT https://forge.test/api/packages/jumbleknot/generic/mcm-ci-failures/7--app-e2e/bundle.json.gz',
+    'PUT https://forge.test/api/packages/jumbleknot/generic/belay-ci-failures/7--app-e2e/bundle.json.gz',
+  ]);
+  assert.ok(f.calls.every((c) => !c.url.includes('/generic/ci-failures/')));
+});
+
+test('(106d) bundle reference and link name the repo-scoped package', async () => {
+  const { bundleRefFor, bundleUrlFor } = await digestModule();
+  assert.equal(bundleRefFor('mcm-ci-failures', '1--x'), 'mcm-ci-failures:1--x');
+  assert.equal(
+    bundleUrlFor({ base: 'https://f.test/api/v1', owner: 'o', pkg: 'mcm-ci-failures', version: '1--x' }),
+    'https://f.test/o/-/packages/generic/mcm-ci-failures/1--x',
+  );
+});
+
+test('(106e) no repository identity: resolving the endpoint fails loudly, never a legacy fallback', async () => {
+  const { forgeEndpoint } = await digestModule();
+  assert.throws(() => forgeEndpoint({}, () => 'not-a-forge-remote'), /could not resolve the forge API base/);
+  assert.deepEqual(
+    forgeEndpoint({}, () => 'http://forge.test:3000/jumbleknot/mcm.git'),
+    { base: 'http://forge.test:3000/api/v1', owner: 'jumbleknot', repo: 'mcm' },
+  );
+  assert.deepEqual(
+    forgeEndpoint({ GITHUB_SERVER_URL: 'https://f.test', GITHUB_REPOSITORY: 'jumbleknot/mcm' }, () => { throw new Error('git not consulted'); }),
+    { base: 'https://f.test/api/v1', owner: 'jumbleknot', repo: 'mcm' },
+  );
+});
+
+test('(106f) prune both names: lists each package by exact name and deletes each expired version under its own', async () => {
+  const { httpApi, pruneExpiredBundles, RETENTION_DAYS } = await digestModule();
+  const old = new Date(Date.now() - (RETENTION_DAYS + 5) * 86_400_000).toISOString();
+  const fresh = new Date().toISOString();
+  const listing = {
+    'mcm-ci-failures': [{ name: 'mcm-ci-failures', version: '9--a', created_at: old }, { name: 'mcm-ci-failures', version: '10--a', created_at: fresh }],
+    // A substring search for `ci-failures` returns the other repositories' packages too.
+    'ci-failures': [
+      { name: 'ci-failures', version: '3--a', created_at: old },
+      { name: 'ci-failures', version: '4--a', created_at: fresh },
+      { name: 'belay-ci-failures', version: '5--a', created_at: old },
+      { name: 'mcm-ci-failures', version: '9--a', created_at: old },
+    ],
+  };
+  const f = stubFetch((url, opts) => {
+    if ((opts.method ?? 'GET') === 'DELETE') return { status: 204 };
+    const q = new URL(url).searchParams.get('q');
+    return { status: 200, body: new URL(url).searchParams.get('page') === '1' ? listing[q] ?? [] : [] };
+  });
+  try {
+    const api = httpApi({ base: 'https://forge.test/api/v1', owner: 'jumbleknot', repo: 'mcm', token: 't' });
+    const listed = await api.listBundleVersions();
+    assert.deepEqual(listed.map((x) => `${x.name}/${x.version}`).sort(), ['ci-failures/3--a', 'ci-failures/4--a', 'mcm-ci-failures/10--a', 'mcm-ci-failures/9--a']);
+    await pruneExpiredBundles(api);
+  } finally { f.restore(); }
+  const queried = f.calls.filter((c) => c.method === 'GET').map((c) => new URL(c.url).searchParams.get('q'));
+  assert.deepEqual([...new Set(queried)], ['mcm-ci-failures', 'ci-failures']);
+  assert.deepEqual(f.calls.filter((c) => c.method === 'DELETE').map((c) => c.url).sort(), [
+    'https://forge.test/api/v1/packages/jumbleknot/generic/ci-failures/3--a',
+    'https://forge.test/api/v1/packages/jumbleknot/generic/mcm-ci-failures/9--a',
+  ]);
+});

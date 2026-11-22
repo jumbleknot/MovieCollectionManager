@@ -50,7 +50,7 @@ movie-assistant-gateway  healthy
 **Not collected**
 - Playwright report — absent (job failed before the web suite ran)
 
-📦 Full evidence: `ci-failures:1247--app-e2e` → `node scripts/ci-status.mjs failure --run 1247 --full`
+📦 Full evidence: `mcm-ci-failures:1247--app-e2e` → `node scripts/ci-status.mjs failure --run 1247 --full`
 ```
 
 ## Content rules

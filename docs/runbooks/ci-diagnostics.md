@@ -38,6 +38,38 @@ node scripts/ci-status.mjs failure --pr 82 --full      # + fetch the full eviden
 node scripts/ci-status.mjs durations                   # how long does each app-e2e step take?
 ```
 
+### Evidence package name (feature 106)
+
+Evidence bundles live in the owner-level generic package **`<repo>-ci-failures`**, here
+`mcm-ci-failures`. `<repo>` is the lowercased repository name: from `GITHUB_REPOSITORY` in CI, or from
+the `origin` remote locally. `bundlePackageFor()` in `scripts/ci-failure-digest.mjs` is the only place
+that builds it, and a repository it cannot resolve is an error, never a fall back. The package used
+to be the shared `ci-failures`. BELAY, under the same owner, now runs the same digest and writes
+`belay-ci-failures`, so one shared name would let each repository prune the other's evidence and read
+the other's bundles.
+
+**The transition.** Cutover is the merge of feature 106 to `main`. From then on:
+
+- The digest writes only `mcm-ci-failures`.
+- `ci-status` (`failure --full`, `durations`) reads `mcm-ci-failures` first, then the legacy
+  `ci-failures`.
+- The digest's 30-day prune deletes expired versions from both, so the legacy package drains by
+  itself. Registry-retention's `keepNewest` would otherwise hold its last versions for ever.
+- Digest comments posted before cutover say `ci-failures:<run>--<job>`. Their links resolve until
+  that version is pruned.
+
+Every listing filters by **exact** name, because the forge's `q=` is a substring search.
+
+**Dropping the legacy name.** Not before cutover + 30 days, and only once a listing of `ci-failures`
+returns no versions. Then remove:
+
+1. `LEGACY_BUNDLE_PACKAGE` from `bundlePackagesFor()` (and the constant) in
+   `scripts/ci-failure-digest.mjs`
+2. the `ci-failures` entry in `infrastructure-as-code/forgejo/registry-retention.yaml`
+3. this transition note, and the "older runs" hints beside the listing commands below
+
+The backlog item filed by feature 106 tracks it.
+
 **Exit codes** — the `3` is the one that matters:
 
 | Code | Meaning |
@@ -612,8 +644,11 @@ telling you `main` was failing a required gate. `bundleJobName()` now handles bo
 package registry before believing a bundle is absent:**
 
 ```bash
+# `q=` is a SUBSTRING search, so filter by exact name (it also returns other repos' <repo>-ci-failures).
+# During the transition (see "Evidence package name"), repeat with PKG=ci-failures for older runs.
+PKG=mcm-ci-failures
 curl -s -H "Authorization: token $MCM_FORGE_TOKEN" \
-  "$FORGE/api/v1/packages/$OWNER?type=generic&q=ci-failures&limit=50" | jq -r '.[] | .version'
+  "$FORGE/api/v1/packages/$OWNER?type=generic&q=$PKG&limit=50" | jq -r --arg p "$PKG" '.[] | select(.name == $p) | .version'
 ```
 
 ### An abbreviated sha returns `[]`, which reads as "no CI ran"
@@ -799,8 +834,9 @@ token and 50 with the other, seconds apart.
 # LIST the versions. Never construct the name: `run_number` in /actions/tasks is OFFSET from the
 # run id the bundle is named after, so a constructed name reads as "no bundle" for a bundle that
 # exists.
+PKG=mcm-ci-failures   # exact-name filter below: `q=` matches substrings (feature 106)
 curl -s -H "Authorization: token $MCM_FORGE_TOKEN" \
-  "$FORGE/api/v1/packages/$OWNER?type=generic&q=ci-failures&page=1&limit=50" | jq -r '.[].version'
+  "$FORGE/api/v1/packages/$OWNER?type=generic&q=$PKG&page=1&limit=50" | jq -r --arg p "$PKG" '.[] | select(.name == $p) | .version'
 ```
 
 Three things worth knowing before you rely on it:
@@ -1233,7 +1269,8 @@ not here.
 >
 > ```bash
 > curl -sS -H "Authorization: token $MCM_FORGE_TOKEN" \
->   ".../api/packages/<owner>/generic/ci-failures/<runId>--<job>/bundle.json.gz" -o b.gz
+>   ".../api/packages/<owner>/generic/mcm-ci-failures/<runId>--<job>/bundle.json.gz" -o b.gz
+> # a run from before feature 106's cutover is under …/generic/ci-failures/… instead
 > ```
 >
 > Its `meta.digestOutcome` states whether the digest published and by which channel (`pr-comment`

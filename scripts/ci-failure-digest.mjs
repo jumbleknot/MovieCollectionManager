@@ -1042,7 +1042,43 @@ export const BUNDLE_CAP_BYTES = 5 * 1024 * 1024;
 /** Matches the repository's existing general log-retention standard. */
 export const RETENTION_DAYS = 30;
 
-export const BUNDLE_PACKAGE = 'ci-failures';
+/**
+ * The evidence package is REPO-SCOPED (feature 106): `<repo>-ci-failures`, owner-level.
+ *
+ * It used to be one constant, `ci-failures`, shared by every repository under the owner. Once BELAY
+ * ran this digest too, that meant one repository's prune deleting the other's evidence, both
+ * filling one retention quota, and a job-name lookup returning the other repository's bundle. The
+ * name is derived from the repository identity the caller already resolved (forgeEndpoint, or
+ * ci-status's connection), and is never hard-coded.
+ *
+ * `ci-failures` is the LEGACY name: read and pruned, never written. It drains through this script's
+ * own age-based prune, because nothing writes it any more and registry-retention's keepNewest would
+ * otherwise hold its last versions for ever. Drop it once it lists empty, no earlier than cutover
+ * + RETENTION_DAYS (docs/runbooks/ci-diagnostics.md, "Evidence package name").
+ */
+export const LEGACY_BUNDLE_PACKAGE = 'ci-failures';
+const BUNDLE_PACKAGE_SUFFIX = '-ci-failures';
+
+/** `mcm` → `mcm-ci-failures`. No repository is an error, never a fall back to the shared name. */
+export function bundlePackageFor(repo) {
+  const name = typeof repo === 'string' ? repo.trim().toLowerCase() : '';
+  if (!name) throw new Error(`cannot name the evidence package: no repository name (got ${JSON.stringify(repo)})`);
+  return `${name}${BUNDLE_PACKAGE_SUFFIX}`;
+}
+
+/** Every package a READER or the prune covers, repo-scoped first. The legacy entry goes when it drains. */
+export const bundlePackagesFor = (repo) => [bundlePackageFor(repo), LEGACY_BUNDLE_PACKAGE];
+
+/** An evidence package of ANY repository — what registry-retention holds to the evidence floor. */
+export const isEvidencePackage = (name) =>
+  name === LEGACY_BUNDLE_PACKAGE || (typeof name === 'string' && name.endsWith(BUNDLE_PACKAGE_SUFFIX) && name.length > BUNDLE_PACKAGE_SUFFIX.length);
+
+/** The `<package>:<version>` string a digest comment carries. */
+export const bundleRefFor = (pkg, version) => `${pkg}:${version}`;
+
+/** The human-facing package page for a version. */
+export const bundleUrlFor = ({ base, owner, pkg, version }) =>
+  `${String(base).replace(/\/api\/v1$/, '')}/${owner}/-/packages/generic/${pkg}/${version}`;
 
 /**
  * The per-step durations file, uploaded as its OWN file in the bundle's version (item #338).
@@ -1289,14 +1325,17 @@ function selftest() {
 // --- Real transport -------------------------------------------------------------------------------
 
 /** Repo slug + API base from the runner env, falling back to the origin remote. Host never printed. */
-function forgeEndpoint(env = process.env) {
+export function forgeEndpoint(
+  env = process.env,
+  readOrigin = () => execFileSync('git', ['remote', 'get-url', 'origin'], { encoding: 'utf8' }),
+) {
   const server = env.GITHUB_SERVER_URL;
   const slug = env.GITHUB_REPOSITORY;
   if (server && slug) {
     const [owner, repo] = slug.split('/');
     return { base: `${server}/api/v1`, owner, repo };
   }
-  const origin = execFileSync('git', ['remote', 'get-url', 'origin'], { encoding: 'utf8' }).trim();
+  const origin = String(readOrigin()).trim();
   const m = origin.replace(/\.git$/, '').match(/^(https?:\/\/[^/]+)\/([^/]+)\/([^/]+)$/);
   if (!m) throw new Error('could not resolve the forge API base');
   return { base: `${m[1]}/api/v1`, owner: m[2], repo: m[3] };
@@ -1335,7 +1374,10 @@ async function fetchWithTimeout(url, opts = {}, ms = Number(process.env.CI_HTTP_
   }
 }
 
-function httpApi({ base, owner, repo, token }) {
+export function httpApi({ base, owner, repo, token }) {
+  // Resolved ONCE, up front: a repository the name cannot be derived from fails here, before any
+  // write — never mid-publish, and never onto the shared legacy name.
+  const pkg = bundlePackageFor(repo);
   const call = async (method, path, body) => {
     const res = await fetchWithTimeout(`${base}${path}`, {
       method,
@@ -1369,25 +1411,33 @@ function httpApi({ base, owner, repo, token }) {
   return {
     listComments: (pr) => call('GET', `/repos/${owner}/${repo}/issues/${pr}/comments`),
     uploadBundle: (version, filename, buffer) =>
-      rawCall('PUT', `${packagesRoot}/${owner}/generic/${BUNDLE_PACKAGE}/${version}/${filename}`, buffer, 'application/octet-stream'),
+      rawCall('PUT', `${packagesRoot}/${owner}/generic/${pkg}/${version}/${filename}`, buffer, 'application/octet-stream'),
+    // Every version this repository's prune may touch: the repo-scoped package AND the legacy one
+    // (which only drains — see LEGACY_BUNDLE_PACKAGE). Each item keeps the `name` it was listed from,
+    // so its delete goes to the right package.
     listBundleVersions: async () => {
       // PAGINATED, deliberately. Forgejo defaults to page 1 at 30 items and orders packages by
       // name, not age — so an unpaginated call silently stops seeing expired bundles once more
       // than 30 exist, degrading retention to a no-op with no error. This is the same pagination
       // trap the read side documents at length; the write side must not fall into it.
+      // EXACT name, deliberately too: `q=` matches substrings, so `q=ci-failures` also returns
+      // `mcm-ci-failures` and other repositories' `<repo>-ci-failures` — whose evidence this
+      // repository must never delete.
       const out = [];
-      for (let page = 1; page <= 100; page++) {
-        const res = await rawCall('GET', `${base}/packages/${owner}?type=generic&q=${BUNDLE_PACKAGE}&page=${page}&limit=50`);
-        if (res.status === 404) break;
-        const batch = await res.json();
-        if (!Array.isArray(batch) || batch.length === 0) break;
-        out.push(...batch.filter((x) => x.name === BUNDLE_PACKAGE));
-        if (batch.length < 50) break;
+      for (const name of bundlePackagesFor(repo)) {
+        for (let page = 1; page <= 100; page++) {
+          const res = await rawCall('GET', `${base}/packages/${owner}?type=generic&q=${name}&page=${page}&limit=50`);
+          if (res.status === 404) break;
+          const batch = await res.json();
+          if (!Array.isArray(batch) || batch.length === 0) break;
+          out.push(...batch.filter((x) => x.name === name));
+          if (batch.length < 50) break;
+        }
       }
       return out;
     },
-    deleteBundleVersion: (version) =>
-      rawCall('DELETE', `${base}/packages/${owner}/generic/${BUNDLE_PACKAGE}/${version}`),
+    deleteBundleVersion: (version, name = pkg) =>
+      rawCall('DELETE', `${base}/packages/${owner}/generic/${name}/${version}`),
     createComment: (pr, body) => call('POST', `/repos/${owner}/${repo}/issues/${pr}/comments`, { body }),
     // Re-added by feature 051 US4. It was removed in 042's T040 because the endpoint 403'd for
     // CI_DIGEST_TOKEN — but T034 measured that the run's AUTOMATICALLY-PROVISIONED token is allowed
@@ -1472,14 +1522,15 @@ async function run() {
     return;
   }
 
-  const api = httpApi({ ...forgeEndpoint(), token: credential.token });
+  const endpoint = forgeEndpoint();
+  const api = httpApi({ ...endpoint, token: credential.token });
 
   const version = bundleVersion(context.runId, context.job);
-  context.bundleRef = `${BUNDLE_PACKAGE}:${version}`;
+  const pkg = bundlePackageFor(endpoint.repo);
+  context.bundleRef = bundleRefFor(pkg, version);
   // The human-facing package page, surfaced in the digest so a reader can click through from the
   // job log. No longer used as a commit-status target_url — that status is gone (T040).
-  const { base, owner } = forgeEndpoint();
-  context.bundleUrl = `${base.replace(/\/api\/v1$/, '')}/${owner}/-/packages/generic/${BUNDLE_PACKAGE}/${version}`;
+  context.bundleUrl = bundleUrlFor({ base: endpoint.base, owner: endpoint.owner, pkg, version });
   const withBundle = buildDigest(context, evidence);
 
   // Publish FIRST, then upload — so the bundle can record whether publication actually reached its
@@ -1655,14 +1706,18 @@ export async function publishBundle(api, version, evidence, context, publishResu
   }
 }
 
-/** Delete bundle versions past the retention window. Never throws at the caller's expense. */
-async function pruneExpiredBundles(api) {
+/**
+ * Delete bundle versions past the retention window, in the repo-scoped AND the legacy package (each
+ * under the package it was listed from — the legacy one drains only through this). Never throws at
+ * the caller's expense.
+ */
+export async function pruneExpiredBundles(api) {
   const packages = await api.listBundleVersions();
   const expired = selectExpiredVersions(packages);
   for (const p of expired) {
     try {
-      await api.deleteBundleVersion(p.version);
-      console.log(`[ci-failure-digest] pruned expired bundle ${p.version}`);
+      await api.deleteBundleVersion(p.version, p.name);
+      console.log(`[ci-failure-digest] pruned expired bundle ${p.name}/${p.version}`);
     } catch (err) {
       console.error(`[ci-failure-digest] prune of ${p.version} suppressed: ${redactForPublication(String(err?.message ?? err))}`);
     }

@@ -29,7 +29,7 @@ import { execFileSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 
 import { redactForPublication } from './ci-digest-redact.mjs';
-import { bundleVersion, BUNDLE_PACKAGE, DURATIONS_FILE } from './ci-failure-digest.mjs';
+import { bundleVersion, bundlePackageFor, bundlePackagesFor, DURATIONS_FILE } from './ci-failure-digest.mjs';
 import { gunzipSync } from 'node:zlib';
 
 /** Endpoint-family → the token scope it requires. Used to turn a bare 401/403 into a remedy. */
@@ -1876,11 +1876,19 @@ export function safeBundleEntryPath(root, entryPath) {
  * Retrieve the full evidence bundle to disk and print its PATH, never its contents (FR-016).
  * At the measured ~135 KB/s the 5 MB cap is ~40 s, so progress is reported rather than appearing hung.
  */
-async function fetchBundle(conn, runId, job, { quietWhenAbsent = false } = {}) {
+export async function fetchBundle(conn, runId, job, { quietWhenAbsent = false } = {}) {
   const version = bundleVersion(runId, job);
-  const url = `${conn.base.replace(/\/api\/v1$/, '/api/packages')}/${conn.owner}/generic/${BUNDLE_PACKAGE}/${version}/bundle.json.gz`;
   if (!quietWhenAbsent) emit(`fetching bundle ${version} (up to 5 MB over a ~135 KB/s link — allow ~40 s)…`);
-  const res = await fetchWithTimeout(url, { headers: { Authorization: `token ${conn.token}` } });
+  // Repo-scoped package first, then the legacy shared one (feature 106): a run from before the
+  // cutover lives only in the legacy package, for up to RETENTION_DAYS after it. "Absent" means
+  // absent from BOTH — a single 404 on the new name would hide every pre-cutover bundle.
+  let res = null;
+  let url = '';
+  for (const pkg of bundlePackagesFor(conn.repo)) {
+    url = `${conn.base.replace(/\/api\/v1$/, '/api/packages')}/${conn.owner}/generic/${pkg}/${version}/bundle.json.gz`;
+    res = await fetchWithTimeout(url, { headers: { Authorization: `token ${conn.token}` } });
+    if (res.status !== 404) break;
+  }
   if (res.status === 404) {
     if (!quietWhenAbsent) emit(`no bundle exists for ${version} — the job may have died before the digest step ran.`);
     return null;
@@ -1909,17 +1917,45 @@ async function fetchBundle(conn, runId, job, { quietWhenAbsent = false } = {}) {
  * `<run id>--<job>` versions is neither the newest nor a random selection.
  */
 async function listBundleVersions(conn) {
+  const listings = [];
+  for (const name of bundlePackagesFor(conn.repo)) {
+    const items = [];
+    for (let page = 1; page <= 100; page++) {
+      const url = `${conn.base}/packages/${conn.owner}?type=generic&q=${name}&page=${page}&limit=50`;
+      const res = await fetchWithTimeout(url, { headers: { Authorization: `token ${conn.token}` } });
+      if (res.status === 404) break;
+      if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, url));
+      if (!res.ok) throw new CiStatusError(`Forge returned ${res.status} listing ${name} versions`);
+      const batch = await res.json();
+      if (!Array.isArray(batch) || batch.length === 0) break;
+      items.push(...batch);
+      if (batch.length < 50) break;
+    }
+    listings.push({ name, items });
+  }
+  return mergeBundleListings(listings);
+}
+
+/**
+ * Merge per-package listings into one list of versions, each tagged with the package it lives in
+ * (feature 106). Order follows `listings` — repo-scoped first — so a version present under both names
+ * is kept once, from the repo-scoped package.
+ *
+ * EXACT-name filtering happens here, not at the query: the forge's `q=` is a SUBSTRING search, so a
+ * listing of `ci-failures` also carries `mcm-ci-failures` and every other repository's
+ * `<repo>-ci-failures`. Without it, `durations` would sample another repository's runs.
+ *
+ * @param {{name:string, items:{name?:string, version?:string}[]}[]} listings
+ */
+export function mergeBundleListings(listings) {
+  const seen = new Set();
   const out = [];
-  for (let page = 1; page <= 100; page++) {
-    const url = `${conn.base}/packages/${conn.owner}?type=generic&q=${BUNDLE_PACKAGE}&page=${page}&limit=50`;
-    const res = await fetchWithTimeout(url, { headers: { Authorization: `token ${conn.token}` } });
-    if (res.status === 404) break;
-    if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, url));
-    if (!res.ok) throw new CiStatusError(`Forge returned ${res.status} listing ${BUNDLE_PACKAGE} versions`);
-    const batch = await res.json();
-    if (!Array.isArray(batch) || batch.length === 0) break;
-    out.push(...batch.filter((x) => x.name === BUNDLE_PACKAGE));
-    if (batch.length < 50) break;
+  for (const { name, items } of listings) {
+    for (const item of items ?? []) {
+      if (item?.name !== name || seen.has(item.version)) continue;
+      seen.add(item.version);
+      out.push({ ...item, name });
+    }
   }
   return out;
 }
@@ -1935,14 +1971,14 @@ async function listBundleVersions(conn) {
  * A version with no durations file is skipped without comment: every bundle published before this
  * existed is one, and they are the majority until the sample fills.
  */
-async function cmdDurations(target, conn) {
+export async function cmdDurations(target, conn) {
   const job = target.job ?? 'app-e2e';
   const runs = target.runs ?? DEFAULT_DURATION_RUNS;
   const packagesRoot = conn.base.replace(/\/api\/v1$/, '/api/packages');
 
   const selected = selectDurationVersions(await listBundleVersions(conn), { job, runs });
   if (!selected.length) {
-    emit(`No \`${BUNDLE_PACKAGE}\` versions exist for job \`${job}\`.`);
+    emit(`No \`${bundlePackagesFor(conn.repo).join('` or `')}\` versions exist for job \`${job}\`.`);
     emit('Nothing has been published for it inside the 30-day bundle retention window.');
     return EXIT.OK;
   }
@@ -1955,7 +1991,8 @@ async function cmdDurations(target, conn) {
   const rows = [];
   const runIds = [];
   for (const v of selected) {
-    const url = `${packagesRoot}/${conn.owner}/generic/${BUNDLE_PACKAGE}/${v.version}/${DURATIONS_FILE}`;
+    // From the package THIS version lives in (feature 106) — a pre-cutover run is in the legacy one.
+    const url = `${packagesRoot}/${conn.owner}/generic/${v.name ?? bundlePackageFor(conn.repo)}/${v.version}/${DURATIONS_FILE}`;
     const res = await fetchWithTimeout(url, { headers: { Authorization: `token ${conn.token}` } });
     if (res.status === 404) continue; // published before item #338, or the step wrote nothing
     if (res.status === 401 || res.status === 403) throw new CiStatusError(describeAuthFailure(res.status, url));
