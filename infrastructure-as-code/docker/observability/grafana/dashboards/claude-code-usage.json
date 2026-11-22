@@ -1,0 +1,332 @@
+{
+  "uid": "claude-code-usage",
+  "title": "Claude Code usage",
+  "description": "Feature 105: weighted Claude Code tokens by activity, area, spec and feature, with feature outcomes. Counts only; no content is stored. Source: the prod-dev-usage store, read as usage_reader (views only).",
+  "tags": [
+    "claude-code",
+    "usage",
+    "feature-105"
+  ],
+  "editable": false,
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-8w",
+    "to": "now"
+  },
+  "refresh": "",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Share of weighted tokens with no feature (work on main)",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dev-usage-store"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dev-usage-store"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT CASE WHEN tot > 0 THEN nf / tot END AS \"no feature share\"\nFROM (SELECT (SELECT weighted_tokens FROM usage.v_no_feature_totals) AS nf,\n             (SELECT weighted_tokens FROM usage.v_no_feature_totals) + COALESCE((SELECT SUM(weighted_tokens) FROM usage.v_feature_totals), 0) AS tot) x"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "title": "Share of weighted tokens unclassified",
+      "type": "stat",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dev-usage-store"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dev-usage-store"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT CASE WHEN SUM(weighted_tokens) > 0 THEN SUM(weighted_tokens) FILTER (WHERE activity = 'unclassified' OR activity IS NULL) / SUM(weighted_tokens) END AS \"unclassified share\"\nFROM usage.v_turn_totals\nWHERE $__timeFilter(started_at)"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "title": "Efficiency by kind (like with like)",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dev-usage-store"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 12,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dev-usage-store"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT kind, features, merged_prs, weighted_tokens, weighted_per_merged_pr, weighted_per_task_done, rework_share\nFROM usage.v_feature_efficiency\nORDER BY kind"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Weekly weighted tokens by activity",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dev-usage-store"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dev-usage-store"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT week::timestamptz AS time, COALESCE(activity, 'unclassified') AS metric, SUM(weighted_tokens) AS value\nFROM usage.v_weekly_trend\nWHERE $__timeFilter(week::timestamptz)\nGROUP BY 1, 2\nORDER BY 1"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "title": "Weekly weighted tokens by area",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dev-usage-store"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dev-usage-store"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT week::timestamptz AS time, area AS metric, SUM(weighted_tokens) AS value\nFROM usage.v_weekly_trend\nWHERE $__timeFilter(week::timestamptz)\nGROUP BY 1, 2\nORDER BY 1"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      },
+      "description": "A turn that touched several areas is split evenly across them, so the areas sum to the weekly total."
+    },
+    {
+      "id": 6,
+      "title": "Weekly weighted tokens by spec",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dev-usage-store"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dev-usage-store"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT week::timestamptz AS time, COALESCE('spec ' || spec_number::text, '(no spec)') AS metric, SUM(weighted_tokens) AS value\nFROM usage.v_weekly_trend\nWHERE $__timeFilter(week::timestamptz)\nGROUP BY 1, 2\nORDER BY 1"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "title": "Weekly weighted tokens by feature",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dev-usage-store"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 13,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dev-usage-store"
+          },
+          "editorMode": "code",
+          "format": "time_series",
+          "rawQuery": true,
+          "rawSql": "SELECT week::timestamptz AS time, COALESCE(feature_id, 'no feature') AS metric, SUM(weighted_tokens) AS value\nFROM usage.v_weekly_trend\nWHERE $__timeFilter(week::timestamptz)\nGROUP BY 1, 2\nORDER BY 1"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "title": "Features and their outcomes",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "dev-usage-store"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "dev-usage-store"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT feature_id AS feature, kind, spec_dir AS spec, pr_state AS pr, pr_number, sessions, turns,\n       round(weighted_tokens) AS weighted, commits, lines_added, lines_removed,\n       CASE WHEN tasks_total IS NULL THEN 'n/a' ELSE tasks_done || '/' || tasks_total END AS tasks,\n       ci_runs_red, ci_runs_green, backlog_closed, first_seen_at, merged_at\nFROM usage.v_feature_totals\nWHERE $__timeFilter(first_seen_at)\nORDER BY first_seen_at DESC\nLIMIT 100"
+        }
+      ]
+    }
+  ]
+}

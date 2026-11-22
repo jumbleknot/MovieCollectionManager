@@ -16,6 +16,7 @@ import { isMain } from './lib/is-main.mjs';
 import { doctorLines, runHook } from './lib/cc-usage/capture.mjs';
 import { sessionTotals } from './lib/cc-usage/transcript-files.mjs';
 import * as query from './lib/cc-usage/query.mjs';
+import * as featureQuery from './lib/cc-usage/feature-query.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_FIXTURES = join(HERE, '__tests__', 'fixtures', 'cc-usage');
@@ -27,10 +28,16 @@ commands:
   doctor                            capture health: configured, last ship, spool, back-off, token state, unshipped transcripts
   oracle-check [--fixtures <dir>]   compare parser totals on the fixtures with the committed ccusage oracle; exit 1 on any mismatch
   now --session <id>                this session so far: tokens by type, context now, top tool outputs, subagent share (works offline)
-  sessions [--since 7d] [--branch b] [--area x]
-                                    one row per session from the store
-  trend --by week|area [--since 8w] one row per bucket
-  compare <a> <b>                   side by side; a/b are session ids or YYYY-MM-DD..YYYY-MM-DD
+  sessions [--since 7d] [--branch b] [--area x] [--feature f] [--activity a] [--spec n]
+                                    one row per session from the store; with --feature, the tokens attributed to it
+  feature <branch|spec:NNN|feature_id> [--all]
+                                    one feature: kind, spec, PR, sessions, tokens, activity mix, outcomes
+  features [--since 30d] [--kind spec|no-spec] [--state open|merged|all]
+                                    one row per feature, then a final "no feature" row
+  trend --by week|area|activity|feature|spec [--since 8w]
+                                    one row per bucket
+  compare <a> <b>                   side by side; a/b are session ids, YYYY-MM-DD..YYYY-MM-DD, branch:<name>, spec:NNN or feature ids
+  weights push                      upsert scripts/cc-usage-weights.json into the store (sweeps also do it once per asOf)
   sync --session <id>               ship this session now, ignoring the 15-minute interval
   tag --session <id> <label>        set the session's manual tag
 
@@ -42,7 +49,15 @@ const COMMANDS = {
   doctor: { run: (_p, io) => { io.out(doctorLines().join('\n')); return 0; } },
   'oracle-check': { withValues: ['--fixtures'], run: oracleCheck },
   now: { withValues: ['--session'], accepted: ['--json'], run: interactive((p) => query.now(p.cfg, { session: need(p, '--session'), json: p.json }), { history: false }) },
-  sessions: { withValues: ['--since', '--branch', '--area'], accepted: ['--json'], run: interactive((p) => query.sessions(p.cfg, { since: p.values.get('--since'), branch: p.values.get('--branch'), area: p.values.get('--area'), json: p.json })) },
+  sessions: { withValues: ['--since', '--branch', '--area', '--feature', '--activity', '--spec'], accepted: ['--json'], run: interactive((p) => query.sessions(p.cfg, {
+    since: p.values.get('--since'), branch: p.values.get('--branch'), area: p.values.get('--area'),
+    feature: p.values.get('--feature'), activity: p.values.get('--activity'), spec: specFlag(p.values.get('--spec')), json: p.json,
+  })) },
+  feature: { accepted: ['--json', '--all'], maxPositionals: 1, run: interactive((p) => featureQuery.feature(p.cfg, { ref: positional(p, 'feature <branch|spec:NNN|feature_id>'), all: p.flags.has('--all'), json: p.json })) },
+  features: { withValues: ['--since', '--kind', '--state'], accepted: ['--json'], run: interactive((p) => featureQuery.features(p.cfg, {
+    since: p.values.get('--since'), kind: oneOf(p, '--kind', ['spec', 'no-spec']), state: oneOf(p, '--state', ['open', 'merged', 'all']) ?? 'open', json: p.json,
+  })) },
+  weights: { maxPositionals: 1, run: interactive((p) => featureQuery.weights(p.cfg, { action: positional(p, 'weights push') })) },
   trend: { withValues: ['--by', '--since'], accepted: ['--json'], run: interactive(trendCmd) },
   compare: { accepted: ['--json'], maxPositionals: 2, run: interactive((p) => query.compare(p.cfg, { a: p.positionals[0], b: p.positionals[1], json: p.json })) },
   sync: { withValues: ['--session'], run: interactive((p) => query.sync(p.cfg, { session: need(p, '--session') }), { history: false }) },
@@ -59,9 +74,26 @@ function need(p, flag) {
   return v;
 }
 
+function positional(p, what) {
+  if (!p.positionals[0]) throw new ArgvError(`cc-usage.mjs: usage: ${what}\n\n${USAGE}`);
+  return p.positionals[0];
+}
+
+function oneOf(p, flag, allowed) {
+  const v = p.values.get(flag);
+  if (v !== undefined && !allowed.includes(v)) throw new ArgvError(`cc-usage.mjs: ${flag} expects ${allowed.join(' or ')}, got ${v}\n\n${USAGE}`);
+  return v;
+}
+
+function specFlag(v) {
+  if (v === undefined) return undefined;
+  if (!/^\d{1,4}$/.test(v)) throw new ArgvError(`cc-usage.mjs: --spec expects a spec number, got ${v}\n\n${USAGE}`);
+  return v;
+}
+
 function trendCmd(p) {
   const by = p.values.get('--by');
-  if (!['week', 'area'].includes(by ?? '')) throw new ArgvError(`cc-usage.mjs: trend --by expects week or area\n\n${USAGE}`);
+  if (!['week', 'area', 'activity', 'feature', 'spec'].includes(by ?? '')) throw new ArgvError(`cc-usage.mjs: trend --by expects week, area, activity, feature or spec\n\n${USAGE}`);
   return query.trend(p.cfg, { by, since: p.values.get('--since') ?? '8w', json: p.json });
 }
 

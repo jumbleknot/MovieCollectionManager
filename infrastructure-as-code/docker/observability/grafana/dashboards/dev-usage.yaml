@@ -1,0 +1,11 @@
+# Feature 105 US3 (T055): loads the "Claude Code usage" dashboard. Mounted as one file beside the
+# image's own dashboard providers.
+apiVersion: 1
+providers:
+  - name: Claude Code usage
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false
+    options:
+      path: /otel-lgtm/dev-usage-dashboards
+      foldersFromFilesStructure: false

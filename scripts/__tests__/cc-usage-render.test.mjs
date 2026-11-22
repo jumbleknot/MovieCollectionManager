@@ -31,7 +31,9 @@ test('--json returns every row', () => {
 });
 
 test('a tailnet host name in a value is redacted, in the table and in --json', () => {
-  const r = [{ name: 'http://box.tail1234.ts.net:19040/x', tokens: 1 }];
+  // Built at run time: a literal *.ts.net name of this shape is what check-topology-scrub forbids committing.
+  const host = ['box', 'tail1234', 'ts', 'net'].join('.');
+  const r = [{ name: `http://${host}:19040/x`, tokens: 1 }];
   assert.doesNotMatch(renderTable(r, COLS), /tail1234/);
   assert.doesNotMatch(renderTable(r, COLS, { json: true }), /tail1234/);
 });

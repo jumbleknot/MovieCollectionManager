@@ -258,8 +258,17 @@ services:
       # 19000–19099 (feature 029) so it can't collide with a CI/dev Grafana on the shared host (old 3002
       # overlapped CI). Guarded by check-prod-ci-port-collision.mjs.
       - "19002:3000"
+    environment:
+      # Feature 105 US3: the Claude Code usage datasource reads as usage_reader (views only); Grafana
+      # interpolates this into grafana/datasources/zz-dev-usage.yaml at provisioning time.
+      DEV_USAGE_READER_PASSWORD: "${DEV_USAGE_READER_PASSWORD:?set the Komodo Variable DEV_USAGE_READER_PASSWORD}"
     volumes:
       - otel-lgtm-data:/data
+      # Feature 105 US3: single FILES beside the image's own provisioning — a directory mount would
+      # hide otel-lgtm's built-in datasources and dashboards.
+      - ./grafana/datasources/zz-dev-usage.yaml:/otel-lgtm/grafana/conf/provisioning/datasources/zz-dev-usage.yaml:ro
+      - ./grafana/dashboards/dev-usage.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/dev-usage.yaml:ro
+      - ./grafana/dashboards/claude-code-usage.json:/otel-lgtm/dev-usage-dashboards/claude-code-usage.json:ro
     networks:
       - backend-network
     healthcheck:

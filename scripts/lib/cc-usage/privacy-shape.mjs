@@ -21,9 +21,17 @@ export const TABLE_COLUMNS = {
   turns: [
     'session_id', 'turn_seq', 'origin', 'started_at', 'ended_at', 'idle_gap_s',
     'context_tokens_at_start', 'areas', 'rereads',
+    // US3: the label, the rule that fired, the feature and how it was decided — never the inputs.
+    'activity', 'activity_rule', 'feature_id', 'attribution_rule',
   ],
   tool_use: ['session_id', 'turn_seq', 'tool', 'command_family', 'calls', 'result_bytes', 'rtk_calls', 'subagent_type'],
   skill_use: ['session_id', 'skill', 'invocations', 'first_turn'],
+  features: [
+    'feature_id', 'branch', 'first_seen_at', 'kind', 'spec_dir', 'spec_number', 'commits', 'lines_added',
+    'lines_removed', 'tasks_total', 'tasks_done', 'pr_number', 'pr_state', 'merged_at', 'ci_runs_red',
+    'ci_runs_green', 'first_red_at', 'backlog_closed', 'collected_at',
+  ],
+  token_weights: ['as_of', 'input', 'output', 'cache_read', 'cache_write_5m', 'cache_write_1h', 'source'],
 };
 
 const MAX_STRING = 200;
@@ -55,6 +63,7 @@ export function shapeRows(table, rows) {
 export function shapeRecords(records) {
   return {
     sessions: shapeRows('sessions', records.session ? [records.session] : []),
+    features: shapeRows('features', records.features ?? []),
     model_calls: shapeRows('model_calls', records.modelCalls),
     turns: shapeRows('turns', records.turns),
     tool_use: shapeRows('tool_use', records.toolUse),

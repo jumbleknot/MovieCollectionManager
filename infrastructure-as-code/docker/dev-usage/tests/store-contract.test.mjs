@@ -7,7 +7,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { obtainAccessToken } from '../../../../scripts/lib/cc-usage/obtain-access-token.mjs';
@@ -268,4 +268,112 @@ it('US2: PATCH sessions sets manual_tag; a column sessions does not have is refu
   assert.equal(psql(`SELECT manual_tag FROM usage.sessions WHERE session_id = '${sid}'`).trim(), 'refactor-x');
   const bad = await req(`/sessions?session_id=eq.${sid}`, { method: 'PATCH', body: JSON.stringify({ input_tokens: 1 }) });
   assert.equal(bad.status, 400, 'sessions has no token columns to change');
+});
+
+// --- US3 (T047): features, attribution views, conservation, weights --------------------------------
+const TOKEN_COLS = ['input_tokens', 'output_tokens', 'cache_read_tokens', 'cache_write_5m_tokens', 'cache_write_1h_tokens'];
+const getJson = async (path) => { const r = await req(path); assert.equal(r.status, 200, `${path} → ${r.status} ${await r.clone().text()}`); return r.json(); };
+const turn = (sid, seq, extra = {}) => ({ session_id: sid, turn_seq: seq, origin: 'human', started_at: '2026-11-18T10:00:00Z', ended_at: '2026-11-18T10:01:00Z', idle_gap_s: 0, context_tokens_at_start: 1, areas: [], rereads: 0, activity: 'implement', activity_rule: 'implement-edit', feature_id: null, attribution_rule: 'main', ...extra });
+const feat = (id, extra = {}) => ({ feature_id: id, branch: id.split('@')[0], first_seen_at: '2026-11-18T09:00:00Z', kind: 'no-spec', pr_state: 'none', ...extra });
+
+it('US3: feature totals are sums of attributed turns; no-feature holds main turns; features + no-feature = sessions', async () => {
+  await token();
+  const p = `it-us3-${randomUUID().slice(0, 6)}`;
+  const F1 = `${p}-spec@2026-11-18`;
+  const F2 = `${p}-nospec@2026-11-18`;
+  const F3old = `${p}-reused@2026-11-01`;
+  const F3new = `${p}-reused@2026-11-18`;
+  const features = [
+    feat(F1, { kind: 'spec', spec_dir: 'specs/999-it', spec_number: 999, tasks_total: 10, tasks_done: 4, pr_state: 'merged', pr_number: 1, merged_at: '2026-11-19T00:00:00Z', first_red_at: '2026-11-18T10:30:00Z' }),
+    feat(F2),
+    feat(F3old, { pr_state: 'merged', pr_number: 2, merged_at: '2026-11-02T00:00:00Z', first_seen_at: '2026-11-01T09:00:00Z' }),
+    feat(F3new),
+  ];
+  const noFeatureBefore = (await getJson('/v_no_feature_totals'))[0] ?? {};
+  // S1–S3 on F1; S4 split F1/F2; S5 main only; S6 on the reused name's new feature.
+  const S = Array.from({ length: 6 }, () => randomUUID());
+  let n = 1000;
+  const plan = [
+    [S[0], [[1, F1, 'worktree']]], [S[1], [[1, F1, 'worktree']]], [S[2], [[1, F1, 'inherited']]],
+    [S[3], [[1, F1, 'worktree'], [2, F2, 'worktree']]], [S[4], [[1, null, 'main'], [2, null, 'main']]], [S[5], [[1, F3new, 'worktree']]],
+  ];
+  const expectFeature = {};
+  let mainTokens = 0;
+  for (const [sid, turns] of plan) {
+    const calls = turns.map(([seq, fid]) => { n += 1; const c = call(sid, n, { turn_seq: seq, message_id: `msg_us3_${n}` }); const t = TOKEN_COLS.reduce((a, k) => a + c[k], 0); if (fid) expectFeature[fid] = (expectFeature[fid] ?? 0) + c.input_tokens; else mainTokens += t; return c; });
+    const r = await sendBatches({
+      sessions: [session(sid)],
+      features,
+      turns: turns.map(([seq, fid, rule]) => turn(sid, seq, { feature_id: fid, attribution_rule: rule })),
+      model_calls: calls,
+    }, shipOpts(sid));
+    assert.deepEqual(r, { ok: true, spooled: false }, sid);
+  }
+  const ft = await getJson(`/v_feature_totals?branch=like.${p}*&order=feature_id`);
+  const byId = Object.fromEntries(ft.map((f) => [f.feature_id, f]));
+  assert.equal(byId[F1].input_tokens, expectFeature[F1]);
+  assert.equal(byId[F1].sessions, 4, 'S1–S3 and the split S4');
+  assert.equal(byId[F2].input_tokens, expectFeature[F2]);
+  assert.equal(byId[F3new].input_tokens, expectFeature[F3new]);
+  assert.equal(byId[F3old].input_tokens, 0, 'the merged feature of a reused name keeps its own (zero) totals');
+  assert.equal(byId[F1].tasks_total, 10);
+
+  const nf = (await getJson('/v_no_feature_totals'))[0];
+  const delta = TOKEN_COLS.reduce((a, k) => a + Number(nf[k]) - Number(noFeatureBefore[k] ?? 0), 0);
+  assert.equal(delta, mainTokens, 'the main-branch turns land in no-feature');
+
+  // Conservation (SC-010) over the whole store, every token type.
+  const all = await getJson('/v_feature_totals');
+  const sessions = await getJson('/v_session_totals');
+  for (const k of TOKEN_COLS) {
+    const f = all.reduce((a, r) => a + Number(r[k]), 0) + Number(nf[k]);
+    const s = sessions.reduce((a, r) => a + Number(r[k]), 0);
+    assert.equal(f, s, `features + no-feature = sessions for ${k}`);
+  }
+});
+
+it('US3: v_feature_efficiency gives per-task figures only where tasks_total is set, grouped by kind', async () => {
+  const eff = await getJson('/v_feature_efficiency');
+  const kinds = Object.fromEntries(eff.map((r) => [r.kind, r]));
+  assert.ok(kinds.spec && kinds['no-spec'], JSON.stringify(eff));
+  assert.equal(kinds['no-spec'].weighted_per_task_done, null);
+  assert.ok(Number(kinds.spec.weighted_per_task_done) > 0);
+  assert.ok('weighted_per_merged_pr' in kinds.spec && 'rework_share' in kinds.spec);
+});
+
+it('US3: v_weekly_trend has feature and spec dimensions; v_session_activity_mix marks the dominant activity', async () => {
+  const rows = await getJson('/v_weekly_trend?spec_number=eq.999');
+  assert.ok(rows.length > 0 && rows.every((r) => r.feature_id && r.week && r.activity), JSON.stringify(rows[0]));
+  // A multi-area turn is split across its areas, so the trend sums back to the turns exactly.
+  const trend = await getJson('/v_weekly_trend');
+  const turns = await getJson('/v_turn_totals?started_at=not.is.null');
+  const sum = (rs, k) => rs.reduce((a, r) => a + Number(r[k]), 0);
+  for (const k of ['input_tokens', 'weighted_tokens']) assert.ok(Math.abs(sum(trend, k) - sum(turns, k)) < 1e-6, `${k}: trend ${sum(trend, k)} vs turns ${sum(turns, k)}`);
+  assert.ok(Math.abs(sum(trend, 'turns') - turns.length) < 1e-6);
+  const mix = await getJson('/v_session_activity_mix?limit=5');
+  assert.ok(mix.length > 0 && mix.every((m) => 'dominant' in m && 'share' in m));
+});
+
+it('US3: token_weights upserts by as_of and the latest changes v_call_weighted', async () => {
+  const sid = randomUUID();
+  await sendBatches({ sessions: [session(sid)], model_calls: [call(sid, 7, { message_id: 'msg_w', input_tokens: 10, output_tokens: 1, cache_read_tokens: 0, cache_write_5m_tokens: 0, cache_write_1h_tokens: 0 })] }, shipOpts(sid));
+  const put = (output) => req('/token_weights?on_conflict=as_of', { method: 'POST', headers: { prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify([{ as_of: '2100-01-01', input: 1, output, cache_read: 0.1, cache_write_5m: 1.25, cache_write_1h: 2, source: 'it' }]) });
+  assert.equal((await put(5)).status, 201);
+  const w1 = (await getJson(`/v_call_weighted?session_id=eq.${sid}`))[0].weighted_tokens;
+  assert.equal(Number(w1), 10 + 5);
+  assert.ok([200, 201].includes((await put(9)).status));
+  const w2 = (await getJson(`/v_call_weighted?session_id=eq.${sid}`))[0].weighted_tokens;
+  assert.equal(Number(w2), 10 + 9);
+});
+
+it('US3: every Grafana panel query runs as usage_reader against the real views', () => {
+  const dash = JSON.parse(readFileSync(new URL('../../observability/grafana/dashboards/claude-code-usage.json', import.meta.url), 'utf8'));
+  for (const p of dash.panels) {
+    for (const t of p.targets) {
+      const sql = t.rawSql.replace(/\$__timeFilter\([^)]*\)/g, 'true');
+      const r = psqlFails(sql, 'usage_reader');
+      assert.equal(r.status, 0, `${p.title}: ${r.stderr}`);
+    }
+  }
 });

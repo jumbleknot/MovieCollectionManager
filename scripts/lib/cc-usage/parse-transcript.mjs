@@ -13,9 +13,11 @@
 // An assistant line without message.id or usage, or a complete line that is not JSON, is format
 // drift: the session becomes `partial` with reason `format-drift` (FR-005), never a zero.
 import { createHash } from 'node:crypto';
+import { bashPaths, worktreeRoot } from './attribute-feature.mjs';
+import { bashTags, labelActivity } from './label-activity.mjs';
 
 /** Bump when parsing or labelling changes what a transcript yields (data-model.md sessions.parser_version). */
-export const PARSER_VERSION = 1;
+export const PARSER_VERSION = 2; // 2: activity labels and feature attribution (US3)
 
 const FILE_TOOLS = new Set(['Read', 'Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'Grep', 'Glob']);
 const READ_TOOLS = new Set(['Read']);
@@ -99,7 +101,7 @@ function resultBytes(block, toolUseResult, loneResult) {
   return 0;
 }
 
-function newTurn(seq, origin, ts, prevEndedAt) {
+function newTurn(seq, origin, ts, prevEndedAt, startBranch = null) {
   return {
     turn_seq: seq,
     origin,
@@ -111,7 +113,34 @@ function newTurn(seq, origin, ts, prevEndedAt) {
     rereads: 0,
     tools: {}, // `${tool}\u0000${family}` → aggregate row (without session_id)
     rereadFiles: [],
+    sig: newSignals(startBranch),
   };
+}
+
+/**
+ * Per-turn facts for labelling and attribution (US3). LOCAL ONLY: never part of a record. Paths are
+ * reduced at once to a worktree root and a top-level area; commands to a family and tags.
+ */
+function newSignals(startBranch = null) {
+  return { skills: [], editAreas: [], bash: [], tools: [], roots: {}, startBranch };
+}
+
+const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
+const BASH_SIGNAL_CAP = 100;
+
+function notePath(st, t, path, cwd, { edit = false } = {}) {
+  const root = worktreeRoot(path, cwd);
+  if (!root) return;
+  st.callIdx = (st.callIdx ?? 0) + 1;
+  const r = (t.sig.roots[root] ??= { calls: 0, last: 0 });
+  r.calls += 1;
+  r.last = st.callIdx;
+  if (edit) {
+    const abs = path.startsWith('/') ? path : `${cwd}/${path}`;
+    const first = abs.slice(root.length + 1).split('/').filter(Boolean);
+    const area = first.length > 1 ? first[0] : null; // a file directly in the root has no area
+    if (area && !t.sig.editAreas.includes(area)) t.sig.editAreas.push(area);
+  }
 }
 
 function turnRecord(sessionId, t) {
@@ -125,6 +154,7 @@ function turnRecord(sessionId, t) {
     context_tokens_at_start: t.context_tokens_at_start ?? 0,
     areas: [...t.areas].sort(),
     rereads: t.rereads,
+    ...labelActivity(t.sig ?? newSignals()),
   };
 }
 
@@ -161,7 +191,7 @@ export function parseTranscript(input, state, { sessionId, projectDir, agentId =
   const ensureTurn = (ts) => {
     if (!st.turn) {
       st.turnSeq += 1;
-      st.turn = newTurn(st.turnSeq, 'other', ts, st.lastTurnEndedAt);
+      st.turn = newTurn(st.turnSeq, 'other', ts, st.lastTurnEndedAt, st.meta?.starting_branch ?? null);
     }
     return st.turn;
   };
@@ -201,7 +231,7 @@ export function parseTranscript(input, state, { sessionId, projectDir, agentId =
           touch(st.turn);
         }
         st.turnSeq += 1;
-        st.turn = newTurn(st.turnSeq, originOf(kind), j.timestamp, st.lastTurnEndedAt);
+        st.turn = newTurn(st.turnSeq, originOf(kind), j.timestamp, st.lastTurnEndedAt, typeof j.gitBranch === 'string' ? j.gitBranch : null);
         touch(st.turn);
         continue;
       }
@@ -263,6 +293,8 @@ export function parseTranscript(input, state, { sessionId, projectDir, agentId =
         t.context_tokens_at_start = call.input_tokens + call.cache_read_tokens + cw;
       }
       if (t && call.skill) {
+        t.sig ??= newSignals();
+        if (!t.sig.skills.includes(call.skill)) t.sig.skills.push(call.skill);
         const s = (st.skills[call.skill] ??= { invocations: 0, first_turn: t.turn_seq, lastTurn: 0 });
         if (s.lastTurn !== t.turn_seq) {
           s.invocations += 1;
@@ -281,6 +313,17 @@ export function parseTranscript(input, state, { sessionId, projectDir, agentId =
       const key = `${tool}\u0000${family}`;
       const row = (t.tools[key] ??= { tool, command_family: family, calls: 0, result_bytes: 0, rtk_calls: 0, subagent_type: null });
       row.calls += 1;
+      t.sig ??= newSignals();
+      if (!t.sig.tools.includes(tool)) t.sig.tools.push(tool);
+      if (tool === 'Bash') {
+        const tags = bashTags(c.input?.command);
+        const entry = { family, tags };
+        if (t.sig.bash.length < BASH_SIGNAL_CAP && !t.sig.bash.some((b) => b.family === family && b.tags.join() === tags.join())) t.sig.bash.push(entry);
+        for (const p of bashPaths(c.input?.command)) notePath(st, t, p, j.cwd);
+      } else if (FILE_TOOLS.has(tool)) {
+        const p = toolPath(c.input);
+        if (typeof p === 'string') notePath(st, t, p, j.cwd, { edit: EDIT_TOOLS.has(tool) });
+      }
       if (tool === 'Bash' && isRtk(c.input?.command)) row.rtk_calls += 1;
       if (c.id) st.pending[c.id] = [t.turn_seq, tool, family];
       if ((tool === 'Agent' || tool === 'Task') && c.id) st.agentSpawns[c.id] = t.turn_seq;
@@ -314,6 +357,7 @@ export function parseTranscript(input, state, { sessionId, projectDir, agentId =
       })),
     },
     state: st,
+    signals: Object.fromEntries(turns.map((x) => [x.turn_seq, structuredClone(x.sig ?? newSignals())])),
   };
 }
 

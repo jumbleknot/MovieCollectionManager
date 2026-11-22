@@ -103,7 +103,8 @@ export function tempConfigDir() {
 
 export function envFor(configDir, store, extra = {}) {
   const env = { ...process.env, CLAUDE_CONFIG_DIR: configDir, ...extra };
-  for (const k of ['MCM_USAGE_INGEST_URL', 'MCM_USAGE_TOKEN_URL', 'MCM_USAGE_CLIENT_SECRET']) delete env[k];
+  // Hermetic: no real store config, and no forge credential (US3 outcome collection would call the forge).
+  for (const k of ['MCM_USAGE_INGEST_URL', 'MCM_USAGE_TOKEN_URL', 'MCM_USAGE_CLIENT_SECRET', 'MCM_FORGE_TOKEN', 'MCM_FORGE_ISSUE_TOKEN']) delete env[k];
   if (store) {
     env.MCM_USAGE_INGEST_URL = store.ingestUrl;
     env.MCM_USAGE_TOKEN_URL = store.tokenUrl;

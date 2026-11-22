@@ -1,0 +1,24 @@
+# Feature 105 US3 (T055): the Claude Code usage store as a Grafana datasource. Mounted as ONE file
+# beside the image's own provisioning (a directory mount would hide otel-lgtm's datasources).
+# Login: usage_reader, which can read the usage views only (030-roles.sql). The password is the
+# Komodo Variable DEV_USAGE_READER_PASSWORD, passed to otel-lgtm as an environment variable and
+# interpolated by Grafana at provisioning time; it is never written here.
+apiVersion: 1
+datasources:
+  - name: Claude Code usage
+    uid: dev-usage-store
+    type: grafana-postgresql-datasource
+    access: proxy
+    url: dev-usage-postgres:5432
+    user: usage_reader
+    editable: false
+    # Never the default: Explore keeps the image's own default. The file is named zz-… so it also
+    # loads AFTER the image's datasources (Grafana makes the first one loaded the default when none is).
+    isDefault: false
+    jsonData:
+      database: dev_usage
+      sslmode: disable
+      postgresVersion: 1800
+      timescaledb: false
+    secureJsonData:
+      password: $DEV_USAGE_READER_PASSWORD
