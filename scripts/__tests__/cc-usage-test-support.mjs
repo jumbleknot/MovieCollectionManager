@@ -22,7 +22,7 @@ export const SESSION = {
 };
 export const PROJECT = { A: '-workspaces-mcm', B: '-home-coder-worktrees-feat-a', C: '-workspaces-mcm', D: '-workspaces-mcm' };
 
-export async function startFakeStore({ failTables = [] } = {}) {
+export async function startFakeStore({ failTables = [], views = {} } = {}) {
   const tables = new Map(); // table → Map(key → row)
   const requests = [];
   const server = createServer((req, res) => {
@@ -44,6 +44,22 @@ export async function startFakeStore({ failTables = [] } = {}) {
       }
       if (req.headers.authorization !== 'Bearer tok-test') {
         res.writeHead(401);
+        res.end();
+        return;
+      }
+      if (req.method === 'GET') {
+        // Canned view/table rows (US2+). Only `col=eq.value` filters are applied, as PostgREST would;
+        // every other filter is left to the integration tier, and tests assert the query that was sent.
+        let out = views[table] ?? [...(tables.get(table)?.values() ?? [])];
+        for (const [col, v] of u.searchParams) {
+          if (v.startsWith('eq.') && !['order', 'limit', 'select'].includes(col)) out = out.filter((r) => String(r[col]) === v.slice(3));
+        }
+        res.writeHead(200, { 'content-type': 'application/json' });
+        res.end(JSON.stringify(out));
+        return;
+      }
+      if (req.method === 'PATCH') {
+        res.writeHead(204);
         res.end();
         return;
       }

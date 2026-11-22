@@ -227,3 +227,45 @@ it('an expired token is refused', async () => {
 });
 
 test.after(() => { if (tokenDir) rmSync(tokenDir, { recursive: true, force: true }); });
+
+// --- US2 read paths (T038): the queries `sessions`, `trend`, `compare`, `now` and `tag` send -------
+it('US2: filtered, ordered, limited reads of v_session_totals and v_turn_totals return the seeded rows', async () => {
+  await token();
+  const branch = `it-us2-${randomUUID().slice(0, 8)}`;
+  const ids = [randomUUID(), randomUUID(), randomUUID()];
+  for (const [i, sid] of ids.entries()) {
+    const day = `2026-11-1${i + 1}`;
+    const r = await sendBatches({
+      sessions: [session(sid, { starting_branch: branch, started_at: `${day}T09:00:00Z` })],
+      turns: [1, 2].map((turn_seq) => ({ session_id: sid, turn_seq, origin: 'human', started_at: `${day}T09:0${turn_seq}:00Z`, ended_at: `${day}T09:0${turn_seq}:30Z`, idle_gap_s: 0, context_tokens_at_start: 5, areas: turn_seq === 1 ? ['docs'] : (i === 0 ? ['scripts'] : []), rereads: 0 })),
+      model_calls: [call(sid, 10 + i, { turn_seq: 1 }), call(sid, 20 + i, { turn_seq: 2, agent_id: 'sub' })],
+    }, shipOpts(sid));
+    assert.deepEqual(r, { ok: true, spooled: false });
+  }
+  const json = async (path) => { const r = await req(path); assert.equal(r.status, 200, `${path} → ${r.status}`); return r.json(); };
+
+  const two = await json(`/v_session_totals?starting_branch=eq.${branch}&order=started_at.desc&limit=2`);
+  assert.deepEqual(two.map((s) => s.session_id), [ids[2], ids[1]], 'ordered newest first, limited to 2');
+  assert.equal(two[0].turns, 2);
+  assert.equal(two[0].input_tokens, 12 + 22);
+  assert.equal(two[0].subagent_tokens > 0, true);
+
+  const scripts = await json(`/v_session_totals?starting_branch=eq.${branch}&areas=cs.%7Bscripts%7D`);
+  assert.deepEqual(scripts.map((s) => s.session_id), [ids[0]], 'areas: the union of the turns\' areas, filterable');
+  const since = await json(`/v_session_totals?starting_branch=eq.${branch}&started_at=gte.2026-11-12T00:00:00Z`);
+  assert.equal(since.length, 2);
+
+  const turns = await json(`/v_turn_totals?session_id=eq.${ids[0]}&order=turn_seq.asc`);
+  assert.deepEqual(turns.map((t) => [t.turn_seq, t.areas, t.input_tokens]), [[1, ['docs'], 10], [2, ['scripts'], 20]]);
+});
+
+it('US2: PATCH sessions sets manual_tag; a column sessions does not have is refused', async () => {
+  await token();
+  const sid = randomUUID();
+  await sendBatches({ sessions: [session(sid)] }, shipOpts(sid));
+  const ok = await req(`/sessions?session_id=eq.${sid}`, { method: 'PATCH', body: JSON.stringify({ manual_tag: 'refactor-x' }) });
+  assert.equal(ok.status, 204);
+  assert.equal(psql(`SELECT manual_tag FROM usage.sessions WHERE session_id = '${sid}'`).trim(), 'refactor-x');
+  const bad = await req(`/sessions?session_id=eq.${sid}`, { method: 'PATCH', body: JSON.stringify({ input_tokens: 1 }) });
+  assert.equal(bad.status, 400, 'sessions has no token columns to change');
+});

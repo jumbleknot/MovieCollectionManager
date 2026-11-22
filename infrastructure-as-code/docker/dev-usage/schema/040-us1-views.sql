@@ -26,7 +26,11 @@ SELECT
            FILTER (WHERE c.agent_id IS NOT NULL), 0)::bigint AS subagent_tokens,
   COUNT(c.message_id)::bigint AS model_calls,
   (SELECT COUNT(*) FROM usage.turns t WHERE t.session_id = s.session_id)::bigint AS turns,
-  (SELECT t.context_tokens_at_start FROM usage.turns t WHERE t.session_id = s.session_id ORDER BY t.turn_seq LIMIT 1) AS floor_tokens
+  (SELECT t.context_tokens_at_start FROM usage.turns t WHERE t.session_id = s.session_id ORDER BY t.turn_seq LIMIT 1) AS floor_tokens,
+  -- US2 (`sessions --area`): the union of the turns' areas. LAST, because CREATE OR REPLACE VIEW can
+  -- only append columns to a view that already exists on a running store.
+  (SELECT COALESCE(array_agg(DISTINCT a ORDER BY a), '{}') FROM usage.turns t, unnest(t.areas) AS a
+    WHERE t.session_id = s.session_id) AS areas
 FROM usage.sessions s
 LEFT JOIN usage.model_calls c ON c.session_id = s.session_id
 GROUP BY s.session_id;

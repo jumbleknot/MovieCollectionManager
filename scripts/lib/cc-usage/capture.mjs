@@ -15,6 +15,7 @@ import {
 } from './local-state.mjs';
 import { obtainAccessToken, tokenState } from './obtain-access-token.mjs';
 import { captureStatus, initialState, parseTranscript, summarizeSession } from './parse-transcript.mjs';
+import { emptySummary, foldSummary, parseSessionFiles } from './session-summary.mjs';
 import { sendBatches, shipRecords } from './ship-records.mjs';
 import { listSessions, sessionPaths } from './transcript-files.mjs';
 
@@ -160,10 +161,12 @@ export async function shipSession(cfg, { projectDir, sessionId }, how = {}) {
       records.toolUse.push(...r.records.toolUse);
       records.skillUse.push(...r.records.skillUse);
     }
+    const subBufs = [];
     const reasons = [...(st.files.main?.reasons ?? [])];
     const add = (r) => { if (!reasons.includes(r)) reasons.push(r); };
     for (const s of subagents) {
       const tbuf = readOrNull(s.transcriptPath);
+      subBufs.push({ agentId: s.agentId, buf: tbuf });
       if (!tbuf) {
         add('subagent-transcript-missing');
         continue;
@@ -194,6 +197,14 @@ export async function shipSession(cfg, { projectDir, sessionId }, how = {}) {
       capture_status: captureStatus({ hasMain: Boolean(mainBuf), reasons, ended: Boolean(st.endedAt) }),
       partial_reasons: reasons,
     };
+    // The incremental summary `now` reads (US2, T040). A session shipped before summaries existed, or
+    // whose summary does not cover exactly the previous offsets, is rebuilt once from those bytes.
+    const prevOffsets = Object.fromEntries(Object.entries(prev.files ?? {}).map(([k, v]) => [k, v?.offset ?? 0]));
+    const covered = prev.summary && Object.entries(prevOffsets).every(([k, o]) => (prev.summary.offsets?.[k] ?? -1) === o);
+    const summaryBase = covered ? prev.summary : Object.keys(prevOffsets).length
+      ? foldSummary(emptySummary(), parseSessionFiles({ sessionId, projectDir, mainBuf, subagents: subBufs, limits: prevOffsets }), prevOffsets)
+      : emptySummary();
+    st.summary = foldSummary(summaryBase, records, Object.fromEntries(Object.entries(st.files).map(([k, v]) => [k, v?.offset ?? 0])));
     const sessionKey = JSON.stringify(session);
     const hasNew = records.modelCalls.length + records.turns.length + records.toolUse.length + records.skillUse.length > 0;
     if (!hasNew && sessionKey === prev.lastSessionKey) {
