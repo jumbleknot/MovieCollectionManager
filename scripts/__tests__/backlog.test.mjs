@@ -652,3 +652,59 @@ test('a changed timestamp is reported with both values and the remedy, not silen
   assert.match(msg, /show 4/);
   assert.match(msg, /Not overwriting/i);
 });
+
+// --- exit path (Windows abort) -------------------------------------------------------------------
+// `process.exit()` while undici keep-alive sockets from the forge fetches are still closing aborts
+// the process on Windows (`Assertion failed: !(handle->flags & UV_HANDLE_CLOSING)`, exit
+// 0xC0000409, or 127 under Git Bash) although the output was correct. Callers branch on the exit
+// code, so it must survive. Same fix and guard as ci-status.mjs `exitWith` / `(uu4)`.
+
+const BACKLOG_SCRIPT = join(HERE, '..', 'backlog.mjs');
+
+test('(ex1) a successful network read exits 0, not a teardown abort', async () => {
+  const { createServer } = await import('node:http');
+  const { spawn, execFileSync } = await import('node:child_process');
+  const issue = { number: 1, title: 'exit-path probe', state: 'open', labels: [], body: 'b', html_url: 'x' };
+  const server = createServer((req, res) => {
+    res.setHeader('content-type', 'application/json');
+    res.end(JSON.stringify(/\/issues\/1$/.test(req.url.split('?')[0]) ? issue : []));
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const repoDir = mkdtempSync(join(tmpdir(), 'backlog-exit-'));
+  try {
+    execFileSync('git', ['init', '-q'], { cwd: repoDir });
+    execFileSync('git', ['remote', 'add', 'origin', `http://127.0.0.1:${server.address().port}/o/r.git`], { cwd: repoDir });
+    const run = () =>
+      new Promise((resolveRun) => {
+        const child = spawn(process.execPath, [BACKLOG_SCRIPT, 'show', '1'], {
+          cwd: repoDir,
+          env: { ...process.env, MCM_FORGE_ISSUE_TOKEN: 'fake-token-for-test', MCM_FORGE_TOKEN: '' },
+        });
+        let out = '';
+        child.stdout.on('data', (d) => (out += d));
+        child.stderr.on('data', (d) => (out += d));
+        child.on('close', (code, signal) => resolveRun({ code, signal, out }));
+      });
+    // The abort is a race; on the affected host it hit 4/4 runs, so three attempts cannot all miss it.
+    for (let i = 0; i < 3; i++) {
+      const r = await run();
+      assert.equal(r.code, 0, `run ${i + 1}: expected exit 0, got ${r.code} (signal=${r.signal})\n${r.out}`);
+      assert.match(r.out, /exit-path probe/);
+    }
+  } finally {
+    server.closeAllConnections?.();
+    server.close();
+    rmSync(repoDir, { recursive: true, force: true });
+  }
+});
+
+test('(ex2) the exit path does not call process.exit() directly', () => {
+  // Guard the FIX, not just the symptom: the abort is Windows-only, so on Linux CI (ex1) passes either
+  // way and only this assertion stops `.then((code) => process.exit(code))` from coming back.
+  const src = readFileSync(BACKLOG_SCRIPT, 'utf8');
+  // assert.ok, not doesNotMatch/match: those print the whole script on failure.
+  assert.ok(!/\.then\(\s*\(?code\)?\s*=>\s*process\.exit/.test(src), 'process.exit() is back on the resolve path');
+  assert.ok(!/^\s*process\.exit\(e instanceof/m.test(src), 'process.exit() is back on the reject path');
+  assert.ok(/process\.exitCode = code/.test(src), 'exitWith no longer sets process.exitCode');
+  assert.ok(/setTimeout\(\(\) => process\.exit\(code\), \d+\)\.unref\(\)/.test(src), "the force-exit fallback must stay unref'd");
+});
