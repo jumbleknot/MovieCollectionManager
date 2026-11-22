@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: CI evidence pipeline (producing the evidence)
-description: How CI produces the evidence a session reads back — the per-job failure digest with its three channels (PR comment, digest inside the bundle, and the green-run counts bundle), the 5 MB ci-failures bundle with its recursive packing and trimming rules, per-step durations and the generated ceiling table with the guard that makes a row agree with its own basis, and the coverage, wrapper and CRLF gates that stop the machinery eroding. The producing half of the CI-diagnostics pair; ci-diagnostics.md covers reading it.
+description: How CI produces the evidence a session reads back — the per-job failure digest with its three channels (PR comment, digest inside the bundle, and the green-run counts bundle), the 5 MB repo-scoped evidence bundle (`<repo>-ci-failures`) with its recursive packing and trimming rules, per-step durations and the generated ceiling table with the guard that makes a row agree with its own basis, and the coverage, wrapper and CRLF gates that stop the machinery eroding. The producing half of the CI-diagnostics pair; ci-diagnostics.md covers reading it.
 resource: docs/runbooks/ci-evidence-pipeline.md
-resource-sha256: 0be5f9b9e2c9e8915ca6fad42ff54159c29db64985622f4901997216734da271
+resource-sha256: 6f4229b4e0ef43a98f6c5264ac44270cccdd830e938a5f466b7babf75169597c
 tags: [ci, forgejo, evidence, diagnostics, tooling, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-14T22:34:19.980Z
+timestamp: 2026-11-22T17:30:53.195Z
 ---
 
 # CI evidence pipeline (producing the evidence)
@@ -33,7 +33,7 @@ flowchart TD
   CH -->|"pull_request"| PR["PR comment, upserted by job marker"]
   CH -->|"push or other"| BUN["digest.md inside the bundle"]
   CH -->|"cancelled run"| NON["nothing published"]
-  DIG -->|"job status failure"| B["ci-failures package — runId--jobSlug, 5 MB cap, 30 days"]
+  DIG -->|"job status failure"| B["mcm-ci-failures package — runId--jobSlug, 5 MB cap, 30 days"]
   DIG -->|"job status success"| CNT["counts-only bundle — no comment, no health, no container logs"]
   CNT --> B
   LOG --> DUR["step-durations.tsv, a separate file in the bundle"]
@@ -135,7 +135,8 @@ through unredacted and were not caught by the backstop either.
 The digest is deliberately small. For a failure its excerpt cannot explain, the reader fetches the
 bundle (`ci-status … --full`); the how is the [sibling page's](./ci-diagnostics.md) business.
 
-- Stored in the generic package registry as `ci-failures` / **`{runId}--{jobSlug}`** — **per run *and*
+- Stored in the generic package registry as `<repo>-ci-failures` (here `mcm-ci-failures`; the shared
+  `ci-failures` before feature 106) / **`{runId}--{jobSlug}`** — **per run *and*
   job**, so two jobs failing in one run keep separate bundles instead of overwriting each other.
 - **5 MB cap**, sized for **agent context**, not link time. (It was ≈40 s to retrieve while the tailnet
   was throttled; post-fix that is under a second, so context is the only binding constraint.)

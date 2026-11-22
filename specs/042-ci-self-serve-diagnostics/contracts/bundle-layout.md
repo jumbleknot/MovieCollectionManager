@@ -7,12 +7,18 @@
 Forge **generic package registry**:
 
 ```
-/api/packages/{owner}/generic/ci-failures/{runId}--{jobSlug}/bundle.json.gz
+/api/packages/{owner}/generic/{repo}-ci-failures/{runId}--{jobSlug}/bundle.json.gz
 ```
+
+> **Amended 2026-11-22 (feature 106): the package is repo-scoped, no longer a constant.** It is
+> `<repo>-ci-failures` (lowercased repository name; `mcm-ci-failures` here), because other repositories
+> under the same owner now run this digest. The legacy `ci-failures` is read and pruned during a
+> transition, never written. Naming, transition and its end:
+> [specs/106-repo-scoped-ci-failures/contracts/evidence-package.md](../../106-repo-scoped-ci-failures/contracts/evidence-package.md).
 
 | Component | Value |
 |---|---|
-| Package | `ci-failures` (constant) |
+| Package | `<repo>-ci-failures` (feature 106; was the constant `ci-failures`) |
 | Version | `{runId}--{jobSlug}` — **per run *and* job** |
 | File | `bundle.json.gz` |
 

@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: f97ad390d58a23444dcca44ca44f825b53118f793fd122354f08770350b45298
+resource-sha256: 210dd092e267be48dcf44a95f26f1f59de9b8ad7f618b395581fdc483770e9f5
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-22T16:47:45.632Z
+timestamp: 2026-11-22T18:08:46.893Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -498,8 +498,9 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
     `MCM_DEVCONTAINER_IMAGE`, so no `.env.deploy` names it and `keep:protected` can never cover it: the
     newest **4** or **21 days** is what keeps a developer's pin alive, against the app images' 40 / 30. A
     stale pin must be refreshed from the newest `devcontainer-image` run within 21 days.
-  - **`ci-failures` is pruned elsewhere, so the config only enforces a floor.** `ci-failure-digest.mjs`
-    already deletes its own bundles at **30 days** on every publish; the config's `ci-failures` entry
+  - **Evidence bundles are pruned elsewhere, so the config only enforces a floor.** `ci-failure-digest.mjs`
+    already deletes its own bundles at **30 days** on every publish, in the repo-scoped `mcm-ci-failures`
+    and the draining legacy `ci-failures` (feature 106). The config lists both; each evidence entry
     exists to keep the floor `ci-status durations` needs — 25 runs × every bundle-publishing job, rounded
     up — and its `keepDays` may not fall below the config's `evidenceWindowDays` (45). The job count is
     computed from the workflows, so a new job that publishes a bundle fails the config until the floor is

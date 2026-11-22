@@ -426,8 +426,11 @@ read, no child of that package is deleted (`keep:unverified`).
   real alarm: a deployed or rollback image is gone, or the pin is wrong.
 - Indexes are deleted before their children.
 
-`ci-failures` bundles are pruned by `ci-failure-digest.mjs` itself (30 days). The config only
-enforces the floor that `ci-status durations` needs: 25 runs × every bundle-publishing job.
+Evidence bundles are pruned by `ci-failure-digest.mjs` itself (30 days), in the repo-scoped
+`mcm-ci-failures` and, while it drains, the legacy `ci-failures` (feature 106). The config lists both
+and only enforces the floor that `ci-status durations` needs: 25 runs × every bundle-publishing job,
+for every evidence package (`ci-failures` or `*-ci-failures`). Another repository's `<repo>-ci-failures`
+is not listed, so it is never deleted.
 
 The dev-container digest is pinned only in each developer's gitignored `MCM_DEVCONTAINER_IMAGE`, so git
 cannot protect it. Refresh your pin from the newest `devcontainer-image` run within 21 days.

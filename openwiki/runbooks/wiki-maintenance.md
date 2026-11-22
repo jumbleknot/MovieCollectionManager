@@ -3,10 +3,10 @@ type: Runbook
 title: "OpenWiki knowledge-bundle maintenance"
 description: The derived summary of how the openwiki/ bundle is kept current since feature 098 — the coding session's duty to refresh a derived page in the same PR as its source, the source fingerprint and the V17 check that blocks a stale page, G14's single-human-written-file rule, the retired Claims bookkeeping and unattended machinery, and the generator's remaining role as a manual, dispatch-only rebuild of operator-named pages — with that rebuild's provider table and env-scoping rule, its locked install and release-age cooldown, its job deadline and exit codes, the per-page verification and restore machinery, the single long-lived proposal, the canonical-home rule, the provenance stamp, and the commands that verify the machinery itself.
 resource: docs/runbooks/wiki-maintenance.md
-resource-sha256: 8e680cb731e7038831c20bb4b420fe54a3d8cd19433775c0078c4d63296ea607
+resource-sha256: 0c477c709c2d66165b1b195338e301a94095473e23ed58f4355cbebfc5d2fa53
 tags: [openwiki, okf, documentation, ci, maintenance, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-04T13:09:42.610Z" }
-timestamp: 2026-11-20T03:37:42.482Z
+timestamp: 2026-11-22T17:30:53.427Z
 ---
 
 
@@ -437,7 +437,7 @@ because Fireworks bills reasoning tokens as output tokens.
 
 **The per-call lines themselves are kept in the evidence bundle (item #682), and each names its page
 (item #719).** In CI, each invocation's tap lines are appended to the job's step log `wiki-usage.log`,
-under a `# invocation pages=… effort=…` header, so they arrive in `ci-failures:<runId>--maintain` as
+under a `# invocation pages=… effort=…` header, so they arrive in `mcm-ci-failures:<runId>--maintain` as
 `step:wiki-usage` (`node scripts/ci-status.mjs failure --run <id> --full`; a dispatched run posts no
 commit status, so fetch the bundle from the package list instead). Until 2026-10-10 only the sum
 survived — run 4960 failed after 447 calls with nothing finer to read. Counts, status and timing only,

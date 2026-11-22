@@ -74,7 +74,7 @@ test('(d) a 403 names the scope the endpoint needs, not just the code', () => {
 });
 
 test('(d2) a 401 on the package registry names read:package', () => {
-  const msg = describeAuthFailure(401, '/packages/jumbleknot/generic/ci-failures/1--x');
+  const msg = describeAuthFailure(401, '/packages/jumbleknot/generic/mcm-ci-failures/1--x');
   assert.match(msg, /read:package/);
 });
 
@@ -2048,7 +2048,8 @@ function stubDeployForge({ statuses, runs, bundles = {}, runById = null }) {
     if (/\/actions\/runs\/\d+/.test(u)) return json(runById ?? {});
     if (u.includes('/actions/runs?')) return json({ workflow_runs: runs });
     if (u.endsWith('/status')) return json({ statuses });
-    const b = u.match(/\/generic\/ci-failures\/([^/]+)\/bundle\.json\.gz$/);
+    // Feature 106: the package is repo-scoped (`r-ci-failures` for FAKE_CONN), so match ANY package.
+    const b = u.match(/\/generic\/[^/]+\/([^/]+)\/bundle\.json\.gz$/);
     if (b) {
       const manifest = bundles[b[1]];
       if (!manifest) return { ok: false, status: 404, text: async () => 'not found' };
@@ -2181,4 +2182,99 @@ test('failure on a passed deploy still reports nothing failed', async () => {
     assert.match(out, /No failed jobs/);
     assert.equal(code, 0);
   } finally { restore(); }
+});
+
+// --- Feature 106: read BOTH evidence packages during the transition ---------------------------------
+//
+// New bundles land in `<repo>-ci-failures`; up to 30 days of older ones are still in the legacy
+// `ci-failures`. The reader covers both, by EXACT name (`q=` is a substring search, so it also returns
+// other repositories' `<repo>-ci-failures`), repo-scoped first.
+
+const ciStatus106 = () => import('../ci-status.mjs');
+
+const CONN_106 = { base: 'http://forge.invalid/api/v1', owner: 'jumbleknot', repo: 'mcm', token: 't' };
+
+/** A forge holding generic packages: `{ <package>: { <version>: { bundle?, durations? } } }`. */
+function stubPackageForge(packages) {
+  const realFetch = globalThis.fetch;
+  const fetched = [];
+  const json = (o) => ({ ok: true, status: 200, text: async () => JSON.stringify(o), json: async () => o });
+  const missing = { ok: false, status: 404, text: async () => 'not found', json: async () => ({}) };
+  globalThis.fetch = async (url) => {
+    const u = String(url);
+    fetched.push(u);
+    const list = u.match(/\/api\/v1\/packages\/[^/?]+\?(.*)$/);
+    if (list) {
+      const q = new URLSearchParams(list[1]);
+      if (q.get('page') !== '1') return json([]);
+      // Substring semantics, exactly like the forge: `ci-failures` matches every `*-ci-failures`.
+      const hits = Object.entries(packages).filter(([name]) => name.includes(q.get('q')));
+      return json(hits.flatMap(([name, versions]) => Object.keys(versions).map((version) => ({ name, version, created_at: '2026-11-20T00:00:00Z' }))));
+    }
+    const file = u.match(/\/api\/packages\/[^/]+\/generic\/([^/]+)\/([^/]+)\/([^/]+)$/);
+    if (file) {
+      const entry = packages[file[1]]?.[file[2]];
+      if (!entry) return missing;
+      if (file[3] === 'bundle.json.gz') {
+        if (!entry.bundle) return missing;
+        const gz = gzipSync(JSON.stringify(entry.bundle));
+        return { ok: true, status: 200, arrayBuffer: async () => gz.buffer.slice(gz.byteOffset, gz.byteOffset + gz.length) };
+      }
+      return entry.durations ? { ok: true, status: 200, text: async () => entry.durations } : missing;
+    }
+    throw new Error(`unexpected fetch: ${u}`);
+  };
+  return { fetched, restore: () => { globalThis.fetch = realFetch; } };
+}
+
+test('(106-1) bundle listings: tagged per package, exact name only, repo-scoped wins a duplicate', async () => {
+  const { mergeBundleListings } = await ciStatus106();
+  const merged = mergeBundleListings([
+    { name: 'mcm-ci-failures', items: [{ name: 'mcm-ci-failures', version: '10--a' }, { name: 'mcm-ci-failures', version: '8--a' }] },
+    // What a `q=ci-failures` search really returns: the legacy package AND every `*-ci-failures`.
+    { name: 'ci-failures', items: [
+      { name: 'ci-failures', version: '8--a' },
+      { name: 'ci-failures', version: '7--a' },
+      { name: 'belay-ci-failures', version: '6--a' },
+      { name: 'mcm-ci-failures', version: '10--a' },
+    ] },
+  ]);
+  assert.deepEqual(merged.map((x) => `${x.name}/${x.version}`), ['mcm-ci-failures/10--a', 'mcm-ci-failures/8--a', 'ci-failures/7--a']);
+});
+
+test('(106-2) legacy bundle fallback: new name first, then legacy, then "absent"', async () => {
+  const { fetchBundle } = await ciStatus106();
+  const manifest = { meta: { job: 'app-e2e' }, files: [{ path: 'x.txt', text: 'hi' }] };
+  const { fetched, restore } = stubPackageForge({
+    'mcm-ci-failures': { '20--app-e2e': { bundle: manifest } },
+    'ci-failures': { '19--app-e2e': { bundle: manifest } },
+  });
+  const quietly = async (fn) => { const real = console.log; console.log = () => {}; try { return await fn(); } finally { console.log = real; } };
+  try {
+    const legacy = await quietly(() => fetchBundle(CONN_106, '19', 'app-e2e'));
+    assert.ok(legacy, 'a legacy-only bundle was reported absent');
+    const legacyUrls = fetched.splice(0);
+    assert.deepEqual(legacyUrls.map((u) => u.match(/generic\/([^/]+)\//)[1]), ['mcm-ci-failures', 'ci-failures']);
+
+    assert.ok(await quietly(() => fetchBundle(CONN_106, '20', 'app-e2e')));
+    assert.equal(fetched.splice(0).length, 1, 'a repo-scoped bundle must need ONE request');
+
+    assert.equal(await quietly(() => fetchBundle(CONN_106, '18', 'app-e2e')), null);
+  } finally { restore(); }
+});
+
+test('(106-3) durations across both packages: newest N by run id, each file from its own package', async () => {
+  const { cmdDurations } = await ciStatus106();
+  const d = { durations: '' };
+  const { fetched, restore } = stubPackageForge({
+    'mcm-ci-failures': { '10--app-e2e': d, '9--app-e2e': d },
+    'ci-failures': { '8--app-e2e': d, '7--app-e2e': d },
+    'belay-ci-failures': { '11--app-e2e': d },
+  });
+  try {
+    const real = console.log; console.log = () => {};
+    try { await cmdDurations({ job: 'app-e2e', runs: 3 }, CONN_106); } finally { console.log = real; }
+  } finally { restore(); }
+  const files = fetched.filter((u) => /\/api\/packages\//.test(u)).map((u) => u.match(/generic\/([^/]+\/[^/]+)\//)[1]);
+  assert.deepEqual(files, ['mcm-ci-failures/10--app-e2e', 'mcm-ci-failures/9--app-e2e', 'ci-failures/8--app-e2e']);
 });

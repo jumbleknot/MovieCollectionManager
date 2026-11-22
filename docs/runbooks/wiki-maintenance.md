@@ -434,9 +434,9 @@ rate limiting under page concurrency shows up there first.
 
 **The per-call lines themselves are kept in the evidence bundle (item #682), and each names its page
 (item #719).** In CI, each invocation's tap lines are appended to the job's step log `wiki-usage.log`,
-under a `# invocation pages=… effort=…` header, so they arrive in `ci-failures:<runId>--maintain` as
+under a `# invocation pages=… effort=…` header, so they arrive in `mcm-ci-failures:<runId>--maintain` as
 `step:wiki-usage` (`node scripts/ci-status.mjs failure --run <id> --full`; a dispatched run posts no commit
-status, so fetch `…/generic/ci-failures/<runId>--maintain/bundle.json.gz` from the package list instead).
+status, so fetch `…/generic/mcm-ci-failures/<runId>--maintain/bundle.json.gz` from the package list instead).
 Until 2026-10-10 only the sum survived — run 4960 failed after 447 calls with nothing finer to read.
 
 Four page workers run concurrently, so a line is useful only if it says whose call it was. A page worker's

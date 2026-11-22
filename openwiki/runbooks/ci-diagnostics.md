@@ -3,10 +3,10 @@ type: Runbook
 title: CI self-serve diagnostics
 description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the one pinned Trivy installer all three scanning workflows share, and the labelled container holds that stop another run's prune deleting the scan tags, the event-versus-trigger_event split (including which run posted a check) and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
-resource-sha256: 9635154f935c24d606d24d8eab1a80517abe7af2568088fa650389864ba1bfc1
+resource-sha256: 2e4b8a10ed3e591be250211a366808403e69ffc951f4233604a719d951af4c38
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-19T11:32:20.062Z
+timestamp: 2026-11-22T17:30:53.080Z
 ---
 
 # CI self-serve diagnostics
@@ -94,6 +94,14 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
 
 ## Gotchas
 
+- **The evidence package is repo-scoped: `<repo>-ci-failures`, here `mcm-ci-failures` (feature 106).**
+  It was the owner-level `ci-failures`, shared with BELAY once BELAY ran the same digest, so each
+  repository could prune the other's evidence and read the other's bundles. `bundlePackageFor()` in
+  `ci-failure-digest.mjs` derives it from `GITHUB_REPOSITORY` or the `origin` remote, and fails rather
+  than fall back. During the transition `ci-status` reads the new package and then the legacy one, and
+  the digest's 30-day prune drains the legacy one. Every listing filters by **exact** name, because the
+  forge's `q=` is a substring search. The legacy name goes once it lists empty, no earlier than
+  cutover + 30 days; the runbook's "Evidence package name" lists the three removals.
 - **A dispatched `cd-deploy` run posts NO commit status — so its outcome is resolved from the RUNS
   (item 823, fixed 2026-10-31).** `trigger-cd` dispatches `cd-deploy.yml`, and the dispatched run
   attaches nothing to the commit. Until item 823 a **failed deploy was invisible to every command here**:
@@ -967,11 +975,12 @@ The load-bearing properties, each of which is a way the sweep could destroy some
   that has already been removed.
 - **The config is validated rather than half-read** (an unknown key, a duplicate package, `keepAll`
   alongside a window, or a `mode` other than `report`/`apply` is refused), and it enforces the floor
-  that `ci-status durations` needs on the `ci-failures` bundles — which `ci-failure-digest.mjs` itself
+  that `ci-status durations` needs on the evidence bundles (`mcm-ci-failures`, and the legacy `ci-failures`
+  while it drains) — which `ci-failure-digest.mjs` itself
   already prunes at 30 days.
 - **The GENERIC packages prune themselves at publish time; this sweep owns only the container images.**
   There is no scheduled job for either, so each publisher deletes opportunistically as it writes:
-  `ci-failure-digest.mjs` drops `ci-failures` bundle versions past its own 30-day `RETENTION_DAYS`
+  `ci-failure-digest.mjs` drops evidence-bundle versions (both packages, by exact name) past its own 30-day `RETENTION_DAYS`
   (`selectExpiredVersions`, which KEEPS a version whose `created_at` will not parse, because deleting
   evidence on a parse failure is the destructive direction), and `scripts/cd/publish-apk.mjs` — run by
   `cd-deploy`'s `prod-apk` step on every deploy — keeps the newest **5** `mcm-app-android` versions by
@@ -980,9 +989,10 @@ The load-bearing properties, each of which is a way the sweep could destroy some
   installable APK. That retention is count-based for the same reason the container rules are
   reference-based: the two packages answer different questions about what "still needed" means, and a
   prune failure in either is logged and swallowed rather than allowed to red a deploy.
-  The `ci-failures` entry in the retention config is therefore a **floor**, not the deleter — it exists
+  The evidence entries in the retention config are therefore a **floor**, not the deleter — it exists
   so a future config edit cannot shrink the window below what `ci-status durations` samples — and its
-  `evidenceWindowDays: 45` is the value a `ci-failures` `keepDays` below which is refused outright.
+  `evidenceWindowDays: 45` is the value an evidence package's `keepDays` (`ci-failures` or any `*-ci-failures`) below which is
+  refused outright.
 
 The sweep uses its own `write:package`-only credential (`REGISTRY_CLEANUP_TOKEN`), separate from the CI
 push token (`actions-ci-push`) so rotating either cannot break the other; a report can also run with the

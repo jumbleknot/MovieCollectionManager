@@ -13,7 +13,7 @@
 # A package not listed here is reported and never deleted.
 mode: apply
 owner: jumbleknot
-# The evidence the ci-failures bundles must cover. A ci-failures window below it is refused.
+# The evidence the evidence bundles must cover. An evidence package's window below it is refused.
 evidenceWindowDays: 45
 packages:
   # The six app images: R13's newest 40 or 30 days, whichever keeps more, plus the protected set.
@@ -32,6 +32,12 @@ packages:
   # bundle-publishing jobs = 625, rounded up to 650 (item #954 added `mc-service-checks-integration`).
   # The script refuses anything below the product, so a new job that publishes a bundle fails the
   # config until this is raised.
+  # Feature 106: the digest writes the REPO-SCOPED `mcm-ci-failures` (BELAY, under the same owner, writes
+  # its own `belay-ci-failures`, which this config does not list and so never deletes). The legacy shared
+  # `ci-failures` is no longer written; it drains through the digest's 30-day prune, which keepNewest here
+  # does not block. Both are held to the same floor. Drop the legacy entry once `ci-failures` lists empty,
+  # no earlier than cutover + 30 days (docs/runbooks/ci-diagnostics.md, "Evidence package name").
+  - { name: mcm-ci-failures, type: generic, keepNewest: 650, keepDays: 45 }
   - { name: ci-failures, type: generic, keepNewest: 650, keepDays: 45 }
   # Release APKs are not rebuildable.
   - { name: mcm-app-android, type: generic, keepAll: true }
