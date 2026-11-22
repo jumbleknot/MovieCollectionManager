@@ -1958,3 +1958,35 @@ test('(106f) prune both names: lists each package by exact name and deletes each
     'https://forge.test/api/v1/packages/jumbleknot/generic/mcm-ci-failures/9--a',
   ]);
 });
+
+// --- The failing step's own log is never held back (reported from BELAY, 2026-11-22) -------------
+//
+// Every `step:` source ranks 0 in rankSource, so step logs tie and sort by NAME — and the digest shows
+// only DIGEST_MAX_SOURCES of them. With four or more wrapped steps, a failing step whose name sorts last
+// was cut: BELAY's digest named `guardrails-test` as the failing step and showed install-deps,
+// install-pnpm and lint instead, holding back the one log that said why.
+
+const shownSources = (markdown) => [...markdown.matchAll(/^\*\*`([^`]+)`/gm)].map((m) => m[1]);
+const fourSteps = [
+  { source: 'step:guardrails-install-deps', text: 'deps ok' },
+  { source: 'step:guardrails-install-pnpm', text: 'pnpm ok' },
+  { source: 'step:guardrails-lint', text: 'lint ok' },
+  { source: 'step:guardrails-test', text: 'not ok 7 - the assertion that explains the failure' },
+];
+
+test('(fs1) THE BUG: the failing step sorts last of four, and its log is still shown, FIRST', () => {
+  const { markdown } = buildDigest(ctx({ step: 'guardrails-test' }), { excerpts: fourSteps });
+  assert.match(markdown, /the assertion that explains the failure/, 'the failing step\'s log was held back');
+  assert.deepEqual(shownSources(markdown), ['step:guardrails-test', 'step:guardrails-install-deps', 'step:guardrails-install-pnpm']);
+  assert.match(markdown, /_1 more source\(s\) held back/);
+});
+
+test('(fs2) no failing step recorded: the ranked order is left exactly as it arrived', () => {
+  const { markdown } = buildDigest(ctx({ step: '' }), { excerpts: fourSteps });
+  assert.deepEqual(shownSources(markdown), ['step:guardrails-install-deps', 'step:guardrails-install-pnpm', 'step:guardrails-lint']);
+});
+
+test('(fs3) a failing step with no excerpt of its own (an unwrapped step) leaves the order unchanged', () => {
+  const { markdown } = buildDigest(ctx({ step: 'Run agent mobile flows (Maestro)' }), { excerpts: fourSteps });
+  assert.deepEqual(shownSources(markdown), ['step:guardrails-install-deps', 'step:guardrails-install-pnpm', 'step:guardrails-lint']);
+});
