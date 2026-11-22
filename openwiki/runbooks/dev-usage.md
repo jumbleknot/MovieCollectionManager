@@ -3,9 +3,9 @@ type: Runbook
 title: Claude Code token usage capture (prod-dev-usage)
 description: How every dev-container Claude Code session ships per-session, per-turn and per-tool token counts — never content — through committed lifecycle hooks and scripts/cc-usage.mjs to the tailnet-only prod-dev-usage store (Postgres + PostgREST on 19040, Keycloak client-credentials tokens), the operator setup that turns it on, what doctor reports, and the traps — best-effort SessionEnd, the per-session lock and spool order, the JWKS fetched only at deploy, and not-configured meaning do nothing.
 resource: docs/runbooks/dev-usage.md
-resource-sha256: b38ec0279a6cb895fd1cdf7da025830ec7b95c9ac434e5f8b2148eaeb43967b4
+resource-sha256: 92b855152547d340d853c49ed801a543129ae6ec4352a0c1f6927f8ec964d8fe
 tags: [claude-code, usage, tokens, postgrest, keycloak, devcontainer, runbook]
-timestamp: 2026-11-22T01:41:45.381Z
+timestamp: 2026-11-22T03:20:26.350Z
 ---
 
 # Claude Code token usage capture (prod-dev-usage)

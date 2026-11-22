@@ -101,3 +101,8 @@ test('wired into capture: shipped turns carry feature_id, attribution_rule and a
     await store.close();
   }
 });
+
+test('T078: a first turn in a detached-HEAD checkout is no feature, never a "HEAD" feature', () => {
+  assert.deepEqual(attributeTurns([{ turn_seq: 1, roots: {}, startBranch: 'HEAD' }], { resolveBranch }),
+    [{ turn_seq: 1, branch: null, attribution_rule: 'main' }]);
+});

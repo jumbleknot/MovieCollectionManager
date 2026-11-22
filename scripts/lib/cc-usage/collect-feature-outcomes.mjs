@@ -49,7 +49,7 @@ const CLOSES = /\b(?:close[sd]?|fix(?:e[sd])?|resolve[sd]?)\s+#(\d+)/gi;
  * @returns {Promise<object|null>} the row to upsert, or null when collected less than 15 min ago
  */
 export async function collectOutcomes(feature, deps) {
-  const { now, worktree, specDirs, readFile, git, forge } = deps;
+  const { now, worktree, repo = null, specDirs, readFile, git, forge } = deps;
   if (feature.collected_at && now - Date.parse(feature.collected_at) < COLLECT_INTERVAL_MS) return null;
   const fjText = worktree ? readFile(join(worktree, '.specify', 'feature.json')) : null;
   let featureJson = null;
@@ -61,7 +61,9 @@ export async function collectOutcomes(feature, deps) {
   row.tasks_total = null;
   row.tasks_done = null;
   if (spec_dir) {
-    const text = (worktree && readFile(join(worktree, spec_dir, 'tasks.md'))) ?? null;
+    // From the feature's worktree; once it is gone, from the repo checkout (T078). feature.json above is
+    // read from the worktree ONLY: the main checkout's describes whatever spec is current THERE.
+    const text = (worktree && readFile(join(worktree, spec_dir, 'tasks.md'))) || (repo && readFile(join(repo, spec_dir, 'tasks.md'))) || null;
     if (text !== null) {
       const t = countTasks(text);
       row.tasks_total = t.total;
@@ -139,7 +141,8 @@ export function outcomeReaders({ repo, env = process.env, fetch = globalThis.fet
       },
     },
     forge: {
-      prsForBranch: async (b) => (await get(`/pulls?state=all&limit=50&sort=recentupdate`)).filter((p) => p?.head?.ref === b)
+      // head.label keeps the branch name; head.ref becomes refs/pull/<n>/head once the branch is deleted (T078).
+      prsForBranch: async (b) => (await get(`/pulls?state=all&limit=50&sort=recentupdate`)).filter((p) => p?.head?.label === b || p?.head?.ref === b)
         .map((p) => ({ number: p.number, state: p.state, merged: Boolean(p.merged), merged_at: p.merged_at ?? null, created_at: p.created_at, body: p.body ?? '', head_sha: p.head?.sha ?? null, merge_commit_sha: p.merge_commit_sha ?? null, merge_base: p.merge_base ?? null })),
       // One "run" per pushed commit of the PR (the most recent 10): red when any status failed, green
       // when every status passed; pending commits count as neither.
