@@ -85,3 +85,26 @@ test('collection is skipped when done less than 15 minutes ago', async () => {
 test('collected_at is stamped', async () => {
   assert.equal((await collectOutcomes(base(), fakes())).collected_at, new Date(NOW).toISOString());
 });
+
+// --- T078: found by the first production sweep after US3 (2026-11-22) ---------------------------------
+
+test('a merged PR is found by head.label: the forge rewrites head.ref to refs/pull/<n>/head once the branch is deleted', async () => {
+  const { outcomeReaders } = await import('../lib/cc-usage/collect-feature-outcomes.mjs');
+  const pulls = [
+    { number: 9, state: 'closed', merged: true, merged_at: '2026-11-21T10:00:00Z', created_at: '2026-11-21T09:00:00Z', body: '', head: { label: 'feat-x', ref: 'refs/pull/9/head', sha: 'a'.repeat(40) } },
+    { number: 8, state: 'open', merged: false, created_at: '2026-11-21T08:00:00Z', body: '', head: { label: 'other', ref: 'other', sha: 'b'.repeat(40) } },
+  ];
+  const fetch = async (url) => new Response(JSON.stringify(new URL(url).pathname.endsWith('/pulls') ? pulls : []), { status: 200 });
+  const r = outcomeReaders({ repo: process.cwd(), env: { MCM_FORGE_TOKEN: 'tok' }, fetch });
+  assert.deepEqual((await r.forge.prsForBranch('feat-x')).map((p) => p.number), [9]);
+});
+
+test('with its worktree gone, a spec feature\'s tasks are read from the repo checkout (feature.json never is)', async () => {
+  const deps = { ...fakes({ files: {
+    '/repo/specs/feat-x/tasks.md': '- [x] T001 a\n- [x] T002 b\n- [ ] T003 c\n',
+    '/repo/.specify/feature.json': JSON.stringify({ feature_directory: 'specs/105-cc-token-usage-capture' }),
+  } }), worktree: null, repo: '/repo' };
+  const f = await collectOutcomes(base(), deps);
+  assert.equal(f.spec_dir, 'specs/feat-x', 'the main checkout\'s feature.json describes ITS current spec, not this feature\'s');
+  assert.deepEqual([f.tasks_total, f.tasks_done], [3, 2]);
+});

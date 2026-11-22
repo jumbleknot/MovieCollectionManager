@@ -210,8 +210,23 @@ with the existing `DEV_USAGE_READER_PASSWORD`.
    **Claude Code usage**. The panels fill as attributed turns arrive. Explore's default datasource is
    unchanged.
 4. From the dev container: `node scripts/cc-usage.mjs features`. Expected: a table that ends with a
-   `no feature` row. Turns shipped before this merge have no activity or feature, so they count as
-   `unclassified` and `no feature`.
+   `no feature` row.
+
+**Relabelling history (optional, done once on 2026-11-22).** Turns shipped before the merge carry no
+activity or feature, because their offsets have already moved past them. To re-parse every transcript
+still on the volume, in the dev container once the merged code is in the main checkout (every write
+is an upsert, so this only fills in the new columns):
+
+```bash
+U=$CLAUDE_CONFIG_DIR/usage; cp -a $U/state $U/state.bak-$(date -u +%Y%m%dT%H%M%S)
+find $U/state -maxdepth 1 -name '*.json' -delete; rm -f $U/sweep.json
+echo '{"hook_event_name":"SessionStart","cwd":"/workspaces/mcm"}' | node scripts/cc-usage.mjs hook
+node scripts/cc-usage.mjs doctor
+```
+
+Expected: `unshipped: none` and `spool: 0 files`. Activity labels come back for all history.
+Features come back only where the turn's worktree still exists, because a removed worktree's branch
+can no longer be resolved. Those turns count as `no feature`.
 
 ## 4. `doctor`, line by line
 

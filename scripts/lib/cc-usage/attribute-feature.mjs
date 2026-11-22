@@ -63,7 +63,8 @@ export function attributeTurns(turns, { resolveBranch, prevBranch = null, hasEar
       branch = prev;
       rule = 'inherited';
     } else {
-      branch = t.startBranch ?? null;
+      // A detached checkout records gitBranch "HEAD": no branch, so no feature (T078).
+      branch = t.startBranch && t.startBranch !== 'HEAD' ? t.startBranch : null;
       rule = 'session-branch';
     }
     if (branch === null || MAIN_BRANCHES.has(branch)) {

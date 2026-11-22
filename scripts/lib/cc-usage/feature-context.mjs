@@ -125,7 +125,7 @@ export async function collectOutcomes(cfg, st, { budgetMs = 4000, readers = null
     const rd = readers ?? outcomeReaders({ repo: worktree ?? cfg.repoDir });
     const row = await collectRow(
       { feature_id: id, branch: f.branch, first_seen_at: f.first_seen_at, pr_state: 'none', collected_at: cache.collected[id] ?? null },
-      { now: cfg.now(), worktree, ...rd },
+      { now: cfg.now(), worktree, repo: cfg.repoDir, ...rd },
     );
     if (!row) continue;
     out.push(row);
