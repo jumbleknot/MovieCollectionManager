@@ -1,11 +1,11 @@
 ---
 type: Decision
 title: The governing constitution
-description: The repository's ratified, versioned constitution — currently v2.11.0, ratified 2026-03-08 and last amended 2026-11-17 (session-lifetime, token-sealing and token-renewal rules for the BFF session, and the native sign-in variant), and the auth-flow diagrams corrected to server-held tokens, after the mandatory doc-impact sweep of 2026-11-15 (feature 101) — the core principles every spec and plan must comply with, the amendment process and its same-pull-request rule, the per-feature Constitution Check gate, and the bundle-budget gate that enforces its sole accepted exception.
+description: The repository's ratified, versioned constitution — currently v2.12.0, ratified 2026-03-08 and last amended 2026-11-22 (dependency pinning restated as lockfile-pinned installs with exact lockstep sets, and a sanctioned exception letting repository CI/ops scripts run directly with node), after the session rules of 2026-11-17 and the mandatory doc-impact sweep of 2026-11-15 (feature 101) — the core principles every spec and plan must comply with, the amendment process and its same-pull-request rule, the per-feature Constitution Check gate, and the bundle-budget gate that enforces its sole accepted exception.
 resource: .specify/memory/constitution.md
-resource-sha256: 8395af2ad92f23d5879a95e138545c95233f853f0334b7fa5c4688bb60b73a89
+resource-sha256: 5289120df4b9372e4b640c3e4fe8612270b1abda6c6fd0be6bbcb55a71b49974
 tags: [governance, security, tdd, constitution]
-timestamp: 2026-11-18T11:11:42.541Z
+timestamp: 2026-11-22T16:50:43.254Z
 ---
 
 # The governing constitution
@@ -18,9 +18,9 @@ of the file) and has been amended more than twenty times as the system matured, 
 ratification through incremental clarifications like the client auth model rewrite and the Tamagui
 design-system mandate.
 
-The file currently reads **v2.11.0**: its footer says `**Version**: 2.11.0 | **Ratified**: 2026-03-08
-| **Last Amended**: 2026-11-17`, and the version-history entry carrying the `[CURRENT]` marker is the
-one dated 2026-11-17. That marker is the authoritative "latest amendment" signal — check it rather
+The file currently reads **v2.12.0**: its footer says `**Version**: 2.12.0 | **Ratified**: 2026-03-08
+| **Last Amended**: 2026-11-22`, and the version-history entry carrying the `[CURRENT]` marker is the
+one dated 2026-11-22. That marker is the authoritative "latest amendment" signal — check it rather
 than inferring the version from any summary, this page included.
 
 Amendments follow the file's own **Governance** section: a proposal documenting rationale, impact on
@@ -115,6 +115,20 @@ the native sign-in variant: the code returns to the app, which hands it and its 
 BFF; the BFF-driven flow is a SHOULD for web (item #1060). The Login and access diagrams, drawn with HttpOnly token cookies
 since v2.2.0 against the constitution's own Server-Side Session Storage rule, now show server-held
 tokens, and the access diagram shows the session store and the renewal step. Rules added, none redefined, so a MINOR; requested by the operator.
+
+**v2.12.0** (2026-11-22) made two clauses state what the repository already enforced. **Dependency
+Security** no longer says manifest versions "must be pinned": installs are pinned by each ecosystem's
+committed lockfile (`pnpm install --frozen-lockfile`, `Cargo.lock`, `uv sync --frozen`); the lockstep
+sets — `nx`/`@nx/*` and `@playwright/test` (gated by `scripts/check-toolchain-consistency.mjs`) and
+Tamagui (its lockstep guard) — are exact in every `package.json`; everything else MAY use `^`, so a
+lockfile refresh can pick up in-range security fixes. The reason is that `lockFileMaintenance`
+re-resolves every range with no group rule over it, so a ranged lockstep member moves alone (PR #695;
+the three-Nx-versions tree — [Renovate](../runbooks/renovate.md)). **Monorepo Build Tool** gains a
+**sanctioned exception**: the repository's own scripts under `scripts/` and their `scripts/__tests__`
+MAY run directly with `node` in CI, because an Nx target costs ~60 s of project-graph computation
+against ~0.09 s direct ([Nx as the universal task runner](../invariants/nx-task-runner.md)); every
+product test, lint, build, e2e and deploy still runs through Nx. It scopes a rule rather than
+reversing it, so a MINOR (the v2.4.0 precedent); requested by the operator.
 
 Amendments are drafted rather than hand-edited. The Spec Kit constitution command
 ([`.github/agents/speckit.constitution.agent.md`](../../.github/agents/speckit.constitution.agent.md),
