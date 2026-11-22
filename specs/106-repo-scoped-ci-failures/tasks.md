@@ -223,7 +223,8 @@ package, and the committed config lists both.
 - [x] T029 File a backlog item (`scripts/backlog.mjs`, forgejo-issues skill): "Drop the legacy `ci-failures` evidence package (feature 106)", due cutover + 30 days, listing the three removals.
   - **Done when**: the item number is quoted in the PR body
   - **Result**: filed as item #1098 (`type/chore`, `priority/p3`).
-- [ ] T030 **Open the PR** from a real branch (`git push origin HEAD:106-repo-scoped-ci-failures`, then `node scripts/forge-pr.mjs open`). Tick this task in the branch's LAST commit, quoting the branch, PR number and that commit's sha. CI evidence goes in the PR's closing comment, never here.
+- [x] T030 **Open the PR** from a real branch (`git push origin HEAD:106-repo-scoped-ci-failures`, then `node scripts/forge-pr.mjs open`). Tick this task in the branch's LAST commit, quoting the branch, PR number and that commit's sha. CI evidence goes in the PR's closing comment, never here.
+  - **Result**: branch `106-repo-scoped-ci-failures`, PR #1099. This tick is the branch's last commit; its sha is quoted in the PR comment.
 
 ---
 
