@@ -28,5 +28,7 @@ export function storeClient(cfg) {
     get: (path) => call('GET', path),
     patch: (path, body) => call('PATCH', path, body, 'return=minimal'),
     upsert: (table, onConflict, rows) => call('POST', `/${table}?on_conflict=${onConflict}`, rows, 'resolution=merge-duplicates,return=minimal'),
+    /** Insert, leaving any existing row with the same key untouched. */
+    insertNew: (table, onConflict, rows) => call('POST', `/${table}?on_conflict=${onConflict}`, rows, 'resolution=ignore-duplicates,return=minimal'),
   };
 }

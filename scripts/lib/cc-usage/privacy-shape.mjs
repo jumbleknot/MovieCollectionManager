@@ -32,6 +32,11 @@ export const TABLE_COLUMNS = {
     'ci_runs_green', 'first_red_at', 'backlog_closed', 'collected_at',
   ],
   token_weights: ['as_of', 'input', 'output', 'cache_read', 'cache_write_5m', 'cache_write_1h', 'source'],
+  // US4. `evidence` is the one object that ships: numbers, a metric name and session ids only (safeEvidence).
+  findings: [
+    'finding_id', 'rule', 'scope', 'evidence', 'sample_size', 'suggestion', 'watch_metric', 'counter_metric',
+    'status', 'accepted_at', 'baseline_value', 'after_value', 'counter_baseline', 'counter_after',
+  ],
 };
 
 const MAX_STRING = 200;
@@ -48,13 +53,34 @@ function safeValue(v) {
   return null; // nested objects never ship
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const METRIC = /^[a-z][a-z0-9_]{0,40}$/;
+
+/** findings.evidence: a flat object of numbers, a metric name, and arrays of session ids. Anything else is dropped. */
+function safeEvidence(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+  const out = {};
+  for (const [k, x] of Object.entries(v)) {
+    if (!METRIC.test(k)) continue;
+    if (typeof x === 'number' && Number.isFinite(x)) out[k] = x;
+    else if (typeof x === 'string' && METRIC.test(x)) out[k] = x;
+    else if (Array.isArray(x)) out[k] = x.filter((s) => typeof s === 'string' && UUID.test(s)).slice(0, 50);
+  }
+  return out;
+}
+
 /** Keep only the allowlisted columns of `table`, with value checks. Unknown table → nothing. */
 export function shapeRows(table, rows) {
   const cols = TABLE_COLUMNS[table];
   if (!cols) return [];
   return (rows ?? []).map((row) => {
     const out = {};
-    for (const c of cols) if (Object.hasOwn(row, c)) out[c] = safeValue(row[c]);
+    for (const c of cols) {
+      if (!Object.hasOwn(row, c)) continue;
+      if (table === 'findings' && c === 'evidence') out[c] = safeEvidence(row[c]);
+      else if (table === 'findings' && c === 'suggestion') out[c] = typeof row[c] === 'string' && row[c].length <= 1000 && !HOST_PATH.test(row[c]) ? row[c] : null;
+      else out[c] = safeValue(row[c]);
+    }
     return out;
   });
 }

@@ -1,6 +1,6 @@
 # Runbook — Claude Code token usage capture (`prod-dev-usage`)
 
-Feature 105 ([spec](../../specs/105-cc-token-usage-capture/spec.md)). Every Claude Code session in the
+Feature 105 ([spec](../../specs/105-cc-token-usage-capture/spec.md); the stack's files: [infrastructure-as-code/docker/dev-usage/](../../infrastructure-as-code/docker/dev-usage/README.md)). Every Claude Code session in the
 dev container ships per-session, per-turn and per-tool **counts** to a small store on the homelab, so
 usage can be compared over time. This page is the operator's half: one-time setup, checks,
 troubleshooting, restore. Nothing here is needed to merge the code. Until the setup is done, capture is
@@ -14,10 +14,15 @@ path segment and branch, model names, token counts by type (input, output, cache
 1-hour cache writes, thinking), timestamps, turn boundaries and origin, compaction counts, tool **names**
 with call counts and result **sizes**, the first word of each Bash command (`pnpm`, `git` — sanitized,
 never an argument), skill names, the top-level repository areas a turn touched (`docs`, `scripts`), and
-a re-read count.
+a re-read count. Since US3, per turn also: one **activity label** and the id of the rule that fired, and
+the **feature** it worked on (`<branch>@<date>`) with the attribution rule. Per feature: the branch name,
+the spec directory, commit and line counts, task checkbox counts, the PR number and state, CI run
+counts, and how many backlog items the PR closed. Since US4: **findings**, which are rule ids, numbers
+and session ids only.
 
 **Never shipped**: prompt or assistant text, tool input or output, file contents, file paths, command
-arguments, subagent descriptions, host names, the token or the client secret. A per-table allowlist
+arguments, subagent descriptions, host names, the token or the client secret. Labels and feature
+attribution are computed **in the container** from command text and paths, which are then dropped. A per-table allowlist
 (`scripts/lib/cc-usage/privacy-shape.mjs`) drops anything else, and a guard test plants sentinel strings
 in every content field of the fixtures and fails if one reaches a shipped batch.
 
@@ -191,6 +196,23 @@ Expected: `Result=success`, then one `dev-usage: N bytes` line. A oneshot unit i
 one: re-run the last two commands after a few minutes. A `Result=` other than `success`
 also opens a backup alert in the backlog; the journal says which step failed.
 
+### 3.8 After the US2–US4 merge (a second, smaller round)
+
+The merge adds schema files (`035`, `060`, `070`), extends `040`'s views in place, and adds a Grafana
+datasource and dashboard to `prod-observability`. No new Variable: Grafana reads as `usage_reader`
+with the existing `DEV_USAGE_READER_PASSWORD`.
+
+1. Komodo → ResourceSync → refresh. The diff shows one change: `prod-observability`'s environment gains
+   `DEV_USAGE_READER_PASSWORD=[[DEV_USAGE_READER_PASSWORD]]`. Apply it.
+2. Redeploy **`prod-dev-usage`**. `dev-usage-schema-init` applies the new files. Its log ends with
+   `applying 070-us4-findings.sql`, then `schema applied`, and the container stays healthy.
+3. Redeploy **`prod-observability`**. Then open Grafana (`http://<tailnet-host>:19002`) → Dashboards →
+   **Claude Code usage**. The panels fill as attributed turns arrive. Explore's default datasource is
+   unchanged.
+4. From the dev container: `node scripts/cc-usage.mjs features`. Expected: a table that ends with a
+   `no feature` row. Turns shipped before this merge have no activity or feature, so they count as
+   `unclassified` and `no feature`.
+
 ## 4. `doctor`, line by line
 
 | Line | Meaning | If wrong |
@@ -250,7 +272,50 @@ docker exec dev-usage-postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB"
 Expected: no errors from `pg_restore`, then a session count. Then redeploy the stack, so the schema
 re-applies over the restored data (every schema file is idempotent).
 
-## 8. When the transcript format drifts
+**Restore drill** (with the host's restore drill, [Server-Setup-Runbook.md](Server-Setup-Runbook.md)
+"Restore drill"): prove a dump restores **without touching the live store**. As the prod user, with
+a `dev-usage.dump` from the newest snapshot (restored as in that drill) in the current directory:
+
+```bash
+IMG=$(docker inspect -f '{{.Config.Image}}' dev-usage-postgres)
+docker run -d --name drill-usage --network none -e POSTGRES_HOST_AUTH_METHOD=trust "$IMG" >/dev/null
+for i in $(seq 60); do docker exec drill-usage pg_isready -h 127.0.0.1 -U postgres -q 2>/dev/null && break; sleep 2; done
+docker cp dev-usage.dump drill-usage:/tmp/d.dump
+docker exec drill-usage sh -c 'createdb -U postgres dev_usage && pg_restore -U postgres -d dev_usage --no-owner --no-acl /tmp/d.dump; psql -U postgres -d dev_usage -Atc "select count(*) from usage.sessions; select count(*) from usage.model_calls"'
+docker rm -f drill-usage >/dev/null
+```
+
+Expected: two non-zero counts, close to the live store's. `pg_restore` may warn about the roles
+(`--no-owner --no-acl` skips them). Any other error means the dump is unusable, so check backup
+step 6.
+
+## 8. Asking about usage, and the dashboard
+
+In a session, the `usage` skill (`.claude/skills/usage/SKILL.md`) picks the command. Directly:
+`now --session <id>` (offline-capable), `sessions`, `trend --by week|area|activity|feature|spec`,
+`compare`, `feature <branch|spec:NNN|id>`, `features`, `findings`, `accept`/`reject`, `sync`, `tag`
+(`node scripts/cc-usage.mjs --help`). Grafana's **Claude Code usage** dashboard (`prod-observability`)
+shows the weekly trend by activity, area, spec and feature, the features table with outcomes, and the
+no-feature and unclassified shares. It reads only the views, as `usage_reader`.
+
+Findings need a baseline: under 14 days of data, or below a rule's minimum sample, the answer is
+`not enough data`. That is expected, not a fault.
+
+**Plan-limit burn (opt-in statusline).** To record the share of the plan limit each activity uses
+(FR-033), wrap your statusline. In `~/.claude/settings.json` (user settings, never the committed
+ones), with your current statusline command in `CC_USAGE_STATUSLINE_NEXT`:
+
+```json
+{ "statusLine": { "type": "command",
+  "command": "CC_USAGE_STATUSLINE_NEXT='<your current statusline command>' node /workspaces/mcm/scripts/cc-usage.mjs statusline" } }
+```
+
+It prints exactly what your command prints, or nothing when `CC_USAGE_STATUSLINE_NEXT` is unset, and
+never fails. It keeps the latest `rate_limits` and the burn per activity in
+`$CLAUDE_CONFIG_DIR/usage/ratelimits.json`, locally only. To turn it off, restore your old
+`statusLine`.
+
+## 9. When the transcript format drifts
 
 A Claude Code upgrade can change transcript lines. The parser then marks sessions `partial` with reason
 `format-drift` rather than storing zeros. To check:

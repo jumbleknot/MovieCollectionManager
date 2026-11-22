@@ -17,6 +17,8 @@ import { doctorLines, runHook } from './lib/cc-usage/capture.mjs';
 import { sessionTotals } from './lib/cc-usage/transcript-files.mjs';
 import * as query from './lib/cc-usage/query.mjs';
 import * as featureQuery from './lib/cc-usage/feature-query.mjs';
+import * as findingsQuery from './lib/cc-usage/findings-query.mjs';
+import { statusline } from './lib/cc-usage/statusline.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_FIXTURES = join(HERE, '__tests__', 'fixtures', 'cc-usage');
@@ -38,6 +40,10 @@ commands:
                                     one row per bucket
   compare <a> <b>                   side by side; a/b are session ids, YYYY-MM-DD..YYYY-MM-DD, branch:<name>, spec:NNN or feature ids
   weights push                      upsert scripts/cc-usage-weights.json into the store (sweeps also do it once per asOf)
+  findings [--all]                  findings against your own per-activity baseline; --all adds experiments' before/after
+  accept <finding_id>               start an experiment: record its baseline and counter-metric baseline
+  reject <finding_id>               dismiss a finding
+  statusline                        OPT-IN statusline wrapper: records rate_limits, then prints $CC_USAGE_STATUSLINE_NEXT's output
   sync --session <id>               ship this session now, ignoring the 15-minute interval
   tag --session <id> <label>        set the session's manual tag
 
@@ -57,6 +63,10 @@ const COMMANDS = {
   features: { withValues: ['--since', '--kind', '--state'], accepted: ['--json'], run: interactive((p) => featureQuery.features(p.cfg, {
     since: p.values.get('--since'), kind: oneOf(p, '--kind', ['spec', 'no-spec']), state: oneOf(p, '--state', ['open', 'merged', 'all']) ?? 'open', json: p.json,
   })) },
+  findings: { accepted: ['--json', '--all'], run: interactive((p) => findingsQuery.findings(p.cfg, { all: p.flags.has('--all'), json: p.json })) },
+  accept: { maxPositionals: 1, run: interactive((p) => findingsQuery.accept(p.cfg, { id: positional(p, 'accept <finding_id>') })) },
+  reject: { maxPositionals: 1, run: interactive((p) => findingsQuery.reject(p.cfg, { id: positional(p, 'reject <finding_id>') })) },
+  statusline: { run: statuslineCmd },
   weights: { maxPositionals: 1, run: interactive((p) => featureQuery.weights(p.cfg, { action: positional(p, 'weights push') })) },
   trend: { withValues: ['--by', '--since'], accepted: ['--json'], run: interactive(trendCmd) },
   compare: { accepted: ['--json'], maxPositionals: 2, run: interactive((p) => query.compare(p.cfg, { a: p.positionals[0], b: p.positionals[1], json: p.json })) },
@@ -123,6 +133,16 @@ function interactive(fn, { history = true } = {}) {
   };
 }
 
+/** The statusline wrapper: exit 0 on every path, and print exactly what the next command printed. */
+function statuslineCmd() {
+  let stdin = '';
+  try {
+    stdin = readFileSync(0, 'utf8');
+  } catch { /* no stdin */ }
+  process.stdout.write(statusline(stdin));
+  return 0;
+}
+
 /** Exit 0 and print nothing on EVERY path — a hook must never disturb the session (contracts/cli.md). */
 async function hook() {
   let stdin = '';
@@ -171,7 +191,11 @@ export async function main(argv, io = { out: (s) => console.log(s), err: (s) => 
   return cmd.run(parsed, io);
 }
 
-if (isMain(import.meta.url) && process.argv[2] === 'hook') {
+if (isMain(import.meta.url) && process.argv[2] === 'statusline') {
+  // Like the hook: no argument checking, no error report, always 0 — a statusline must never break.
+  try { statuslineCmd(); } catch { /* nothing */ }
+  process.exitCode = 0;
+} else if (isMain(import.meta.url) && process.argv[2] === 'hook') {
   // The hook path bypasses argument checking and every error report: nothing may reach stdout/stderr.
   hook().catch(() => {}).finally(() => { process.exitCode = 0; });
 } else if (isMain(import.meta.url)) {

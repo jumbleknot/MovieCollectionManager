@@ -377,3 +377,56 @@ it('US3: every Grafana panel query runs as usage_reader against the real views',
     }
   }
 });
+
+// --- US4 (T059): the baseline and the findings table -----------------------------------------------
+it('US4: v_baseline gives median, p90, p10 and n per activity over the trailing window', async () => {
+  await token();
+  const act = `it-act-${randomUUID().slice(0, 6)}`;
+  const floors = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
+  const recentIso = new Date(Date.now() - 2 * 86_400_000).toISOString();
+  for (const [i, floor] of floors.entries()) {
+    const sid = randomUUID();
+    const r = await sendBatches({
+      sessions: [session(sid, { started_at: recentIso })],
+      turns: [turn(sid, 1, { started_at: recentIso, context_tokens_at_start: floor, activity: act, activity_rule: 'it' })],
+      model_calls: [call(sid, 5000 + i, { message_id: `msg_us4_${act}_${i}`, turn_seq: 1 })],
+    }, shipOpts(sid));
+    assert.deepEqual(r, { ok: true, spooled: false });
+  }
+  // An old session outside the 28-day window does not count.
+  const old = randomUUID();
+  const oldIso = new Date(Date.now() - 60 * 86_400_000).toISOString();
+  await sendBatches({ sessions: [session(old, { started_at: oldIso })], turns: [turn(old, 1, { started_at: oldIso, context_tokens_at_start: 999999, activity: act })], model_calls: [call(old, 5999, { message_id: `msg_us4_${act}_old` })] }, shipOpts(old));
+
+  const metrics = await getJson(`/v_session_metrics?activity=eq.${act}`);
+  assert.equal(metrics.length, 11, 'one metrics row per session, with its dominant activity');
+  const rows = await getJson(`/v_baseline?activity=eq.${act}&metric=eq.floor_tokens`);
+  assert.equal(rows.length, 1);
+  const b = rows[0];
+  assert.equal(Number(b.n), 10);
+  assert.equal(Number(b.median), 55);
+  assert.equal(Number(b.p90), 91);
+  assert.equal(Number(b.p10), 19);
+  assert.ok(Number(b.data_days) >= 59, 'data_days spans the whole store');
+  const metricsSeen = new Set((await getJson(`/v_baseline?activity=eq.${act}`)).map((r) => r.metric));
+  // rtk_share is undefined (NULL) without Bash calls, which these seeds do not make; the rest are defined.
+  for (const m of ['weighted_tokens', 'floor_tokens', 'cache_read_ratio', 'idle_tax', 'context_growth', 'compactions', 'tool_output_bytes', 'reread_rate', 'subagent_share', 'premium_share', 'rework_share']) {
+    assert.ok(metricsSeen.has(m), `v_baseline has ${m}`);
+  }
+});
+
+it('US4: findings upsert by finding_id; PATCH can change status and accepted_at; DELETE is refused', async () => {
+  const id = `it-rule:activity:x:${randomUUID().slice(0, 8)}`;
+  const row = { finding_id: id, rule: 'it-rule', scope: 'activity:x', evidence: { metric: 'floor_tokens', recent_median: 3, sessions: [] }, sample_size: 12, suggestion: 'Could a shorter CLAUDE.md lower the floor?', watch_metric: 'floor_tokens', counter_metric: 'rework_share', status: 'open' };
+  const post = (rows) => req('/findings?on_conflict=finding_id', { method: 'POST', headers: { prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(rows) });
+  assert.equal((await post([row])).status, 201);
+  assert.ok([200, 201].includes((await post([{ ...row, sample_size: 13 }])).status));
+  assert.equal(psql(`SELECT count(*), max(sample_size) FROM usage.findings WHERE finding_id = '${id}'`).trim(), '1|13');
+  const p = await req(`/findings?finding_id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ status: 'accepted', accepted_at: '2026-12-01T00:00:00Z', baseline_value: 3 }) });
+  assert.equal(p.status, 204);
+  assert.equal(psql(`SELECT status, accepted_at IS NOT NULL FROM usage.findings WHERE finding_id = '${id}'`).trim(), 'accepted|t');
+  const bad = await req(`/findings?finding_id=eq.${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify({ status: 'nonsense' }) });
+  assert.equal(bad.status, 400, 'status is an enum');
+  const del = await req(`/findings?finding_id=eq.${encodeURIComponent(id)}`, { method: 'DELETE' });
+  assert.ok([401, 403].includes(del.status), `DELETE → ${del.status}`);
+});

@@ -30,6 +30,14 @@ Counts only: tokens by type, turns, tool names and output sizes. No prompt or to
   `node scripts/cc-usage.mjs tag --session ${CLAUDE_SESSION_ID} <label>`
 - Add `--json` for every row; tables stop at 10 rows.
 
+## Findings (after two weeks of data)
+
+`node scripts/cc-usage.mjs findings` lists rules that fired against the user's own baseline, or
+`not enough data`. For a finding: read the repository files its evidence points at (instruction files
+for a session floor, the commands for tool-output weight), then propose ONE change, its expected
+effect, and the metric to watch. Only on the user's say-so: `accept <finding_id>` (or `reject`); a
+larger change can be filed with the forgejo-issues skill. `findings --all` shows before/after.
+
 ## Rules
 
 - Pass `--session ${CLAUDE_SESSION_ID}` wherever a command takes it. Never guess a session from the

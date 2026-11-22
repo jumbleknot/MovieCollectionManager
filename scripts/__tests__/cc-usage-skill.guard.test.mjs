@@ -25,7 +25,7 @@ test('at most 60 lines', () => {
 test('every command that takes --session passes ${CLAUDE_SESSION_ID}', () => {
   const needs = ['now', 'sync', 'tag'];
   for (const l of commandLines) {
-    const cmd = l.match(/cc-usage\.mjs (\S+)/)[1];
+    const cmd = l.match(/cc-usage\.mjs ([a-z][a-z-]*)/)[1];
     if (needs.includes(cmd)) assert.match(l, /--session \$\{CLAUDE_SESSION_ID\}/, l);
   }
   assert.ok(commandLines.some((l) => / now --session /.test(l)), 'the skill shows `now`');
@@ -37,7 +37,7 @@ test('sync runs only when the user asks', () => {
 
 test('every command the skill names exists in the CLI', () => {
   for (const l of commandLines) {
-    const cmd = l.match(/cc-usage\.mjs (\S+)/)[1];
+    const cmd = l.match(/cc-usage\.mjs ([a-z][a-z-]*)/)[1];
     assert.match(USAGE, new RegExp(`^  ${cmd}\\b`, 'm'), `${cmd} is not a cc-usage command`);
   }
 });
