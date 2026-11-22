@@ -590,6 +590,14 @@ workspace paths not owned by me: 0
 trigger — the `devcontainer-image` workflow builds and publishes automatically, so check for a
 `build-publish` run before building anything by hand.
 
+**A pnpm bump is an image change too.** The image installs pnpm at the root `packageManager`
+(`scripts/install-pnpm.sh`), so a Renovate pnpm PR also publishes a new image. The workflow triggers
+on `package.json`, and its `gate` step (`scripts/devcontainer-image-gate.mjs`) ends the run after
+checkout unless the `packageManager` value itself moved, so ordinary dependency bumps cost nothing.
+Before this, the 2026-11-20 bump to 12.21.0 published no image. For the following week, every pnpm
+probe outside the workspace saw 12.20.0, and check-pnpm-version's "installed pnpm is the root pin"
+test failed in the sandbox. After a pnpm bump merges, re-pin to the new digest the same way.
+
 **The procedure, in full — and it runs in the VM shell, not the container.** A container cannot
 rebuild itself; `devcontainer up` must run from `ssh mcm.sbx`, and it destroys the container you may
 be working in. Everything below is one VM-shell session, because step 3's `set -a` only holds there.

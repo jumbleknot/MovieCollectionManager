@@ -12,15 +12,24 @@
 # Refresh model (FR-013 / research D8): the DIGEST is the staleness signal. Re-run this workflow
 # (dispatch, a toolchain.Dockerfile change, or the weekly cron) → a new @sha256 digest → the
 # developer updates their local MCM_DEVCONTAINER_IMAGE. No forced local rebuild for a refresh.
+#
+# A `packageManager` bump is a toolchain change too: the image installs pnpm at that pin. Path
+# filters cannot see inside package.json, so it is in `paths:` and the `gate` step below stops the
+# run after checkout unless the packageManager value itself moved (scripts/devcontainer-image-gate.mjs
+# — the 2026-11-20 pnpm 12.21.0 bump published no image and left the dev container a week stale).
 name: devcontainer-image
 
 on:
   workflow_dispatch:
   push:
+    # Keep in step with IMAGE_INPUTS in scripts/devcontainer-image-gate.mjs (+ package.json, gated).
     paths:
       - '.devcontainer/toolchain.Dockerfile'
       - '.devcontainer/Dockerfile'
       - '.forgejo/workflows/devcontainer-image.yml'
+      - 'scripts/install-pnpm.sh'
+      - 'scripts/devcontainer-image-gate.mjs'
+      - 'package.json'
   schedule:
     # Weekly refresh (Friday 06:00 UTC ≈ 02:00 America/New_York). Picks up upstream base-image +
     # toolchain security patches even when the Dockerfile is unchanged (FR-013). Cron is UTC-only
@@ -45,9 +54,22 @@ jobs:
       REGISTRY_USER: ${{ vars.REGISTRY_USER }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # The gate diffs against the push's `before` sha, which a depth-1 clone does not contain.
+          fetch-depth: 0
+
+      # Build only when something the image is built from changed. A package.json push that does not
+      # move `packageManager` ends here, green. Any other event, or anything the gate cannot
+      # establish, decides build=true (fail-safe).
+      - name: Decide whether the image inputs changed
+        id: gate
+        env:
+          GATE_BEFORE: ${{ github.event.before }}
+        run: bash scripts/ci-log-step.sh devcontainer-image-gate node scripts/devcontainer-image-gate.mjs
 
       # Confirm the Docker CLI + daemon are reachable (mirror cd-deploy's guard); fail LOUD if not.
       - name: Set up Docker CLI (talk to the runner's daemon socket)
+        if: steps.gate.outputs.build == 'true'
         run: |
           bash scripts/ci-log-step.sh build-publish-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
           if ! command -v docker >/dev/null 2>&1; then
@@ -60,6 +82,7 @@ jobs:
       # scripts/install-pnpm.sh, for the pnpm pin; the
       # thin .devcontainer/Dockerfile is NOT built here — this publishes its `FROM` base).
       - name: Build toolchain image
+        if: steps.gate.outputs.build == 'true'
         # The `:?` var guard is INSIDE the wrapper (item #177 variant 4). Above it, an unset REGISTRY
         # or NS failed the step before the wrapper ever ran — no capture, no `_failed-step` marker,
         # and a digest that named nothing for a one-line misconfiguration.
@@ -74,6 +97,7 @@ jobs:
       # Login → push → capture the immutable @sha256 digest (same pattern as cd-deploy). The forge
       # push token is REGISTRY_TOKEN (Forgejo reserves the FORGEJO_/GITEA_/GITHUB_ secret prefixes).
       - name: Push (tag + digest) and surface the digest
+        if: steps.gate.outputs.build == 'true'
         env:
           REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
         run: |
