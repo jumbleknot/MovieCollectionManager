@@ -258,6 +258,7 @@ jobs:
               - 'scripts/cc-usage.mjs'
               - 'scripts/lib/cc-usage/**'
               - 'infrastructure-as-code/docker/keycloak/*-realm.json'
+              - 'infrastructure-as-code/docker/observability/grafana/**'
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

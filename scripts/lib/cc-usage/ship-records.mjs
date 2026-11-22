@@ -30,6 +30,16 @@ class ShipError extends Error {}
  *          sessionId: string, range?: object, now?: number, spoolOnFailure?: boolean}} opts
  * @returns {Promise<{ok: boolean, spooled: boolean, reason?: string}>}
  */
+/** Rows grouped by their key set, in first-seen order. */
+function byKeySet(rows) {
+  const groups = new Map();
+  for (const r of rows) {
+    const k = Object.keys(r).sort().join(',');
+    (groups.get(k) ?? groups.set(k, []).get(k)).push(r);
+  }
+  return [...groups.values()];
+}
+
 /**
  * One row per `on_conflict` key, first occurrence wins. Postgres refuses an upsert that touches one
  * row twice in a statement (SQLSTATE 21000), which PostgREST returns as a 500. This also lets a batch
@@ -58,10 +68,14 @@ export async function sendBatches(batches, { configDir, ingestUrl, fetch = globa
     }
     const base = String(ingestUrl).replace(/\/+$/, '');
     for (const table of TABLE_ORDER) {
-      const rows = shaped[table];
-      if (!rows) continue;
-      for (let i = 0; i < rows.length; i += BATCH_CAPS[table]) {
-        const chunk = rows.slice(i, i + BATCH_CAPS[table]);
+      if (!shaped[table]) continue;
+      // PostgREST requires every object of a bulk insert to have the same keys (PGRST102 → 400), and
+      // filling a gap with null would overwrite a column on update. So rows go in groups of one key set.
+      const chunks = [];
+      for (const group of byKeySet(shaped[table])) {
+        for (let i = 0; i < group.length; i += BATCH_CAPS[table]) chunks.push(group.slice(i, i + BATCH_CAPS[table]));
+      }
+      for (const chunk of chunks) {
         let res;
         try {
           res = await timedFetch(fetch, `${base}/${table}?on_conflict=${ON_CONFLICT[table]}`, {

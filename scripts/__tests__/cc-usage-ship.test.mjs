@@ -86,6 +86,19 @@ test('rows sharing an on_conflict key are sent once per batch, first wins (Postg
   assert.equal(sent[1].agent_id, null, 'the first occurrence is kept');
 }));
 
+test('rows with different key sets go in separate POSTs (PostgREST PGRST102), never null-filled', () => withDir(async (dir) => {
+  const rec = recorder();
+  await sendBatches({ features: [
+    { feature_id: 'a@2026-11-01', branch: 'a', first_seen_at: '2026-11-01T00:00:00Z' },
+    { feature_id: 'b@2026-11-01', branch: 'b', first_seen_at: '2026-11-01T00:00:00Z', kind: 'spec', spec_dir: 'specs/b' },
+    { feature_id: 'c@2026-11-01', branch: 'c', first_seen_at: '2026-11-01T00:00:00Z' },
+  ] }, opts(dir, rec));
+  const posts = rec.calls.filter((c) => c.table === 'features');
+  assert.equal(posts.length, 2);
+  for (const p of posts) assert.equal(new Set(p.rows.map((r) => Object.keys(r).sort().join())).size, 1, 'one key set per POST');
+  assert.ok(posts.flatMap((p) => p.rows).every((r) => !Object.values(r).includes(undefined)));
+}));
+
 test('every batch goes through the privacy allowlist', () => withDir(async (dir) => {
   const rec = recorder();
   const r = records();

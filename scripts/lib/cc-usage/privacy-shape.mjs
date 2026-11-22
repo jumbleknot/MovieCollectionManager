@@ -21,9 +21,22 @@ export const TABLE_COLUMNS = {
   turns: [
     'session_id', 'turn_seq', 'origin', 'started_at', 'ended_at', 'idle_gap_s',
     'context_tokens_at_start', 'areas', 'rereads',
+    // US3: the label, the rule that fired, the feature and how it was decided — never the inputs.
+    'activity', 'activity_rule', 'feature_id', 'attribution_rule',
   ],
   tool_use: ['session_id', 'turn_seq', 'tool', 'command_family', 'calls', 'result_bytes', 'rtk_calls', 'subagent_type'],
   skill_use: ['session_id', 'skill', 'invocations', 'first_turn'],
+  features: [
+    'feature_id', 'branch', 'first_seen_at', 'kind', 'spec_dir', 'spec_number', 'commits', 'lines_added',
+    'lines_removed', 'tasks_total', 'tasks_done', 'pr_number', 'pr_state', 'merged_at', 'ci_runs_red',
+    'ci_runs_green', 'first_red_at', 'backlog_closed', 'collected_at',
+  ],
+  token_weights: ['as_of', 'input', 'output', 'cache_read', 'cache_write_5m', 'cache_write_1h', 'source'],
+  // US4. `evidence` is the one object that ships: numbers, a metric name and session ids only (safeEvidence).
+  findings: [
+    'finding_id', 'rule', 'scope', 'evidence', 'sample_size', 'suggestion', 'watch_metric', 'counter_metric',
+    'status', 'accepted_at', 'baseline_value', 'after_value', 'counter_baseline', 'counter_after',
+  ],
 };
 
 const MAX_STRING = 200;
@@ -40,13 +53,34 @@ function safeValue(v) {
   return null; // nested objects never ship
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const METRIC = /^[a-z][a-z0-9_]{0,40}$/;
+
+/** findings.evidence: a flat object of numbers, a metric name, and arrays of session ids. Anything else is dropped. */
+function safeEvidence(v) {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
+  const out = {};
+  for (const [k, x] of Object.entries(v)) {
+    if (!METRIC.test(k)) continue;
+    if (typeof x === 'number' && Number.isFinite(x)) out[k] = x;
+    else if (typeof x === 'string' && METRIC.test(x)) out[k] = x;
+    else if (Array.isArray(x)) out[k] = x.filter((s) => typeof s === 'string' && UUID.test(s)).slice(0, 50);
+  }
+  return out;
+}
+
 /** Keep only the allowlisted columns of `table`, with value checks. Unknown table → nothing. */
 export function shapeRows(table, rows) {
   const cols = TABLE_COLUMNS[table];
   if (!cols) return [];
   return (rows ?? []).map((row) => {
     const out = {};
-    for (const c of cols) if (Object.hasOwn(row, c)) out[c] = safeValue(row[c]);
+    for (const c of cols) {
+      if (!Object.hasOwn(row, c)) continue;
+      if (table === 'findings' && c === 'evidence') out[c] = safeEvidence(row[c]);
+      else if (table === 'findings' && c === 'suggestion') out[c] = typeof row[c] === 'string' && row[c].length <= 1000 && !HOST_PATH.test(row[c]) ? row[c] : null;
+      else out[c] = safeValue(row[c]);
+    }
     return out;
   });
 }
@@ -55,6 +89,7 @@ export function shapeRows(table, rows) {
 export function shapeRecords(records) {
   return {
     sessions: shapeRows('sessions', records.session ? [records.session] : []),
+    features: shapeRows('features', records.features ?? []),
     model_calls: shapeRows('model_calls', records.modelCalls),
     turns: shapeRows('turns', records.turns),
     tool_use: shapeRows('tool_use', records.toolUse),

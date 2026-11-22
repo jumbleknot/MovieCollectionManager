@@ -3,9 +3,9 @@ type: Runbook
 title: Claude Code token usage capture (prod-dev-usage)
 description: How every dev-container Claude Code session ships per-session, per-turn and per-tool token counts — never content — through committed lifecycle hooks and scripts/cc-usage.mjs to the tailnet-only prod-dev-usage store (Postgres + PostgREST on 19040, Keycloak client-credentials tokens), the operator setup that turns it on, what doctor reports, and the traps — best-effort SessionEnd, the per-session lock and spool order, the JWKS fetched only at deploy, and not-configured meaning do nothing.
 resource: docs/runbooks/dev-usage.md
-resource-sha256: 3d419de3b0cbec364587facd3fa0b16871909776df44eb4d89ed3d8521796846
+resource-sha256: b38ec0279a6cb895fd1cdf7da025830ec7b95c9ac434e5f8b2148eaeb43967b4
 tags: [claude-code, usage, tokens, postgrest, keycloak, devcontainer, runbook]
-timestamp: 2026-11-22T00:24:20.537Z
+timestamp: 2026-11-22T01:41:45.381Z
 ---
 
 # Claude Code token usage capture (prod-dev-usage)
@@ -15,9 +15,18 @@ Feature 105. Three hooks committed in `.claude/settings.json` (`SessionStart`, `
 reduces them to names, counts and sizes, and upserts them over HTTP to the `prod-dev-usage` Komodo stack:
 Postgres (schema `usage`) behind PostgREST, published on **19040**, tailnet-only. Every request carries a
 short-lived Keycloak token for the service-account client `dev-usage-capture`, cached in the container
-until 60 s before it expires. The runbook has the one-time operator setup (ending with a reinstall of the host backup copies,
-which do not dump the store until then), the `doctor` reference, key rotation, restore and the
-format-drift procedure.
+until 60 s before it expires. Each turn also carries an activity label and the feature it worked on,
+both decided in the container. The `usage` skill and `cc-usage.mjs` answer questions per session,
+feature, spec and activity (`now` works offline). Findings compare recent sessions with the developer's
+own 28-day baseline. A Grafana dashboard in `prod-observability` reads the views. The runbook covers:
+- the one-time operator setup, ending with a reinstall of the host backup copies, which do not dump the
+  store until then;
+- the smaller round after the US2–US4 merge;
+- the `doctor` reference;
+- key rotation;
+- restore and its drill;
+- the opt-in statusline for plan-limit burn;
+- the format-drift procedure.
 
 ## Load-bearing gotchas
 
@@ -42,6 +51,16 @@ format-drift procedure.
   parent's calls under the same message id. A batch holding both copies is a Postgres `21000` (`store
   500`), and its spooled copy then blocks the session at every retry. So the first occurrence (main)
   claims the call, and `sendBatches` also sends one row per conflict key (T077).
+- **Features are per TURN, not per session.** A main-checkout session that drives two worktrees splits
+  between their features. A turn whose calls name no path inherits the previous turn's feature, and
+  `gitBranch` is used only for a session's first turn (it says `main` in the shared checkout). Calls
+  with no attributed turn count as "no feature", so all features + no feature = all sessions.
+- **Schema files re-apply in name order, so view columns are only ever appended.** The US3 turn columns
+  are in `035`, before `040` defines `v_turn_totals`. Columns added after `040` would make its next
+  re-apply fail with `cannot drop columns from view`.
+- **PostgREST bulk inserts need one key set per request** (PGRST102). `sendBatches` groups rows by keys
+  and never fills a gap with null. Minimal `features` rows ship with every batch, and outcome rows go in
+  their own upsert, so neither overwrites the other.
 - **The store learns Keycloak's keys only when PostgREST starts.** PostgREST cannot fetch a JWKS URL, so
   an init container fetches it into a volume. Like every prod init, it then idles under
   `restart: always` behind a ready marker, because Komodo counts an exited container as unhealthy. After a signing-key rotation, `doctor` says `store rejects token`

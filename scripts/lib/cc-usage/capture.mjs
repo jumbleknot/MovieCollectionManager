@@ -15,6 +15,8 @@ import {
 } from './local-state.mjs';
 import { obtainAccessToken, tokenState } from './obtain-access-token.mjs';
 import { captureStatus, initialState, parseTranscript, summarizeSession } from './parse-transcript.mjs';
+import { emptySummary, foldSummary, parseSessionFiles } from './session-summary.mjs';
+import { attribute, collectOutcomes, pushWeights, reconcileOpen } from './feature-context.mjs';
 import { sendBatches, shipRecords } from './ship-records.mjs';
 import { listSessions, sessionPaths } from './transcript-files.mjs';
 
@@ -44,6 +46,8 @@ export function loadConfig(env = process.env) {
     intervalMs: (Number.isFinite(interval) ? interval : 900) * 1000,
     now: () => fixedNow ?? Date.now(),
     sweepMaxSessions: env.CC_USAGE_TEST_SWEEP_MAX_SESSIONS ? Number(env.CC_USAGE_TEST_SWEEP_MAX_SESSIONS) : Infinity,
+    testWorktrees: env.CC_USAGE_TEST_WORKTREES || null, // test-only: a worktrees.json in place of `git rev-parse`
+    repoDir: env.CLAUDE_PROJECT_DIR || process.cwd(), // a checkout for git and specs/ when a feature's worktree is gone
     traceEvent,
     fetch: (url, init) => {
       traceEvent(`fetch ${new URL(url).pathname}`);
@@ -149,21 +153,25 @@ export async function shipSession(cfg, { projectDir, sessionId }, how = {}) {
     const unclaimed = (calls) => calls.filter((c) => !claimed.has(c.message_id) && claimed.add(c.message_id));
     const mainBuf = readOrNull(mainPath);
     let mainSession = null;
+    let mainSignals = {};
     const range = { file: 'main', from: st.files.main?.offset ?? 0, to: null };
     if (mainBuf) {
       const r = parseTranscript(mainBuf, st.files.main ?? initialState(), opts);
       st.files.main = r.state;
       mainSession = r.records.session;
+      mainSignals = r.signals ?? {};
       range.to = r.state.offset;
       records.modelCalls.push(...unclaimed(r.records.modelCalls));
       records.turns.push(...r.records.turns);
       records.toolUse.push(...r.records.toolUse);
       records.skillUse.push(...r.records.skillUse);
     }
+    const subBufs = [];
     const reasons = [...(st.files.main?.reasons ?? [])];
     const add = (r) => { if (!reasons.includes(r)) reasons.push(r); };
     for (const s of subagents) {
       const tbuf = readOrNull(s.transcriptPath);
+      subBufs.push({ agentId: s.agentId, buf: tbuf });
       if (!tbuf) {
         add('subagent-transcript-missing');
         continue;
@@ -194,6 +202,22 @@ export async function shipSession(cfg, { projectDir, sessionId }, how = {}) {
       capture_status: captureStatus({ hasMain: Boolean(mainBuf), reasons, ended: Boolean(st.endedAt) }),
       partial_reasons: reasons,
     };
+    // The incremental summary `now` reads (US2, T040). A session shipped before summaries existed, or
+    // whose summary does not cover exactly the previous offsets, is rebuilt once from those bytes.
+    const prevOffsets = Object.fromEntries(Object.entries(prev.files ?? {}).map(([k, v]) => [k, v?.offset ?? 0]));
+    const covered = prev.summary && Object.entries(prevOffsets).every(([k, o]) => (prev.summary.offsets?.[k] ?? -1) === o);
+    const summaryBase = covered ? prev.summary : Object.keys(prevOffsets).length
+      ? foldSummary(emptySummary(), parseSessionFiles({ sessionId, projectDir, mainBuf, subagents: subBufs, limits: prevOffsets }), prevOffsets)
+      : emptySummary();
+    st.summary = foldSummary(summaryBase, records, Object.fromEntries(Object.entries(st.files).map(([k, v]) => [k, v?.offset ?? 0])));
+    // US3: each turn's feature (records.turns gain feature_id, attribution_rule) and the features rows
+    // they reference. Attribution never fails a ship: on any error the turns go without a feature.
+    try {
+      records.features = await attribute(cfg, { records, signals: mainSignals, st });
+    } catch (e) {
+      log(dir, { level: 'warn', msg: 'attribution failed', session_id: sessionId, reason: String(e?.message ?? e).slice(0, 120) }, { now });
+      records.features = [];
+    }
     const sessionKey = JSON.stringify(session);
     const hasNew = records.modelCalls.length + records.turns.length + records.toolUse.length + records.skillUse.length > 0;
     if (!hasNew && sessionKey === prev.lastSessionKey) {
@@ -207,6 +231,12 @@ export async function shipSession(cfg, { projectDir, sessionId }, how = {}) {
     }
     writeSessionState(dir, sessionId, { ...st, lastShipAt: now, lastSessionKey: sessionKey });
     if (res.ok) writeAtomic(paths(dir).ship, JSON.stringify({ lastOkAt: now }));
+    // US3 outcomes, after the batch landed (its features rows exist), at SessionEnd and in sweeps.
+    if (res.ok && (how.ended || how.sweep) && st.featuresTouched?.length) {
+      try {
+        await collectOutcomes(cfg, st, { budgetMs: how.ended ? 3000 : 6000 });
+      } catch { /* the next SessionEnd or sweep collects them */ }
+    }
     return res.ok ? 'shipped' : 'spooled';
   } finally {
     releaseLock(dir, `session-${sessionId}`);
@@ -232,6 +262,9 @@ export async function sweep(cfg) {
       handled += 1;
       if (r === 'backoff' || r === 'locked') complete = false;
     }
+    // US3 housekeeping, best effort: the committed weight table, and ids minted offline for one branch.
+    try { await pushWeights(cfg); } catch { /* next sweep */ }
+    try { await reconcileOpen(cfg); } catch { /* next sweep */ }
     if (complete) writeAtomic(p.sweep, JSON.stringify({ completedAt: now }));
     return complete ? 'complete' : 'incomplete';
   } finally {

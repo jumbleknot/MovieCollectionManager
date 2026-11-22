@@ -3,10 +3,10 @@ type: Architecture
 title: Infrastructure-as-code stacks (local Compose + production Komodo)
 description: How the four named local Docker Compose stacks (auth, mcm, audit, observability) and the eight production Komodo ResourceSync stacks are defined as config-as-code, the side artifacts that ship with them, and the deploy ordering, interpolation/env_file contract, published-port carve-out and topology rules that keep them from colliding or drifting.
 resource: infrastructure-as-code/komodo/stacks.toml
-resource-sha256: 039ac79f413f84e3dfd1aec5ca9729b72ce4201e7bc8c84c8370d093bb4d50ff
+resource-sha256: 5eab18711b42fabea3140390534f35635ddd52626e7617c840050d2a1fa2d9c0
 tags: [infrastructure, docker-compose, komodo, deployment, nx]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-21T16:34:48.458Z
+timestamp: 2026-11-22T01:41:33.116Z
 ---
 
 # Infrastructure-as-code stacks (local Compose + production Komodo)
@@ -286,8 +286,11 @@ are declared:
   `LANGFUSE_CLICKHOUSE_PASSWORD`, `LANGFUSE_REDIS_PASSWORD`, `LANGFUSE_RUSTFS_SECRET_KEY`,
   `LANGFUSE_INIT_PROJECT_PUBLIC_KEY`, `LANGFUSE_INIT_PROJECT_SECRET_KEY`,
   `LANGFUSE_INIT_USER_PASSWORD`, `UNLEASH_PG_PASSWORD`, `UNLEASH_ADMIN_TOKEN`,
-  `UNLEASH_CLIENT_TOKEN`), and `TAILNET_HOST`, reused for LangFuse's tailnet `NEXTAUTH_URL`. No
-  `additional_env_files`.
+  `UNLEASH_CLIENT_TOKEN`), and `TAILNET_HOST`, reused for LangFuse's tailnet `NEXTAUTH_URL`. Since
+  feature 105 US3 also `DEV_USAGE_READER_PASSWORD`, shared with `prod-dev-usage`: Grafana in
+  `otel-lgtm` reads the usage store's views as `usage_reader` for the "Claude Code usage" dashboard. Its
+  datasource and dashboard are mounted as single files, so the image's own provisioning stays visible.
+  No `additional_env_files`.
 - **`prod-vault`** (`docker/vault`) — **no `environment` block at all**: a dormant Vault has no root
   token to inject. Its `[stack.config]` still carries `env_file_path = ".env.prod"` and no
   `additional_env_files`, so it is the fourth stack that receives no committed digest file (the other

@@ -23,6 +23,8 @@ test('the changes job exposes a dev-usage output over the store\'s paths', () =>
     'scripts/cc-usage.mjs',
     'scripts/lib/cc-usage/**',
     'infrastructure-as-code/docker/keycloak/*-realm.json',
+    // US3: the integration tier runs every Grafana panel query as usage_reader against the views.
+    'infrastructure-as-code/docker/observability/grafana/**',
   ]);
 });
 

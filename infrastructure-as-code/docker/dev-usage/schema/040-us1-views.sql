@@ -26,9 +26,15 @@ SELECT
            FILTER (WHERE c.agent_id IS NOT NULL), 0)::bigint AS subagent_tokens,
   COUNT(c.message_id)::bigint AS model_calls,
   (SELECT COUNT(*) FROM usage.turns t WHERE t.session_id = s.session_id)::bigint AS turns,
-  (SELECT t.context_tokens_at_start FROM usage.turns t WHERE t.session_id = s.session_id ORDER BY t.turn_seq LIMIT 1) AS floor_tokens
+  (SELECT t.context_tokens_at_start FROM usage.turns t WHERE t.session_id = s.session_id ORDER BY t.turn_seq LIMIT 1) AS floor_tokens,
+  -- US2 (`sessions --area`): the union of the turns' areas. LAST, because CREATE OR REPLACE VIEW can
+  -- only append columns to a view that already exists on a running store.
+  (SELECT COALESCE(array_agg(DISTINCT a ORDER BY a), '{}') FROM usage.turns t, unnest(t.areas) AS a
+    WHERE t.session_id = s.session_id) AS areas,
+  -- US3: weighted by the latest token_weights (035). Appended last, as above.
+  COALESCE(SUM(c.weighted_tokens), 0)::numeric AS weighted_tokens
 FROM usage.sessions s
-LEFT JOIN usage.model_calls c ON c.session_id = s.session_id
+LEFT JOIN usage.v_call_weighted c ON c.session_id = s.session_id
 GROUP BY s.session_id;
 
 CREATE OR REPLACE VIEW usage.v_turn_totals AS
@@ -47,9 +53,15 @@ SELECT
   COALESCE(SUM(c.cache_read_tokens), 0)::bigint AS cache_read_tokens,
   COALESCE(SUM(c.cache_write_5m_tokens), 0)::bigint AS cache_write_5m_tokens,
   COALESCE(SUM(c.cache_write_1h_tokens), 0)::bigint AS cache_write_1h_tokens,
-  COUNT(c.message_id)::bigint AS model_calls
+  COUNT(c.message_id)::bigint AS model_calls,
+  -- US3 (columns from 035; appended last so a running store's view can be replaced in place).
+  t.activity,
+  t.activity_rule,
+  t.feature_id,
+  t.attribution_rule,
+  COALESCE(SUM(c.weighted_tokens), 0)::numeric AS weighted_tokens
 FROM usage.turns t
-LEFT JOIN usage.model_calls c ON c.session_id = t.session_id AND c.turn_seq = t.turn_seq
+LEFT JOIN usage.v_call_weighted c ON c.session_id = t.session_id AND c.turn_seq = t.turn_seq
 GROUP BY t.session_id, t.turn_seq;
 
 GRANT SELECT ON usage.v_session_totals, usage.v_turn_totals TO usage_writer, usage_reader;
