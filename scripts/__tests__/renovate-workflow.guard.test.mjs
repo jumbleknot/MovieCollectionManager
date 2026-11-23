@@ -2412,6 +2412,9 @@ const appCiText = readFileSync(APP_CI, 'utf8');
 const guardrailsText = readFileSync(GUARDRAILS, 'utf8');
 const renovateText = readFileSync(WORKFLOW, 'utf8');
 const toolchainDockerfile = readFileSync(TOOLCHAIN_DOCKERFILE, 'utf8');
+// Item #1114: the sast job's Rust tooling moved out of guardrails.yml into this installer.
+const RUST_AUDIT_INSTALLER = 'scripts/ci-install-rust-audit.sh';
+const rustAuditInstallerText = readFileSync(resolve(REPO_ROOT, RUST_AUDIT_INSTALLER), 'utf8');
 
 const customManagers = config.customManagers ?? [];
 const managerPatterns = (m) => m.managerFilePatterns ?? m.fileMatch ?? [];
@@ -2447,15 +2450,21 @@ test('a rust-toolchain.toml pins an EXACT Rust version, so no unchosen compiler 
   }
 });
 
+// Every site that bootstraps rustup. guardrails' sast job does it through RUST_AUDIT_INSTALLER
+// since item #1114 (a verified rustup-init, not sh.rustup.rs), so the installer is the site checked.
 const RUSTUP_WORKFLOWS = [
-  ['.forgejo/workflows/guardrails.yml', guardrailsText],
+  [RUST_AUDIT_INSTALLER, rustAuditInstallerText],
   ['.forgejo/workflows/app-ci.yml', appCiText],
   ['.forgejo/workflows/renovate.yml', renovateText],
 ];
 
+const rustupInstallLine = (text) =>
+  // Comment lines excluded: the installer's header names sh.rustup.rs as what it replaced.
+  text.split('\n').find((l) => !/^\s*#/.test(l) && (l.includes('sh.rustup.rs') || /rustup-init"?\s+-y\b/.test(l)));
+
 for (const [file, text] of RUSTUP_WORKFLOWS) {
   test(`${file}'s rustup install defers to rust-toolchain.toml rather than taking stable`, () => {
-    const line = text.split('\n').find((l) => l.includes('sh.rustup.rs'));
+    const line = rustupInstallLine(text);
     assert.ok(line, `${file} no longer installs Rust by this recipe — update the guard rather than deleting it.`);
     assert.match(
       line,
@@ -2588,24 +2597,19 @@ test('Renovate tracks the semgrep pin, so the scanner that blocks a merge does n
 // ── cargo-audit ─────────────────────────────────────────────────────────────────────────────────
 
 // The two spellings this repository uses: `cargo-audit@X` (the devcontainer's `cargo install` list)
-// and `cargo-audit … --version X` (the workflow, where `--locked` sits between the two).
-const cargoAuditVersionIn = (text) => /cargo-audit(?:@|[^\n]*?--version\s+)(\d+\.\d+\.\d+)/.exec(text)?.[1] ?? null;
+// and `CARGO_AUDIT_VERSION=X` (the CI installer, item #1114).
+const cargoAuditVersionIn = (text) => /cargo-audit@(\d+\.\d+\.\d+)|^CARGO_AUDIT_VERSION=(\d+\.\d+\.\d+)$/m.exec(text)?.slice(1).find(Boolean) ?? null;
 
 test('cargo-audit is version-pinned wherever it is installed, and both sites agree', () => {
-  // `cargo"? install` — the workflow invokes it as `"$HOME/.cargo/bin/cargo" install`, so the
-  // quote sits between the binary and the subcommand.
-  const ci = /cargo"?\s+install[^\n]*cargo-audit[^\n]*/.exec(guardrailsText)?.[0] ?? '';
-  assert.ok(ci, 'guardrails no longer installs cargo-audit by this recipe');
-  assert.match(
-    ci,
-    /--version\s+\d+\.\d+\.\d+|cargo-audit@\d+\.\d+\.\d+/,
-    'guardrails installs cargo-audit at whatever version is newest that run:\n' +
-      `    ${ci.trim()}\n` +
-      '  `--locked` locks the crate\'s DEPENDENCIES, not the crate\'s own version. This is the tool\n' +
-      '  that decides whether a Rust advisory blocks the merge.',
-  );
+  // The sast job installs it ONLY through the installer — a `cargo install` creeping back into the
+  // workflow would compile it again, unpinned by the checksum below.
+  assert.match(guardrailsText, /ci-log-step\.sh sast-install-rust-cargo-audit bash -e \/dev\/stdin <<'CI_LOG_STEP'\n\s*bash scripts\/ci-install-rust-audit\.sh\n/,
+    'the sast job no longer installs cargo-audit through scripts/ci-install-rust-audit.sh');
+  assert.doesNotMatch(guardrailsText, /cargo"?\s+install[^\n]*cargo-audit/, 'guardrails compiles cargo-audit again (item #1114)');
+  assert.doesNotMatch(guardrailsText, /curl[^\n]*sh\.rustup\.rs[^\n]*\|/, 'guardrails pipes sh.rustup.rs into sh again (item #1114)');
 
-  const ciVersion = cargoAuditVersionIn(ci);
+  const ciVersion = cargoAuditVersionIn(rustAuditInstallerText);
+  assert.ok(ciVersion, `${RUST_AUDIT_INSTALLER} pins no CARGO_AUDIT_VERSION — this is the tool that decides whether a Rust advisory blocks the merge`);
   const devLine = /cargo-audit@?\S*/.exec(toolchainDockerfile)?.[0] ?? '';
   const devVersion = cargoAuditVersionIn(devLine);
   assert.ok(devVersion, `the devcontainer installs cargo-audit unpinned ('${devLine.trim()}'), so a local scan and the CI scan can disagree`);
@@ -2615,13 +2619,38 @@ test('cargo-audit is version-pinned wherever it is installed, and both sites agr
 test('Renovate tracks the cargo-audit pin in both files', () => {
   const ca = managerFor('cargo-audit');
   assert.equal(ca.length, 1, 'expected exactly one customManager tracking cargo-audit');
-  assert.equal(ca[0].datasourceTemplate, 'crate', 'cargo-audit is installed with `cargo install`, so it comes from crates.io');
+  assert.equal(ca[0].datasourceTemplate, 'crate', 'cargo-audit release versions are its crates.io versions');
   for (const [file, text] of [
-    ['.forgejo/workflows/guardrails.yml', guardrailsText],
+    [RUST_AUDIT_INSTALLER, rustAuditInstallerText],
     ['.devcontainer/toolchain.Dockerfile', toolchainDockerfile],
   ]) {
     assert.ok(managerCovers(ca[0], file), `the cargo-audit customManager does not cover ${file}, so that pin would rot while the other moved`);
     assert.ok(capturesIn(ca[0], text), `the cargo-audit customManager's matchStrings capture no currentValue in ${file}`);
+  }
+});
+
+test('item #1114: each pinned sha256 in the Rust installer was taken for the version it pins', () => {
+  // Renovate moves `*_VERSION` alone (its managers match nothing else). The `*_SHA256_FOR` beside
+  // each checksum is what a bump PR cannot update, so the pair disagreeing is THE signal that the
+  // checksum is stale — caught here, offline, instead of as a download failure in CI.
+  const v = (name) => new RegExp(`^${name}=(\\S+)$`, 'm').exec(rustAuditInstallerText)?.[1] ?? null;
+  for (const [what, version, shaFor, sha, where] of [
+    ['rustup-init', 'RUSTUP_VERSION', 'RUSTUP_INIT_SHA256_FOR', 'RUSTUP_INIT_SHA256', 'static.rust-lang.org/rustup/archive/<V>/x86_64-unknown-linux-gnu/rustup-init.sha256'],
+    ['cargo-audit', 'CARGO_AUDIT_VERSION', 'CARGO_AUDIT_SHA256_FOR', 'CARGO_AUDIT_SHA256', "the cargo-audit/v<V> release's x86_64-unknown-linux-musl asset digest on github.com/rustsec/rustsec"],
+  ]) {
+    assert.match(String(v(sha)), /^[0-9a-f]{64}$/, `${RUST_AUDIT_INSTALLER}: ${sha} is not a sha256`);
+    assert.equal(
+      v(shaFor), v(version),
+      `${RUST_AUDIT_INSTALLER}: ${version} is ${v(version)} but ${sha} was taken for ${v(shaFor)}.\n` +
+        `  A ${what} bump needs its checksum too — copy it from ${where}, then set ${shaFor}.`,
+    );
+  }
+  // And the managers really do leave the checksum half alone — otherwise this guard would be moot.
+  const managers = [...managerFor('cargo-audit'), ...managerFor('rust-lang/rustup')];
+  assert.equal(managers.length, 2, 'expected one customManager each for cargo-audit and rust-lang/rustup');
+  for (const m of managers) {
+    for (const ms of m.matchStrings) assert.doesNotMatch(ms, /SHA256/, `a Renovate matchString reaches a checksum: ${ms}`);
+    assert.ok(capturesIn(m, rustAuditInstallerText), `the ${m.depNameTemplate} customManager captures nothing in ${RUST_AUDIT_INSTALLER}`);
   }
 });
 

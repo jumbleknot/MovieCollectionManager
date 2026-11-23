@@ -15,7 +15,8 @@ blocking `sast` CI gate. Config tree: [security/sast/](../../security/sast/).
 ## Run it locally
 
 Prereqs (no app stack needed — this is a static scan): Node ≥ 22.13 (the root `engines.node` floor), `uv`/`uvx`, a Rust toolchain with
-`cargo-audit` (`cargo install cargo-audit --locked`), pnpm, and **all four Python venvs synced**
+`cargo-audit` (`cargo install cargo-audit --locked --version 0.23.0`, or the prebuilt binary CI uses —
+`scripts/ci-install-rust-audit.sh`, Linux x86_64), pnpm, and **all four Python venvs synced**
 (`uv sync` in `agents/movie-assistant` and in each `mcp-servers/*` — pip-audit audits the installed
 env, per surface). An unsynced surface **fails** the scan; it is never silently skipped.
 
@@ -71,7 +72,7 @@ iteration. `--emit-allowlist` writes `reports/allowlist.proposed.yaml` (baseline
 The blocking **`sast`** job in [.forgejo/workflows/guardrails.yml](../../.forgejo/workflows/guardrails.yml)
 runs on every pull request and on every push to `main` (the `push:` trigger is branch-scoped; the
 required contexts come from `pull_request`, auto-covered by the `guardrails*` branch-protection glob). Keyless — no scanner uses a
-`${{ secrets }}` value (the only one in the job is the shared failure-digest step's). Steps: install uv + Rust/cargo-audit fresh + `pnpm install` + `uv sync` each of the
+`${{ secrets }}` value (the only one in the job is the shared failure-digest step's). Steps: install uv + rustup and the prebuilt cargo-audit (`scripts/ci-install-rust-audit.sh`) + `pnpm install` + `uv sync` each of the
 four Python venvs → `check-sast-findings.mjs --selftest` → `sast-scan.mjs --test-rules` → `sast-scan.mjs` (`--scope changed` on PRs, `--scope full`
 on push; **SCA always full**) → `check-sast-findings.mjs` (the gate) → on PRs,
 `check-dependency-downgrade.mjs` (the downgrade gate, below) → upload the `sast-report` artifact
@@ -333,6 +334,12 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
   `/root/.cache`. Every scan failed with `PermissionError: /root/.cache, writable by another user`,
   reported as `produced non-JSON output`. The flag keeps pip-audit away from platformdirs altogether.
   Do not pin `platformdirs` back instead; that would undo a hardening fix to keep a shared cache.
+- **pip-audit repeats vulnerabilities; the normalizer keeps each once (item #1117).** Measured with
+  pip-audit 2.10.1 (`-s osv`): `jinja2 3.1.2` came back with 10 `vulns[]` entries for 5 ids, `werkzeug
+  2.2.2` with 20 for 11 — every entry verbatim twice. `normalizePipAudit` keys a finding by (package,
+  version, advisory id). Ids that are each other's *aliases* (`PYSEC-2026-1860` / `PYSEC-2026-3417`
+  for one werkzeug advisory) are deliberately **not** merged: a suppression matches an exact `id`, and
+  folding one into the other would silently change which id it must name.
 - **Keyless & fail-CLOSED (R7).** All rule/advisory data is fetched anonymously at scan time (Semgrep
   registry, RustSec DB, npm advisories, OSV/PyPI). If any fetch fails, that scanner **fails fast**
   (exit 1, `scanners[].error` recorded) rather than reporting a false clean. Residual: an upstream
@@ -433,8 +440,16 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
 - **Rust code is out of Semgrep scope** — clippy (`pnpm nx lint mc-service`) covers Rust patterns;
   cargo-audit covers only Rust *deps*. Consequently `mcm-no-jwt-payload-tracing` enforces the no-JWT-
   logging invariant on TS/JS + Python only; the mc-service (Rust) residual stays with clippy + review.
-- **No caching yet.** `actions/cache` is not mirrored on the runner, so cargo-audit is compiled fresh
-  each run (~2–3 min). A monthly-keyed cache of `~/.cargo/bin/cargo-audit` + `~/.cargo/advisory-db` is a
-  future optimization.
+- **cargo-audit is the PREBUILT release binary, not a per-run compile (item #1114).**
+  `scripts/ci-install-rust-audit.sh` downloads a `rustup-init` and the `x86_64-unknown-linux-musl`
+  cargo-audit asset and verifies each against the sha256 its publisher states (rustup's
+  `rustup-init.sha256`; the GitHub release asset's digest). It replaced `curl sh.rustup.rs | sh` plus
+  `cargo install cargo-audit`, which compiled for minutes every run behind an apt step for
+  `build-essential`/`pkg-config`/`libssl-dev` that existed only for that compile — both are gone.
+  rustup still installs **no** toolchain (`--default-toolchain none`): the scan's `cargo tree` installs
+  `rust-toolchain.toml`'s. **Bumping either pin:** Renovate moves `RUSTUP_VERSION` /
+  `CARGO_AUDIT_VERSION` only, so its PR is red (`renovate-workflow.guard.test.mjs`, and the installer
+  itself) until the matching `*_SHA256` and `*_SHA256_FOR` are copied from the release — a checksum is
+  never re-trusted automatically.
 - **Paths are normalized to forward slashes** so allowlist `locationPattern`s are portable across the
   Windows dev host and the Linux CI runner.

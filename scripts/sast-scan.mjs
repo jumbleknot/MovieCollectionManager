@@ -723,12 +723,20 @@ export function assertPipAuditAllowlistShape(entries = []) {
 
 export function normalizePipAudit(native, agentSet, runtimeSet, map, project) {
   const out = [];
+  // pip-audit repeats vulns verbatim (item #1117 — measured with 2.10.1 on `-s osv`: 10 entries for 5
+  // ids on one package), so a finding is keyed by (package, version, advisory id) and kept once.
+  // Exact id only: ids that are each other's ALIASES stay separate, because a suppression matches an
+  // exact id and folding one into the other would silently change which id it has to name.
+  const seen = new Set();
   for (const dep of native.dependencies ?? []) {
     const name = normPyName(dep.name);
     // Auditing the installed env also surfaces pip-audit's own ephemerally-injected deps; keep only
     // packages that are actually in the agent's dependency graph (agentSet). Null set → keep all.
     if (agentSet && !agentSet.has(name)) continue;
     for (const vuln of dep.vulns ?? []) {
+      const key = `${name}@${dep.version}#${vuln.id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
       // pip-audit/OSV rarely carries a CVSS score → conservative 'unscored' (→ High).
       const severity = normalizeSeverity('pip-audit', 'unscored', map);
       const scope = classifyScope(name, runtimeSet);

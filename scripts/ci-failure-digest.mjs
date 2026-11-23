@@ -1603,6 +1603,21 @@ async function run() {
  * Publishing here can only ADD a package version; it never comments, never sets a status, and never
  * touches the job's result.
  */
+/**
+ * Whether a PASSING job publishes anything, and why (item #1113).
+ *
+ * Counts sources OR step durations. It used to be counts alone, so every green job other than the
+ * e2e tiers returned early here — and the durations sample (item #338) rides only on a published
+ * version, so `ci-status durations` had green-run samples for e2e and nothing else: the ceilings it
+ * proposes for `sast`, `okf` and the rest were drawn from FAILED runs only. Neither present is still
+ * "publish nothing": a green job with nothing to say must stay free.
+ */
+export function countsPublication({ sources = [], durations = null } = {}) {
+  if (sources.length) return { publish: true, durationsOnly: false, reason: 'the job passed with e2e counts sources' };
+  if (durations) return { publish: true, durationsOnly: true, reason: 'the job passed with step durations and no counts sources' };
+  return { publish: false, durationsOnly: false, reason: 'the job passed and produced no counts sources and no step durations' };
+}
+
 async function publishCounts({ context, evidence, gate, emitOutcome }) {
   const sources = selectCountsSources(evidence.excerpts);
 
@@ -1611,9 +1626,10 @@ async function publishCounts({ context, evidence, gate, emitOutcome }) {
   // copy, applied to the case that previously produced no output at all.
   for (const s of sources) console.log(`[ci-failure-digest] ${s.source}\n${s.text.trim()}`);
 
-  if (!sources.length) {
-    emitOutcome(describeOutcome({ gate: { publish: false, reason: 'the job passed and produced no counts sources' } }));
-    console.log('[ci-failure-digest] counts mode — this job runs no e2e counts steps; nothing to publish.');
+  const decision = countsPublication({ sources, durations: readStepDurations() });
+  if (!decision.publish) {
+    emitOutcome(describeOutcome({ gate: { publish: false, reason: decision.reason } }));
+    console.log('[ci-failure-digest] counts mode — no e2e counts and no step durations; nothing to publish.');
     return;
   }
 
@@ -1636,14 +1652,16 @@ async function publishCounts({ context, evidence, gate, emitOutcome }) {
   let result;
   try {
     await publishBundle(api, version, { excerpts: sources, health: [], absent: evidence.absent }, context);
-    result = { published: true, channel: 'counts-bundle' };
+    // A durations-only version still carries a (tiny) bundle.json.gz: the version stays
+    // self-describing (run, job, sha) and every reader keeps one shape to expect.
+    result = { published: true, channel: decision.durationsOnly ? 'durations-bundle' : 'counts-bundle' };
   } catch (err) {
     result = { published: false, reason: redactForPublication(String(err?.message ?? err)) };
   }
   emitOutcome(describeOutcome({ gate, tokenPresent: true, publishResult: result }));
   console.log(
     result.published
-      ? `[ci-failure-digest] counts published (bundle ${version})`
+      ? `[ci-failure-digest] ${decision.durationsOnly ? 'step durations' : 'counts'} published (bundle ${version})`
       : `[ci-failure-digest] counts NOT published — ${result.reason}`,
   );
 

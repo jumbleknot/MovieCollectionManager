@@ -381,6 +381,21 @@ test('feature 068: the same advisory in two projects yields separately suppressi
   assert.ok(!anchored.test(b.location));
 });
 
+test('item #1117: pip-audit repeating a vuln within one dependency is ONE finding, not two', () => {
+  // Measured 2026-11-23 with pip-audit 2.10.1 (-s osv): jinja2 3.1.2 came back with 10 vulns for 5
+  // ids, werkzeug 2.2.2 with 20 for 11 — every entry repeated verbatim. One advisory, one finding.
+  const vuln = (id) => ({ id, aliases: [`CVE-2099-${id.slice(-4)}`], fix_versions: ['3.1.6'] });
+  const native = {
+    dependencies: [{ name: 'jinja2', version: '3.1.2', vulns: [vuln('PYSEC-2099-0001'), vuln('PYSEC-2099-0002'), vuln('PYSEC-2099-0001'), vuln('PYSEC-2099-0002')] }],
+  };
+  const out = normalizePipAudit(native, null, null, MAP, 'agents/movie-assistant');
+  assert.deepEqual(out.map((f) => f.id), ['PYSEC-2099-0001', 'PYSEC-2099-0002']);
+
+  // A repeated DEPENDENCY entry collapses the same way; a different version is a different finding.
+  const twice = { dependencies: [...native.dependencies, ...native.dependencies, { name: 'jinja2', version: '3.1.3', vulns: [vuln('PYSEC-2099-0001')] }] };
+  assert.equal(normalizePipAudit(twice, null, null, MAP, 'agents/movie-assistant').length, 3);
+});
+
 test('feature 068: every surface derives its OWN runtime set, so scope is never borrowed', () => {
   // `uvicorn` is runtime in a server but absent from a different project's graph. Classifying with
   // the wrong project's set is how a server's dev-only package would be called runtime (FR-002).

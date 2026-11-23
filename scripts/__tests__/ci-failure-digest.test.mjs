@@ -1162,7 +1162,22 @@ test('(mm9) a green job with no counts steps publishes nothing and says so', () 
     CI_DIGEST_TOKEN: 'not-a-real-token-just-a-shape',
   });
   assert.equal(r.code, 0);
-  assert.match(r.out, /no e2e counts steps/, 'the self-limiting path did not say why it published nothing');
+  // Item #1113: "nothing to publish" now needs BOTH no counts and no step durations.
+  assert.match(r.out, /no e2e counts and no step durations; nothing to publish/, 'the self-limiting path did not say why it published nothing');
+});
+
+test('(#1113) a green job with step durations and no counts gets PAST the early return', () => {
+  const root = mkdtempSync(join(tmpdir(), 'counts-durations-'));
+  mkdirSync(join(root, '90103', 'sast'), { recursive: true });
+  writeFileSync(join(root, '90103', 'sast', '_step-durations.tsv'), 'sast-static-scan\t0\t412\t412\n');
+  const r = runDigest({
+    GITHUB_RUN_ID: '90103', GITHUB_WORKFLOW: 'guardrails', GITHUB_JOB: 'sast',
+    GITHUB_EVENT_NAME: 'push', CI_DIGEST_JOB_STATUS: 'success', CI_STEP_LOG_ROOT: root,
+    // No purpose-scoped credential: the publish stops at the credential check, so this proves the
+    // decision without a network call. The old code stopped one step earlier, at "nothing to publish".
+  });
+  assert.equal(r.code, 0);
+  assert.doesNotMatch(r.out, /nothing to publish/, r.out);
 });
 
 test('(nn) counts mode carries the global-setup identity lines, filtered, not the whole web-e2e log', async () => {
@@ -1594,6 +1609,30 @@ function durationsHome(rows = {}) {
   }
   return root;
 }
+
+test('(#1113) a green job publishes its step durations even with no e2e counts', async () => {
+  const { countsPublication } = await digestModule();
+  // The regression: sast/okf/guardrails have no counts sources, so they published nothing and
+  // `ci-status durations` had no green-run sample for them.
+  const durationsOnly = countsPublication({ sources: [], durations: 'sast-static-scan\t0\t412\t412' });
+  assert.equal(durationsOnly.publish, true);
+  assert.equal(durationsOnly.durationsOnly, true);
+  // Counts present: unchanged.
+  const counts = countsPublication({ sources: [{ source: 'step:e2e-gate', text: 'x' }], durations: null });
+  assert.equal(counts.publish, true);
+  assert.equal(counts.durationsOnly, false);
+  // Neither: a green job with nothing to say stays free.
+  assert.equal(countsPublication({ sources: [], durations: null }).publish, false);
+  assert.equal(countsPublication().publish, false);
+});
+
+test('(#1113) publishCounts consults the durations, not the counts alone', () => {
+  // Wiring guard: the pure decision above is worthless if publishCounts stops calling it.
+  const src = readFile645(new URL('../ci-failure-digest.mjs', import.meta.url), 'utf8');
+  const body = src.slice(src.indexOf('async function publishCounts('), src.indexOf('export function bundleFiles('));
+  assert.match(body, /countsPublication\(\{ sources, durations: readStepDurations\(\) \}\)/);
+  assert.doesNotMatch(body, /if \(!sources\.length\)/);
+});
 
 test('(#338f) readStepDurations returns null when no step in this job was wrapped', () => {
   assert.equal(readStepDurations({ GITHUB_RUN_ID: 'nope', HOME: '/nonexistent' }), null);

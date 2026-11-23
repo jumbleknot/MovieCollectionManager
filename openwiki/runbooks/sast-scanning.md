@@ -3,10 +3,10 @@ type: Runbook
 title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: 797557e0af6c7988ebde5092c707712cb944b4072b3977d00c6397878e0c857d
+resource-sha256: 44808ac4e6938a77c4fe82a1587d7cdfc975a2a0da0f40d031342b4ceec0049f
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-23T19:47:44.776Z
+timestamp: 2026-11-23T23:20:49.868Z
 ---
 
 # SAST & SCA static scanning
@@ -193,6 +193,10 @@ that job), not by flipping the whole tier.
   is unpinned, and `platformdirs` 4.14.8 (2026-11-20) refuses a user cache dir under a world-writable
   ancestor, which `/root/.cache` is in CI. Every scan failed with `PermissionError: /root/.cache, writable
   by another user`, reported as `produced non-JSON output`. Do not pin `platformdirs` back instead.
+- **pip-audit repeats vulnerabilities; the normalizer keeps each once (item #1117).** Measured with
+  pip-audit 2.10.1: `jinja2 3.1.2` returned 10 `vulns[]` entries for 5 ids, every one twice.
+  `normalizePipAudit` keys a finding by (package, version, advisory id). Alias-linked ids are kept
+  apart on purpose, because a suppression matches an exact `id`.
 - **pip-audit findings are project-qualified; allowlist `locationPattern`s should be surface-anchored.**
   Since feature 068 each finding's location names its surface: `mcp-servers/web-api-mcp:click@8.5.0`,
   not `click@8.5.0`. An allowlist entry should normally be anchored:

@@ -1712,7 +1712,10 @@ export async function cmdFailure(target, conn) {
     // either: superseded is about CONTEXTS being cancelled, and a contextless run has none.
     const contextless = describeContextlessRunFailure(run);
     if (contextless) {
-      emit(contextless);
+      // Item #1116 — "no context" is not "no evidence": a dispatched or scheduled run still publishes
+      // `<run id>--<job>` bundles. Read those first; the warning stands alone only when there are none.
+      const shown = await explainRunBundles(run.id, conn);
+      if (!shown) emit(contextless);
       return EXIT.FAILED;
     }
     if (verdict.superseded.length) {
@@ -1816,6 +1819,32 @@ export async function cmdFailure(target, conn) {
  * Print a failed deploy's digest from its bundle(s), or say that none was published (FR-010/011).
  * Every cd-deploy job that publishes a bundle is tried, quietly: only one of them usually failed.
  */
+/**
+ * Print the digest of every bundle a run published, found by its `<run id>--` version prefix
+ * (item #1116). The prefix, not a job list: a contextless run's job names are known to nothing here,
+ * and the forge has no jobs-of-a-run endpoint in this build. A version with no digest.md (a green
+ * job's counts publication) is not a failure and is skipped. Returns how many digests were printed.
+ */
+async function explainRunBundles(runId, conn) {
+  const prefix = `${runId}--`;
+  const versions = (await listBundleVersions(conn))
+    .map((v) => String(v.version ?? ''))
+    .filter((v) => v.startsWith(prefix))
+    .sort();
+  let shown = 0;
+  for (const version of versions) {
+    const bundle = await fetchBundle(conn, runId, version.slice(prefix.length), { quietWhenAbsent: true });
+    if (!bundle) continue;
+    const digestPath = join(bundle.dir, 'digest.md');
+    if (!existsSync(digestPath)) continue;
+    if (!shown) emit(`⚠ Run ${runId} FAILED and posted NO commit status — reading its evidence bundle(s) instead (item #1116):`);
+    shown += 1;
+    emit(readFileSync(digestPath, 'utf8'));
+    emit(`   📦 extracted to: ${bundle.dir}`);
+  }
+  return shown;
+}
+
 async function explainDeployFailure(deploy, conn) {
   let found = 0;
   for (const job of DEPLOY_BUNDLE_JOBS) {

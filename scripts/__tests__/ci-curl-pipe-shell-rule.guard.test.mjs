@@ -71,7 +71,9 @@ test('the rule matches every curl-pipe-shell line the workflows actually contain
   // A regex that matched nothing would pass every acceptance test below vacuously. This is the
   // guard against that: the blinded community rule's 0 findings looked exactly like a clean repo.
   assert.ok(
-    hits.length >= 6,
+    // 5 since item #1114 took guardrails' sast rustup off `curl sh.rustup.rs | sh` (was 6). Lower it
+    // again only by REMOVING an installer — never to make a pattern that stopped matching pass.
+    hits.length >= 5,
     `expected the pattern to see the curl|shell installers in .forgejo/workflows (found ${hits.length}) — ` +
       'a pattern that matches nothing makes every acceptance assertion below vacuous, which is the ' +
       'exact failure mode item #224 documents',
@@ -79,7 +81,7 @@ test('the rule matches every curl-pipe-shell line the workflows actually contain
   // Every one of them is inside a ci-log-step heredoc, which is what defeated the community rule.
   assert.ok(
     hits.some((h) => h.file === 'guardrails.yml'),
-    'expected guardrails.yml among the matches (its uv + rustup installers are heredoc-wrapped)',
+    'expected guardrails.yml among the matches (its uv installers are heredoc-wrapped)',
   );
 });
 
