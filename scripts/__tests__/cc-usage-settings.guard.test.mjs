@@ -29,10 +29,22 @@ test('the plugin keys are exactly the intended set', () => {
   // measured sessions (host + dev container). A plugin added or removed here must update this list
   // in the same change, so no marketplace slips into every contributor's session unreviewed.
   assert.deepEqual(settings.extraKnownMarketplaces, {
-    'callstack-agent-skills': { source: { source: 'github', repo: 'callstackincubator/agent-skills' } },
+    'callstack-agent-skills': {
+      source: { source: 'github', repo: 'callstackincubator/agent-skills', ref: '59e9d17446a248b21d86f078fcd0bd2d36db1ca4' },
+    },
   });
   assert.deepEqual(settings.enabledPlugins, {
     'building-react-native-apps@callstack-agent-skills': true,
   });
   assert.deepEqual(Object.keys(settings).sort(), ['enabledPlugins', 'extraKnownMarketplaces', 'hooks']);
+});
+
+test('every marketplace is pinned to a full commit SHA', () => {
+  // An unpinned github marketplace runs whatever its repository holds at install/update time in every
+  // contributor's session; a branch or tag can be moved. Only a full 40-hex SHA in `ref` freezes it
+  // (Claude Code v2.1.324+; the github source has no separate `sha` field). Bump the SHA deliberately,
+  // after reading the upstream diff.
+  for (const [name, { source }] of Object.entries(settings.extraKnownMarketplaces ?? {})) {
+    assert.match(source.ref ?? '', /^[0-9a-f]{40}$/, `marketplace ${name} is not pinned to a full commit SHA`);
+  }
 });

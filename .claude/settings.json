@@ -3,7 +3,8 @@
     "callstack-agent-skills": {
       "source": {
         "source": "github",
-        "repo": "callstackincubator/agent-skills"
+        "repo": "callstackincubator/agent-skills",
+        "ref": "59e9d17446a248b21d86f078fcd0bd2d36db1ca4"
       }
     }
   },
