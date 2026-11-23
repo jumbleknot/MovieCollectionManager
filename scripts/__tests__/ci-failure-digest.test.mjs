@@ -649,7 +649,7 @@ test('(bb) another job\'s marker in a log excerpt is neutralised (no cross-job o
   const evil = 'log: <!-- ci-digest:job=affected -->';
   const d = buildDigest(ctx({ job: 'app-e2e' }), { excerpts: [{ source: 'a.log', text: evil }] });
   // exactly one REAL marker (this job\'s, at the top); the injected one is defanged
-  const markers = (d.markdown.match(/<!--\s*ci-digest:job=/g) || []).length;
+  const markers = (d.markdown.match(/<[!]--\s*ci-digest:job=/g) || []).length;
   assert.equal(markers, 1, `expected 1 marker, found ${markers}`);
   assert.match(d.markdown, /^<!-- ci-digest:job=app-e2e -->/);
 });

@@ -20,9 +20,11 @@ Prereqs (no app stack needed — this is a static scan): Node ≥ 22.13 (the roo
 env, per surface). An unsynced surface **fails** the scan; it is never silently skipped.
 
 > **Adding a Python project?** Register it in `PYTHON_SURFACES` (`scripts/sast-scan.mjs`) and add a
-> `uv sync` step to the `sast` job. A project directory carrying a `uv.lock` that is not a registered
-> surface fails the scan by design (feature 068) — neither silently unscanned, nor silently
-> auto-included with a runtime/dev classification nobody reviewed.
+> `uv sync` step to the `sast` job. Any directory holding a tracked `pyproject.toml` — **anywhere in the
+> tree**, discovered with `git ls-files` (item #1110; it used to look only under `agents/` and
+> `mcp-servers/`) — that is not a registered surface fails the scan by design (feature 068), and so
+> does one with no committed `uv.lock`, which pip-audit cannot audit. Neither silently unscanned, nor
+> silently auto-included with a runtime/dev classification nobody reviewed.
 
 > **Adding a nested pnpm workspace?** Nothing to register: `pnpm-audit` audits every committed
 > `pnpm-lock.yaml` (item #721), and `sast-scan.guard.test.mjs` fails if one is ever left out of the
@@ -59,7 +61,9 @@ Reports land in `security/sast/reports/` (gitignored): `findings.json` (gate inp
 the long pole).
 
 Scope flags: `--scope full` (default, whole tree) vs `--scope changed --base <ref>` (Semgrep scans only
-files changed vs `<ref>`; **SCA always runs full**). `--only <scanner,...>` restricts scanners for local
+files changed vs `<ref>`; **SCA always runs full**). If `git diff <ref>...HEAD` fails — a stale or
+missing `origin/main` locally — the scan **exits 2** rather than scanning an empty set and reporting it
+clean (item #1109); `git fetch origin main` and re-run. `--only <scanner,...>` restricts scanners for local
 iteration. `--emit-allowlist` writes `reports/allowlist.proposed.yaml` (baseline-seeding aid).
 
 ## The CI gate
@@ -154,7 +158,11 @@ The scan had otherwise **completed clean** — `scope=changed findings=16 blocki
 cargo-audit 0. osv.dev answered 200 minutes later, and the identical path passed on PRs #443 and #445 the
 same day.
 
-**Since item #449 these are bounded-retried.** The classifier and retry driver live in
+**Since item #449 these are bounded-retried — and since item #1108, so is Semgrep**, whose community
+packs are fetched from the Semgrep registry at scan time. Semgrep needed one extra step: on a registry
+503 or 404 it exits 7 with an **empty stderr** and writes the reason only into its `--json` report's
+`errors[]` (measured, semgrep 1.185.0), so `sast-scan.mjs` classifies those messages together with
+stderr. A 429/5xx is retried; a `HTTP 404` (a misspelled or withdrawn pack) fails at once. The classifier and retry driver live in
 `scripts/lib/scanner-retry.mjs` — **shared** with `infra-image-scan.mjs` since item #495, which needed
 the same thing for Trivy's vulnerability-DB fetch. It was extracted rather than copied on purpose: the
 hard part is the `TRANSIENT_SIGNATURES` list, and a signature learned from one scanner's outage is
@@ -347,7 +355,7 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
 
   ```bash
   curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous
-  node scripts/sast-scan.mjs --scope full --only semgrep           # exit 1 + "[semgrep] scan failed … rules/registry may be unreachable" => unreachable (exit 2 = bad arguments)
+  node scripts/sast-scan.mjs --scope full --only semgrep           # exit 1 + "[semgrep] TRANSPORT/SERVICE ERROR" after 3 attempts => unreachable (exit 2 = bad arguments)
   ```
 
   A Semgrep result you did not sanity-check this way is the same green either way, which is the

@@ -618,7 +618,39 @@ function main() {
     overrides = {};
   }
 
-  process.exit(gate(report, allowlist, today(), { checkExpiring, overrides }));
+  // Exit 1 means "a blocking finding". A report the gate cannot evaluate is exit 2 (item #1111): a
+  // malformed report — `{}`, `null`, `findings` not an array, no `generatedAtScope` — used to escape
+  // as an uncaught GateError or TypeError, which Node turns into exit 1, indistinguishable from a
+  // real finding in the job status.
+  const problem = report?.reportAbsent ? null : reportShapeProblem(report);
+  if (problem) {
+    console.error(`✗ report ${reportPath} is not a findings report the gate can evaluate: ${problem} — regenerate it with scripts/sast-scan.mjs.`);
+    process.exit(2);
+  }
+  let code;
+  try {
+    code = gate(report, allowlist, today(), { checkExpiring, overrides });
+  } catch (e) {
+    if (!(e instanceof GateError)) throw e;
+    console.error(`✗ ${e.message}`);
+    process.exit(2);
+  }
+  process.exit(code);
+}
+
+/**
+ * Why this parsed JSON is not a findings report (specs/033 findings.schema.json), or null if it is.
+ * Checks only what the gate reads; full schema validation stays in the tests.
+ */
+export function reportShapeProblem(report) {
+  if (report === null || typeof report !== 'object' || Array.isArray(report)) return `expected an object, got ${report === null ? 'null' : Array.isArray(report) ? 'an array' : typeof report}`;
+  if (!Array.isArray(report.findings)) return '`findings` is missing or not an array';
+  // `scanners` is deliberately not required: the gate treats it as optional (collectBlinded), and a
+  // shape check stricter than the gate's own reads would reject reports the gate evaluates correctly.
+  if (report.scanners !== undefined && !Array.isArray(report.scanners)) return '`scanners` is not an array';
+  const bad = report.findings.findIndex((f) => f === null || typeof f !== 'object' || typeof f.blocking !== 'boolean');
+  if (bad !== -1) return `findings[${bad}] is not a finding (no boolean \`blocking\`)`;
+  return null;
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';

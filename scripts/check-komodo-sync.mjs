@@ -36,7 +36,7 @@ const RULES = [
   { name: 'hardcoded-url-host', re: HARDCODED_URL_HOST },
 ];
 
-/** Scan one TOML text blob; return [{rule, sample, line}]. Scans comments too — a real host in a
+/** Scan one TOML text blob; return [{rule, line}]. Scans comments too — a real host in a
  *  comment is still a leak. */
 function scanText(text) {
   const hits = [];
@@ -44,7 +44,7 @@ function scanText(text) {
   for (let i = 0; i < lines.length; i++) {
     for (const { name, re } of RULES) {
       const m = re.exec(lines[i]);
-      if (m) hits.push({ rule: name, sample: m[0].slice(0, 40), line: i + 1 });
+      if (m) hits.push({ rule: name, line: i + 1 }); // never the value — the CI log is a publication (item #1106)
     }
   }
   return hits;
@@ -64,7 +64,7 @@ function runScan() {
   }
   if (findings.length) {
     console.error('[komodo-sync] ❌ infra-topology literal(s) in komodo/*.toml — use a [[Variable]] token:');
-    for (const f of findings) console.error(`  ${f.file}:${f.line}: ${f.rule} (${f.sample})`);
+    for (const f of findings) console.error(`  ${f.file}:${f.line}: ${f.rule} (value withheld)`);
     console.error('[komodo-sync] Host/domain/IP/webhook must be Komodo Variables ([[NAME]]) — never committed (scrub rule).');
     process.exit(1);
   }

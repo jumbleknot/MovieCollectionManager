@@ -270,7 +270,10 @@ export function scrubSecretsInText(text) {
     .replace(/eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]*/g, '<redacted-jwt>')
     .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]{20,}/gi, '$1<redacted>')
     .replace(/sk-ant-[A-Za-z0-9_-]{20,}/g, '<redacted-anthropic-key>')
-    .replace(/(mcm_(?:access_token|refresh_token|session_id)=)[^;"'\s\\]+/g, '$1<redacted>');
+    // Any `…access_token=` / `refresh_token=` / `id_token=` / `session_id=` / `client_secret=` /
+    // `api_key=` pair — cookie or query string, `mcm_`-prefixed or not (item #1111: only the three
+    // `mcm_` cookie names were covered, so an ordinary `?access_token=…` in a URL went out verbatim).
+    .replace(/(\b[A-Za-z0-9_]*(?:access_token|refresh_token|id_token|session_id|client_secret|api_key)=)[^;&"'\s\\]+/gi, '$1<redacted>');
 }
 
 function writeReport(path, text) {
@@ -298,6 +301,23 @@ function normalizeSemgrep(native, map) {
   return out;
 }
 
+/**
+ * What a failed Semgrep run actually said: its stderr PLUS the `errors[].message` entries of its JSON
+ * report. Measured (item #1108): on a registry 503 or 404 Semgrep exits 7 with an EMPTY stderr and puts
+ * the only explanation in the report — so the old stderr-only message read "scan failed (exit 7): " with
+ * nothing after it, and no classifier could have told a registry outage from a bad rule.
+ */
+export function semgrepFailureText(stderr, nativeJsonText) {
+  let messages = [];
+  try {
+    const errs = JSON.parse(nativeJsonText || '{}')?.errors;
+    if (Array.isArray(errs)) messages = errs.map((e) => String(e?.message ?? '')).filter(Boolean);
+  } catch {
+    // An unparseable report adds nothing; stderr still stands.
+  }
+  return [String(stderr ?? '').trim(), ...messages].filter(Boolean).join('\n');
+}
+
 function runSemgrep({ scope, targets, outDir, map }) {
   assertToolchain('uvx', 'semgrep');
   const nativeOut = resolve(outDir, 'semgrep-native.json');
@@ -317,14 +337,23 @@ function runSemgrep({ scope, targets, outDir, map }) {
   }
   args.push(...scanTargets);
 
-  const r = run('uvx', args);
-  // semgrep exit: 0 = no findings, 1 = findings present, >=2 = error (registry unreachable, bad rule, …).
-  if (r.status !== 0 && r.status !== 1) {
-    throw new Error(`[semgrep] scan failed (exit ${r.status}) — rules/registry may be unreachable (fail-closed, FR-015): ${(r.stderr || '').slice(-500)}`);
-  }
-  if (!existsSync(nativeOut)) {
-    throw new Error(`[semgrep] produced no JSON output (exit ${r.status}) — refusing to report a clean scan.`);
-  }
+  // Bounded-retried like the other three scanners (item #1108): the community packs are fetched from
+  // the Semgrep registry AT SCAN TIME, so a registry blip used to red the required gate on the first
+  // attempt. A rule/config fault is still a real failure — transientOr only retries what it can prove
+  // is a transport or service error.
+  retryTransient('semgrep', () => {
+    // A report left by an EARLIER attempt (or run) must never stand in for this one.
+    rmSync(nativeOut, { force: true });
+    const r = run('uvx', args);
+    // semgrep exit: 0 = no findings, 1 = findings present, >=2 = error (registry unreachable, bad rule, …).
+    if (r.status !== 0 && r.status !== 1) {
+      const why = semgrepFailureText(r.stderr, existsSync(nativeOut) ? readFileSync(nativeOut, 'utf8') : '');
+      throw transientOr(`[semgrep] scan failed (exit ${r.status}) — rules/registry may be unreachable (fail-closed, FR-015): ${why.slice(-800)}`, why);
+    }
+    if (!existsSync(nativeOut)) {
+      throw new Error(`[semgrep] produced no JSON output (exit ${r.status}) — refusing to report a clean scan.`);
+    }
+  });
   const native = JSON.parse(readFileSync(nativeOut, 'utf8'));
   return { native, findings: normalizeSemgrep(native, map), meta: { blindedRules: summarizeBlindedRules(native.errors) } };
 }
@@ -357,9 +386,26 @@ export function ruleFixturePairs(dir = resolve(REPO_ROOT, 'security/sast/rules')
   });
 }
 
+/**
+ * Zero custom rules is not "every rule passed" (item #1111): an emptied or moved rules directory used
+ * to print "passed for all 0 custom rule(s)" and exit 0.
+ */
+export function assertSomeRules(pairs) {
+  if (!pairs.length) {
+    throw new Error('[semgrep --test] found NO custom rules under security/sast/rules/ — refusing to report "all passed" for zero rules.');
+  }
+}
+
 function testRules() {
   assertToolchain('uvx', 'semgrep');
-  const unfixtured = ruleFixturePairs().filter((p) => p.fixtures.length === 0);
+  const pairs = ruleFixturePairs();
+  try {
+    assertSomeRules(pairs);
+  } catch (e) {
+    console.error(e.message);
+    process.exit(1);
+  }
+  const unfixtured = pairs.filter((p) => p.fixtures.length === 0);
   if (unfixtured.length) {
     console.error(`[semgrep --test] ${unfixtured.length} custom rule(s) have NO fixture, and \`semgrep --test\` skips those silently rather than failing:`);
     for (const p of unfixtured) console.error(`  ${p.rule}`);
@@ -371,7 +417,7 @@ function testRules() {
     console.error(`[semgrep --test] custom rule fixtures FAILED (exit ${r.status}).`);
     process.exit(1);
   }
-  console.log(`✓ semgrep --test passed for all ${ruleFixturePairs().length} custom rule(s), each with a fixture.`);
+  console.log(`✓ semgrep --test passed for all ${pairs.length} custom rule(s), each with a fixture.`);
 }
 
 // ── cargo audit runner (T012) ────────────────────────────────────────────────
@@ -590,27 +636,50 @@ export const PYTHON_SURFACES = [
   { project: 'mcp-servers/web-api-mcp', dir: 'mcp-servers/web-api-mcp' },
 ];
 
-/** Every Python project on disk, identified by carrying its own lockfile. */
-export function discoverPythonProjects(root = REPO_ROOT) {
-  const found = [];
-  for (const parent of ['agents', 'mcp-servers']) {
-    const base = resolve(root, parent);
-    if (!existsSync(base)) continue;
-    for (const name of readdirSync(base)) {
-      if (existsSync(resolve(base, name, 'uv.lock'))) found.push(`${parent}/${name}`);
-    }
-  }
-  return found.sort();
+/**
+ * Every tracked `pyproject.toml` and `uv.lock`, as repo-relative forward-slash paths.
+ *
+ * Discovered from GIT, repo-wide (item #1110). The previous discovery looked only one level under
+ * `agents/` and `mcp-servers/`, and only for a `uv.lock` — so a Python project anywhere else, or one
+ * with a pyproject.toml and no lockfile, was audited by nothing and nothing said so. Same method as
+ * pnpmAuditSet(): what is committed decides, never a hard-coded parent list.
+ */
+export function trackedPythonManifests() {
+  const r = run('git', ['ls-files', '-z', '--', '*pyproject.toml', '*uv.lock']);
+  if (r.status !== 0) throw new Error(`[pip-audit] git ls-files failed — cannot discover Python projects: ${(r.stderr || '').slice(-300)}`);
+  return (r.stdout || '').split('\0').filter(Boolean);
+}
+
+const dirOf = (path) => (path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : '.');
+
+/** Every Python project in the tree: a directory holding a tracked pyproject.toml. */
+export function discoverPythonProjects(files = trackedPythonManifests()) {
+  return [...new Set(files.filter((f) => /(^|\/)pyproject\.toml$/.test(f)).map(dirOf))].sort();
+}
+
+/** Python projects with a pyproject.toml but no committed uv.lock — unauditable, so a failure. */
+export function pythonProjectsWithoutLock(files = trackedPythonManifests()) {
+  const locked = new Set(files.filter((f) => /(^|\/)uv\.lock$/.test(f)).map(dirOf));
+  return discoverPythonProjects(files).filter((p) => !locked.has(p));
 }
 
 /**
- * A Python project present on disk but absent from PYTHON_SURFACES FAILS the scan (FR-021).
+ * A Python project present in the tree but absent from PYTHON_SURFACES FAILS the scan (FR-021), and so
+ * does one with no committed uv.lock (item #1110) — pip-audit audits the synced venv `uv` builds from
+ * that lockfile, so a project without one cannot be audited at all.
  *
  * Silent omission would rebuild — one directory over — exactly the blind spot this feature closed.
  * Silent auto-inclusion is not the fix either: it would put an unreviewed dependency graph into a
  * merge gate with a runtime/dev classification nobody has looked at. Fail, and let a human add it.
  */
-export function assertKnownPythonSurfaces(onDisk = discoverPythonProjects()) {
+export function assertKnownPythonSurfaces(onDisk = discoverPythonProjects(), withoutLock = pythonProjectsWithoutLock()) {
+  if (withoutLock.length) {
+    throw new Error(
+      `[pip-audit] ${withoutLock.length} Python project(s) have a pyproject.toml but no committed uv.lock: ` +
+      `${withoutLock.join(', ')}. pip-audit audits the venv built from that lockfile, so these cannot be ` +
+      `audited — run \`uv lock\` there and commit it.`,
+    );
+  }
   const known = new Set(PYTHON_SURFACES.map((s) => s.project));
   const missing = onDisk.filter((p) => !known.has(p));
   if (missing.length) {
@@ -830,31 +899,57 @@ function summarize(report) {
 }
 
 // ── CLI ──────────────────────────────────────────────────────────────────────
-function parseArgs(argv) {
+export const USAGE = 'Usage: sast-scan.mjs [--scope full|changed] [--base <ref>] [--only <scanner,...>] [--emit-allowlist] [--test-rules] [--out <dir>]';
+
+/** A command-line mistake: main() prints it with the usage line and exits 2. */
+export class UsageError extends Error {}
+
+/**
+ * Parse argv. Throws UsageError rather than exiting, so it is testable (item #1111): a value flag at the
+ * END of argv (`--only`) used to crash on `undefined.split` with a TypeError — exit 1, no usage — and a
+ * trailing `--scope` / `--base` / `--out` silently took `undefined`. A value that is itself a flag
+ * (`--base --only x`) is refused too, rather than swallowing the next flag as the value.
+ */
+export function parseArgs(argv) {
   const args = { scope: 'full', base: 'origin/main', only: null, out: 'security/sast/reports', emitAllowlist: false };
+  const value = (i, flag) => {
+    const v = argv[i];
+    if (v === undefined || v.startsWith('--')) throw new UsageError(`${flag} needs a value.`);
+    return v;
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
-    if (a === '--scope') args.scope = argv[++i];
-    else if (a === '--base') args.base = argv[++i];
-    else if (a === '--only') args.only = argv[++i].split(',').map((s) => s.trim()).filter(Boolean);
-    else if (a === '--out') args.out = argv[++i];
+    if (a === '--scope') args.scope = value(++i, a);
+    else if (a === '--base') args.base = value(++i, a);
+    else if (a === '--only') args.only = value(++i, a).split(',').map((s) => s.trim()).filter(Boolean);
+    else if (a === '--out') args.out = value(++i, a);
     else if (a === '--emit-allowlist') args.emitAllowlist = true;
     else if (a === '--test-rules') args.testRules = true;
-    else { console.error(`Unknown argument: ${a}. Usage: sast-scan.mjs [--scope full|changed] [--base <ref>] [--only <scanner,...>] [--emit-allowlist] [--test-rules] [--out <dir>]`); process.exit(2); }
+    else throw new UsageError(`Unknown argument: ${a}.`);
   }
-  if (!['full', 'changed'].includes(args.scope)) { console.error(`--scope must be full|changed (got "${args.scope}")`); process.exit(2); }
+  if (!['full', 'changed'].includes(args.scope)) throw new UsageError(`--scope must be full|changed (got "${args.scope}")`);
   if (args.only) {
     const bad = args.only.filter((s) => !ALL_SCANNERS.includes(s));
-    if (bad.length) { console.error(`--only: unknown scanner(s) ${bad.join(', ')} (valid: ${ALL_SCANNERS.join(', ')})`); process.exit(2); }
+    if (bad.length) throw new UsageError(`--only: unknown scanner(s) ${bad.join(', ')} (valid: ${ALL_SCANNERS.join(', ')})`);
+    if (!args.only.length) throw new UsageError('--only needs at least one scanner name.');
   }
   return args;
 }
 
-function computeChangedTargets(base) {
-  const r = run('git', ['diff', '--name-only', '--diff-filter=ACMR', `${base}...HEAD`]);
+/**
+ * The changed files `--scope changed` hands Semgrep. FAILS CLOSED when `git diff` fails (item #1109):
+ * it used to warn and return [], which runSemgrep then reported as "no changed code files" — a clean
+ * scan of nothing. CI fetches the base first, so this bit local runs with a stale or missing
+ * `origin/main`; a gate must not report clean for a scan that never happened, wherever it runs.
+ */
+export function computeChangedTargets(base, runGit = (args) => run('git', args)) {
+  const r = runGit(['diff', '--name-only', '--diff-filter=ACMR', `${base}...HEAD`]);
   if (r.status !== 0) {
-    console.warn(`[sast-scan] git diff vs ${base} failed — scanning changed set is empty. ${(r.stderr || '').slice(-200)}`);
-    return [];
+    throw new Error(
+      `[sast-scan] cannot compute the changed set: \`git diff ${base}...HEAD\` failed (exit ${r.status}). ` +
+        `Refusing to scan an empty set and report it clean. Fetch the base (\`git fetch origin main\`) or ` +
+        `pass --base <ref>. ${(r.stderr || '').trim().slice(-200)}`,
+    );
   }
   // Explicit target files bypass Semgrep's --exclude, so apply the .semgrepignore exclusions here too:
   // drop any changed path with an excluded segment (notably security/ — the rule fixtures are
@@ -867,14 +962,29 @@ function computeChangedTargets(base) {
 }
 
 function main() {
-  const args = parseArgs(process.argv.slice(2));
+  let args;
+  try {
+    args = parseArgs(process.argv.slice(2));
+  } catch (e) {
+    if (!(e instanceof UsageError)) throw e;
+    console.error(`${e.message} ${USAGE}`);
+    process.exit(2);
+  }
   // Prove the custom rules still match what they claim BEFORE spending minutes on a real scan.
   if (args.testRules) return testRules();
   const outDir = resolve(REPO_ROOT, args.out);
   mkdirSync(outDir, { recursive: true });
   const map = loadSeverityMap();
   const selected = args.only ?? ALL_SCANNERS;
-  const changedTargets = args.scope === 'changed' ? computeChangedTargets(args.base) : [];
+  let changedTargets = [];
+  if (args.scope === 'changed') {
+    try {
+      changedTargets = computeChangedTargets(args.base);
+    } catch (e) {
+      console.error(e.message);
+      process.exit(2);
+    }
+  }
 
   const runners = {
     'semgrep': () => runSemgrep({ scope: args.scope, targets: changedTargets, outDir, map }),

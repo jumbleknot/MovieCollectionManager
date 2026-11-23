@@ -3,10 +3,10 @@ type: Runbook
 title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: 45ef1c5e840499a415e09277250c8119512ea5e3ba1a7bad12d30140f88e79ae
+resource-sha256: 797557e0af6c7988ebde5092c707712cb944b4072b3977d00c6397878e0c857d
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-20T12:02:01.189Z
+timestamp: 2026-11-23T19:47:44.776Z
 ---
 
 # SAST & SCA static scanning
@@ -55,7 +55,8 @@ node scripts/check-sast-findings.mjs       # the gate: exit 0 pass / 1 fail / 2 
 Reports land in `security/sast/reports/` (gitignored): `findings.json` is the severity gate's input
 contract, `pnpm-audit-native.json` is the downgrade gate's input, and `findings.sarif`, `summary.txt`
 and the remaining `<scanner>-native.json` are for triage. `--scope changed --base <ref>`
-narrows Semgrep to the files changed against `<ref>` (SCA still runs full), `--only <scanner,...>`
+narrows Semgrep to the files changed against `<ref>` (SCA still runs full; a failed `git diff` exits 2
+rather than scanning nothing, item #1109), `--only <scanner,...>`
 restricts the scanners — the lever that gets you the SCA half when Semgrep's registry is unreachable —
 and `--emit-allowlist` writes a proposed baseline for triage.
 
@@ -196,9 +197,10 @@ that job), not by flipping the whole tier.
   Since feature 068 each finding's location names its surface: `mcp-servers/web-api-mcp:click@8.5.0`,
   not `click@8.5.0`. An allowlist entry should normally be anchored:
   `^mcp-servers/web-api-mcp:click@.*`. Two static checks enforce this at scan time, before any findings
-  are compared: (1) `assertKnownPythonSurfaces` fails the scan if a Python project directory carrying a
-  `uv.lock` is not registered in `PYTHON_SURFACES` (`scripts/sast-scan.mjs`) — adding a project without
-  registering it produces a hard error, not a silent omission; (2) `assertPipAuditAllowlistShape` fails
+  are compared: (1) `assertKnownPythonSurfaces` fails the scan if a directory holding a tracked
+  `pyproject.toml` — anywhere in the tree, discovered with `git ls-files` (item #1110) — is not
+  registered in `PYTHON_SURFACES` (`scripts/sast-scan.mjs`), or has no committed `uv.lock` — adding a
+  project without registering it produces a hard error, not a silent omission; (2) `assertPipAuditAllowlistShape` fails
   the scan if an anchored `locationPattern` (leading `^`) names a surface that does not exist in
   `PYTHON_SURFACES` — a dead anchor can never match, so it suppresses nothing: a real finding would
   still block, and the failure exists so nobody believes a suppression is in force when it is not. Drop the leading `^` only when you deliberately mean the suppression to span every
@@ -326,7 +328,7 @@ that job), not by flipping the whole tier.
   committed entry does not tell you which world you are in. One command does:
   ```bash
   curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous
-  node scripts/sast-scan.mjs --scope full --only semgrep            # exit 1 + "[semgrep] scan failed … rules/registry may be unreachable" => unreachable (exit 2 is bad arguments only)
+  node scripts/sast-scan.mjs --scope full --only semgrep            # exit 1 + "[semgrep] TRANSPORT/SERVICE ERROR" after 3 attempts => unreachable (exit 2 is bad arguments only)
   ```
   A Semgrep result you did not sanity-check this way is the same green either way — which is the
   whole trap. **To test an allowlist entry locally when Semgrep is unreachable, hand the gate a
@@ -578,9 +580,10 @@ that job), not by flipping the whole tier.
   (measured: `4/4 ✓ All tests passed` with five rule files present). The Semgrep pin lives only in
   `sast-scan.mjs`, so the workflow step carries no second copy to drift.
 - **A red `sast` gate whose output says `TRANSPORT/SERVICE ERROR` is an outage — re-run it (item #449).**
-  Three scanners reach a third party on the required gate's critical path: `pip-audit` queries
-  **osv.dev**, `cargo-audit` fetches the **RustSec advisory DB**, and `pnpm audit` queries the **npm
-  registry**. Measured 2026-09-13 on run 3328: `guardrails / sast` went red on a pip-audit
+  All four scanners reach a third party on the required gate's critical path: `pip-audit` queries
+  **osv.dev**, `cargo-audit` fetches the **RustSec advisory DB**, `pnpm audit` queries the **npm
+  registry**, and Semgrep fetches its packs from the **Semgrep registry** (retried since item #1108,
+  classifying the `errors[]` of its `--json` report because a registry 503/404 leaves stderr empty). Measured 2026-09-13 on run 3328: `guardrails / sast` went red on a pip-audit
   `ServiceError` from osv.dev while the scan had otherwise completed clean (`findings=16 blocking=0`).
   osv.dev recovered 200 minutes later. Since item #449, `sast-scan.mjs` classifies these as transport
   or service failures and **retries 3 times with exponential backoff (2 s, 4 s)** before giving a

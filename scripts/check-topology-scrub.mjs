@@ -79,7 +79,7 @@ function runScan() {
   }
   if (findings.length) {
     console.error('[topology-scrub] ❌ real tailnet host(s) committed — use a placeholder (`<tailnet-host>` / `*.tailnet.ts.net`):');
-    for (const f of findings) console.error(`  ${f.file}:${f.line}: ${f.host}`);
+    for (const f of findings) console.error(`  ${f.file}:${f.line}: tailnet host (withheld — the CI log is a publication, item #1106)`);
     console.error('[topology-scrub] The tailnet host + domain were scrubbed from the repo/history — never re-commit them.');
     process.exit(1);
   }

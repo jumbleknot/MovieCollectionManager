@@ -963,7 +963,7 @@ export function renderDigestAbsence(failed, outcomes = []) {
  * The upsert marker written by scripts/ci-failure-digest.mjs. The two formats live in different
  * files and nothing but the round-trip assertion in the test suite couples them — keep them in step.
  */
-export const DIGEST_MARKER_RE = /<!--\s*ci-digest:job=([^\s>]+)\s*-->/;
+export const DIGEST_MARKER_RE = /<[!]--\s*ci-digest:job=([^\s>]+)\s*-->/;
 
 /** Pull the failure digests out of a PR's comments, optionally narrowing to one job. */
 export function extractDigests(comments, job = null) {

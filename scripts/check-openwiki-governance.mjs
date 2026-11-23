@@ -78,9 +78,9 @@ const ASSISTANT_SURFACES = ['opencode.json', '.claude/settings.json'];
  * its own tooling gets switched off.
  */
 const MANAGED_REGIONS = [
-  [/<!--\s*nx configuration start\s*-->/i, /<!--\s*nx configuration end\s*-->/i],
-  [/<!--\s*SPECKIT START\s*-->/i, /<!--\s*SPECKIT END\s*-->/i],
-  [/<!--\s*OPENWIKI:START\s*-->/i, /<!--\s*OPENWIKI:END\s*-->/i],
+  [/<[!]--\s*nx configuration start\s*-->/i, /<[!]--\s*nx configuration end\s*-->/i],
+  [/<[!]--\s*SPECKIT START\s*-->/i, /<[!]--\s*SPECKIT END\s*-->/i],
+  [/<[!]--\s*OPENWIKI:START\s*-->/i, /<[!]--\s*OPENWIKI:END\s*-->/i],
 ];
 
 /**

@@ -81,7 +81,7 @@ export function fenceFor(text) {
  *  job's `<!-- ci-digest:job=X -->` must not inject a second marker or enable a cross-job overwrite.
  *  A zero-width space after `<!--` breaks the literal token without changing what a human reads. */
 export function neutralizeMarkers(text) {
-  return String(text).replace(/<!--(\s*ci-digest:)/gi, '<!--\u200b$1');
+  return String(text).replace(/<[!]--(\s*ci-digest:)/gi, '<!--\u200b$1');
 }
 
 /** The upsert key. Keyed by JOB, not run: a retry produces a new run but must edit one comment. */
