@@ -316,6 +316,13 @@
     // persist-claude-config.sh. Kept in step with ../devcontainer.json (the two are duplicates
     // until FR-032 collapses them).
     "CLAUDE_CONFIG_DIR": "/home/coder/.claude",
+    // GH_CONFIG_DIR: the same fix for the GitHub CLI. `gh` keeps its login in ~/.config/gh, on the
+    // EPHEMERAL overlay, so every recreate logged it out (the dotfiles repo is pushed with it) — and
+    // verify-personal-layer.sh's "persists in ~/.claude" note was untrue. Measured 2026-11-23:
+    // unset here, no ~/.config/gh, while BELAY's container lost its login on each rebuild. Pointing
+    // it into the volume makes `gh auth login` a one-time action. containerEnv for the same
+    // `docker exec` reason as above.
+    "GH_CONFIG_DIR": "/home/coder/.claude/gh",
 
     "FORGE_REGISTRY_HOST": "${localEnv:FORGE_REGISTRY_HOST}",
     // Feature 105 — the Claude Code token usage store (PostgREST) and the Keycloak realm token
