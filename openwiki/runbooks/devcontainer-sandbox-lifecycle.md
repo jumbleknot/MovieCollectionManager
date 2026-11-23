@@ -3,10 +3,10 @@ type: Runbook
 title: Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
 description: "The lifecycle half of the Docker Sandbox dev-container runbook, pinned to sbx v0.53.0 — template recreate-from-nothing and why it is fast but cold, the three creation-time-resizable volumes and how a full disk disguises itself, the six gaps a cold recreate must fill, the memory bound that keeps an OOM kill off Keycloak (Jest workers capped at 4, a 10 GiB dev container), the destructive verification harness with its three vantage points and one vacuous pass, and the ritual before upgrading the sbx binary."
 resource: docs/runbooks/devcontainer-sandbox-lifecycle.md
-resource-sha256: 31de79ef7448f62ec8a86f199570411541f5e554b8b9e2cf338b3826e75aee76
+resource-sha256: a0aa97435382ed16bf1ad0d57e541fc12505a680958cbcd69047184c770bec81
 tags: [devcontainer, sandbox, docker, lifecycle, disk, verification, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
-timestamp: 2026-11-23T11:13:25.038Z
+timestamp: 2026-11-23T12:12:36.370Z
 ---
 
 # Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
@@ -134,6 +134,13 @@ flowchart TD
   to 10 GB**, so a future recreate that forgets the variable silently gets a far smaller disk than
   the one before it. v0.51.0 also accepts `sandboxOptions.rootSize` / `dockerSize` in an environment
   file; not adopted, the variables still work.
+- **Check `docker system df` before resizing.** On 2026-11-23 the Docker volume stood at 94 %, and
+  most of it was superseded images (two old toolchain pins, an old Playwright tag, older duplicate
+  service images) and their build cache. `docker rmi <id>` **without** `-f` (so an image any container
+  references is refused), then `image prune -f` and `builder prune -f`, freed **58 GB** with no
+  recreate. The Docker size was then raised to **250 GB** (from 150 GB) for the next creation.
+- **The variables are per host, the volumes per sandbox.** A second sandbox on the host gets its own
+  volumes at the values in force when *it* is created; sandboxes compete only for the host drive.
 - **Sparse is real only until written.** A fresh volume occupies a small fraction of its declared size
   on the host, but blocks are **never released back** — a deleted 50 GiB volume was still holding
   53.6 GB of real bytes. Treat a declared size as a future host cost, not a free option.
