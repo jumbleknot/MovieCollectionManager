@@ -291,8 +291,19 @@ sbx exec <name> sh -c 'lsblk | grep ^vd; df -h /var/lib/docker /'
 # then a NEW shell, so sbx and the daemon inherit them
 ```
 
-Current values: **Docker 150 GB, root 40 GB** (Docker raised from 100 GB on 2026-10-08, when it
-stood at 91 % — 85 GB used, 8.5 GB free — with the root volume at 38 %).
+Current values: **Docker 250 GB, root 40 GB** (Docker raised from 150 GB on 2026-11-23, when it
+stood at 94 % — 131 GB used, 8.6 GB free — with the root volume at 21 %; earlier raised from 100 GB
+on 2026-10-08 at 91 %). Most of the 2026-11-23 fill was **superseded images, not data**: two old
+`mcm-devcontainer` pins (~16 GB each), an old Playwright tag, older duplicate service images and
+their build cache. Removing them by ID (`docker rmi <id>` **without** `-f`, so anything a container
+references is refused), then `docker image prune -f` and `docker builder prune -f`, freed **58 GB**
+before any resize. Check `docker system df` first — its `RECLAIMABLE` column is the lever that
+needs no recreate.
+
+**The variables are per host, the volumes per sandbox.** A second sandbox on the same host (BELAY's
+`belay`, created 2026-11-23) gets its own volumes at whatever the variables say when *it* is created,
+and neither sandbox's disk competes with the other's — only with the host drive (§"Relocating the
+data root"), which holds every sandbox's images.
 
 ⚠️ **A User-scope variable reaches neither the current shell nor a daemon that is already
 running.** Which of the CLI and the daemon reads it has not been isolated; the 2026-10-08 resize
