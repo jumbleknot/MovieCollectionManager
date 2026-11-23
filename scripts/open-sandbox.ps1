@@ -122,7 +122,13 @@ if ($ls.ExitCode -ne 0) {
   throw "'sbx ls' failed (exit $($ls.ExitCode)): $(($ls.Output | Out-String).Trim())"
 }
 $json = ($ls.Output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }) -join "`n"
-try { $sandboxes = @($json | ConvertFrom-Json) } catch {
+# UNROLL the array. Windows PowerShell 5.1's ConvertFrom-Json emits a JSON array as ONE pipeline
+# object, so the name filter below matched the whole array, `.status` became every sandbox's status,
+# and `-eq 'running'` was truthy whenever ANY sandbox ran — a stopped sandbox was reported "already
+# running", the start was skipped, and VS Code's attach then failed. Reproduced 2026-11-23 on
+# 5.1.26100.9818 with `belay` stopped and `mcm` running: belay's status read "stopped running".
+# Invisible with one sandbox on the host. Guard: scripts/__tests__/open-sandbox.guard.test.mjs.
+try { $sandboxes = @(($json | ConvertFrom-Json) | ForEach-Object { $_ }) } catch {
   throw "could not parse 'sbx ls --format json' (exit $($ls.ExitCode)): $json"
 }
 $entry = $sandboxes | Where-Object { $_.name -eq $Sandbox } | Select-Object -First 1
