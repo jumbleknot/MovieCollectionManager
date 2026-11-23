@@ -456,12 +456,27 @@ provisioning path supplies. The first three were hit on 2026-08-27 and again on 
 fourth and fifth on 2026-11-03, the sixth on 2026-11-04; each of the first five stops the recreate
 dead, and the sixth stops the first commit.
 
-**1. The `devcontainer` CLI is not installed.** §7b's recreate sequence calls `devcontainer up`, and
-the binary does not exist in a fresh sandbox:
+**1. The `devcontainer` CLI is not installed — and a fresh sandbox may have no Node to install it
+with.** §7b's recreate sequence calls `devcontainer up`, and the binary does not exist in a fresh
+sandbox. The current `mcm` VM (created 2026-11-04) has Node only because the shell kit's
+`nodejs-24` package was present then; a sandbox created on 2026-11-22 had **no Node at all**, its
+package source (`dhi.io`, in `/etc/apt/sources.list.d/dhi.sources`) is not on the allowlist, and
+Debian's own `npm` conflicts with the kit's patched system libraries. Check first; if `node` is
+missing, install the official tarball from `nodejs.org` (allowlisted) with its checksum verified.
+Use `.tar.gz` — the kit has no `xz`:
 
 ```bash
-sudo npm install -g @devcontainers/cli
+command -v node || {
+  V=v24.22.2; F=node-$V-linux-x64.tar.gz; cd /tmp
+  curl -fsSLO "https://nodejs.org/dist/$V/$F"
+  curl -fsSL "https://nodejs.org/dist/$V/SHASUMS256.txt" | grep " $F\$" | sha256sum -c -   # must print OK
+  sudo tar -xzf "$F" -C /usr/local --strip-components=1 --no-same-owner && rm -f "$F"
+}
+sudo "$(command -v npm)" install -g @devcontainers/cli
 ```
+
+`sha256sum -c` exits non-zero on a mismatch *and* when `grep` finds no line, so a wrong version
+string fails here rather than installing an unverified file.
 
 **2. `/etc/docker/daemon.json` has no `insecure-registries`.** The forge registry is plain **HTTP on
 :3000**, so every pull fails with `http: server gave HTTP response to HTTPS client`. This was already

@@ -3,10 +3,10 @@ type: Runbook
 title: Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
 description: "The lifecycle half of the Docker Sandbox dev-container runbook, pinned to sbx v0.53.0 — template recreate-from-nothing and why it is fast but cold, the three creation-time-resizable volumes and how a full disk disguises itself, the six gaps a cold recreate must fill, the memory bound that keeps an OOM kill off Keycloak (Jest workers capped at 4, a 10 GiB dev container), the destructive verification harness with its three vantage points and one vacuous pass, and the ritual before upgrading the sbx binary."
 resource: docs/runbooks/devcontainer-sandbox-lifecycle.md
-resource-sha256: a10bdd99adf91db586614c422d7b96080d859ed04dc5e550cd9bd871f86a702b
+resource-sha256: 31de79ef7448f62ec8a86f199570411541f5e554b8b9e2cf338b3826e75aee76
 tags: [devcontainer, sandbox, docker, lifecycle, disk, verification, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-06T07:34:17.095Z" }
-timestamp: 2026-11-15T16:44:09.478Z
+timestamp: 2026-11-23T11:13:25.038Z
 ---
 
 # Dev container on Docker Sandbox microVM — lifecycle (recreate, disk, harness, sbx upgrades)
@@ -172,6 +172,9 @@ fourth and fifth on 2026-11-03, the sixth on 2026-11-04; **each of the first fiv
 dead, and the sixth stops the first commit.**
 
 1. **The `devcontainer` CLI is not installed** — and the recreate sequence calls `devcontainer up`.
+   A fresh sandbox may have **no Node to install it with**: the kit's package source (`dhi.io`) is
+   not allowlisted and Debian's `npm` conflicts with the kit's libraries, so install the official
+   `nodejs.org` `.tar.gz` (the kit has no `xz`) with its SHA-256 checked against `SHASUMS256.txt`.
 2. **`/etc/docker/daemon.json` has no `insecure-registries`.** The forge registry is plain **HTTP**
    (port 3000), so every pull fails with `http: server gave HTTP response to HTTPS client`. On the
    v0.51.0 shell kit **`/etc/docker` does not exist at all** and `tee` will not create it — `mkdir`
