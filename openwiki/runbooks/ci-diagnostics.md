@@ -3,10 +3,10 @@ type: Runbook
 title: CI self-serve diagnostics
 description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the one pinned Trivy installer all three scanning workflows share, and the labelled container holds that stop another run's prune deleting the scan tags, the event-versus-trigger_event split (including which run posted a check) and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
-resource-sha256: 2e4b8a10ed3e591be250211a366808403e69ffc951f4233604a719d951af4c38
+resource-sha256: c06dbefe228228507e2ffd8e9a1f15aae7d4a8e21c6654ad82882133f367084d
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-22T17:30:53.080Z
+timestamp: 2026-11-23T23:20:50.118Z
 ---
 
 # CI self-serve diagnostics
@@ -630,6 +630,8 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   1. Note: `conclusion` is `undefined` on every run measured in this forge — a reader that consults
   only `conclusion` sees nothing, and `ci-status` reads both. A red scheduled sweep is now also visible
   on the commit: `infra-image-scan.yml` posts an `infra-image-scan/weekly` status after each sweep.
+  **Since item #1116** the command also reads the run's own `<run id>--<job>` bundles and prints each
+  digest it finds. The bare warning remains only for a run that published no digest at all.
 - **Verifying a branch without opening a PR: `workflow_dispatch` works, but posts no commit
   status.** Feature branches trigger almost nothing on `push:` (guardrails and app-ci scope their
   push trigger to `main`). Both workflows expose `workflow_dispatch`, so a branch can be fully
@@ -897,7 +899,7 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   on the same collection regardless of how their timestamps or sequential-looking ObjectIds line up.
   Sequential ObjectIds prove nothing either: ids differing by one only mean concurrent creations in
   the same second, which is consistent with any number of independent writers.
-- **A green job that is not `app-e2e` emits nothing — use a commit status recorder when the output must survive (item 457 AC4).** Every other job's green publication finds nothing and uploads nothing. Measured verbatim in `cd-deploy` run 3430: `digest-outcome=not-needed`. The `prod-apk` disk measurement was only ever readable because the job had failed — a step that succeeds at doing nothing leaves no trace. The pattern that closes it (items 418, 268, 485, 457): have the step export its measurement to `$GITHUB_OUTPUT`, then add a recorder that `curl`s it as a commit status. Five properties are load-bearing: **`always()`** so a *failed* run still leaves the record; **`continue-on-error`** so a curl failure cannot be a second gate; **`state` always `success`** with the finding in the description; values carried through **raw**, `<unset>` included; and the **context name must match no required glob** (verify against the live branch-protection list, not by reasoning about separators — `guardrails*` has no ` / ` separator and gates everything). `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins the check against the measured glob list.
+- **A green job that is not `app-e2e` emits no step OUTPUT — use a commit status recorder when the output must survive (item 457 AC4).** Since item #1113 it does publish its step durations (a minimal bundle plus `step-durations.tsv`), so `ci-status durations` has green-run samples for every job. Nothing else of what its steps printed is uploaded. Measured verbatim in `cd-deploy` run 3430: `digest-outcome=not-needed`. The `prod-apk` disk measurement was only ever readable because the job had failed — a step that succeeds at doing nothing leaves no trace. The pattern that closes it (items 418, 268, 485, 457): have the step export its measurement to `$GITHUB_OUTPUT`, then add a recorder that `curl`s it as a commit status. Five properties are load-bearing: **`always()`** so a *failed* run still leaves the record; **`continue-on-error`** so a curl failure cannot be a second gate; **`state` always `success`** with the finding in the description; values carried through **raw**, `<unset>` included; and the **context name must match no required glob** (verify against the live branch-protection list, not by reasoning about separators — `guardrails*` has no ` / ` separator and gates everything). `scripts/__tests__/prod-apk-disk-step.guard.test.mjs` pins the check against the measured glob list.
 
 ## What the registry keeps (spec 084 US5)
 

@@ -2037,7 +2037,7 @@ test('status shows the deploy as advisory and the verdict is unchanged (FR-008, 
 });
 
 /** A forge that also serves runs and bundles, for the end-to-end cases. */
-function stubDeployForge({ statuses, runs, bundles = {}, runById = null }) {
+function stubDeployForge({ statuses, runs, bundles = {}, runById = null, listing = null }) {
   const realFetch = globalThis.fetch;
   const fetched = [];
   globalThis.fetch = async (url) => {
@@ -2048,6 +2048,9 @@ function stubDeployForge({ statuses, runs, bundles = {}, runById = null }) {
     if (/\/actions\/runs\/\d+/.test(u)) return json(runById ?? {});
     if (u.includes('/actions/runs?')) return json({ workflow_runs: runs });
     if (u.endsWith('/status')) return json({ statuses });
+    // The bundle-version listing (item #1116): page 1 carries every version, keyed to the queried package.
+    const l = u.match(/\/packages\/[^/?]+\?type=generic&q=([^&]+)&page=(\d+)/);
+    if (l) return json(listing && l[2] === '1' ? listing.map((version) => ({ name: l[1], version })) : []);
     // Feature 106: the package is repo-scoped (`r-ci-failures` for FAKE_CONN), so match ANY package.
     const b = u.match(/\/generic\/[^/]+\/([^/]+)\/bundle\.json\.gz$/);
     if (b) {
@@ -2159,6 +2162,36 @@ test('failure --run on the dispatched run reads the same bundle, not "posted NO 
   try {
     const { code, out } = await capture(() => cmdFailure({ run: '5745' }, FAKE_CONN));
     assert.match(out, /Failing step\*\* \| scan-push/, out);
+    assert.equal(code, 1);
+  } finally { restore(); }
+});
+
+// Item #1116 — a dispatched run that is NOT the deploy: no context, but a bundle all the same.
+const PROBE_SHA = 'b1161116b1161116b1161116b1161116b1161116';
+const PROBE_RUN = { id: 6116, status: 'failure', conclusion: 'failure', event: '', trigger_event: 'workflow_dispatch', workflow_id: 'guardrails.yml', head_sha: PROBE_SHA, commit_sha: PROBE_SHA };
+const probeBundle = (digest) => ({ meta: {}, files: [{ path: 'digest.md', text: digest }] });
+
+test('(#1116) failure --run on a failed dispatched non-deploy run prints its bundle digest', async () => {
+  const { restore } = stubDeployForge({
+    statuses: [], runs: [PROBE_RUN], runById: PROBE_RUN,
+    listing: ['6115--sast', '6116--sast', '6116--okf', '61160--sast'],
+    bundles: { '6116--sast': probeBundle('## CI failure — `guardrails` / `sast`\n| **Failing step** | sast-static-scan |'), '6116--okf': { meta: {}, files: [] } },
+  });
+  try {
+    const { code, out } = await capture(() => cmdFailure({ run: '6116' }, FAKE_CONN));
+    assert.match(out, /Failing step\*\* \| sast-static-scan/, out);
+    assert.match(out, /reading its evidence bundle/);
+    assert.doesNotMatch(out, /no context to explain/); // the bare warning is for runs with NO evidence
+    assert.equal(code, 1);
+  } finally { restore(); }
+});
+
+test('(#1116) the same run with no bundle still gets the #485 warning and exits 1', async () => {
+  const { restore } = stubDeployForge({ statuses: [], runs: [PROBE_RUN], runById: PROBE_RUN, listing: ['6115--sast'] });
+  try {
+    const { code, out } = await capture(() => cmdFailure({ run: '6116' }, FAKE_CONN));
+    assert.match(out, /posted NO commit status — so there is no context to explain/);
+    assert.doesNotMatch(out, /No failed jobs/);
     assert.equal(code, 1);
   } finally { restore(); }
 });

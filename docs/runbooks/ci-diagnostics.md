@@ -485,6 +485,13 @@ the run's own status is now carried through from the `--run` lookup, so the same
 > **`status` carries the terminal verdict on this forge; `conclusion` is `undefined` on every run
 > measured.** A reader that consults only `conclusion` sees nothing. `ci-status.mjs` reads both.
 
+**No context is not no evidence (item #1116).** A contextless failed run (scheduled, or any
+`workflow_dispatch` other than the deploy below) still publishes `<run id>--<job>` bundles. `failure
+--run <id>` now lists the bundle versions under that prefix and prints each `digest.md` it finds, under
+`⚠ Run <id> FAILED and posted NO commit status — reading its evidence bundle(s) instead`. The bare
+warning above is printed only when the run published no digest at all. Either way it exits 1. Before
+this, reading a dispatched probe's failure meant calling `fetchBundle` by hand.
+
 A red scheduled sweep is now also visible **on the commit**: `infra-image-scan.yml` posts an
 `infra-image-scan/weekly` status carrying a real `success`/`failure`. It cannot gate anything —
 branch protection requires the glob `infra-image-scan / infra-image-scan*` and this context has no
@@ -900,8 +907,15 @@ uploads nothing.** Measured verbatim in `cd-deploy` run 3430's `Publish failure 
 [ci-failure-digest] counts mode — this job runs no e2e counts steps; nothing to publish.
 ```
 
+**Durations are the exception, since item #1113.** A green job that recorded step durations now
+publishes them even with no counts: a version holding a minimal `bundle.json.gz` plus
+`step-durations.tsv`, logged as `step durations published`. Before that, `ci-status durations` had no
+green-run sample for any job but the e2e tiers, so the ceilings it proposed for `sast`, `okf` and the
+rest came from failed runs only. A job with neither counts nor durations still publishes nothing,
+logged as `no e2e counts and no step durations; nothing to publish`.
+
 So for any job but `app-e2e`, a **green run leaves no machine-readable trace of what its steps
-printed**. Every other route is closed too — measured against run 3430:
+printed** — only how long they took. Every other route is closed too — measured against run 3430:
 
 | route | result |
 |---|---|

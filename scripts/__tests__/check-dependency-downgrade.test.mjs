@@ -178,6 +178,19 @@ test('CLI: a missing or empty native report fails closed (1), never "no regressi
   assert.equal(cli(['--base', 'HEAD', '--native', join(dir, 'empty.json')]).status, 1);
 });
 
+test('CLI: a base lockfile that cannot be read fails closed (1), never "no regression" (item #1115)', () => {
+  // gitShow() throws for any `git show` failure other than "the path is not at that ref" — an unknown
+  // ref, a shallow clone missing the base. Treating that as an empty base lockfile would make every
+  // head version look "new to the lockfile" and report a clean change; nothing pinned it until now.
+  const dir = tempRoot('downgrade-base-');
+  const native = join(dir, 'native.json');
+  writeFileSync(native, JSON.stringify({ 'pnpm-lock.yaml': { advisories: {} } }));
+  const r = cli(['--base', 'refs/heads/no-such-ref-item-1115', '--native', native]);
+  assert.equal(r.status, 1, r.stdout + r.stderr);
+  assert.match(r.stderr, /git show refs\/heads\/no-such-ref-item-1115:pnpm-lock\.yaml failed/);
+  assert.doesNotMatch(r.stdout, /no package resolution moved/);
+});
+
 // ── wiring: a gate that is never invoked is indistinguishable from no gate ──────────────────────────
 
 test('guardrails.yml runs the downgrade gate in the sast job, on PRs, AFTER the scan that writes its input', () => {

@@ -335,8 +335,8 @@ jobs:
   # un-allowlisted High/Critical *blocking* finding (SAST, or runtime-scope SCA). SCA runs FULL every
   # time — a newly-published advisory can hit an unchanged dep, so it is deliberately NOT path-gated
   # (FR-013). Semgrep is full-tree on push (baseline) and changed-files on PRs (FR-014). Rust is the one
-  # toolchain the runner image lacks, so cargo-audit is installed fresh (actions/cache is not mirrored
-  # on this runner — a monthly binary+advisory-db cache is a future optimization).
+  # toolchain the runner image lacks: rustup and a prebuilt, checksum-pinned cargo-audit are fetched
+  # each run by scripts/ci-install-rust-audit.sh (item #1114 — no compile, so no cache is needed).
   sast:
     runs-on: ubuntu-latest
     # Stays at 25. An intermediate revision of this PR raised it to 40 because pnpm 11.5.3's
@@ -362,10 +362,6 @@ jobs:
         run: bash scripts/ci-log-step.sh sast-ensure-pr-base-ref-available git fetch --no-tags --depth=200 origin "$BASE_REF" || true
       - name: Install pnpm (version from package.json packageManager; Node 26 has no corepack)
         run: bash scripts/ci-log-step.sh sast-install-pnpm sh scripts/install-pnpm.sh
-      - name: Install native build deps (cargo-audit compiles native code)
-        run: |
-          bash scripts/ci-log-step.sh sast-install-native-build-deps apt-get update
-          bash scripts/ci-log-step.sh sast-install-native-build-deps apt-get install -y --no-install-recommends build-essential pkg-config libssl-dev
       - name: Install uv (Semgrep via uvx + pip-audit)
         run: |
           bash scripts/ci-log-step.sh sast-install-uv bash -e /dev/stdin <<'CI_LOG_STEP'
@@ -374,15 +370,14 @@ jobs:
           CI_LOG_STEP
       - name: Install Rust + cargo-audit
         run: |
+          # Item #1114: a sha256-verified rustup-init (toolchain `none` — the version is
+          # rust-toolchain.toml's, item #307) and the PREBUILT cargo-audit, sha256-pinned. It used to
+          # pipe sh.rustup.rs into sh and compile cargo-audit from source every run, behind an apt
+          # step for build-essential/pkg-config/libssl-dev that existed only for that compile. The
+          # version pins live in the script; Renovate moves them, the checksum guard holds the pair.
           bash scripts/ci-log-step.sh sast-install-rust-cargo-audit bash -e /dev/stdin <<'CI_LOG_STEP'
-          # `--default-toolchain none`: the version is rust-toolchain.toml's, not rustup's idea of
-          # `stable` on the day (item #307). The first cargo call below resolves it from the file.
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+          bash scripts/ci-install-rust-audit.sh
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          # `--locked` locks cargo-audit's DEPENDENCIES, not cargo-audit — without --version this
-          # installed whatever was newest that run, in the tool that decides whether a Rust
-          # advisory blocks the merge. Renovate keeps the pin current (crate datasource).
-          "$HOME/.cargo/bin/cargo" install cargo-audit --locked --version 0.23.0
           CI_LOG_STEP
       - name: Install JS dependencies
         run: bash scripts/ci-log-step.sh sast-install-js-dependencies pnpm install --frozen-lockfile

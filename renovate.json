@@ -314,19 +314,36 @@
         "locks the crate's DEPENDENCIES, not the crate's own version. The devcontainer installed it",
         "unpinned too, so a local scan and the CI scan of identical inputs could disagree — the cost",
         "item #303 measured for Trivy.",
-        "Two files, two spellings (`--version X` in the workflow, `cargo-audit@X` in the image), one",
-        "depName on the crates.io datasource — so one dependency in one branch, no grouping rule."
+        "Two files, two spellings (`CARGO_AUDIT_VERSION=X` in the CI installer, `cargo-audit@X` in the",
+        "image), one depName on the crates.io datasource — so one dependency in one branch, no grouping rule.",
+        "Item #1114: CI installs the PREBUILT release binary, sha256-pinned beside the version. This",
+        "manager moves CARGO_AUDIT_VERSION only, never CARGO_AUDIT_SHA256_FOR — so a bump PR fails",
+        "renovate-workflow.guard.test.mjs (and the installer) until a human copies the new asset digest.",
+        "That red is the design: a checksum is never re-trusted automatically."
       ],
       "managerFilePatterns": [
-        "/^\\.forgejo/workflows/guardrails\\.yml$/",
+        "/^scripts/ci-install-rust-audit\\.sh$/",
         "/^\\.devcontainer/toolchain\\.Dockerfile$/"
       ],
       "matchStrings": [
-        "cargo-audit\\s+--locked\\s+--version\\s+(?<currentValue>[\\d.]+)",
+        "CARGO_AUDIT_VERSION=(?<currentValue>[\\d.]+)",
         "cargo-audit@(?<currentValue>[\\d.]+)"
       ],
       "depNameTemplate": "cargo-audit",
       "datasourceTemplate": "crate"
+    },
+    {
+      "customType": "regex",
+      "description": [
+        "Item #1114 — rustup-init, the sast job's Rust bootstrapper (it installs NO toolchain; the",
+        "version is rust-toolchain.toml's). Pinned with the sha256 rustup publishes for that release.",
+        "As with cargo-audit, only RUSTUP_VERSION moves: the bump PR stays red until",
+        "RUSTUP_INIT_SHA256 and RUSTUP_INIT_SHA256_FOR are taken from the release's rustup-init.sha256."
+      ],
+      "managerFilePatterns": ["/^scripts/ci-install-rust-audit\\.sh$/"],
+      "matchStrings": ["RUSTUP_VERSION=(?<currentValue>[\\d.]+)"],
+      "depNameTemplate": "rust-lang/rustup",
+      "datasourceTemplate": "github-tags"
     },
     {
       "customType": "regex",

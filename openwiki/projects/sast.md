@@ -4,9 +4,9 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
 tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: 797557e0af6c7988ebde5092c707712cb944b4072b3977d00c6397878e0c857d
+resource-sha256: 44808ac4e6938a77c4fe82a1587d7cdfc975a2a0da0f40d031342b4ceec0049f
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
-timestamp: 2026-11-23T19:47:44.771Z
+timestamp: 2026-11-23T23:20:49.751Z
 ---
 
 # SAST & SCA static security scanning
@@ -300,8 +300,7 @@ host is unreachable.
 `guardrails.yml`'s `sast` job has **no `paths:` filter** and runs on every pull request and every
 push to `main`. No scanner uses a credential: the only `${{ secrets }}` reference in the job belongs
 to the shared failure-digest step every job in the workflow carries, never to scanning. In order:
-install native build deps (`build-essential`, `pkg-config`, `libssl-dev`, because cargo-audit compiles
-native code), uv + Rust/cargo-audit + `pnpm install`, `uv sync` each of the
+uv, rustup and the prebuilt cargo-audit (`scripts/ci-install-rust-audit.sh`), `pnpm install`, `uv sync` each of the
 four Python surfaces, `check-sast-findings.mjs --selftest`, `sast-scan.mjs --test-rules`,
 `sast-scan.mjs` (`--scope changed` on PRs, `--scope full` on push), `check-sast-findings.mjs` (the
 gate), then — **on pull requests only** — `check-dependency-downgrade.mjs --base "origin/$BASE_REF"`
@@ -442,6 +441,10 @@ a scan that happened to pass.
   is unpinned, and `platformdirs` 4.14.8 (2026-11-20) refuses a user cache dir under a world-writable
   ancestor, which `/root/.cache` is in CI. Every scan failed with `PermissionError: /root/.cache, writable
   by another user`, reported as `produced non-JSON output`. Do not pin `platformdirs` back instead.
+- **pip-audit repeats vulnerabilities; the normalizer keeps each once (item #1117).** Measured with
+  pip-audit 2.10.1: `jinja2 3.1.2` returned 10 `vulns[]` entries for 5 ids, every one twice.
+  `normalizePipAudit` keys a finding by (package, version, advisory id). Alias-linked ids are kept
+  apart on purpose, because a suppression matches an exact `id`.
 
 - **pip-audit findings are project-qualified; allowlist `locationPattern`s should be surface-anchored.**
   Since feature 068 each finding's location names its surface: `mcp-servers/web-api-mcp:click@8.5.0`,
@@ -728,11 +731,14 @@ a scan that happened to pass.
   See `docs/runbooks/sast-scanning.md` § "When the gate goes red and NO finding was involved" for
   the full measured incident (run 3328, 2026-09-13) that produced this.
 
-- **No caching yet.** `actions/cache` is not mirrored on the self-hosted runner, so cargo-audit is
-  compiled fresh each CI run (~2–3 min). A monthly-keyed cache of `~/.cargo/bin/cargo-audit` and
-  `~/.cargo/advisory-db` is a future optimization. `cargo-audit` is installed `--locked --version`
-  pinned, because `--locked` alone locks its dependencies, not the tool that decides whether a Rust
-  advisory blocks a merge.
+- **cargo-audit is the prebuilt release binary, sha256-pinned (item #1114).**
+  `scripts/ci-install-rust-audit.sh` downloads `rustup-init` and the `x86_64-unknown-linux-musl`
+  cargo-audit asset, and verifies each against the sha256 its publisher states. It replaced
+  `curl sh.rustup.rs | sh` and a per-run `cargo install` compile, together with the apt step for
+  `build-essential`/`pkg-config`/`libssl-dev` that existed only for that compile. rustup still installs
+  no toolchain, because `rust-toolchain.toml` decides the version. Renovate moves only
+  `RUSTUP_VERSION`/`CARGO_AUDIT_VERSION`, so a bump PR stays red until a human copies the new checksum
+  and its `*_SHA256_FOR`.
 
 - **Paths in `locationPattern` must use forward slashes.** Allowlist entries are matched against
   paths normalized to forward slashes so they are portable across the Windows dev host and the Linux
