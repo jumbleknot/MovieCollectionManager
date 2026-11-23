@@ -4,9 +4,9 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
 tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: 45ef1c5e840499a415e09277250c8119512ea5e3ba1a7bad12d30140f88e79ae
+resource-sha256: 797557e0af6c7988ebde5092c707712cb944b4072b3977d00c6397878e0c857d
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
-timestamp: 2026-11-20T12:02:01.094Z
+timestamp: 2026-11-23T19:47:44.771Z
 ---
 
 # SAST & SCA static security scanning
@@ -383,7 +383,7 @@ a scan that happened to pass.
   you which world you are in. One command does:
   ```bash
   curl -sS -o /dev/null -w '%{http_code}\n' https://semgrep.dev/   # DNS failure / 000 => still vacuous
-  node scripts/sast-scan.mjs --scope full --only semgrep            # exit 1 + "[semgrep] scan failed … rules/registry may be unreachable" => unreachable (exit 2 is bad arguments only)
+  node scripts/sast-scan.mjs --scope full --only semgrep            # exit 1 + "[semgrep] TRANSPORT/SERVICE ERROR" after 3 attempts => unreachable (exit 2 is bad arguments only)
   ```
   A Semgrep result you did not sanity-check this way is the same green either way, which is the
   whole trap.
@@ -447,9 +447,10 @@ a scan that happened to pass.
   Since feature 068 each finding's location names its surface: `mcp-servers/web-api-mcp:click@8.5.0`,
   not `click@8.5.0`. An allowlist entry should normally be anchored:
   `^mcp-servers/web-api-mcp:click@.*`. Two static checks enforce this at scan time, before any findings
-  are compared: (1) `assertKnownPythonSurfaces` fails the scan if a Python project directory carrying a
-  `uv.lock` is not registered in `PYTHON_SURFACES` (`scripts/sast-scan.mjs`) — adding a project without
-  registering it produces a hard error, not a silent omission; (2) `assertPipAuditAllowlistShape` fails
+  are compared: (1) `assertKnownPythonSurfaces` fails the scan if a directory holding a tracked
+  `pyproject.toml` — anywhere in the tree, discovered with `git ls-files` (item #1110) — is not
+  registered in `PYTHON_SURFACES` (`scripts/sast-scan.mjs`), or has no committed `uv.lock` — adding a
+  project without registering it produces a hard error, not a silent omission; (2) `assertPipAuditAllowlistShape` fails
   the scan if an anchored `locationPattern` (leading `^`) names a surface that does not exist in
   `PYTHON_SURFACES` — a dead anchor can never match, so it suppresses nothing: a real finding would
   still block, and the failure exists so nobody believes a suppression is in force when it is not. Drop the leading `^` only when you deliberately mean the suppression to span every
@@ -688,9 +689,13 @@ a scan that happened to pass.
   --disable-version-check` so telemetry stays off by configuration rather than by network policy.
 
 - **A red gate labelled `TRANSPORT/SERVICE ERROR` is a scanner outage, not a finding — re-run it.**
-  Three of the four scanners reach a third party over the network: `pip-audit` queries **osv.dev**,
-  `cargo-audit` fetches the **RustSec advisory DB**, and `pnpm audit` queries the **npm registry**
-  advisory endpoint. Any of them can fail for a reason unrelated to this repository. Since item #449
+  All four scanners reach a third party over the network: `pip-audit` queries **osv.dev**,
+  `cargo-audit` fetches the **RustSec advisory DB**, `pnpm audit` queries the **npm registry**
+  advisory endpoint, and Semgrep fetches its community packs from the **Semgrep registry**. Any of them
+  can fail for a reason unrelated to this repository. Semgrep joined the retried set in item #1108; on
+  a registry 503 or 404 it exits 7 with an empty stderr and the reason only in its `--json` report's
+  `errors[]`, so those messages are classified with stderr (a 429/5xx retries, a `HTTP 404` fails at
+  once). Since item #449
   `sast-scan.mjs` classifies failures against a narrow `TRANSIENT_SIGNATURES` list (socket errors,
   HTTP 429/50x, DNS failures, git fetch failures) and re-attempts **3 times with exponential backoff
   (2 s, 4 s)** before issuing a verdict. What you see when it fires:
@@ -774,11 +779,11 @@ a scan that happened to pass.
   Two consequences of that construction, both of which look like a clean PR. First, **an empty target
   list is a legitimate no-op, not an error**: with no changed code files, Semgrep is skipped, an empty
   native report is emitted (`skipped: 'no changed code files'`), and SCA still runs full. Second, and
-  the trap, **if the `git diff` against the base fails the changed set is empty too** — the
-  orchestrator warns (`git diff vs <base> failed — scanning changed set is empty`) and proceeds, so
-  Semgrep scans nothing and the PR's `sast` job is green having examined no code. That is why the CI
-  job fetches the PR base ref (`git fetch --no-tags --depth=200 origin "$BASE_REF"`) before the scan:
-  the diff needs the ref to exist. A green PR whose log carries that warning has not been gated.
+  **if the `git diff` against the base fails, the scan exits 2** (item #1109). It used to warn and
+  scan an empty set — a green `sast` job that had examined no code. The CI job fetches the PR base ref
+  (`git fetch --no-tags --depth=200 origin "$BASE_REF"`) before the scan because the diff needs the
+  ref to exist; locally, a stale or missing `origin/main` now fails loudly — `git fetch origin main`
+  and re-run.
 
 - **Workflow YAML was not a scan target on pull requests until item #224.** Before that, workflow
   YAML was absent from that list, so a `curl … | sh` added to a workflow on a PR

@@ -90,6 +90,21 @@ const TRANSIENT_SIGNATURES = [
   // truncation fix in infra-image-scan.mjs): it is the documented parent of the measured leaf, and
   // "failed to download the vulnerability DB" can only ever be a fetch, never a finding.
   /\bfailed to download (?:the )?(?:vulnerability|java) DB\b/i,
+
+  // Semgrep's rule-REGISTRY fetch (item #1108). Measured with semgrep 1.185.0 on 2026-11-23 against a
+  // local server answering every request with the status shown. Semgrep exits 7 and writes the reason
+  // ONLY into its --json output's `errors[]`, never to stderr, so sast-scan.mjs hands this classifier
+  // those messages alongside stderr:
+  //
+  //   503 → "Failed to download configuration from http://…/c/p/python Failed after multiple
+  //          attempts (too many 503 error responses)"
+  //   404 → "Failed to download configuration from http://…/c/p/python HTTP 404."
+  //
+  // Only 429 and 5xx are listed. A 404 is a misspelled or withdrawn pack name — a real fault that
+  // must fail on the first attempt. (A refused connection prints a requests `ConnectionError … Max
+  // retries exceeded` traceback to stderr, which the signatures above already match.)
+  /\bFailed to download configuration from\b[^\n]*\btoo many (?:429|5\d\d) error responses\b/i,
+  /\bFailed to download configuration from\b[^\n]*\bHTTP (?:429|5\d\d)\b/i,
 ];
 
 /**

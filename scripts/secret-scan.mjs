@@ -73,24 +73,42 @@ const CRED_FALLBACK_GET = new RegExp(`(?:get|getenv|cfg|_cfg)\\(\\s*["'](?:${CRE
 // so a match carrying one is a deliberate placeholder, not a leaked secret.
 const PLACEHOLDER = /MARKER|do-not-surface|definitely-not-a-real|not-a-real-key|EXAMPLE|PLACEHOLDER|FAKE|REVOKED|spoiled|bad-key/i;
 
-/** Scan a single file's text for any rule hit; cassette files additionally check auth fields. */
+/** 1-based line number of a character offset. */
+function lineAt(text, index) {
+  let n = 1;
+  for (let i = 0; i < index; i++) if (text.charCodeAt(i) === 10) n++;
+  return n;
+}
+
+/**
+ * Scan a single file's text for any rule hit; cassette files additionally check auth fields.
+ *
+ * Returns `{ rule, line }` and deliberately NO part of the matched value (item #1106): findings are
+ * printed to the CI log and from there into the failure digest, so echoing even a prefix of the
+ * match would publish part of a real credential at exactly the moment the gate catches one. The
+ * file and line are enough to find it.
+ */
 export function scanText(relPath, text) {
   const hits = [];
   for (const { name, re } of RULES) {
     const m = re.exec(text);
-    if (m && !PLACEHOLDER.test(m[0])) hits.push({ rule: name, sample: m[0].slice(0, 16) + '…' });
+    if (m && !PLACEHOLDER.test(m[0])) hits.push({ rule: name, line: lineAt(text, m.index) });
   }
   if (relPath.includes('tests/golden/cassettes/')) {
     const m = CASSETTE_FIELD.exec(text);
-    if (m) hits.push({ rule: 'cassette-auth-field', sample: m[1] });
+    if (m) hits.push({ rule: 'cassette-auth-field', line: lineAt(text, m.index) });
   }
   // Feature 027 US4 — Rule A (known live password literal) + Rule B (E2E-credential fallback shape).
-  if (text.includes(E2E_PW_LITERAL)) {
-    hits.push({ rule: 'e2e-test-password-literal', sample: E2E_PW_LITERAL.slice(0, 8) + '…' });
-  }
+  const pw = text.indexOf(E2E_PW_LITERAL);
+  if (pw !== -1) hits.push({ rule: 'e2e-test-password-literal', line: lineAt(text, pw) });
   const mFallback = CRED_FALLBACK_JS.exec(text) || CRED_FALLBACK_GET.exec(text);
-  if (mFallback) hits.push({ rule: 'e2e-credential-fallback-literal', sample: mFallback[0].slice(0, 40) });
+  if (mFallback) hits.push({ rule: 'e2e-credential-fallback-literal', line: lineAt(text, mFallback.index) });
   return hits;
+}
+
+/** The one line printed per finding — location and rule, never the value (item #1106). */
+export function formatFinding(f) {
+  return `  ${f.file}:${f.line}: ${f.rule}: credential-shaped value (withheld)`;
 }
 
 function trackedFiles() {
@@ -121,7 +139,7 @@ function runScan() {
   }
   if (findings.length) {
     console.error('[secret-scan] ❌ credential-shaped strings found in committed files:');
-    for (const f of findings) console.error(`  ${f.file}: ${f.rule} (${f.sample})`);
+    for (const f of findings) console.error(formatFinding(f));
     console.error('[secret-scan] Secrets are per-user, encrypted at rest, injected per-run — never commit one (SC-006).');
     process.exit(1);
   }

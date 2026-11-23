@@ -190,8 +190,11 @@ export function scrubSecretsInText(text) {
     .replace(/(Bearer\s+)[A-Za-z0-9._~+/=-]{20,}/gi, '$1<redacted>')
     // Anthropic API keys (defense-in-depth; the gateway carries one for boot).
     .replace(/sk-ant-[A-Za-z0-9_-]{20,}/g, '<redacted-anthropic-key>')
-    // mcm_* cookie values.
-    .replace(/(mcm_(?:access_token|refresh_token|session_id)=)[^;"'\s\\]+/g, '$1<redacted>');
+    // Any `…access_token=` / `refresh_token=` / `id_token=` / `session_id=` / `client_secret=` /
+    // `api_key=` pair — cookie or query string, `mcm_`-prefixed or not. Kept identical to
+    // sast-scan.mjs's copy (item #1111: only the three `mcm_` cookie names used to be covered, so an
+    // ordinary `?access_token=…` in a crawled URL went into the report verbatim).
+    .replace(/(\b[A-Za-z0-9_]*(?:access_token|refresh_token|id_token|session_id|client_secret|api_key)=)[^;&"'\s\\]+/gi, '$1<redacted>');
 }
 
 function scrubReports(reportDir) {
