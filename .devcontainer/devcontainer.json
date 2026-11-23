@@ -125,6 +125,13 @@
     // is not always the entry point — sees it too. Seeding of an existing config is done once by
     // onCreateCommand's persist-claude-config.sh.
     "CLAUDE_CONFIG_DIR": "/home/coder/.claude",
+    // GH_CONFIG_DIR: the same fix for the GitHub CLI. `gh` keeps its login in ~/.config/gh, on the
+    // EPHEMERAL overlay, so every recreate logged it out (the dotfiles repo is pushed with it) — and
+    // verify-personal-layer.sh's "persists in ~/.claude" note was untrue. Measured 2026-11-23:
+    // unset here, no ~/.config/gh, while BELAY's container lost its login on each rebuild. Pointing
+    // it into the volume makes `gh auth login` a one-time action. containerEnv for the same
+    // `docker exec` reason as above.
+    "GH_CONFIG_DIR": "/home/coder/.claude/gh",
     // 038 — the forge registry / git host, so init-firewall.sh auto-allowlists it on every start
     // (default-deny otherwise blocks git pull/push to the tailnet forge). Sourced from the HOST env
     // via ${localEnv} so the topology-sensitive host literal NEVER enters git (topology-scrub) — set

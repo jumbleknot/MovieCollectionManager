@@ -202,11 +202,18 @@ if [ "${MCM_DEVCONTAINER:-0}" = "1" ]; then
   fi
 fi
 
-# SC-007 — service logins persist. `gh auth status` is a non-interactive, safe probe and `gh`'s
-# credential is stored under the persisted ~/.claude; we check it as the representative service
-# login (best-effort — a not-logged-in gh is a note, not a fail, because login is the developer's
-# one-time action, not something this script performs). The Claude-side login is asserted directly
-# above rather than inferred from this one.
+# SC-007 — service logins persist. `gh` stores its login in GH_CONFIG_DIR, which containerEnv points
+# into the persisted ~/.claude volume. Until 2026-11-23 it was UNSET, so the login lived in
+# ~/.config/gh on the ephemeral overlay and every recreate logged gh out — while this block's note
+# claimed it persisted. So the location is ASSERTED (a fail), not assumed. Whether gh is logged in
+# stays a note: login is the developer's one-time action, not something this script performs.
+if [ "${MCM_DEVCONTAINER:-0}" = "1" ]; then
+  case "${GH_CONFIG_DIR:-}" in
+    "") err "GH_CONFIG_DIR is unset — gh keeps its login in ~/.config/gh on the EPHEMERAL overlay, so a recreate logs it out (SC-007). Expected /home/coder/.claude/gh via containerEnv." ;;
+    "${CLAUDE_CONFIG_DIR:-/home/coder/.claude}"/*) ok "gh config is on the persisted volume: GH_CONFIG_DIR=$GH_CONFIG_DIR (SC-007)" ;;
+    *) err "GH_CONFIG_DIR=$GH_CONFIG_DIR is not under the persisted ~/.claude volume — the gh login would not survive a recreate (SC-007)." ;;
+  esac
+fi
 if command -v gh >/dev/null 2>&1; then
   if gh auth status >/dev/null 2>&1; then
     ok "gh login resolves without re-auth (persisted — SC-007)"
