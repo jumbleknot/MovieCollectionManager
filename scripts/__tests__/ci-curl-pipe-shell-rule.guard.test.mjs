@@ -71,9 +71,10 @@ test('the rule matches every curl-pipe-shell line the workflows actually contain
   // A regex that matched nothing would pass every acceptance test below vacuously. This is the
   // guard against that: the blinded community rule's 0 findings looked exactly like a clean repo.
   assert.ok(
-    // 5 since item #1114 took guardrails' sast rustup off `curl sh.rustup.rs | sh` (was 6). Lower it
-    // again only by REMOVING an installer — never to make a pattern that stopped matching pass.
-    hits.length >= 5,
+    // 3: item #1114 took guardrails' sast rustup off `curl sh.rustup.rs | sh` (6 → 5), and item #1119
+    // the app-ci and renovate.yml ones (5 → 3; left: two uv installers and Maestro). Lower it again
+    // only by REMOVING an installer — never to make a pattern that stopped matching pass.
+    hits.length >= 3,
     `expected the pattern to see the curl|shell installers in .forgejo/workflows (found ${hits.length}) — ` +
       'a pattern that matches nothing makes every acceptance assertion below vacuous, which is the ' +
       'exact failure mode item #224 documents',

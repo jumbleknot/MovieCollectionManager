@@ -33,6 +33,13 @@ import {
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const IS_WIN = process.platform === 'win32';
 const SEMGREP_PIN = '1.185.0';
+// Item #1120 — pip-audit, the tool that decides whether a Python advisory blocks the merge, was
+// `--with pip-audit` (newest on PyPI every scan). Renovate keeps this pin current (pypi datasource),
+// and runPipAudit() checks the version that actually RESOLVED against it before auditing anything.
+// Its transitive deps still float — see docs/runbooks/sast-scanning.md for why (platformdirs).
+export const PIP_AUDIT_PIN = '2.10.1';
+/** The `uv run --with` argument that injects exactly the pinned pip-audit. */
+export const pipAuditWith = () => ['--with', `pip-audit==${PIP_AUDIT_PIN}`];
 const ALL_SCANNERS = ['semgrep', 'cargo-audit', 'pnpm-audit', 'pip-audit'];
 const CODE_EXT_RE = /\.(ts|tsx|js|jsx|mjs|cjs|py)$/i;
 // Workflow definitions are scanned too, but ONLY under the two workflow trees (item #224). The rule
@@ -770,7 +777,7 @@ function auditOnePythonSurface({ project, dir }, map, cacheDir) {
   // the message below is NOT retried — transientOr classifies it as a real fault, so it still fails
   // on the first attempt rather than after the whole backoff budget.
   const native = retryTransient('pip-audit', () => {
-    const r = run('uv', ['run', '--no-sync', '--with', 'pip-audit', 'pip-audit', '--format', 'json', '-s', 'osv', '--progress-spinner', 'off', ...pipAuditCacheArgs(cacheDir)], { cwd: surfaceDir });
+    const r = run('uv', ['run', '--no-sync', ...pipAuditWith(), 'pip-audit', '--format', 'json', '-s', 'osv', '--progress-spinner', 'off', ...pipAuditCacheArgs(cacheDir)], { cwd: surfaceDir });
     const out = `${r.stderr || ''}\n${r.stdout || ''}`;
     if (r.status !== 0 && r.status !== 1) {
       throw transientOr(`[pip-audit] ${project} failed (exit ${r.status}) — OSV unreachable, or the venv is not synced (run \`uv sync\` in ${dir}): ${(r.stderr || '').slice(-500)}`, out);
@@ -795,6 +802,30 @@ export function pipAuditCacheArgs(cacheDir) {
   return cacheDir ? ['--cache-dir', join(cacheDir, 'pip-audit')] : [];
 }
 
+/** The version in `pip-audit --version` output (`pip-audit 2.10.1`), or null. */
+export function parsePipAuditVersion(text) {
+  return /\bpip-audit\s+(\d+(?:\.\d+)+\S*)/.exec(String(text ?? ''))?.[1] ?? null;
+}
+
+/**
+ * Fail unless the pip-audit that `uv run --with` resolves IS the pin (item #1120). A pin nobody checks
+ * is a description, not a property: a typo'd specifier, or a uv that ignored it, would otherwise audit
+ * with an unchosen version while the log claimed the pinned one. Retried like the audit itself, since
+ * resolving the injected env reaches PyPI.
+ */
+function assertPipAuditVersion({ project, dir }, cacheDir) {
+  const got = retryTransient('pip-audit', () => {
+    const r = run('uv', ['run', '--no-sync', ...pipAuditWith(), 'pip-audit', '--version', ...pipAuditCacheArgs(cacheDir)], { cwd: resolve(REPO_ROOT, dir) });
+    const out = `${r.stdout || ''}\n${r.stderr || ''}`;
+    if (r.status !== 0) throw transientOr(`[pip-audit] ${project}: \`pip-audit --version\` failed (exit ${r.status}): ${(r.stderr || '').slice(-400)}`, out);
+    return parsePipAuditVersion(out);
+  });
+  if (got !== PIP_AUDIT_PIN) {
+    throw new Error(`[pip-audit] resolved pip-audit ${got ?? '<unparseable>'} but PIP_AUDIT_PIN is ${PIP_AUDIT_PIN} — refusing to audit with an unchosen version.`);
+  }
+  console.log(`[pip-audit] pip-audit ${got} (pinned, item #1120)`);
+}
+
 function runPipAudit({ map }) {
   assertToolchain('uv', 'pip-audit');
   // FR-021 — before scanning anything, refuse to run if a Python project on disk is unregistered.
@@ -809,6 +840,7 @@ function runPipAudit({ map }) {
   const findings = [];
   const cacheDir = mkdtempSync(join(tmpdir(), 'mcm-pip-audit-'));
   try {
+    assertPipAuditVersion(PYTHON_SURFACES[0], cacheDir);
     for (const surface of PYTHON_SURFACES) {
       // Any surface failing fails the WHOLE scan (FR-008). Three-of-four is never reported as success.
       const out = auditOnePythonSurface(surface, map, cacheDir);

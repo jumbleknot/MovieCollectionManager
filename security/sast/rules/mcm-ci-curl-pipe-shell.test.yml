@@ -38,10 +38,12 @@ jobs:
           curl -LsSf https://astral.sh/uv/0.12.10/install.sh | sh
           CI_LOG_STEP
 
-      # ── Accepted: rustup, whose toolchain comes from rust-toolchain.toml ────
+      # ── Caught: rustup's piped script, no longer accepted (item #1119) ──────
+      # Every CI job now bootstraps rustup through scripts/ci-install-rustup.sh, a sha256-verified
+      # rustup-init. A step copying the old recipe back is the regression this catches.
       - run: |
           bash scripts/ci-log-step.sh probe-rustup bash -e /dev/stdin <<'CI_LOG_STEP'
-          # ok: mcm-ci-curl-pipe-shell
+          # ruleid: mcm-ci-curl-pipe-shell
           curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
           CI_LOG_STEP
 

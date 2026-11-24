@@ -30,14 +30,14 @@
 # comment you write beside it IS the written decision.
 #
 # ACCEPTED INSTALLERS (all fixed, non-attacker-controlled, fetched over TLS):
-#   * sh.rustup.rs — the canonical rustup bootstrap, always invoked with
-#     `--proto '=https' --tlsv1.2` and `--default-toolchain none`, so the toolchain itself comes from
-#     rust-toolchain.toml rather than from whatever the installer defaults to (item #307).
+#   * (sh.rustup.rs was accepted until item #1119. Every CI job now bootstraps rustup through
+#     scripts/ci-install-rustup.sh — a sha256-verified rustup-init — so the piped script is no
+#     longer needed anywhere a workflow runs, and is caught again like any other host.)
 #   * astral.sh/uv/<x.y.z>/install.sh — VERSION-PINNED PATH ONLY. The unversioned
 #     `astral.sh/uv/install.sh` is deliberately NOT accepted: PR #272 nearly added exactly that line
 #     to renovate.yml, heredoc-wrapped, and the blinded rule would not have objected.
 #   * get.maestro.mobile.dev — the vendor publishes no versioned endpoint, so this URL cannot carry
-#     a version the way the other two do. THE ARTIFACT IS PINNED ANYWAY, by environment: the
+#     a version the way uv's does. THE ARTIFACT IS PINNED ANYWAY, by environment: the
 #     installer's own source takes `releases/latest/download/maestro.zip` when $MAESTRO_VERSION is
 #     unset and `releases/download/cli-$MAESTRO_VERSION/` when it is set, so app-ci.yml exports the
 #     pin before the pipe. That pin is outside this rule's reach — a URL regex cannot see it — and is
@@ -68,4 +68,4 @@ rules:
       # Text-level, single-line by construction: neither half may span a newline, so a hit is always
       # one `curl … | shell` line and the reported location is that line, not the enclosing `run:`.
       - pattern-regex: 'curl[^\n|]*\|[^\n]*\b(sh|bash|zsh)\b'
-      - pattern-not-regex: 'curl[^\n|]*https://(sh\.rustup\.rs|astral\.sh/uv/[0-9]+\.[0-9]+\.[0-9]+/install\.sh|get\.maestro\.mobile\.dev)[^\n|]*\|[^\n]*\b(sh|bash|zsh)\b'
+      - pattern-not-regex: 'curl[^\n|]*https://(astral\.sh/uv/[0-9]+\.[0-9]+\.[0-9]+/install\.sh|get\.maestro\.mobile\.dev)[^\n|]*\|[^\n]*\b(sh|bash|zsh)\b'

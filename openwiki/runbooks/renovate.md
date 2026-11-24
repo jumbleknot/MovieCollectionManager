@@ -3,10 +3,10 @@ type: Runbook
 title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0, and -1 for the OpenWiki generator's lock refresh) that allocates the six in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
 resource: docs/runbooks/renovate.md
-resource-sha256: 503da700c88b832d4b7932f5ba12f6a3498d8d30d3d16acebdc66e3cba9da2e8
+resource-sha256: 593cb968bfbbe0efa791669c95a61fd52eaebeaa53655f9925e997171d172851
 tags: [renovate, ci, dependencies, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-23T23:20:49.997Z
+timestamp: 2026-11-24T00:07:06.808Z
 ---
 
 # Renovate dependency bot
@@ -320,7 +320,8 @@ at every site, and tracked by something that will move it.
 | **Rust** | `rust-toolchain.toml` (`channel`) + devcontainer `--default-toolchain` arg | built-in `rust-toolchain` manager + a customManager for the devcontainer half (same depName/datasource) | yes — `rust toolchain` |
 | **semgrep** | `scripts/sast-scan.mjs` (`SEMGREP_PIN`) | customManager, `pypi` | no |
 | **cargo-audit** | `scripts/ci-install-rust-audit.sh` (`CARGO_AUDIT_VERSION=`; its sha256 is not moved by the bump, item #1114) and the toolchain image | customManager, `crate` | no |
-| **rustup-init** (sast job) | `scripts/ci-install-rust-audit.sh` (`RUSTUP_VERSION=`, sha256 beside it) | customManager, `github-tags` | no |
+| **rustup-init** (every CI job) | `scripts/ci-install-rustup.sh` (`RUSTUP_VERSION=`, sha256 beside it; items #1114, #1119) | customManager, `github-tags` | no |
+| **pip-audit** | `scripts/sast-scan.mjs` (`PIP_AUDIT_PIN`, item #1120) | customManager, `pypi` | no |
 | **python** (interpreter minor) | `agents/movie-assistant/.python-version` — docker `allowedVersions` ceiling is derived from it | 1 pin + 8 image refs share depName/datasource with pyenv; `requires-python` floors and 4 lockfiles ride other paths | yes — `python toolchain` (item #366) |
 | **uv** | one version string repeated at every site (3 install-script URLs + 5 `setup-uv` inputs + 4 image tags) | customManager (`github-releases`) for script/action shapes; built-in docker manager for image tags | yes — `uv pin` |
 
@@ -621,9 +622,12 @@ as a suspected defect:
   new major's breaking changes and re-running the validator against `renovate.json` first. The pin is
   about config *semantics* only — it says nothing about the runtime, which is why the `setup-node` step
   is the thing that covers an `engines` bump.
-- **`curl https://sh.rustup.rs | sh` stays an unversioned script piped to `sh`**, in two workflows
-  (`app-ci`, `renovate`) and the toolchain image. The `sast` job moved to a sha256-verified
-  `rustup-init` in item #1114: it runs only on the amd64 runner, which reaches `static.rust-lang.org`. What it installs is `rustup`, a bootstrapper; the thing that decides which
+- **`curl https://sh.rustup.rs | sh` stays an unversioned script piped to `sh` in the toolchain image
+  only.** Every CI job (`sast` in item #1114, then `mc-service-checks` and `renovate.yml` in item #1119)
+  bootstraps through `scripts/ci-install-rustup.sh`, a sha256-verified `rustup-init`. They all run on
+  the amd64 runner, which reaches `static.rust-lang.org`. The Semgrep rule no longer accepts
+  `sh.rustup.rs`, and a guard fails any workflow that pipes it into a shell. The rest of this entry
+  is about the image. What it installs is `rustup`, a bootstrapper; the thing that decides which
   compiler runs — the toolchain — is pinned by `rust-toolchain.toml`, so a change in rustup cannot
   change the compiler. Both pinnable alternatives cost more than they buy: the archive **binary**
   hard-codes the architecture, which would break a non-amd64 devcontainer build, and the archive
