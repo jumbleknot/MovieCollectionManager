@@ -184,26 +184,38 @@ jobs:
             "${GITHUB_SERVER_URL}/api/v1/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}" \
             -d "{\"context\":\"renovate/mode\",\"state\":\"success\",\"description\":\"$mode\"}" >/dev/null
           CI_LOG_STEP
-      # Item #309, the half the PR gate cannot cover. `guardrails / renovate-config` validates an
-      # EDIT to renovate.json before it merges. It cannot see a semantic change that arrives with a
-      # renovate@44 MINOR — nothing in the repository changed, so no PR runs — and that is the #160
-      # shape in its config edition: the major pin below is entirely about config SEMANTICS, and a
-      # release inside the pinned major can still deprecate or rename a key we use. Validating here,
-      # with the SAME major that is about to run, is what catches it, at most a week later.
+      # Item #309. `guardrails / renovate-config` validates an EDIT to renovate.json, and since item
+      # #1126 also every Renovate VERSION bump (it arrives as a PR changing .forgejo/renovate-version).
+      # This run-time validation stays as the backstop: it checks the config with the EXACT release
+      # that is about to act on it, so a config this Renovate would reject never gets acted on.
       #
       # BLOCKING on purpose. A config this Renovate would reject is a Renovate that is already
       # silently mismanaging the repository, so stopping the run is strictly better than letting it
       # act on a config half of which it ignores — and it fails visibly, with a failure digest,
       # rather than as the absence this whole file's comments keep warning about.
       #
-      # Near-free: this is the FIRST renovate@44 pull of the job, and the `Run Renovate` step below
+      # Near-free: this is the FIRST renovate pull of the job, and the `Run Renovate` step below
       # then resolves from the same ~/.npm/_npx cache inside this container rather than pulling
       # again — so the cost is the validation itself, not a second download. The flags are the
       # measured ones; see the `renovate-config` job in guardrails.yml for what each one holds up.
       - name: 'Validate renovate.json before acting on it (item #309)'
-        run: bash scripts/ci-log-step.sh renovate-validate-config npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
-      - name: Run Renovate
+        run: bash scripts/ci-log-step.sh renovate-validate-config npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" --package renovate@"$(cat .forgejo/renovate-version)" -- renovate-config-validator --strict --no-global renovate.json
+      # Item #1125 — the token, probed BEFORE a run that would otherwise meet a missing scope as a 403
+      # deep inside itself and still exit 0. Read scopes only; write scopes cannot be probed without
+      # writing, and the verdict step below covers them through the run's own result.
+      - name: 'Preflight RENOVATE_TOKEN (item #1125)'
         env:
+          RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
+        run: bash scripts/ci-log-step.sh renovate-preflight node scripts/renovate-verdict.mjs preflight
+      - name: Run Renovate
+        id: run
+        env:
+          # Item #1125 — Renovate's own JSON log, at debug level, for the verdict step below. It carries
+          # the `Repository finished` result and the `branches info extended` entry (every branch's
+          # `result`), which stdout at info level does not. LOWERCASE PATH, deliberately: Renovate
+          # lower-cases every LOG_* env value it reads (logger/utils.js getEnv, 44.x).
+          RENOVATE_LOG_FILE: renovate-log.ndjson
+          RENOVATE_LOG_FILE_LEVEL: debug
           # Non-interactive corepack, should anything still reach for one: setup-node's Node 26 has none,
           # but the runner image's Node 22 corepack is still on PATH. pnpm itself comes from
           # scripts/install-pnpm.sh (item #992); this only stops a first-use prompt from hanging the job.
@@ -237,48 +249,38 @@ jobs:
           # in renovate.json — so this env var is the only place; renovate-workflow.guard.test.mjs
           # asserts it stays at or below 10. docs/runbooks/renovate.md §5 has the measurement.
           RENOVATE_DOCKER_MAX_PAGES: '10'
-        # npx pulls the renovate package into the node runner. PINNED to a major (2026-08-08): it was
-        # `npx --yes renovate`, i.e. always-latest, so a Renovate major could land in CI unannounced
-        # and change config semantics under us. That is not hypothetical — v41 renamed customManagers'
-        # `fileMatch` to `managerFilePatterns`, and a config using the wrong key does not fail loudly,
-        # it silently manages nothing. Matches how every other CI tool here is treated (sast-scan.mjs
-        # pins SEMGREP_PIN = '1.169.0').
+        # The Renovate VERSION is one exact line in .forgejo/renovate-version (item #1126), read by every
+        # renovate@ call in CI: this step, the pre-run validation above and guardrails' validator, so all
+        # three run the SAME release. It was a major pin (`renovate@44`) in shell text, which no Renovate
+        # manager can see, so the bot never proposed its own upgrades and a major needed a human to
+        # notice it. A customManager in renovate.json now tracks the file (npm datasource), and
+        # renovate-workflow.guard.test.mjs fails on any other `renovate@` literal.
         #
-        # A MAJOR pin, not exact: Renovate ships several releases a week, and nothing in this repo can
-        # bump this string automatically (it is shell text in a `run:`, invisible to Renovate's own
-        # managers). Major is the reproducibility/maintenance balance the original TODO here asked for.
-        # Raising 44 -> 45 is a DELIBERATE, reviewed act: read the major's breaking changes and re-run
-        # `npx --yes --package renovate@<new> -- renovate-config-validator` against renovate.json first.
+        # What the old major pin's comments recorded still holds, now per bump PR instead of per run:
+        #   - a MAJOR can change how renovate.json is read (v41 renamed `fileMatch` to
+        #     `managerFilePatterns`, and the wrong key silently manages nothing) — the bump PR runs
+        #     guardrails' strict validator against the new version before it can merge;
+        #   - a minor can raise `engines.node` (44.14.12 moved it to ^24.11.0, #160) — check it against
+        #     setup-node above when reviewing the bump;
+        #   - a release can be uninstallable under npm (44.131.1–44.132.1 depended on a Yarn-only
+        #     `patch:` spec, item #631) — the bump PR's own validator run installs it first.
         #
-        # RESIDUAL RISK THE MAJOR PIN DOES NOT COVER — and this one has already fired. The reasoning
-        # above is entirely about CONFIG SEMANTICS: a major could change how renovate.json is read.
-        # It says nothing about the RUNTIME, and a minor/patch INSIDE the pinned major can raise
-        # `engines`. That is precisely what happened: 44.14.12 moved `engines.node` to ^24.11.0, well
-        # inside `renovate@44`, and the pin let it through because the pin was never about that. The
-        # job then ran on the container's Node 22 and exited 1 on every run for four days before
-        # anyone read the nightly red (#160).
-        #
-        # What covers it is the `actions/setup-node` step above, not this pin. So when raising the
-        # major, check the new major's `engines.node` against that step's `node-version` as well as
-        # the config changes — a pin bump and a runtime bump are two separate reviews.
-        # Item #631: this was pinned to 44.131.0 from 2026-10-02 to 2026-10-10, because renovate 44.131.1–44.132.1
-        # depended on @yarnpkg/core@4.9.2, which npm cannot install (a Yarn-only `patch:` spec;
-        # EUNSUPPORTEDPROTOCOL). Under npx that failure exits 1 and prints nothing but the path to npm's log.
-        # Every release from 44.132.2 on is back on 4.9.1. Back on the major pin as of 2026-10-10 (44.149.2 installed).
-        #
-        # `--before` = now minus 3 days (added 2026-11-13). npm resolves `renovate@44` to the newest
-        # 44.x published BEFORE that moment. One flag, two reasons:
-        # (1) The Friday window run died at 07:00:37 UTC with `E404 renovate-44.237.3.tgz`. 44.237.3
-        #     was published at 06:58:27; npm's index already listed it, but the tarball wasn't served
-        #     yet, so the window was lost because the bot itself was two minutes old.
-        # (2) Every dependency Renovate PROPOSES waits 3 days (renovate.json `minimumReleaseAge`,
-        #     pnpm-workspace.yaml 4320 min). The bot, which runs with the repository write token, was
-        #     the one thing installed at whatever was published minutes earlier.
-        # The same flag is on every renovate@44 call (this step, the pre-run validation above and the
-        # guardrails validator), so all three read the SAME release; the guard test asserts it. The date
-        # comes from node, not `date -d`, so it doesn't depend on GNU date. If a fix is needed sooner
-        # (the #631 case), pin the exact version, as #631 did.
-        run: bash scripts/ci-log-step.sh renovate npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" renovate@44
+        # `--before` = now minus 3 days (2026-11-13) stays: it bounds the TRANSITIVE dependencies npm
+        # resolves for the pinned release to the same 3-day cooldown everything Renovate proposes waits
+        # (renovate.json `minimumReleaseAge`), and the version in the file is itself proposed only once
+        # it is 3 days old, so the two cannot disagree.
+        run: bash scripts/ci-log-step.sh renovate npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" renovate@"$(cat .forgejo/renovate-version)"
+      # Items #1125, #1124, #1123 — what the run ACTUALLY did, from Renovate's own JSON log. Fails on: no
+      # `Repository finished`, a result other than `done`, an ERROR entry; on a LIVE run inside the
+      # lockFileMaintenance window, a lock-file channel that was not scheduled, starved, rejected,
+      # errored or absent; and on a scheduled run, a health digest on item #311 older than 8 days (the
+      # digest is comment-only, so its silence is noticed here or nowhere). `!cancelled()` so a failed
+      # Renovate step is still explained; skipped when the preflight stopped the run (nothing to judge).
+      - name: 'Judge the run from its log (items #1125, #1124, #1123)'
+        if: ${{ !cancelled() && steps.run.outcome != 'skipped' }}
+        env:
+          CI_DIGEST_TOKEN: ${{ secrets.CI_DIGEST_TOKEN }}
+        run: bash scripts/ci-log-step.sh renovate-verdict node scripts/renovate-verdict.mjs verdict --log renovate-log.ndjson
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).

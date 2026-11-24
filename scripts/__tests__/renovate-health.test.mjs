@@ -3,7 +3,7 @@
 // The digest exists because Renovate's failure mode on this forge is ABSENCE (a dead channel, a
 // stale branch, a spent budget), and absence is unreadable — items #153/#218/#268/#290 were each
 // discovered late for exactly that reason. These tests pin the classification logic; the I/O shell
-// follows check-lockfile-refresh.mjs (comment-only, always exit 0) and is deliberately thin.
+// is deliberately thin: a verdict exits 0, an instrument failure or a missing window run exits 1 (items #1123, #1124).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,7 +17,9 @@ import {
   selectNewestScheduledRun,
   selectNewestMainSweepRun,
   sweepVerdict,
+  windowRunVerdict,
 } from '../renovate-health.mjs';
+import { parseWindow } from '../lib/renovate-window.mjs';
 
 // ── parseRepositoryProblems ──────────────────────────────────────────────────
 
@@ -369,4 +371,48 @@ test('(#485) NO ✅ Healthy when branch protection could not be read at all', ()
 test('(#485) the stability-days table no longer reads as a verdict on mergeability', () => {
   const body = buildDigest({ ...CLEAN, rows: [{ number: 478, title: 'pin deps', created_at: '2026-09-18T07:02:16Z', stability: 'success' }] });
   assert.match(body, /ADVISORY/, 'the column that said `success` for an unmergeable PR must say what it is');
+});
+
+// ── Item #1124: the weekly window run, whose ABSENCE only this digest can see ───────────────────
+
+const WINDOW = parseWindow({ timezone: 'America/New_York', lockFileMaintenance: { schedule: ['* 2-4 * * 5'] } });
+const NOW_FRI = new Date('2026-11-20T11:00:30Z'); // the digest's own Friday 11:00 UTC slot
+const rrun = (over) => ({ id: 1, workflow_id: 'renovate.yml', trigger_event: 'schedule', prettyref: 'main', started: '2026-11-20T07:00:12Z', status: 'success', ...over });
+
+test("this week's successful in-window run is success", () => {
+  const v = windowRunVerdict([rrun({ id: 9 })], WINDOW, NOW_FRI);
+  assert.equal(v.state, 'success');
+  assert.equal(v.run.id, 9);
+});
+
+test('a FAILED window run is reported as failure (its verdict step already went red) — not absent', () => {
+  assert.equal(windowRunVerdict([rrun({ status: 'failure' })], WINDOW, NOW_FRI).state, 'failure');
+});
+
+test('only nightly runs this week (outside the window) is ABSENT — the weekly run did not happen', () => {
+  const v = windowRunVerdict([rrun({ started: '2026-11-20T03:00:09Z' }), rrun({ started: '2026-11-19T03:00:09Z' })], WINDOW, NOW_FRI);
+  assert.equal(v.state, 'absent');
+  assert.match(v.text, /did not happen/);
+});
+
+test("LAST week's window run does not certify this week", () => {
+  assert.equal(windowRunVerdict([rrun({ started: '2026-11-11T07:00:12Z' })], WINDOW, NOW_FRI).state, 'absent');
+});
+
+test('a dispatched or branch run inside the window does not count — only the scheduled run on main', () => {
+  assert.equal(windowRunVerdict([rrun({ trigger_event: 'workflow_dispatch' }), rrun({ prettyref: 'fix/x' })], WINDOW, NOW_FRI).state, 'absent');
+});
+
+test('the newest in-window run wins when there are two', () => {
+  const v = windowRunVerdict([rrun({ id: 1, status: 'failure', started: '2026-11-20T07:00:12Z' }), rrun({ id: 2, started: '2026-11-20T08:30:00Z' })], WINDOW, NOW_FRI);
+  assert.equal(v.run.id, 2);
+});
+
+test('an absent or failed window run is an anomaly in the digest — never "Healthy"', () => {
+  for (const state of ['absent', 'failure']) {
+    const body = buildDigest({ ...CLEAN, windowRun: { state, text: 'x' } });
+    assert.doesNotMatch(body, /Healthy/);
+    assert.match(body, new RegExp(`Renovate's weekly window run: ${state}`));
+  }
+  assert.match(buildDigest({ ...CLEAN, windowRun: { state: 'success', text: 'run 9 succeeded', run: {} } }), /Healthy[\s\S]*window run: run 9 succeeded/);
 });

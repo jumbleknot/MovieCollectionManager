@@ -12,7 +12,7 @@
 # session's just-merged work). The open-PR listing FAILS CLOSED, and each delete is leased to the sha
 # that was classified, so a commit pushed meanwhile is never destroyed.
 #
-# THIS JOB GOES RED ON FAILURE, unlike the comment-only jobs (renovate-health, lockfile-refresh-check):
+# THIS JOB GOES RED ON FAILURE, like renovate-health since item #1123:
 # a reaper that silently stopped reaping is exactly the absence it exists to end.
 name: branch-reaper
 

@@ -140,6 +140,25 @@
     {
       "customType": "regex",
       "description": [
+        "Item #1126 — Renovate's OWN version, so the bot proposes its own upgrades. It was a major pin",
+        "(`renovate@44`) in shell text inside renovate.yml, which no manager can see: every release",
+        "inside the major was taken unreviewed at run time, and a new major needed a human to notice.",
+        "Now ONE exact version in .forgejo/renovate-version, read by every renovate@ call in CI (the run,",
+        "its pre-run validation, and guardrails' validator), so a bump arrives as an ordinary PR whose",
+        "guardrails job installs and runs the NEW release's strict validator against this file before",
+        "it can merge. minimumReleaseAge (3 days) applies like any npm dependency, which also keeps the",
+        "pinned release inside the `--before` 3-day cooldown the workflows install it under.",
+        "renovate-workflow.guard.test.mjs asserts every call site reads the file and no other",
+        "`renovate@` literal exists."
+      ],
+      "managerFilePatterns": ["/^\\.forgejo/renovate-version$/"],
+      "matchStrings": ["^(?<currentValue>\\d+\\.\\d+\\.\\d+)\\s*$"],
+      "depNameTemplate": "renovate",
+      "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": [
         "Keep nx.json's `installation.version` in lockstep with package.json's `nx` devDependency.",
         "Renovate only sees package.json, so an nx bump used to land as a HALF bump: PR #141 raised",
         "package.json to 22.7.7 and left nx.json at 22.7.2. The Nx WRAPPER wins at runtime, so every",

@@ -9,10 +9,18 @@
 // by incident, sessions after it started. This job goes and looks, once a week, and writes what it
 // found where the operator already reads.
 //
-// DESIGN, inherited from check-lockfile-refresh.mjs (the proven pattern):
-//   - comment-only, ALWAYS exit 0 — a weekly red trains people to ignore it; the comment IS the report
-//   - always comments, even when healthy (one line) — so silence means the JOB died, which is itself
-//     the signal; absence must never read as health, that being the root fault this digest exists for
+// DESIGN:
+//   - a VERDICT never turns the job red — a weekly red on a finding trains people to ignore it; the
+//     comment IS the report. But the INSTRUMENT failing does (item #1123): no token, a failed read
+//     of something the digest cannot be written without, or a failed POST exits 1, so the failure
+//     digest fires. It used to exit 0 on all of those, and a broken health job was then silent —
+//     the exact failure it exists to prevent. Partial reads that the digest can report as an
+//     anomaly (branch protection, the CVE sweep) still degrade into the digest instead.
+//   - an ABSENCE it watches exits 1 too: no successful Renovate run inside the lockFileMaintenance
+//     window in the last 8 days (item #1124) means the bot's weekly run did not happen at all, and
+//     only a job that runs AFTER the window can notice that
+//   - always comments, even when healthy (one line). Its own silence is watched by the Renovate run's
+//     verdict step (renovate-verdict.mjs), which fails when the newest digest is older than 8 days
 //   - self-stopping: no-ops once item #311 is closed. CLOSING #311 IS THE KILL SWITCH.
 //   - reads the Dependency Dashboard (#29); NEVER writes it — ticking is the only sanctioned
 //     interaction with #29 and this script does not tick
@@ -33,8 +41,11 @@ import { parseRequiredGlobs, computeMergeVerdict } from './ci-status.mjs';
 // `-dry-run` each used to mean "post the comment", with an exit code identical to the intended run's.
 import { ArgvError, dieOnArgvError, partitionArgs, wantsHelp } from './lib/argv-contract.mjs';
 import { isMain } from './lib/is-main.mjs';
+import { parseWindow, inWindow } from './lib/renovate-window.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const RENOVATE_WORKFLOW = 'renovate.yml';
+export const WINDOW_RUN_MAX_AGE_DAYS = 8;
 const ITEM = 311; // the digest's home — close it to stop the digest
 const DASHBOARD = 29; // Renovate's Dependency Dashboard — READ ONLY here
 const STABILITY_CONTEXT = 'renovate/stability-days';
@@ -248,14 +259,51 @@ export function sweepVerdict(run, superseded = null) {
   return { state: 'unknown', text: `${where} reports status=${run.status ?? '<unset>'}`, run, superseded };
 }
 
-export function buildDigest({ problems, branches, budgetInfo, rows, blocked = [], sweep = null, requiredGlobs = null }) {
+/**
+ * Item #1124 — did Renovate's weekly WINDOW run happen, and how did it end?
+ *
+ * The run judges its own lock-file channel (renovate-verdict.mjs fails it when the channel is not
+ * scheduled, starved, rejected or absent), so a red window run already carries that verdict. What
+ * the run can never report is that it DID NOT RUN — a disabled schedule, a dead runner, a workflow
+ * error before the first step. Only a job that runs after the window can see that absence.
+ *
+ * @param {object[]} runs a page of workflow_runs for renovate.yml (newest-first, but re-sorted)
+ * @param {{timezone: string, hours: Set<number>, dow: Set<number>}} window parseWindow(renovate.json)
+ * @returns {{state: 'success'|'failure'|'absent'|'unknown', text: string, run?: object}}
+ */
+export function windowRunVerdict(runs, window, now = new Date(), maxAgeDays = WINDOW_RUN_MAX_AGE_DAYS) {
+  const cutoff = now.getTime() - maxAgeDays * 864e5;
+  const inside = (runs ?? []).filter(
+    (r) => r?.workflow_id === RENOVATE_WORKFLOW
+      && r?.trigger_event === 'schedule'
+      && r?.prettyref === PROTECTED_BRANCH
+      && Date.parse(r?.started ?? '') >= cutoff
+      && inWindow(r.started, window),
+  ).sort((a, b) => Date.parse(b.started) - Date.parse(a.started));
+  if (!inside.length) {
+    return {
+      state: 'absent',
+      text: `no scheduled \`${RENOVATE_WORKFLOW}\` run on \`main\` started inside the lockFileMaintenance window in the last ${maxAgeDays} days — the weekly window run did not happen`,
+    };
+  }
+  const run = inside[0];
+  const status = String(run.status ?? '').toLowerCase();
+  const where = `run ${run.id} (${run.started})`;
+  if (status === 'success') return { state: 'success', text: `${where} succeeded — its verdict step passed, lock-file channel included`, run };
+  if (status === 'failure') return { state: 'failure', text: `${where} FAILED — its verdict step names why (lock-file channel, repository result or an ERROR)`, run };
+  return { state: 'unknown', text: `${where} reports status=${run.status ?? '<unset>'}`, run };
+}
+
+export function buildDigest({ problems, branches, budgetInfo, rows, blocked = [], sweep = null, requiredGlobs = null, windowRun = null }) {
   // Item #485. `✅ Healthy` used to be decided by four branch/dashboard counters alone, so it could
   // be — and on 2026-09-18 was — printed while `main` was five hours into failing a required gate
   // and a listed PR was unmergeable on it. Every signal the line claims to cover must now be in
   // this sum, including the ones whose answer is "I could not tell".
   const requiredUnreadable = !Array.isArray(requiredGlobs) || requiredGlobs.length === 0;
   const sweepBad = sweep && sweep.state !== 'success';
+  const windowBad = windowRun && windowRun.state !== 'success';
   const anomalies =
+    (windowBad ? 1 : 0) +
     problems.length +
     branches.emptyPr.length +
     branches.stale.length +
@@ -276,6 +324,14 @@ export function buildDigest({ problems, branches, budgetInfo, rows, blocked = []
     // superseded a RED cron, that is the week's CVE event: it belongs in the digest even though
     // nothing is wrong now, because dropping it is how this digest started hiding things (item #485).
     if (sweep?.run) lines.push('', `  Read from ${sweep.text}.`);
+    if (windowRun?.run) lines.push('', `  Renovate's window run: ${windowRun.text}.`);
+  }
+
+  if (windowBad) {
+    lines.push(
+      `${windowRun.state === 'failure' ? '❌' : windowRun.state === 'absent' ? '❌' : '⚠️'} **Renovate's weekly window run: ${windowRun.state}** — ${windowRun.text}.`,
+      '',
+    );
   }
 
   if (sweepBad) {
@@ -398,9 +454,10 @@ function gitIsAncestor(branch) {
 async function main(command = 'post') {
   const token = process.env.CI_DIGEST_TOKEN?.trim() || process.env.MCM_FORGE_ISSUE_TOKEN?.trim();
   if (!token) {
-    // Loudly, but exit 0: an absent Actions secret must not read as a verdict.
-    console.error('[renovate-health] no CI_DIGEST_TOKEN — cannot read the forge or comment. Exiting 0 WITHOUT a digest.');
-    return;
+    // Exit 1 (item #1123): no digest can be produced, and a job that silently produces none is the
+    // failure this digest exists to prevent. It used to exit 0 here.
+    console.error('[renovate-health] no CI_DIGEST_TOKEN — cannot read the forge or comment. NO digest posted.');
+    return 1;
   }
   const server = (process.env.GITHUB_SERVER_URL ?? '').replace(/\/$/, '');
   const [owner, repo] = (process.env.GITHUB_REPOSITORY ?? 'jumbleknot/mcm').split('/');
@@ -409,7 +466,7 @@ async function main(command = 'post') {
   const item = await call('GET', `/repos/${owner}/${repo}/issues/${ITEM}`);
   if (item.state !== 'open') {
     console.log(`[renovate-health] item #${ITEM} is ${item.state} — the digest is switched off. Exiting 0.`);
-    return;
+    return 0;
   }
 
   const config = JSON.parse(readFileSync(resolve(REPO_ROOT, 'renovate.json'), 'utf8'));
@@ -471,6 +528,14 @@ async function main(command = 'post') {
     console.error(`[renovate-health] could not read the weekly sweep: ${err.message}`);
   }
 
+  // ── Item #1124: did the weekly window run happen? ─────────────────────────────────────────────
+  // NOT degraded on a failed read, unlike the two reads above: "I could not tell whether Renovate
+  // ran this week" is the absence itself, so it fails the job rather than becoming a digest line.
+  const windowRun = windowRunVerdict(
+    (await call('GET', `/repos/${owner}/${repo}/actions/runs?workflow_id=${RENOVATE_WORKFLOW}&page=1&limit=50`)).workflow_runs ?? [],
+    parseWindow(config),
+  );
+
   const body = buildDigest({
     problems,
     branches,
@@ -479,17 +544,21 @@ async function main(command = 'post') {
     blocked,
     sweep,
     requiredGlobs,
+    windowRun,
   });
 
-  console.log(`[renovate-health] problems=${problems.length} emptyPr=${branches.emptyPr.length} stale=${branches.stale.length} unknown=${branches.unknown.length} openPrs=${openPrs.length} blocked=${blocked.length} sweep=${sweep.state} required=${requiredGlobs?.length ?? 'unreadable'}`);
+  console.log(`[renovate-health] problems=${problems.length} emptyPr=${branches.emptyPr.length} stale=${branches.stale.length} unknown=${branches.unknown.length} openPrs=${openPrs.length} blocked=${blocked.length} sweep=${sweep.state} required=${requiredGlobs?.length ?? 'unreadable'} windowRun=${windowRun.state}`);
+  const code = windowRun.state === 'absent' ? 1 : 0;
+  if (code) console.error(`[renovate-health] ${windowRun.text} — exiting 1 after the digest.`);
   if (command === 'dry-run') {
     // Exercises every read and the whole render path, and posts nothing — so the check can be
     // proven working now rather than discovered broken on a Friday.
     console.log('\n──── digest that WOULD be posted ────\n' + body + '\n─────────────────────────────────────');
-    return;
+    return code;
   }
   await call('POST', `/repos/${owner}/${repo}/issues/${ITEM}/comments`, { body });
   console.log(`[renovate-health] commented on item #${ITEM}.`);
+  return code;
 }
 
 // ── The argument contract (item #500) ────────────────────────────────────────────────────────────
@@ -528,9 +597,9 @@ export function resolveCommand(argv = []) {
 }
 
 if (isMain(import.meta.url)) {
-  // Argv is resolved OUTSIDE the catch below, on purpose. main()'s failures exit 0 (a weekly red
-  // trains people to ignore the digest), but a mistyped flag is a CALLER error, not a digest
-  // failure — routing it through the exit-0 discipline is exactly what made the typo invisible.
+  // Argv is resolved OUTSIDE the catch below, on purpose: a mistyped flag is a CALLER error (exit 2
+  // with usage), not a digest failure (exit 1) — and when main()'s failures exited 0, routing a typo
+  // through that path is exactly what made it invisible.
   let command;
   try {
     ({ command } = resolveCommand(process.argv.slice(2)));
@@ -540,9 +609,15 @@ if (isMain(import.meta.url)) {
   if (command === 'help') {
     console.log(USAGE);
   } else {
-    main(command).catch((err) => {
-      // Still exit 0 — see the header. A broken digest must not present as a failed build.
-      console.error(`[renovate-health] FAILED to produce a digest: ${err.message}`);
-    });
+    main(command)
+      .then((code) => {
+        process.exitCode = code ?? 0;
+      })
+      .catch((err) => {
+        // Exit 1 (item #1123) — a read or the POST failed, so no digest exists. This used to exit 0,
+        // which made a broken health job indistinguishable from a healthy one.
+        console.error(`[renovate-health] FAILED to produce a digest: ${err.message}`);
+        process.exitCode = 1;
+      });
   }
 }

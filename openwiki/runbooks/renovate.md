@@ -3,10 +3,10 @@ type: Runbook
 title: Renovate dependency bot
 description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0, and -1 for the OpenWiki generator's lock refresh) that allocates the six in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
 resource: docs/runbooks/renovate.md
-resource-sha256: 593cb968bfbbe0efa791669c95a61fd52eaebeaa53655f9925e997171d172851
+resource-sha256: e4763f5dd6310bb987e0254ec72b402ff474094b5f4887af54ddd7f569fbd27c
 tags: [renovate, ci, dependencies, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-24T00:07:06.808Z
+timestamp: 2026-11-24T14:19:25.397Z
 ---
 
 # Renovate dependency bot
@@ -65,8 +65,8 @@ branch exists.
 - **Friday is a ladder on one runner, and that is what the gap is really sized for.** In UTC: 02:30
   the daily `branch-reaper` (`branch-reaper.yml`, also on every push to `main`), 04:00
   the twice-weekly CVE sweep (`infra-image-scan.yml`, Friday plus Tuesday), 06:00
-  `devcontainer-image` (a heavy build with a 60-minute timeout), 07:00 the Renovate window, 10:00
-  `lockfile-refresh-check`, 11:00 `renovate-health`. Both scripts **post a public comment when run bare**, on any host (the Windows host too since PR #1029), so run them locally with `--dry-run`. The reaper's daily 02:30 slot is deliberate: it
+  `devcontainer-image` (a heavy build with a 60-minute timeout), 07:00 the Renovate window, 11:00
+  `renovate-health`. That script **posts a public comment when run bare**, on any host (the Windows host too since PR #1029), so run it locally with `--dry-run`. The reaper's daily 02:30 slot is deliberate: it
   is ahead of the nightly 03:00 and the Friday window, so a merged `renovate/*` branch is gone
   *before* Renovate decides whether to reuse it. A second image build used to sit at 05:00 —
   `minio-image.yml`, for the from-source MinIO build — but feature 080 retired that build for the
@@ -82,14 +82,19 @@ branch exists.
   hourly limit for every key and blocks **branch** creation too, not just PR creation, and open PRs
   also eat `prConcurrentLimit` headroom — leaving four green Renovate PRs unmerged caps the next
   window at one new PR. **Merging promptly is a throughput lever.**
-- **"Did the lockfile refresh fire unaided?" has a scheduled answer (item #218).**
-  `lockfile-refresh-check.yml` runs Friday 10:00 UTC, after the window, and comments its verdict on
-  the item — comment-only, always exit 0, and it no-ops once that item closes, so nothing has to be
-  cleaned up afterwards. The load-bearing distinction is *unaided* versus *forced*, and the tell is
-  **when** the PR was created: Renovate returns `not-scheduled` before branch creation, so a lock-file
-  PR created outside the permitted window cannot have come from the schedule. Reading the dashboard
-  tick directly does not work — Renovate rewrites that issue on every run, so by the time the check
-  runs the tick that mattered is already gone.
+- **The run judges itself from Renovate's own JSON log (items #1125, #1124, #1123).** `renovate.yml`
+  writes the log at debug level to `RENOVATE_LOG_FILE` — a **lowercase** path, because Renovate
+  lower-cases every `LOG_*` value it reads — and `scripts/renovate-verdict.mjs` runs a token
+  **preflight** before the run (a `401`/`403` on the user, repository, pulls or issues read names the
+  missing scope; write scopes cannot be probed without writing) and a **verdict** after it. The verdict
+  fails on no `Repository finished`, a result other than `done`, or any ERROR entry; on a live run
+  inside the lockFileMaintenance window, on a lock-file branch that is `not-scheduled`, starved by a
+  limit, rejected (`already-existed`, a closed PR), `error`, or absent; and on a scheduled run, on a
+  health digest on item #311 older than 8 days. `no-work` is "nothing to refresh" and passes. The one
+  thing the run cannot report is that it did not happen, so `renovate-health` exits 1 when no
+  scheduled run on `main` started inside the window in the last 8 days. This replaced
+  `lockfile-refresh-check.yml`, which inferred the channel from PR timestamps, could not tell "nothing
+  to refresh" from "dead", never failed, and had switched itself off when item #218 closed.
 - **Why `docker base images` carries `prPriority: 3` (item #486), and why the ranking must not be
   inverted.** With one in-window run a week, `prHourlyLimit` *is* the weekly throughput, and the three
   `lockFileMaintenance` channels at `prPriority: 5` already claim three of the slots every week by
@@ -574,12 +579,12 @@ None of these produce a red build or a searchable error. They produce absence, a
 nothing has fired yet to enumerate. It only catches that class with **both** `--strict` and
 `--no-global`: without `--no-global` the file validates as a *global self-hosted* config (the wrong
 shape entirely), and without `--strict` a needed migration is a warning, exit 0, on precisely the class
-the check exists to catch. It runs in two places on the same `renovate@44` major the live run uses: a
-required, unconditional job in `guardrails.yml` on every `renovate.json` edit, and a pre-run step in
-`renovate.yml` that catches a key deprecated by a minor bump between Friday windows when nothing in the
-repo changed. Both invocations pin the **major** (`renovate@44`), like the live run, and a guard test
-asserts all three `renovate@` invocations agree on the major, so the validator can never certify a
-config against a grammar the run does not use. The validator job also pins the **same Node** as the run
+the check exists to catch. It runs in two places on the EXACT release the live run uses: a required,
+unconditional job in `guardrails.yml` on every PR — including the PR that bumps the Renovate version,
+which therefore validates the config with the new release before it merges — and a pre-run step in
+`renovate.yml` as the backstop. Every `renovate@` call reads `.forgejo/renovate-version` (item #1126),
+and a guard test fails on any other `renovate@` literal, so the validator can never certify a config
+against a grammar the run does not use. The validator job also pins the **same Node** as the run
 (a guard test asserts the two `node-version` pins are equal), because renovate@44 raised `engines.node`
 inside the pinned major and a validator on a different runtime would be certifying a config against a
 runtime the run does not have. **Exact-patch pinning was tried once and reverted**
@@ -587,7 +592,9 @@ runtime the run does not have. **Exact-patch pinning was tried once and reverted
 renovate 44.131.1–44.132.1 depended on a `@yarnpkg/core` published with a Yarn-only `patch:` spec that
 npm cannot install (`EUNSUPPORTEDPROTOCOL`) — under `npx` that failure exits 1 printing nothing but the
 path to npm's log. Every release from 44.132.2 on is back on `@yarnpkg/core` 4.9.1, so the pin went
-back to the major on 2026-10-10 (44.149.2 installed). It does not replace the guard test — the two
+back to the major on 2026-10-10 (44.149.2 installed). Since item #1126 the pin is exact again, but
+managed: Renovate proposes each release (3-day `minimumReleaseAge`), and an uninstallable one fails its
+own bump PR's validator instead of a live run. It does not replace the guard test — the two
 catch different failure classes: the validator catches a key Renovate does not know at all; the guard
 test catches a key Renovate knows but ignores depending on where it is written (for example,
 `prPriority` set inside `lockFileMaintenance` instead of at the packageRule level).
@@ -616,12 +623,11 @@ as a suspected defect:
   the label maps to a runner-side container, so a "bump" of it would be meaningless — if such a
   proposal ever appears, close it as not applicable. It is not a `lockFileMaintenance` PR, so the
   never-hand-close rule's measured exception does not cover it; the intent here is exactly to close it.
-- **`npx --yes renovate@44` is major-pinned and Renovate cannot see it.** It is shell text in a `run:`
-  block, invisible to every manager, and is documented in `renovate.yml` as a deliberate, reviewed
-  residual with its own bump procedure: raising the major is a deliberate act that requires reading the
-  new major's breaking changes and re-running the validator against `renovate.json` first. The pin is
-  about config *semantics* only — it says nothing about the runtime, which is why the `setup-node` step
-  is the thing that covers an `engines` bump.
+- **Renovate's own version is visible to Renovate since item #1126.** It was `npx --yes renovate@44`
+  in shell text, invisible to every manager. It is now one exact line in `.forgejo/renovate-version`,
+  tracked by a customManager on the npm datasource, so the bot proposes its own upgrades. A bump PR
+  runs guardrails' strict validator with the new release; check a new release's `engines.node` against
+  `setup-node` when reviewing it, since the validator says nothing about the runtime.
 - **`curl https://sh.rustup.rs | sh` stays an unversioned script piped to `sh` in the toolchain image
   only.** Every CI job (`sast` in item #1114, then `mc-service-checks` and `renovate.yml` in item #1119)
   bootstraps through `scripts/ci-install-rustup.sh`, a sha256-verified `rustup-init`. They all run on
