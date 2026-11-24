@@ -324,12 +324,24 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
 
 - **pip-audit audits the INSTALLED venv, not a requirements file.** `pip-audit -r <requirements>`
   resolves the file in an ephemeral venv (downloads the whole 179-pkg graph, chokes on yanked versions —
-  hangs >11 min). The orchestrator instead runs `uv run --no-sync --with pip-audit pip-audit -s osv`
+  hangs >11 min). The orchestrator instead runs `uv run --no-sync --with pip-audit==<PIP_AUDIT_PIN> pip-audit -s osv`
   against the synced venv (~50 s) and intersects findings with the `uv export` dep-set to drop
   pip-audit's own injected deps. **CI must `uv sync` the agent layer first**, and a developer's venv must
   be synced for a local run.
-- **pip-audit gets its own `--cache-dir`, a `mkdtemp` (0700) directory per scan.** `--with pip-audit` is
-  unpinned, so its transitives move under us: `platformdirs` 4.14.8 (2026-11-20) refuses a user cache
+- **pip-audit itself is pinned; its transitive deps deliberately are not (item #1120).**
+  `PIP_AUDIT_PIN` in `scripts/sast-scan.mjs` (Renovate, `pypi`) is injected as `--with
+  pip-audit==<pin>`, and before auditing any surface the scan runs `pip-audit --version` through the
+  same `--with` and FAILS unless the resolved version equals the pin. It logs
+  `[pip-audit] pip-audit <version> (pinned, item #1120)`. Before this, `--with pip-audit` took
+  whatever was newest on PyPI every scan, so the tool deciding whether a Python advisory blocks a
+  merge changed with nobody choosing it. **Why the transitives float.** `uv run --with` takes no
+  lockfile, so pinning them would mean a hand-kept constraints file with no Renovate manager to keep
+  it current. Worse, the one transitive that has bitten (`platformdirs`, below) changed *on purpose*,
+  as a security hardening, and pinning it back would undo that. A transitive change shows up as a
+  loud scan failure, as that one did, rather than as a different verdict from the same pip-audit.
+  Revisit if a transitive is ever shown to change findings.
+- **pip-audit gets its own `--cache-dir`, a `mkdtemp` (0700) directory per scan.** pip-audit's
+  transitives are unpinned (see above), so they move under us: `platformdirs` 4.14.8 (2026-11-20) refuses a user cache
   dir whose nearest existing ancestor is writable by another user, and in the CI container that is
   `/root/.cache`. Every scan failed with `PermissionError: /root/.cache, writable by another user`,
   reported as `produced non-JSON output`. The flag keeps pip-audit away from platformdirs altogether.

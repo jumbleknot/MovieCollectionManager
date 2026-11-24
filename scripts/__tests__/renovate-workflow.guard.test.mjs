@@ -2415,6 +2415,9 @@ const toolchainDockerfile = readFileSync(TOOLCHAIN_DOCKERFILE, 'utf8');
 // Item #1114: the sast job's Rust tooling moved out of guardrails.yml into this installer.
 const RUST_AUDIT_INSTALLER = 'scripts/ci-install-rust-audit.sh';
 const rustAuditInstallerText = readFileSync(resolve(REPO_ROOT, RUST_AUDIT_INSTALLER), 'utf8');
+// Item #1119: the ONE rustup bootstrap — app-ci and renovate.yml call it directly, sast through the above.
+const RUSTUP_INSTALLER = 'scripts/ci-install-rustup.sh';
+const rustupInstallerText = readFileSync(resolve(REPO_ROOT, RUSTUP_INSTALLER), 'utf8');
 
 const customManagers = config.customManagers ?? [];
 const managerPatterns = (m) => m.managerFilePatterns ?? m.fileMatch ?? [];
@@ -2450,17 +2453,30 @@ test('a rust-toolchain.toml pins an EXACT Rust version, so no unchosen compiler 
   }
 });
 
-// Every site that bootstraps rustup. guardrails' sast job does it through RUST_AUDIT_INSTALLER
-// since item #1114 (a verified rustup-init, not sh.rustup.rs), so the installer is the site checked.
+// Every CI job bootstraps rustup through ONE script since item #1119 (#1114 did it for sast):
+// a sha256-verified rustup-init, never sh.rustup.rs piped to sh. So the recipe is checked once, in
+// the script, and each workflow is checked for routing through it.
 const RUSTUP_WORKFLOWS = [
-  [RUST_AUDIT_INSTALLER, rustAuditInstallerText],
-  ['.forgejo/workflows/app-ci.yml', appCiText],
-  ['.forgejo/workflows/renovate.yml', renovateText],
+  [RUSTUP_INSTALLER, rustupInstallerText],
 ];
 
 const rustupInstallLine = (text) =>
   // Comment lines excluded: the installer's header names sh.rustup.rs as what it replaced.
   text.split('\n').find((l) => !/^\s*#/.test(l) && (l.includes('sh.rustup.rs') || /rustup-init"?\s+-y\b/.test(l)));
+
+test('item #1119: every CI job installs rustup through the verified bootstrap, none by curl | sh', () => {
+  for (const [file, text] of [['.forgejo/workflows/app-ci.yml', appCiText], ['.forgejo/workflows/renovate.yml', renovateText]]) {
+    assert.match(text, /^\s*bash scripts\/ci-install-rustup\.sh$/m, `${file} no longer installs rustup through ${RUSTUP_INSTALLER}`);
+  }
+  assert.match(rustAuditInstallerText, /ci-install-rustup\.sh/, `${RUST_AUDIT_INSTALLER} no longer delegates rustup to ${RUSTUP_INSTALLER}`);
+  // Any workflow, not just these three: a new Rust job copying the old recipe is the regression.
+  const dir = resolve(REPO_ROOT, '.forgejo/workflows');
+  for (const name of readdirSync(dir).filter((n) => /\.ya?ml$/.test(n))) {
+    const piped = readFileSync(resolve(dir, name), 'utf8').split('\n')
+      .filter((l) => !/^\s*#/.test(l) && /curl[^\n]*sh\.rustup\.rs[^\n]*\|/.test(l));
+    assert.deepEqual(piped, [], `${name} pipes sh.rustup.rs into a shell again — use bash ${RUSTUP_INSTALLER}`);
+  }
+});
 
 for (const [file, text] of RUSTUP_WORKFLOWS) {
   test(`${file}'s rustup install defers to rust-toolchain.toml rather than taking stable`, () => {
@@ -2594,6 +2610,21 @@ test('Renovate tracks the semgrep pin, so the scanner that blocks a merge does n
   assert.equal(capturesIn(semgrep[0], sastScanText), pin, "the semgrep customManager's matchStrings do not capture SEMGREP_PIN");
 });
 
+test('item #1120: pip-audit is pinned, injected only through the pin, and tracked by Renovate', () => {
+  const pin = /PIP_AUDIT_PIN\s*=\s*'([\d.]+)'/.exec(sastScanText)?.[1];
+  assert.match(String(pin), /^\d+\.\d+\.\d+$/, `PIP_AUDIT_PIN is '${pin}', not an exact version`);
+  // Every `--with` that injects pip-audit goes through pipAuditWith() — a bare `'--with', 'pip-audit'`
+  // is exactly the newest-every-scan shape this item removed.
+  assert.doesNotMatch(sastScanText, /'--with',\s*'pip-audit'/, 'sast-scan.mjs injects an UNPINNED pip-audit again');
+  assert.match(sastScanText, /\['--with', `pip-audit==\$\{PIP_AUDIT_PIN\}`\]/, 'pipAuditWith() no longer pins pip-audit to PIP_AUDIT_PIN');
+
+  const m = managerFor('pip-audit');
+  assert.equal(m.length, 1, 'pip-audit is PINNED but extracted by nothing — a rotting pin');
+  assert.equal(m[0].datasourceTemplate, 'pypi', 'pip-audit is injected from PyPI');
+  assert.ok(managerCovers(m[0], 'scripts/sast-scan.mjs'), 'the pip-audit customManager does not cover scripts/sast-scan.mjs');
+  assert.equal(capturesIn(m[0], sastScanText), pin, "the pip-audit customManager's matchStrings do not capture PIP_AUDIT_PIN");
+});
+
 // ── cargo-audit ─────────────────────────────────────────────────────────────────────────────────
 
 // The two spellings this repository uses: `cargo-audit@X` (the devcontainer's `cargo install` list)
@@ -2633,15 +2664,15 @@ test('item #1114: each pinned sha256 in the Rust installer was taken for the ver
   // Renovate moves `*_VERSION` alone (its managers match nothing else). The `*_SHA256_FOR` beside
   // each checksum is what a bump PR cannot update, so the pair disagreeing is THE signal that the
   // checksum is stale — caught here, offline, instead of as a download failure in CI.
-  const v = (name) => new RegExp(`^${name}=(\\S+)$`, 'm').exec(rustAuditInstallerText)?.[1] ?? null;
-  for (const [what, version, shaFor, sha, where] of [
-    ['rustup-init', 'RUSTUP_VERSION', 'RUSTUP_INIT_SHA256_FOR', 'RUSTUP_INIT_SHA256', 'static.rust-lang.org/rustup/archive/<V>/x86_64-unknown-linux-gnu/rustup-init.sha256'],
-    ['cargo-audit', 'CARGO_AUDIT_VERSION', 'CARGO_AUDIT_SHA256_FOR', 'CARGO_AUDIT_SHA256', "the cargo-audit/v<V> release's x86_64-unknown-linux-musl asset digest on github.com/rustsec/rustsec"],
+  for (const [what, file, text, version, shaFor, sha, where] of [
+    ['rustup-init', RUSTUP_INSTALLER, rustupInstallerText, 'RUSTUP_VERSION', 'RUSTUP_INIT_SHA256_FOR', 'RUSTUP_INIT_SHA256', 'static.rust-lang.org/rustup/archive/<V>/x86_64-unknown-linux-gnu/rustup-init.sha256'],
+    ['cargo-audit', RUST_AUDIT_INSTALLER, rustAuditInstallerText, 'CARGO_AUDIT_VERSION', 'CARGO_AUDIT_SHA256_FOR', 'CARGO_AUDIT_SHA256', "the cargo-audit/v<V> release's x86_64-unknown-linux-musl asset digest on github.com/rustsec/rustsec"],
   ]) {
-    assert.match(String(v(sha)), /^[0-9a-f]{64}$/, `${RUST_AUDIT_INSTALLER}: ${sha} is not a sha256`);
+    const v = (name) => new RegExp(`^${name}=(\\S+)$`, 'm').exec(text)?.[1] ?? null;
+    assert.match(String(v(sha)), /^[0-9a-f]{64}$/, `${file}: ${sha} is not a sha256`);
     assert.equal(
       v(shaFor), v(version),
-      `${RUST_AUDIT_INSTALLER}: ${version} is ${v(version)} but ${sha} was taken for ${v(shaFor)}.\n` +
+      `${file}: ${version} is ${v(version)} but ${sha} was taken for ${v(shaFor)}.\n` +
         `  A ${what} bump needs its checksum too — copy it from ${where}, then set ${shaFor}.`,
     );
   }
@@ -2650,8 +2681,13 @@ test('item #1114: each pinned sha256 in the Rust installer was taken for the ver
   assert.equal(managers.length, 2, 'expected one customManager each for cargo-audit and rust-lang/rustup');
   for (const m of managers) {
     for (const ms of m.matchStrings) assert.doesNotMatch(ms, /SHA256/, `a Renovate matchString reaches a checksum: ${ms}`);
-    assert.ok(capturesIn(m, rustAuditInstallerText), `the ${m.depNameTemplate} customManager captures nothing in ${RUST_AUDIT_INSTALLER}`);
+    const [file, text] = m.depNameTemplate === 'rust-lang/rustup'
+      ? [RUSTUP_INSTALLER, rustupInstallerText] : [RUST_AUDIT_INSTALLER, rustAuditInstallerText];
+    assert.ok(managerCovers(m, file), `the ${m.depNameTemplate} customManager does not cover ${file}`);
+    assert.ok(capturesIn(m, text), `the ${m.depNameTemplate} customManager captures nothing in ${file}`);
   }
+  // The rustup pin lives in ONE file (item #1119): a second copy would let the bump move one of them.
+  assert.doesNotMatch(rustAuditInstallerText, /^RUSTUP_VERSION=/m, `${RUST_AUDIT_INSTALLER} carries its own rustup pin again`);
 });
 
 // ── uv ──────────────────────────────────────────────────────────────────────────────────────────

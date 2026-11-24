@@ -1058,11 +1058,14 @@ pinDigest collision #308 turned up), §8 and §9.
 
 Two residuals were *added* by #307 and are recorded here rather than left to be rediscovered:
 
-- **`curl https://sh.rustup.rs | sh` remains an unversioned script piped to sh**, in two workflows
-  (`app-ci`, `renovate`) and the toolchain image. `guardrails`' `sast` job left it in item #1114 for a
-  sha256-verified `rustup-init` 1.29.3 (`scripts/ci-install-rust-audit.sh`): that job runs only on the
-  amd64 runner, which CI showed reaching `static.rust-lang.org`, so neither objection below applies there. This is item #307's criterion 5 met for uv and **not** met for rustup,
-  deliberately. What that script installs is `rustup` (a bootstrapper), and the thing that decides
+- **`curl https://sh.rustup.rs | sh` remains an unversioned script piped to sh in the toolchain image
+  ONLY.** Every CI job left it: `guardrails`' `sast` in item #1114, then `app-ci`'s `mc-service-checks`
+  and `renovate.yml` in item #1119. All three now bootstrap through `scripts/ci-install-rustup.sh`, a
+  sha256-verified `rustup-init` 1.29.3 with `--default-toolchain none`. Those jobs run only on the amd64
+  runner, which CI showed reaching `static.rust-lang.org`, so neither objection below applies to them.
+  The `mcm-ci-curl-pipe-shell` Semgrep rule no longer accepts `sh.rustup.rs`, and
+  `renovate-workflow.guard.test.mjs` fails any workflow that pipes it into a shell. For the image,
+  this is item #307's criterion 5 met for uv and **not** met for rustup, deliberately. What that script installs is `rustup` (a bootstrapper), and the thing that decides
   which compiler runs — the toolchain — is now pinned by `rust-toolchain.toml`, so a change in
   rustup cannot change the compiler. The pinnable alternatives both cost more than they buy: the
   archive **binary** (`static.rust-lang.org/rustup/archive/<v>/x86_64-unknown-linux-gnu/rustup-init`)
@@ -1089,7 +1092,8 @@ maintaining it trades a floating reference for a rotting one.** So every pin bel
 | **Rust** | `rust-toolchain.toml` (`channel`) | that file + the devcontainer's baked `--default-toolchain` | built-in **`rust-toolchain`** manager (depName `rust`, datasource `rust-version`) + a customManager for the devcontainer half | **yes** — `rust toolchain` |
 | **semgrep** | `scripts/sast-scan.mjs` (`SEMGREP_PIN`) | one | customManager, `pypi` | no — one manager, one depName |
 | **cargo-audit** | `scripts/ci-install-rust-audit.sh` (`CARGO_AUDIT_VERSION=`, with a pinned sha256 the bump does NOT move, item #1114) and the toolchain image (`cargo-audit@X`) | two | customManager, `crate` | no — one manager, one depName |
-| **rustup-init** (sast job) | `scripts/ci-install-rust-audit.sh` (`RUSTUP_VERSION=`, sha256 pinned beside it) | one | customManager, `github-tags` `rust-lang/rustup` | no |
+| **rustup-init** (every CI job) | `scripts/ci-install-rustup.sh` (`RUSTUP_VERSION=`, sha256 pinned beside it; items #1114, #1119) | one | customManager, `github-tags` `rust-lang/rustup` | no |
+| **pip-audit** | `scripts/sast-scan.mjs` (`PIP_AUDIT_PIN`, item #1120) | one | customManager, `pypi` | no — one manager, one depName |
 | **python** (the interpreter minor) | `agents/movie-assistant/.python-version` (3.14) — the images are held to it by a docker `allowedVersions` ceiling derived from that pin (`<3.15`) | **1 pin + 8 image refs + 4 `requires-python` floors + 4 lockfiles** | pyenv for the pin and docker for the images — **the same depName AND the same datasource**, so a rule keyed on datasource+packageName reaches both; pep621 sees the floors on the *python-version* datasource, deliberately out (see below); the locks ride `lockFileMaintenance` | **yes** — `python toolchain` (feature 067, item #366) |
 | **uv** | the version string, at every site | 3 install-script URLs + 5 `setup-uv` inputs + **4 image tags** (#308) | customManager (`github-releases`) for the first two shapes; the built-in **docker** manager for the image tags | **yes** — `uv pin`, which is what joins the two managers |
 

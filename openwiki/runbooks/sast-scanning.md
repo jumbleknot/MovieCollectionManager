@@ -3,10 +3,10 @@ type: Runbook
 title: SAST & SCA static scanning
 description: Operator-facing runbook for the blocking `sast` job — four keyless scanners (Semgrep, cargo-audit, pnpm audit over every committed lockfile, pip-audit over all four Python venvs) normalized into one report, the severity-by-scope gate plus the pull-request-only gate that fails a change moving a package into a known advisory in any scope, how a red run is read from the published failure digest rather than runner logs, the fail-closed and runtime-scope rules that decide what blocks, the bounded retry that separates a scanner outage from a finding, and the OVERRIDE LEVERS playbook for a red gate on a dependency nobody touched.
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: 44808ac4e6938a77c4fe82a1587d7cdfc975a2a0da0f40d031342b4ceec0049f
+resource-sha256: c982d579c4fe366a9d83bcfad6f67f401df1ff73e16fac667e9fac4fb051496a
 tags: [security, sast, sca, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-23T23:20:49.868Z
+timestamp: 2026-11-24T00:07:06.707Z
 ---
 
 # SAST & SCA static scanning
@@ -189,8 +189,14 @@ that job), not by flipping the whole tier.
   runtime classification. `uv sync` all four before a local run; an unsynced surface **fails** the
   scan, it is never silently skipped. CI provisions all four venvs. `pip-audit -r <requirements>` resolves
   an ephemeral venv (hangs >11 min, chokes on yanked versions) — do not use that form.
-- **pip-audit gets its own `--cache-dir`, a 0700 `mkdtemp` directory per scan.** `--with pip-audit`
-  is unpinned, and `platformdirs` 4.14.8 (2026-11-20) refuses a user cache dir under a world-writable
+- **pip-audit is pinned; its transitive deps deliberately are not (item #1120).** `PIP_AUDIT_PIN` in
+  `scripts/sast-scan.mjs` (Renovate, `pypi`) is injected as `--with pip-audit==<pin>`. Before auditing,
+  the scan checks the version that actually resolved and fails on a mismatch. It logs
+  `[pip-audit] pip-audit <version> (pinned, item #1120)`. The transitives float because `--with` takes
+  no lockfile, and the one that has bitten (`platformdirs`, below) changed as a security hardening that
+  pinning would undo.
+- **pip-audit gets its own `--cache-dir`, a 0700 `mkdtemp` directory per scan.** pip-audit's transitives
+  are unpinned, and `platformdirs` 4.14.8 (2026-11-20) refuses a user cache dir under a world-writable
   ancestor, which `/root/.cache` is in CI. Every scan failed with `PermissionError: /root/.cache, writable
   by another user`, reported as `produced non-JSON output`. Do not pin `platformdirs` back instead.
 - **pip-audit repeats vulnerabilities; the normalizer keeps each once (item #1117).** Measured with

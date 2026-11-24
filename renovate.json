@@ -309,6 +309,20 @@
     {
       "customType": "regex",
       "description": [
+        "Item #1120 — pip-audit, the tool that decides whether a Python advisory blocks the merge. It",
+        "was injected as `uv run --with pip-audit`, i.e. newest on PyPI every scan — the class #307",
+        "closed for semgrep, cargo-audit, uv and Trivy. Pinned as PIP_AUDIT_PIN beside SEMGREP_PIN, and",
+        "sast-scan.mjs checks the RESOLVED version against it before auditing. Its transitive deps",
+        "still float, deliberately: see docs/runbooks/sast-scanning.md (the platformdirs hardening)."
+      ],
+      "managerFilePatterns": ["/^scripts/sast-scan\\.mjs$/"],
+      "matchStrings": ["PIP_AUDIT_PIN\\s*=\\s*'(?<currentValue>[\\d.]+)'"],
+      "depNameTemplate": "pip-audit",
+      "datasourceTemplate": "pypi"
+    },
+    {
+      "customType": "regex",
+      "description": [
         "Item #307 — cargo-audit, the tool that decides whether a Rust advisory blocks the merge.",
         "It was installed as `cargo install cargo-audit --locked`, i.e. LATEST every run: `--locked`",
         "locks the crate's DEPENDENCIES, not the crate's own version. The devcontainer installed it",
@@ -335,12 +349,13 @@
     {
       "customType": "regex",
       "description": [
-        "Item #1114 — rustup-init, the sast job's Rust bootstrapper (it installs NO toolchain; the",
-        "version is rust-toolchain.toml's). Pinned with the sha256 rustup publishes for that release.",
+        "Items #1114/#1119 — rustup-init, the ONE Rust bootstrapper every CI job uses (mc-service-checks,",
+        "renovate.yml, sast). It installs NO toolchain; the version is rust-toolchain.toml's.",
+        "Pinned with the sha256 rustup publishes for that release.",
         "As with cargo-audit, only RUSTUP_VERSION moves: the bump PR stays red until",
         "RUSTUP_INIT_SHA256 and RUSTUP_INIT_SHA256_FOR are taken from the release's rustup-init.sha256."
       ],
-      "managerFilePatterns": ["/^scripts/ci-install-rust-audit\\.sh$/"],
+      "managerFilePatterns": ["/^scripts/ci-install-rustup\\.sh$/"],
       "matchStrings": ["RUSTUP_VERSION=(?<currentValue>[\\d.]+)"],
       "depNameTemplate": "rust-lang/rustup",
       "datasourceTemplate": "github-tags"

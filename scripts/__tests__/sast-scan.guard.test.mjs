@@ -381,6 +381,19 @@ test('feature 068: the same advisory in two projects yields separately suppressi
   assert.ok(!anchored.test(b.location));
 });
 
+test('item #1120: the pip-audit version check reads `pip-audit --version` and fails closed on a mismatch', async () => {
+  const { parsePipAuditVersion, PIP_AUDIT_PIN, pipAuditWith } = await import('../sast-scan.mjs');
+  assert.equal(parsePipAuditVersion('pip-audit 2.10.1\n'), '2.10.1');
+  assert.equal(parsePipAuditVersion('warning: something\npip-audit 2.11.0rc1'), '2.11.0rc1');
+  assert.equal(parsePipAuditVersion('Traceback (most recent call last):'), null); // unparseable → null → refused
+  assert.deepEqual(pipAuditWith(), ['--with', `pip-audit==${PIP_AUDIT_PIN}`]);
+  // The check runs BEFORE any surface is audited, so an unchosen version never produces a verdict.
+  const src = readFileSync(new URL('../sast-scan.mjs', import.meta.url), 'utf8');
+  const body = src.slice(src.indexOf('function runPipAudit('), src.indexOf('function runPipAudit(') + 1500);
+  assert.ok(body.indexOf('assertPipAuditVersion(') !== -1 && body.indexOf('assertPipAuditVersion(') < body.indexOf('auditOnePythonSurface('),
+    'runPipAudit no longer checks the resolved pip-audit version before auditing');
+});
+
 test('item #1117: pip-audit repeating a vuln within one dependency is ONE finding, not two', () => {
   // Measured 2026-11-23 with pip-audit 2.10.1 (-s osv): jinja2 3.1.2 came back with 10 vulns for 5
   // ids, werkzeug 2.2.2 with 20 for 11 — every entry repeated verbatim. One advisory, one finding.

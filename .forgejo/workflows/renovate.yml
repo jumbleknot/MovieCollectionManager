@@ -118,7 +118,8 @@ jobs:
           bash scripts/ci-log-step.sh renovate-install-rust bash -e /dev/stdin <<'CI_LOG_STEP'
           # `--default-toolchain none` + rust-toolchain.toml (item #307): the toolchain that
           # regenerates Cargo.lock every Friday is a chosen version, not `stable` on the day.
-          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none
+          # Item #1119: a sha256-verified rustup-init via the shared bootstrap, not sh.rustup.rs piped to sh.
+          bash scripts/ci-install-rustup.sh
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
           CI_LOG_STEP
       # uv, for the pep621 lockFileMaintenance channel — item #218. WITHOUT THIS THE CHANNEL IS NOT

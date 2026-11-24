@@ -4,9 +4,9 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
 tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: 44808ac4e6938a77c4fe82a1587d7cdfc975a2a0da0f40d031342b4ceec0049f
+resource-sha256: c982d579c4fe366a9d83bcfad6f67f401df1ff73e16fac667e9fac4fb051496a
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
-timestamp: 2026-11-23T23:20:49.751Z
+timestamp: 2026-11-24T00:07:06.592Z
 ---
 
 # SAST & SCA static security scanning
@@ -433,12 +433,18 @@ a scan that happened to pass.
   runtime classification. `uv sync` all four before a local run; an unsynced surface **fails** the
   scan, it is never silently skipped. CI provisions all four venvs. `pip-audit -r <requirements>` resolves
   an ephemeral venv (hangs >11 min, chokes on yanked versions) — do not use that form. Two further
-  details of the working invocation: it runs `uv run --no-sync --with pip-audit pip-audit --format json
+  details of the working invocation: it runs `uv run --no-sync --with pip-audit==<PIP_AUDIT_PIN> pip-audit --format json
   -s osv`, and its findings are then intersected with the `uv export` dep-set so pip-audit's own
   ephemerally-injected dependencies never surface as findings. `--no-sync` is what makes "the venv is
   not synced" a real failure rather than a silent re-resolution.
-- **pip-audit gets its own `--cache-dir`, a 0700 `mkdtemp` directory per scan.** `--with pip-audit`
-  is unpinned, and `platformdirs` 4.14.8 (2026-11-20) refuses a user cache dir under a world-writable
+- **pip-audit is pinned; its transitive deps deliberately are not (item #1120).** `PIP_AUDIT_PIN` in
+  `scripts/sast-scan.mjs` (Renovate, `pypi`) is injected as `--with pip-audit==<pin>`. Before auditing,
+  the scan checks the version that actually resolved and fails on a mismatch. It logs
+  `[pip-audit] pip-audit <version> (pinned, item #1120)`. The transitives float because `--with` takes
+  no lockfile, and the one that has bitten (`platformdirs`, below) changed as a security hardening that
+  pinning would undo.
+- **pip-audit gets its own `--cache-dir`, a 0700 `mkdtemp` directory per scan.** pip-audit's transitives
+  are unpinned, and `platformdirs` 4.14.8 (2026-11-20) refuses a user cache dir under a world-writable
   ancestor, which `/root/.cache` is in CI. Every scan failed with `PermissionError: /root/.cache, writable
   by another user`, reported as `produced non-JSON output`. Do not pin `platformdirs` back instead.
 - **pip-audit repeats vulnerabilities; the normalizer keeps each once (item #1117).** Measured with
@@ -772,7 +778,7 @@ a scan that happened to pass.
   above them re-blocks an unrelated PR) or file-wildcarded (a NEW `curl | sh` in an already-listed
   workflow is suppressed unexamined). The accepted hosts live in `mcm-ci-curl-pipe-shell`'s
   `pattern-not-regex` instead; adding an installer means editing that list with a comment explaining
-  why. Currently accepted: `sh.rustup.rs`, `astral.sh/uv/<VERSION>/install.sh` (version-pinned path
+  why. Currently accepted (`sh.rustup.rs` was dropped in item #1119, when every CI job moved to a verified rustup-init): `astral.sh/uv/<VERSION>/install.sh` (version-pinned path
   only — the unversioned form is deliberately excluded), and `get.maestro.mobile.dev` (no versioned
   endpoint exists; the pin is enforced by `renovate-workflow.guard.test.mjs` instead).
 

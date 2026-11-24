@@ -31,9 +31,9 @@ function fakeRustupArchive({ omit = false } = {}) {
   return { base: pathToFileURL(root).href, marker };
 }
 
-function install({ base, platform = 'Linux-x86_64', args = [] } = {}) {
+function install({ base, platform = 'Linux-x86_64', args = [], script = SCRIPT } = {}) {
   const home = mkdtempSync(join(tmpdir(), 'rust-audit-home-'));
-  const r = spawnSync('bash', [SCRIPT, ...args], {
+  const r = spawnSync('bash', [script, ...args], {
     cwd: REPO_ROOT,
     encoding: 'utf8',
     env: {
@@ -69,6 +69,24 @@ test('a platform with no pinned (asset, sha256) pair is refused before anything 
   assert.equal(r.status, 1, r.out);
   assert.match(r.stderr, /pinned for Linux-x86_64 only, not Linux-aarch64/);
   assert.doesNotMatch(r.out, /downloaded/);
+});
+
+// Item #1119: app-ci's mc-service-checks and renovate.yml call the shared rustup bootstrap DIRECTLY.
+const RUSTUP_SCRIPT = 'scripts/ci-install-rustup.sh';
+
+test('ci-install-rustup.sh on its own: unverified rustup-init bytes are refused and never executed', () => {
+  const { base, marker } = fakeRustupArchive();
+  const r = install({ base, script: RUSTUP_SCRIPT });
+  assert.equal(r.status, 1, r.out);
+  assert.match(r.stderr, /ci-install-rustup: checksum mismatch for rustup-init \(expected b1c8cb14/);
+  assert.ok(!existsSync(marker), 'the unverified rustup-init was executed');
+});
+
+test('ci-install-rustup.sh on its own: an unpinned platform and stray arguments are refused', () => {
+  const plat = install({ platform: 'Linux-aarch64', script: RUSTUP_SCRIPT });
+  assert.equal(plat.status, 1, plat.out);
+  assert.match(plat.stderr, /pinned for Linux-x86_64 only, not Linux-aarch64/);
+  assert.equal(install({ args: ['stable'], script: RUSTUP_SCRIPT }).status, 2);
 });
 
 test('arguments are a usage error (2): the pins live in the script, not on a command line', () => {
