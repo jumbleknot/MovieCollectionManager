@@ -322,7 +322,8 @@ The resolutions are in research R4. The repository test (T015) is the RED, and T
     - The strict validator (T019) exited 0: "Config validated successfully".
     - All mutation REDs (T005, T011, T012, T026, T028) turned their named tests red, with the source restored after each.
   - **Done when**: every command passes, or each failure is shown identical on `origin/main`.
-- [ ] T037 **Open the PR** from a real branch: `git push origin HEAD:107-version-pin-guard`, then `node scripts/forge-pr.mjs open` (`docs/runbooks/ci-diagnostics.md`). Tick this task in the LAST commit, quoting the branch, the PR number and the sha. **No CI evidence here**: it goes in the PR's closing comment and item #1128's, posted with `MCM_FORGE_ISSUE_TOKEN`.
+- [X] T037 **Open the PR** from a real branch: `git push origin HEAD:107-version-pin-guard`, then `node scripts/forge-pr.mjs open` (`docs/runbooks/ci-diagnostics.md`). Tick this task in the LAST commit, quoting the branch, the PR number and the sha. **No CI evidence here**: it goes in the PR's closing comment and item #1128's, posted with `MCM_FORGE_ISSUE_TOKEN`.
+  - Opened: branch `107-version-pin-guard`, **PR #1138**, implementation commit `0d8ae545`. This tick is the branch's last commit.
 
 ---
 
