@@ -50,3 +50,5 @@
 # weakened gate, not a visible break. Found when a `git filter-branch` re-added the fixture and
 # normalized it (052); the rule that follows makes it unrepeatable.
 scripts/__tests__/fixtures/** -text
+# Item #1126: read by `cat` inside renovate@"$(…)" — a CR would become part of the version.
+.forgejo/renovate-version text eol=lf

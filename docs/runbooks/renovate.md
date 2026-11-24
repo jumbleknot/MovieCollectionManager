@@ -1047,9 +1047,10 @@ Recorded from the 2026-08-30 latent-issue audit so the next reader knows each wa
   the label maps to a runner-side container and a "bump" would be meaningless — if such a proposal
   ever appears, close it as not applicable (it is not a `lockFileMaintenance` PR; the §4 rule about
   hand-closing marks only that one label rejected, which is the intent here).
-- **`npx --yes renovate@44` is major-pinned and Renovate cannot see it** — already documented in
-  `renovate.yml` as a deliberate, reviewed residual with its own bump procedure. Not re-decided
-  here.
+- **`npx --yes renovate@44` was major-pinned and Renovate could not see it** — resolved by item
+  #1126: the version is one exact line in `.forgejo/renovate-version`, tracked by a customManager
+  (npm datasource), so the bot proposes its own upgrades and each bump PR runs guardrails' strict
+  validator with the new release before it can merge.
 
 The audit's *actionable* findings are items **#307** (floating/rotting merge-gating toolchains:
 Rust, semgrep, cargo-audit, uv), **#308** (the #297 class in app Dockerfiles), and **#309**
@@ -1230,13 +1231,39 @@ key (v41: `fileMatch` → `managerFilePatterns`), or a typo in a new rule, does 
 config **silently manages nothing**, which is §5's mechanism in a new place.
 
 `renovate-config-validator` catches exactly that class, and since item #309 it runs in **two**
-places, both on the same `renovate@44` major the real run uses (the guard test asserts all three
-references agree):
+places, both on the EXACT release the real run uses — every `renovate@` call reads
+`.forgejo/renovate-version` (item #1126), and the guard test fails on any other `renovate@` literal:
 
 | where | catches | when |
 | --- | --- | --- |
 | `guardrails / renovate-config` — required by the `guardrails*` glob, **unconditional** | an EDIT to `renovate.json` | before it merges |
-| a step in `renovate.yml`, before `Run Renovate` | a key deprecated by a renovate@44 **minor** — nothing in the repo changed, so no PR runs | at most a week later |
+| `guardrails / renovate-config`, on a Renovate **version bump** PR | a key the NEW release deprecates or renames, or a release npm cannot install (the #631 shape) | before the bump merges |
+| a step in `renovate.yml`, before `Run Renovate` | anything the exact release about to run would reject — the backstop | at most a week later |
+
+### What the run did, read from its own log (items #1125, #1124, #1123)
+
+Renovate exits 0 having done nothing useful in every shape §5 lists, so the exit code is not the
+verdict. `renovate.yml` writes Renovate's JSON log at debug level (`RENOVATE_LOG_FILE` — a
+**lowercase** path, because Renovate lower-cases every `LOG_*` env value it reads) and
+`scripts/renovate-verdict.mjs` judges it:
+
+| step | fails on |
+| --- | --- |
+| `preflight`, before the run | `RENOVATE_TOKEN` empty, `401`, or a `403` on the user / repository / pulls / issues reads — naming the missing scope. Write scopes cannot be probed without writing |
+| `verdict --log`, after the run | no `Repository finished`, a result other than `done`, any ERROR/FATAL entry; on a **live run inside the lockFileMaintenance window**, a lock-file branch that is `not-scheduled`, starved (`pr-limit-reached`, `branch-limit-reached`, `commit-*-limit-reached`), rejected (`already-existed` — a closed PR), `error`, or **absent**; on a **scheduled** run, a health digest on item #311 older than 8 days |
+
+`no-work` on the lock-file branch is "nothing to refresh" — a pass, reported as such. Outside the
+window a `not-scheduled` lock-file branch is expected and only reported, and a dry run never fails
+on the channel. The lock-file states come from the `branches info extended` entry (every branch's
+`result`); `Repository finished` carries `result`/`status` only on a non-lookup run, so a
+`RENOVATE_DRY_RUN=lookup` log cannot be judged — the workflow's dry run is `full`.
+
+The weekly window run's **absence** is the one thing the run cannot report. `renovate-health.mjs`
+(Friday 11:00 UTC) exits 1 when no scheduled `renovate.yml` run on `main` started inside the window
+in the last 8 days. This replaced `lockfile-refresh-check.yml` / `check-lockfile-refresh.mjs`, which
+inferred the channel's health from PR timestamps, could not tell "nothing to refresh" from "dead",
+never failed, and had switched itself off when item #218 closed on 2026-11-04 — leaving the channel
+unwatched until item #1124.
 
 > ⚠️ **Both flags are load-bearing. Measured 2026-08-30 against this repository's own
 > `renovate.json` on renovate@44.52.0:**
@@ -1270,9 +1297,11 @@ comment).
 - `scripts/__tests__/renovate-workflow.guard.test.mjs` — the assertions that keep the above true
 - `scripts/renovate-health.mjs` / item **#311** — the weekly health digest: channel liveness, stale
   branches, budget consumption, `stability-days` states, and (item #485) the **required**-context
-  state of every open Renovate PR plus the weekly CVE sweep's verdict on `main`. Close item #311 to
-  stop it. **A bare run POSTS the digest** as a public comment, on any host (Windows included since
-  PR #1029), so run it locally as `node scripts/renovate-health.mjs --dry-run`. The same applies to
-  `scripts/check-lockfile-refresh.mjs`.
+  state of every open Renovate PR, the weekly CVE sweep's verdict on `main`, and (item #1124) whether
+  this week's window run happened. A finding is a comment; the job exits 1 only when it cannot produce
+  the digest (item #1123) or the window run is absent. Close item #311 to stop it. **A bare run POSTS
+  the digest** as a public comment, on any host (Windows included since PR #1029), so run it locally
+  as `node scripts/renovate-health.mjs --dry-run`.
+- `scripts/renovate-verdict.mjs` — the token preflight and the run's verdict (above); both read-only.
 - [CI self-serve diagnostics](ci-diagnostics.md) — reading a failure without log access
 - [The agent-driven backlog](backlog.md) — item #29 and the `status/bot-managed` rule

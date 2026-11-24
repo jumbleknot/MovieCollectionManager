@@ -25,7 +25,6 @@ import { fileURLToPath } from 'node:url';
 import { usageNamesEveryFlag } from '../lib/argv-contract.mjs';
 import * as renovateHealth from '../renovate-health.mjs';
 import * as prune from '../prune-bff-runtime-modules.mjs';
-import * as lockfileRefresh from '../check-lockfile-refresh.mjs';
 import * as ciDigest from '../ci-failure-digest.mjs';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
@@ -158,7 +157,7 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
   // default, not the missing --help. Do not fix all fifteen."
   //
   // WHY A TABLE RATHER THAN A HEURISTIC. The first draft of this test was a regex for rmSync/POST,
-  // and it fired on five scripts. Two were real (check-lockfile-refresh.mjs, ci-failure-digest.mjs —
+  // and it fired on five scripts. Two were real (check-lockfile-refresh.mjs — retired by item #1124 — and ci-failure-digest.mjs —
   // the manual audit in item #500 missed both); three were temp-dir cleanup behind a parser that
   // already rejects. A heuristic that over-fires gets LOOSENED until it passes, which is how an
   // audit stops auditing. So every script that both dispatches on argv and can mutate carries an
@@ -167,7 +166,6 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
     // FIXED — the default action mutates, so argv is routed through a rejecting resolveCommand().
     'agent-stack.mjs': 'guarded',            // built + deployed the stack on --help (PR #497)
     'renovate-health.mjs': 'guarded',        // posted a public comment to item #311
-    'check-lockfile-refresh.mjs': 'guarded', // posted a public comment — renovate-health's ancestor
     'prune-bff-runtime-modules.mjs': 'guarded', // deleted files; ALSO inverted to --apply
     'publish-android-launch.mjs': 'guarded', // posts a commit status; written with the rejecting parser (087)
 
@@ -223,18 +221,6 @@ test('(#500) every argv-dispatching script that can mutate has a RECORDED verdic
         'error path drifts, which is the one path nobody exercises until it matters',
     );
   }
-});
-
-test('(#500) check-lockfile-refresh has the same contract as the copy made from it', () => {
-  // renovate-health.mjs's header names this file as the pattern it inherited. It inherited the
-  // defect too, so fixing only the copy would have left the original posting on a typo.
-  for (const flag of TYPOS) {
-    assert.throws(() => lockfileRefresh.resolveCommand([flag]), /unrecognised|unknown/i);
-  }
-  assert.equal(lockfileRefresh.resolveCommand([]).command, 'post', 'a bare invocation must still POST');
-  assert.equal(lockfileRefresh.resolveCommand(['--dry-run']).command, 'dry-run');
-  assert.equal(lockfileRefresh.resolveCommand(['--help']).command, 'help');
-  assert.deepEqual(usageNamesEveryFlag(lockfileRefresh.USAGE, lockfileRefresh.ACCEPTED_FLAGS), []);
 });
 
 test('(#500) the Dockerfile copies the lib the prune script now imports', () => {

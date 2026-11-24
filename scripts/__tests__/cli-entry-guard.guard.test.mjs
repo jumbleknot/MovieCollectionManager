@@ -11,7 +11,7 @@
 // The fix is scripts/lib/is-main.mjs (pathToFileURL, the same encoding import.meta.url uses). This
 // file fails if the old shape reappears anywhere under scripts/, and runs each fixed script as a real
 // subprocess so "it printed something" is measured, not assumed. Every probe is read-only: --help, or
-// e2e-failure-set's `summary` over a fixture. NEVER probe renovate-health or check-lockfile-refresh
+// e2e-failure-set's `summary` over a fixture. NEVER probe renovate-health
 // bare — a bare run POSTS a forge comment.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -67,7 +67,7 @@ const helpNames = (script) => new RegExp(`node scripts/${script.replace('.', '\\
 const PROBES = [
   ...[
     'check-speckit-overrides.mjs',
-    'check-lockfile-refresh.mjs',
+    'renovate-verdict.mjs',
     'renovate-health.mjs',
     'reap-merged-branches.mjs',
     'check-no-server-imports.mjs',

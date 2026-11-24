@@ -2128,8 +2128,8 @@ test('the Run Renovate step caps Docker Hub tag paging at 10 pages, or every Doc
   // fresh cache the same lookup logged zero "no releaseTimestamp" markings and pending became temporal.
   // `dockerMaxPages` is globalOnly, so it cannot live in renovate.json — the env var on this step is
   // the only place it can be set, and this is what keeps it from being tidied away.
-  const run = steps.find((s) => typeof s?.run === 'string' && /npx --yes\b.*\srenovate@\d+(\.\d+\.\d+)?\s*$/.test(s.run.trim()));
-  assert.ok(run, 'renovate.yml has no `npx --yes renovate@<major or exact version>` step to carry the env');
+  const run = steps.find((s) => typeof s?.run === 'string' && /npx --yes\b.*\srenovate@("\$\(cat \.forgejo\/renovate-version\)"|\d+(\.\d+\.\d+)?)\s*$/.test(s.run.trim()));
+  assert.ok(run, 'renovate.yml has no `npx --yes renovate@<version>` step to carry the env');
   const raw = String(run.env?.RENOVATE_DOCKER_MAX_PAGES ?? '');
   assert.match(raw, /^\d+$/, `RENOVATE_DOCKER_MAX_PAGES is ${JSON.stringify(raw)} on the Run Renovate step — unset means Renovate's default of 20, which walks into Docker Hub's page-11 403`);
   const pages = Number(raw);
@@ -2230,14 +2230,19 @@ function validatorSteps() {
  * and `renovate@44.29.3` as historical measurements, and a guard that scanned prose would either
  * be satisfied by a comment or broken by one.
  */
-function renovateMajorRefs() {
+/** Item #1126 — the ONE place the Renovate version lives, and how every call site must read it. */
+const RENOVATE_VERSION_FILE = '.forgejo/renovate-version';
+const RENOVATE_VERSION_REF = '"$(cat .forgejo/renovate-version)"';
+
+/** Every `renovate@<spec>` in a step's `run:`, with where it is. `spec` is the raw text after the @. */
+function renovateRefs() {
   const refs = [];
   for (const [file, wf] of WORKFLOWS_WITH_RENOVATE) {
     for (const [jobName, job] of Object.entries(wf?.jobs ?? {})) {
       for (const step of job?.steps ?? []) {
         if (typeof step?.run !== 'string') continue;
-        for (const m of step.run.matchAll(/renovate@(\d+)/g)) {
-          refs.push({ file, jobName, step: step.name ?? '(unnamed)', major: m[1] });
+        for (const m of step.run.matchAll(/renovate@("[^"]*"|\S+)/g)) {
+          refs.push({ file, jobName, step: step.name ?? '(unnamed)', spec: m[1] });
         }
       }
     }
@@ -2319,23 +2324,37 @@ test('the weekly run validates the config BEFORE it acts on it', () => {
   assert.ok(validateIndex < runIndex, 'renovate.json is validated AFTER Renovate has already acted on it');
 });
 
-test('every renovate@<major> the CI runs agrees, so the validator checks what the run will read', () => {
-  const refs = renovateMajorRefs();
+test('item #1126: every renovate@ the CI runs reads ONE exact version from .forgejo/renovate-version', () => {
+  const refs = renovateRefs();
   assert.ok(
     refs.length >= 3,
-    `expected at least three renovate@<major> invocations (the guardrails validator, the weekly\n` +
-      `  pre-run validation, and the run itself) — found ${refs.length}. A validator on a different\n` +
-      '  major validates a config grammar the run does not use.',
+    `expected at least three renovate@ invocations (the guardrails validator, the weekly pre-run\n` +
+      `  validation, and the run itself) — found ${refs.length}.`,
   );
-  const majors = [...new Set(refs.map((r) => r.major))];
-  assert.equal(
-    majors.length,
-    1,
-    'the renovate majors disagree:\n' +
-      refs.map((r) => `    ${r.file} · ${r.jobName} · ${r.step} → renovate@${r.major}`).join('\n') +
-      '\n  A major is exactly where config semantics change (v41 renamed fileMatch), so a validator\n' +
-      '  pinned elsewhere would pass a config the run mis-reads — the defect it exists to catch.',
+  const stray = refs.filter((r) => r.spec !== RENOVATE_VERSION_REF);
+  assert.deepEqual(
+    stray.map((r) => `${r.file} · ${r.jobName} · ${r.step} → renovate@${r.spec}`),
+    [],
+    `every renovate@ must read ${RENOVATE_VERSION_REF}. A literal version or major beside it is a\n` +
+      '  second pin Renovate cannot see, and a validator on a different release than the run validates a\n' +
+      '  config grammar the run may not use (v41 renamed fileMatch).',
   );
+  const version = readFileSync(resolve(REPO_ROOT, RENOVATE_VERSION_FILE), 'utf8');
+  assert.match(version, /^\d+\.\d+\.\d+\n?$/, `${RENOVATE_VERSION_FILE} must hold one exact x.y.z version and nothing else`);
+});
+
+test('item #1126: Renovate tracks its own version, so the bot proposes its own upgrades', () => {
+  const managers = (config.customManagers ?? []).filter((m) => m.depNameTemplate === 'renovate');
+  assert.equal(managers.length, 1, 'expected exactly one customManager tracking renovate itself');
+  assert.equal(managers[0].datasourceTemplate, 'npm');
+  const patterns = managers[0].managerFilePatterns ?? [];
+  assert.ok(
+    patterns.some((p) => new RegExp(p.replace(/^\/|\/$/g, '')).test(RENOVATE_VERSION_FILE)),
+    `the renovate customManager does not cover ${RENOVATE_VERSION_FILE}`,
+  );
+  const text = readFileSync(resolve(REPO_ROOT, RENOVATE_VERSION_FILE), 'utf8');
+  const captured = managers[0].matchStrings.map((ms) => new RegExp(ms).exec(text)?.groups?.currentValue).filter(Boolean);
+  assert.deepEqual(captured, [text.trim()], `the renovate customManager must capture the version in ${RENOVATE_VERSION_FILE}`);
 });
 
 test('(2026-11-13) every renovate@<major> install waits the same 3-day cooldown as what it proposes', () => {
@@ -2348,14 +2367,14 @@ test('(2026-11-13) every renovate@<major> install waits the same 3-day cooldown 
   for (const [file, wf] of WORKFLOWS_WITH_RENOVATE) {
     for (const [jobName, job] of Object.entries(wf?.jobs ?? {})) {
       for (const step of job?.steps ?? []) {
-        if (typeof step?.run !== 'string' || !/renovate@\d+/.test(step.run)) continue;
+        if (typeof step?.run !== 'string' || !/renovate@/.test(step.run)) continue;
         const beforeAt = step.run.search(BEFORE);
-        const pkgAt = step.run.search(/renovate@\d+/);
+        const pkgAt = step.run.search(/renovate@/);
         if (beforeAt === -1 || beforeAt > pkgAt) missing.push(`${file} · ${jobName} · ${step.name ?? '(unnamed)'}`);
       }
     }
   }
-  assert.ok(renovateMajorRefs().length >= 3, 'expected the three renovate@<major> invocations');
+  assert.ok(renovateRefs().length >= 3, 'expected the three renovate@ invocations');
   assert.deepEqual(
     missing,
     [],

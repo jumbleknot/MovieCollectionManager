@@ -462,8 +462,7 @@ jobs:
   # prevents it. A config key that Renovate does not recognise fires nothing. A major renaming a key
   # (v41 renamed customManagers' `fileMatch` to `managerFilePatterns`) or a plain typo in a new rule
   # does not error — the config SILENTLY MANAGES NOTHING, which is the same "absence reads as
-  # health" mechanism behind #153, #218 and #268, and the documented reason the npx pin below is
-  # major-only. renovate.json itself used to record that the validator catching this class runs
+  # health" mechanism behind #153, #218 and #268. renovate.json itself used to record that the validator catching this class runs
   # nowhere; this job is why that sentence is gone.
   #
   # PLACEMENT. Here rather than in app-ci because branch protection requires the glob `guardrails*`,
@@ -502,9 +501,11 @@ jobs:
       # Item #631: this was pinned to 44.131.0 from 2026-10-02 to 2026-10-10, because renovate 44.131.1–44.132.1
       # depended on @yarnpkg/core@4.9.2, which npm cannot install (a Yarn-only `patch:` spec;
       # EUNSUPPORTEDPROTOCOL). Under npx that failure exits 1 and prints nothing but the path to npm's log.
-      # Every release from 44.132.2 on is back on 4.9.1. Back on the major pin as of 2026-10-10 (44.149.2 installed).
+      # Every release from 44.132.2 on is back on 4.9.1. Since item #1126 the version is ONE exact line in
+      # .forgejo/renovate-version, which Renovate itself bumps — so a bump PR runs THIS validator with
+      # the new release before it can merge, and an uninstallable release (the #631 shape) fails here.
       - name: Validate renovate.json (strict, as a repo config)
-        run: bash scripts/ci-log-step.sh renovate-config-validate npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
+        run: bash scripts/ci-log-step.sh renovate-config-validate npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" --package renovate@"$(cat .forgejo/renovate-version)" -- renovate-config-validator --strict --no-global renovate.json
       # Item #1127 — every (version, sha256) pin in the CI installers (Trivy, rustup-init, cargo-audit)
       # re-verified against what its PUBLISHER states for that version. A Renovate bump moves the
       # version alone, so it arrives red here (stale *_SHA256_FOR) until `refresh-pinned-sha256.mjs
