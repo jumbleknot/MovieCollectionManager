@@ -1188,7 +1188,11 @@ merged branches with no open PR had accumulated on `origin`, back to 2026-09-26,
 [`.forgejo/workflows/branch-reaper.yml`](../../.forgejo/workflows/branch-reaper.yml): on every push to
 `main` and daily at 02:30 UTC — ahead of Renovate's nightly and Friday runs — it deletes a branch only
 when its tip is an ancestor of `main`, it heads no open PR, it is not exempt (`main`,
-`openwiki-maintenance`), and its tip is older than 6 h. The open-PR read fails closed and each delete
+`openwiki-maintenance`), its tip is **not on `main`'s first-parent history**, and its tip is older
+than 6 h. The first-parent check (item #1122) is what tells a merged head from a branch pushed before
+its first commit: both tips are ancestors of `main`, and the latter's tip is as old as `main`'s last
+move, but only a merged head (merged with a merge commit) sits off the first-parent chain. A
+fast-forward merge lands on the chain too and is kept — safe, not tidy. The open-PR read fails closed and each delete
 is leased to the classified sha. Still pass the flag: it removes the branch at once, where the reaper
 may take until the next run. To see what it would do, run
 `node scripts/reap-merged-branches.mjs` — a bare invocation deletes nothing.

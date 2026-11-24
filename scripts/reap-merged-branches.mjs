@@ -16,6 +16,11 @@
 //                                                          a lockFileMaintenance branch it marks the
 //                                                          channel rejected (renovate.md §4)
 //   - it is not exempt (main, automation-owned branches) — openwiki-maintenance is recreated by its job
+//   - its tip is NOT on main's first-parent history      — a branch pushed before its first commit points
+//                                                          AT main; ancestry and tip age both pass it, so
+//                                                          this is the only check that tells it from a
+//                                                          merged head (item #1122). A fast-forward merge
+//                                                          also lands here and is kept: safe, not tidy
 //   - its tip commit is older than the grace period      — a concurrent session's just-merged branch is
 //                                                          left alone until a later run
 //
@@ -50,10 +55,11 @@ const PAGE = 50; // the forge's page cap (backlog skill, measured)
  *
  * @param {{name: string, sha: string, tipDate: Date}[]} branches
  * @param {{openPrHeads: Set<string>, isAncestor: (name: string) => boolean|null,
- *          exempt?: Set<string>, now?: Date, graceMs?: number}} ctx
+ *          mainFirstParent: Set<string>|null, exempt?: Set<string>, now?: Date, graceMs?: number}} ctx
+ *          `mainFirstParent` — every sha on `git rev-list --first-parent origin/main`; null = unreadable
  * @returns {{reap: {name: string, sha: string}[], keep: {name: string, reason: string}[]}}
  */
-export function selectReapable(branches, { openPrHeads, isAncestor, exempt = EXEMPT, now = new Date(), graceMs = GRACE_MS }) {
+export function selectReapable(branches, { openPrHeads, isAncestor, mainFirstParent, exempt = EXEMPT, now = new Date(), graceMs = GRACE_MS }) {
   const reap = [];
   const keep = [];
   for (const b of branches) {
@@ -72,6 +78,18 @@ export function selectReapable(branches, { openPrHeads, isAncestor, exempt = EXE
     }
     if (!anc) {
       keep.push({ name: b.name, reason: 'not merged into main' });
+      continue;
+    }
+    // Item #1122. Ancestry plus tip age cannot tell a MERGED branch from one pushed before its first
+    // commit: both tips are ancestors of main, and the latter's tip is as old as main's last move. A PR
+    // merged with a merge commit leaves its head on the SECOND-parent side; a branch that was never
+    // worked on sits ON main's first-parent chain. Unreadable history keeps everything (fail closed).
+    if (!(mainFirstParent instanceof Set)) {
+      keep.push({ name: b.name, reason: 'first-parent history unreadable' });
+      continue;
+    }
+    if (mainFirstParent.has(b.sha)) {
+      keep.push({ name: b.name, reason: "tip is on main's first-parent history" });
       continue;
     }
     if (!(b.tipDate instanceof Date) || Number.isNaN(b.tipDate.getTime())) {
@@ -131,6 +149,15 @@ function gitIsAncestor(branch) {
   }
 }
 
+/** Every sha on main's first-parent chain, or null when it cannot be read (the reaper then keeps all). */
+function readMainFirstParent() {
+  try {
+    return new Set(git(['rev-list', '--first-parent', `refs/remotes/origin/${DEFAULT_BRANCH}`]).split('\n').filter(Boolean));
+  } catch {
+    return null;
+  }
+}
+
 function listRemoteBranches() {
   const out = git(['for-each-ref', '--format=%(refname:strip=3)%09%(objectname)%09%(committerdate:iso-strict)', 'refs/remotes/origin']);
   return out
@@ -158,7 +185,11 @@ async function main({ apply }) {
     return { rows: await res.json(), total: res.headers.get('x-total-count') };
   });
 
-  const { reap, keep } = selectReapable(listRemoteBranches(), { openPrHeads, isAncestor: gitIsAncestor });
+  const { reap, keep } = selectReapable(listRemoteBranches(), {
+    openPrHeads,
+    isAncestor: gitIsAncestor,
+    mainFirstParent: readMainFirstParent(),
+  });
   for (const k of keep) console.log(`keep  ${k.name}  (${k.reason})`);
   for (const r of reap) console.log(`${apply ? 'reap ' : 'would reap'}  ${r.name}  ${r.sha.slice(0, 8)}`);
   console.log(`[reap-merged-branches] open PRs=${openPrHeads.size} keep=${keep.length} ${apply ? 'reap' : 'would reap'}=${reap.length}${apply ? '' : '  (dry run — pass --apply to delete)'}`);

@@ -58,6 +58,17 @@ function compileEntry(e, i) {
   if (e.expiry !== undefined && (typeof e.expiry !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(e.expiry))) {
     throw new GateError(`allowlist entry #${i + 1} has an invalid "expiry" (must be an ISO YYYY-MM-DD date).`);
   }
+  // Item #1130. An `image` key is a regex tested against the scanned `repo:tag@sha256:…`. Unanchored,
+  // it also matches any image whose NAME contains the string; without a digest it keeps suppressing
+  // across every rebuild of a moving tag (`postgres:18-alpine`), so an acceptance made for one set of
+  // bytes silently carries over to the next. Anchored + digest makes each acceptance about the bytes
+  // that were triaged — a Renovate digest bump re-evaluates it, which is the point.
+  if (!e.image.startsWith('^')) {
+    throw new GateError(`allowlist entry #${i + 1} image '${e.image}' is not anchored — start it with ^ so it cannot match an image whose name merely contains it.`);
+  }
+  if (!/@sha256:[0-9a-f]{12,64}/.test(e.image)) {
+    throw new GateError(`allowlist entry #${i + 1} image '${e.image}' pins no digest — add @sha256:<at least 12 hex> of the image that was triaged, so a rebuild re-evaluates the acceptance.`);
+  }
   let imageRe;
   let idRe;
   try {
@@ -264,17 +275,21 @@ function capture(fn) {
 function selftest() {
   const failures = [];
   // Fixable Critical → blocking (mirrors normalizeTrivy). The gate trusts the report's `blocking` flag.
-  const F = (over) => ({ image: 'quay.io/keycloak/keycloak:26.5.5', location: ['a.yaml:1'], id: 'CVE-2026-1000', pkg: 'libfoo', installed: '1.0', fixedVersion: '1.1', severity: 'Critical', fixAvailable: true, blocking: true, ...over });
+  // Scanned refs carry their digest (docker:pinDigests), and since item #1130 every entry must too.
+  const KC = `quay.io/keycloak/keycloak:26.5.5@sha256:${'a'.repeat(64)}`;
+  const KC_RE = '^quay\\\\.io/keycloak/keycloak:26\\\\.5\\\\.5@sha256:aaaaaaaaaaaa';
+  const REDIS = `docker.io/library/redis:8.2@sha256:${'b'.repeat(64)}`;
+  const F = (over) => ({ image: KC, location: ['a.yaml:1'], id: 'CVE-2026-1000', pkg: 'libfoo', installed: '1.0', fixedVersion: '1.1', severity: 'Critical', fixAvailable: true, blocking: true, ...over });
   // `generatedForImages` is the run's scanned set, written by infra-image-scan.mjs (item #423). It is
   // REQUIRED, so the selftest supplies it exactly as a real report does — a fixture that omits a
   // required field tests a shape the gate will never see.
-  const rep = (findings, images = ['quay.io/keycloak/keycloak:26.5.5']) => ({ schemaVersion: 1, generatedForImages: images, findings });
+  const rep = (findings, images = [KC]) => ({ schemaVersion: 1, generatedForImages: images, findings });
   const allow = (yaml) => loadAllowlistFromString(yaml);
 
   // (a) un-allowlisted fixable Critical → 1
   if (gate(rep([F()]), []) !== 1) failures.push('(a) un-allowlisted fixable Critical should FAIL (exit 1)');
   // (b) allowlisted → 0
-  const al = allow('- image: "quay\\\\.io/keycloak/.*"\n  id: "CVE-2026-1000"\n  justification: "selftest"\n  addedBy: "selftest"\n');
+  const al = allow(`- image: "${KC_RE}"\n  id: "CVE-2026-1000"\n  justification: "selftest"\n  addedBy: "selftest"\n`);
   if (gate(rep([F()]), al) !== 0) failures.push('(b) allowlisted fixable Critical should PASS (exit 0)');
   // (c) fixable HIGH is non-blocking → 0 (base-image High CVEs are report-only, matching cd-deploy CRITICAL-only)
   if (gate(rep([F({ severity: 'High', blocking: false })]), []) !== 0) failures.push('(c) fixable High should PASS (exit 0)');
@@ -288,10 +303,19 @@ function selftest() {
   try { allow('- image: "x"\n  id: "y"\n  justification: ""\n  addedBy: "z"\n'); failures.push('(g) blank justification should be rejected'); }
   catch (e) { if (!(e instanceof GateError)) failures.push('(g) blank justification should throw GateError'); }
   // (h) past expiry does not suppress → 1 ; future expiry suppresses → 0
-  const expired = allow('- image: "quay\\\\.io/keycloak/.*"\n  id: "CVE-2026-1000"\n  justification: "selftest"\n  addedBy: "selftest"\n  expiry: "2000-01-01"\n');
+  const expired = allow(`- image: "${KC_RE}"\n  id: "CVE-2026-1000"\n  justification: "selftest"\n  addedBy: "selftest"\n  expiry: "2000-01-01"\n`);
   if (gate(rep([F()]), expired) !== 1) failures.push('(h) past-expiry entry should NOT suppress (exit 1)');
-  const future = allow('- image: "quay\\\\.io/keycloak/.*"\n  id: "CVE-2026-1000"\n  justification: "selftest"\n  addedBy: "selftest"\n  expiry: "2999-01-01"\n');
+  const future = allow(`- image: "${KC_RE}"\n  id: "CVE-2026-1000"\n  justification: "selftest"\n  addedBy: "selftest"\n  expiry: "2999-01-01"\n`);
   if (gate(rep([F()]), future) !== 0) failures.push('(h) future-expiry entry should suppress (exit 0)');
+  // (i) item #1130 — an UNANCHORED image key is rejected (it would match any name containing it)
+  try { allow('- image: "quay\\\\.io/keycloak/keycloak:26\\\\.5\\\\.5@sha256:aaaaaaaaaaaa"\n  id: "y"\n  justification: "j"\n  addedBy: "z"\n'); failures.push('(i) an unanchored image key should be rejected'); }
+  catch (e) { if (!(e instanceof GateError) || !/not anchored/.test(e.message)) failures.push('(i) an unanchored image key should throw a GateError naming the anchor'); }
+  // (j) item #1130 — a key without a digest is rejected (it would carry over to every rebuild of the tag)
+  try { allow('- image: "^postgres:18-alpine"\n  id: "y"\n  justification: "j"\n  addedBy: "z"\n'); failures.push('(j) an image key without a digest should be rejected'); }
+  catch (e) { if (!(e instanceof GateError) || !/pins no digest/.test(e.message)) failures.push('(j) a digest-less image key should throw a GateError naming the digest'); }
+  // (k) …and so is a digest too short to identify anything
+  try { allow('- image: "^postgres:18-alpine@sha256:77f5"\n  id: "y"\n  justification: "j"\n  addedBy: "z"\n'); failures.push('(k) a 4-hex digest prefix should be rejected'); }
+  catch (e) { if (!(e instanceof GateError)) failures.push('(k) a too-short digest should throw GateError'); }
 
   // ── (g) the warning tier (feature 057) — IDENTICAL behaviour to check-sast-findings.mjs ─────────
   // Contract: specs/057-dependency-security-loop/contracts/check-expiring.cli.md
@@ -301,7 +325,7 @@ function selftest() {
   // IMPORTED, never redeclared — there is exactly one definition in the repository.
   const NOW = '2026-08-13';
   const entry = (over = {}) => {
-    const f = { image: 'quay\\\\.io/keycloak/.*', id: 'CVE-2026-1000', justification: 'selftest', addedBy: 'selftest', ...over };
+    const f = { image: KC_RE, id: 'CVE-2026-1000', justification: 'selftest', addedBy: 'selftest', ...over };
     return allow(Object.entries(f).map(([k, v]) => `${k === 'image' ? '- ' : '  '}${k}: "${v}"`).join('\n') + '\n');
   };
 
@@ -363,7 +387,7 @@ function selftest() {
   //
   // The entry below targets an image absent from this run's scanned set. It is neither matched nor
   // unmatched: it is out of scope, and the run has nothing to say about it.
-  const g8allow = entry({ image: 'docker\\\\.io/library/redis:.*', id: 'CVE-2026-1000' });
+  const g8allow = entry({ image: '^docker\\\\.io/library/redis:8\\\\.2@sha256:bbbbbbbbbbbb', id: 'CVE-2026-1000' });
   const g8 = capture(() => gate(rep([F()]), g8allow, NOW));
   if (/UNMATCHED ENTRIES/.test(g8.out)) failures.push('(g8) an entry whose image this run did not scan must be silent, not unmatched');
   if (capture(() => gate(rep([F()]), g8allow, NOW, { checkExpiring: true })).code !== 0) failures.push('(g8) --check-expiring must exit 0 on an out-of-scope entry');
@@ -371,9 +395,9 @@ function selftest() {
   // And the half that must NOT be traded away: the same entry, on a run that DID scan its image, is
   // still reported and still fails --check-expiring. FR-023 survives the fix (g4 is the sibling case
   // on the default scanned set; this one proves the scoping is computed, not hardcoded).
-  const g9 = capture(() => gate(rep([F()], ['quay.io/keycloak/keycloak:26.5.5', 'docker.io/library/redis:8.2']), g8allow, NOW));
+  const g9 = capture(() => gate(rep([F()], [KC, REDIS]), g8allow, NOW));
   if (!/UNMATCHED ENTRIES/.test(g9.out)) failures.push('(g9) a stale entry for an image the run DID scan must still be reported');
-  if (capture(() => gate(rep([F()], ['quay.io/keycloak/keycloak:26.5.5', 'docker.io/library/redis:8.2']), g8allow, NOW, { checkExpiring: true })).code !== 1) failures.push('(g9) --check-expiring must still exit 1 on a genuinely stale in-scope entry');
+  if (capture(() => gate(rep([F()], [KC, REDIS]), g8allow, NOW, { checkExpiring: true })).code !== 1) failures.push('(g9) --check-expiring must still exit 1 on a genuinely stale in-scope entry');
 
   // (g10) A report without `generatedForImages` is a HARD ERROR, never a fallback to "all in scope".
   // A silent fallback would reintroduce item #423 the moment a producer stopped writing the field,
