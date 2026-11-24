@@ -325,20 +325,22 @@ findings readable.
     by a tag move. Renovate proposes from the registry rather than from this file, so every rebuild is
     still offered, the new digest is scanned unsuppressed, and the Renovate PR's own scan proves whether
     the rebuild carries the fix instead of inheriting the acceptance. The price is stated below: once
-    the digest moves, the key matches nothing. The live example is the `CVE-2026-111497` brotli cohort,
-    whose keys name the digest with no version at all (`^caddy:2\.11\.7-alpine@sha256:d8542f48d34a`,
-    `^postgres:18-alpine@sha256:77f585114c32`,
-    `^postgres:18\.6-alpine3\.23@sha256:697c180dbf24`).
+    the digest moves, the key matches nothing — and, until item #1136, nothing REPORTS that: the expiry
+    check scopes "unmatched" to images the run scanned, and a retired digest is scanned by no run. The
+    live example is the `CVE-2026-111497` brotli entry `^postgres:18-alpine@sha256:77f585114c32`; its
+    caddy and postgres-18.6 siblings were found stale by hand on 2026-11-24 and deleted.
   - **Discharged, not re-keyed.** Where a bump or a same-version digest refresh measurably clears the
     advisory, the entry is **deleted** rather than re-keyed — a re-keyed entry would match nothing and
     fail the expiry check, and deleting is the direction that restores blocking. Comment blocks left
     above an absent entry are the file's history, not a live suppression.
-  - **Live inventory (2026-11-24): six entries.** Two un-expiring BASELINE entries carry the same
+  - **Live inventory (2026-11-24, after the stale-digest cleanup): three entries.** Two un-expiring BASELINE entries carry the same
     Go-stdlib Critical (`CVE-2025-68121`) on `postgres:18.6-alpine3.23` and `postgres:18-alpine`, each
     recording its own measurement because no reachable tag clears it (the shipped binary carrying it is
     `usr/local/bin/gosu`). Both were tag-only keys until item #1130 re-keyed them, mechanically and
-    without a re-scan, to the digest pulled on 2026-11-24, so the next digest bump re-evaluates them. The other four are time-boxed to `2026-12-01`: the OpenSearch netty digest key
-    (`CVE-2026-75595`) and three brotli digest keys (`CVE-2026-111497`) on caddy and both postgres lines.
+    without a re-scan, to the digest pulled on 2026-11-24, so the next digest bump re-evaluates them. The third is the brotli digest key
+    (`CVE-2026-111497`) on `postgres:18-alpine`, time-boxed to `2026-12-01`. The OpenSearch netty key
+    (`CVE-2026-75595`) and the caddy and postgres-18.6 brotli keys were deleted on 2026-11-24: each named a
+    digest the repository no longer pulls, and `infra-image-scan` passes on the new digests unsuppressed.
     Everything else in the file is a comment block recording an entry that has been discharged — history,
     not a live suppression.
   - **The three tiers the gate reports** are `EXPIRING SOON` (inside the 14-day window, still
