@@ -45,7 +45,8 @@ not lengthen the `renovate-config` job meaningfully.
 - tracked files only (`git ls-files`), so local untracked files never change the verdict;
 - an instrument failure exits 3, never 1.
 
-**Scale/Scope**: about 45 pins today (research R4); 13 customManagers; 4 built-in action inputs.
+**Scale/Scope**: about 45 pins today (research R4); 12 customManagers (15 after this feature); 4 built-in action
+inputs.
 
 ## Constitution Check
 
@@ -97,7 +98,7 @@ scripts/
 ├── version-pin-exclusions.json                 # NEW — reasoned exclusions (day-one: expected 1–2)
 └── workflows/guardrails.yml                    # EDIT — renovate-config job: one step
 renovate.json                                   # EDIT — customManagers for the pins that get one (R4)
-.devcontainer/toolchain.Dockerfile              # maybe EDIT — `# renovate:`-free; managers match existing lines
+.devcontainer/toolchain.Dockerfile              # EDIT — POWERSHELL_VERSION annotation gains extractVersion (research R4)
 docs/runbooks/renovate.md                       # EDIT — the guard section (FR-012)
 openwiki/runbooks/renovate.md                   # EDIT — refreshed in the same PR (V17)
 ```

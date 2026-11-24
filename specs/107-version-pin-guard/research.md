@@ -60,7 +60,7 @@ does not look for (R3), so they need no rule.
 
 | shape | where | recognises |
 | --- | --- | --- |
-| `assignment` | all scanned files | `NAME=value`, `NAME: value`, `NAME value` (Dockerfile `ENV` space form), `NAME = 'value'` (JS constant), where NAME is UPPER_SNAKE and contains `VERSION` or `PIN`, and the value is `v?N.N[.N]` |
+| `assignment` | all scanned files | `NAME=value`, `NAME: value`, `NAME value` (Dockerfile `ENV` space form), `NAME = 'value'` (JS constant), where NAME is UPPER_SNAKE with `VERSION` or `PIN` as a whole `_`-separated token, and the value is `v?N.N[.N]` or digits only (data-model.md `Pin.value`) |
 | `action-input` | workflow files | a `*-version:` or `version:` key inside a step's `with:`, in **block or flow** form (`with: { node-version: 26.13.1 }`), attributed to that step's `uses:` action |
 | `command-spec` | shell contexts only: workflow `run:` blocks, `*.sh`, Dockerfile `RUN` | `tool@N.N.N` and `tool==N.N.N` |
 
@@ -97,19 +97,31 @@ From the prototype (`assignment` and `command-spec` shapes, plus `action-input` 
 | `POWERSHELL_VERSION=7.6.5` | `.devcontainer/toolchain.Dockerfile:312` | **unmanaged** |
 | `CCUSAGE_VERSION = '20.0.48'` | `scripts/lib/cc-usage/write-oracle.mjs:13` | **unmanaged** |
 
-That gives **5 unmanaged pins** (after discarding the `pnpm@11.17.0` false positive). The implementation
+| `ANDROID_CLT_VERSION=11076708` | `.devcontainer/toolchain.Dockerfile:176` | **unmanaged**, and invisible to the prototype (found by `/speckit-analyze`) |
+
+That gives **6 unmanaged pins** (after discarding the `pnpm@11.17.0` false positive). The prototype's
+dotted-value rule missed `ANDROID_CLT_VERSION`: it is a build number with no dot. So the `assignment`
+shape also accepts a digits-only value (data-model.md `Pin.value`). The implementation
 re-runs this inventory with the real detector and records its output in tasks.md. The prototype's
 counts are a floor, not the answer.
 
-**Expected resolution** (to be confirmed per pin during implementation):
+**Resolution** (decided 2026-11-24 during `/speckit-analyze` remediation, from the files themselves):
 
-| pin | likely outcome | why |
+| pin | outcome | why |
 | --- | --- | --- |
-| `DOCKER_COMPOSE_VERSION` | customManager | `docker/compose`, github-releases, tag form `v5.3.1` |
-| `POWERSHELL_VERSION` | customManager | `PowerShell/PowerShell`, github-releases |
-| `SPECKIT_VERSION` | exclusion | Spec Kit upgrades are a deliberate, reviewed procedure (docs/runbooks/spec-kit.md: overrides must be re-checked), not a bot bump |
-| `GRADLE_VERSION` | exclusion or manager | the Android toolchain is held by the Expo SDK's gradle wrapper; decide against the Android runbook |
-| `CCUSAGE_VERSION` | customManager | npm datasource. It names the ccusage release whose output the oracle fixtures were recorded against, so a bump must re-record them; a manager makes that visible. |
+| `DOCKER_COMPOSE_VERSION` | customManager (annotation-driven, below) | already carries `# renovate: datasource=github-releases depName=docker/compose` on the line above, but **no customManager reads `# renovate:` comments**. The annotation promised management that never existed, which is exactly this feature's bug class. |
+| `POWERSHELL_VERSION` | the same manager | same: annotated, never read. The release tags are `v7.6.5` and the ARG is `7.6.5` (the URL adds the `v`), so the annotation gains `extractVersion=^v(?<version>.+)$` |
+| `GRADLE_VERSION` | exclusion | it must equal the wrapper version in `frontend/mcm-app/android/gradle/wrapper/gradle-wrapper.properties`, and `android/` is gitignored (CNG: `expo prebuild` generates it from the Expo SDK). So the version moves with an Expo SDK upgrade. A gradle-release bump would only make the baked distribution miss the wrapper |
+| `ANDROID_CLT_VERSION` | exclusion | a build number in a `dl.google.com` zip name. Google publishes no release feed for command-line tools that a Renovate datasource reads |
+| `SPECKIT_VERSION` | exclusion | it must equal `.specify/init-options.json` `speckit_version`, and an upgrade is the reviewed procedure in `docs/runbooks/spec-kit.md` (overrides re-checked against the new templates) |
+| `CCUSAGE_VERSION` | exclusion (**reverses the earlier lean**) | the committed oracle `scripts/__tests__/fixtures/cc-usage/ccusage-oracle.json` records `"tool": "ccusage@20.0.48"`, and CI compares the parser with that file, never re-running ccusage. A bot bump would arrive **green** and leave the constant naming a release the oracle was not recorded by. A bump is meaningful only with a re-record (`pnpm nx cc-usage-oracle infrastructure-as-code`) and a human review of the changed totals |
+
+**The annotation-driven manager.** It is one generic customManager over Dockerfiles. Its `matchStrings`
+read `# renovate: datasource=<d> depName=<n>[ extractVersion=<e>]` followed by an `ARG`/`ENV` line, and
+capture `datasource`, `depName`, `extractVersion` and `currentValue`. This is the pattern in
+Renovate's regex-manager documentation. It makes the existing annotations true, and any future
+annotated Dockerfile pin is managed with no new manager. The evaluator names such a pin by its
+captured `depName`.
 
 ## R5 — Where does the check run? (FR-007)
 
