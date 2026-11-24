@@ -301,8 +301,10 @@ run it the way CI does, and **both** obstacles fail silently rather than errorin
    GitHub (`found version: 0.74.0`) and then downloaded nothing: the tarball comes from
    `get.trivy.dev`, and a non-200 is logged only at debug level. CI hit the same silence on PR #929
    (2026-11-04, twice, transient). CI now installs through `scripts/ci-install-trivy.sh`, which
-   downloads the GitHub release assets directly, verifies the checksum, and names the URL and curl's
-   error when a download fails — so in the dev container a blocked download is an error, not a
+   downloads the GitHub release assets directly, verifies the tarball against the sha256 **pinned in
+   the script** and against the publisher's checksums file (item #1127 — the script is the ONE place the
+   Trivy version and its checksums live; the workflows pass only a `<bindir>`), and names the URL and
+   curl's error when a download fails — so in the dev container a blocked download is an error, not a
    missing binary.
 2. **Trivy's default DB mirror does not resolve.** `mirror.gcr.io` is not in the egress policy, so a
    scan dies with `dial tcp: lookup mirror.gcr.io ... no such host`. `ghcr.io` *is* reachable (a `401`
@@ -534,7 +536,7 @@ beginning `RELEASE.`, which is invisible rather than unordered.)
 The allowlist **is** the accepted baseline — suppression is gate-only; findings stay visible in `findings.json`. Entry shape:
 
 ```yaml
-- image: 'quay\.io/keycloak/.*'   # regex vs the scanned repo:tag
+- image: '^quay\.io/keycloak/keycloak:26\.7\.3@sha256:0123456789ab'   # regex vs the scanned repo:tag@sha256:…
   id: 'CVE-2026-1234'             # regex vs advisory id
   justification: 'awaiting Renovate bump to keycloak:26.6.0'
   addedBy: 'steve'
@@ -542,6 +544,15 @@ The allowlist **is** the accepted baseline — suppression is gate-only; finding
 ```
 
 All four of `image`/`id`/`justification`/`addedBy` are required; a blank field or invalid regex is a gate error.
+
+**Since item #1130 the `image` key must be anchored and digest-pinned** — it must start with `^` and
+contain `@sha256:<at least 12 hex>`, or the gate refuses the whole allowlist as a gate error. Unanchored,
+a key also matches any image whose *name* contains it; tag-only, it carries an acceptance made for one
+set of bytes over to every rebuild of that tag. A digest key is re-evaluated by every digest bump, which
+is the point: the acceptance is about the bytes someone triaged. The three entries that did not meet it
+were re-keyed mechanically on 2026-11-24 to the digest pulled that day (behaviour unchanged until the
+next bump). The section below predates the rule; its version-keying argument still holds, and the
+digest is now required on top of it.
 
 ### Key a suppression to a VERSION, so an upgrade can discharge it
 

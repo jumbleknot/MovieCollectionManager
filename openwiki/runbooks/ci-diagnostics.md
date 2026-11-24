@@ -3,10 +3,10 @@ type: Runbook
 title: CI self-serve diagnostics
 description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the one pinned Trivy installer all three scanning workflows share, and the labelled container holds that stop another run's prune deleting the scan tags, the event-versus-trigger_event split (including which run posted a check) and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
-resource-sha256: c06dbefe228228507e2ffd8e9a1f15aae7d4a8e21c6654ad82882133f367084d
+resource-sha256: 30bbe3973513d873ef364422cb06e0c503a5746800fdf914a65aee3504ab21f4
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-23T23:20:50.118Z
+timestamp: 2026-11-24T14:07:38.557Z
 ---
 
 # CI self-serve diagnostics
@@ -154,15 +154,15 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   those pins disagree; a single `aquasecurity/trivy` customManager in `renovate.json` covers all three
   files and the guard asserts its patterns still match each of them, so the three-way pin is maintained
   rather than left to rot. **All three install through one repo script**,
-  `scripts/ci-install-trivy.sh <vX.Y.Z> <bindir>`: it downloads that release's tarball and
-  checksum list from GitHub with `--retry-all-errors`, verifies the sha256, and then asserts the
+  `scripts/ci-install-trivy.sh <bindir>`, which holds the ONE (version, sha256) pin (item #1127): it
+  downloads that release's tarball and checksum list from GitHub with `--retry-all-errors`, requires
+  the tarball to match the sha256 committed in the script AND the publisher's checksums file, and then asserts the
   installed binary reports the pinned version — so a passing install step means *this* version is on
   PATH, not that a version line was printed. It replaced Trivy's `contrib/install.sh`, which on a
   failed download logged the HTTP status at DEBUG level and exited with no message (measured on PR
   #929, runs 6696 and 6702, 2026-11-04) — and which was fetched code piped into `sh`. The guard fails
-  if any of the three workflows pipes the vendor script or `get.trivy.dev` again, and it resolves the
-  one `${TRIVY_VERSION}` indirection per workflow before comparing the three tags, so a hard-coded tag
-  beside a different assignment is caught rather than silently agreeing. `app-e2e` tags
+  if any of the three workflows pipes the vendor script or `get.trivy.dev` again, or names a Trivy
+  version or passes more than a `<bindir>` — a second pin there could move without the first. `app-e2e` tags
   each of them `app-scan/<name>:run-<run id>` immediately after the build — and holds each tag with a
   labelled container so another run's prune cannot delete it (see the hold bullet below) — so a later
   run rebuilding `:latest` on the persistent daemon cannot change what is scanned. It runs on pushes to
@@ -660,8 +660,10 @@ covers is the other end of `app-image-scan`: what the registry is allowed to **f
   Renovate's nightly 03:00 and its Friday window, so a stale `renovate/*` branch is gone *before*
   Renovate decides whether to reuse it — and on `workflow_dispatch`, so the first run can be proven
   rather than waited for. It deletes a branch only when its tip is an ancestor of `origin/main`, it
-  heads no open PR, it is not exempt (`main`, `openwiki-maintenance`), and its tip is older than a 6 h
-  grace period; every branch it keeps is printed with the reason it was kept, so the decision is
+  heads no open PR, it is not exempt (`main`, `openwiki-maintenance`), its tip is **not on `main`'s
+  first-parent history** (item #1122 — the only check that tells a merged head from a branch pushed
+  before its first commit, whose tip is an equally old ancestor of `main`; a fast-forward merge is
+  kept too), and its tip is older than a 6 h grace period; every branch it keeps is printed with the reason it was kept, so the decision is
   auditable rather than merely applied. The open-PR listing **fails closed** (a short read against its
   own `x-total-count`, or any page error, deletes nothing), ancestry that cannot be answered keeps the
   branch, and each delete is leased to the sha that was classified

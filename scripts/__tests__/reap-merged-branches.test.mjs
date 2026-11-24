@@ -25,11 +25,12 @@ const OLD = new Date(NOW.getTime() - GRACE_MS - 60_000);
 const FRESH = new Date(NOW.getTime() - 60_000);
 const br = (name, tipDate = OLD) => ({ name, sha: `${name.length}`.padEnd(40, 'a'), tipDate });
 
-function run(branches, { open = [], ancestors = null, exempt = EXEMPT } = {}) {
+function run(branches, { open = [], ancestors = null, exempt = EXEMPT, firstParent = [] } = {}) {
   const anc = ancestors ?? Object.fromEntries(branches.map((b) => [b.name, true]));
   return selectReapable(branches, {
     openPrHeads: new Set(open),
     isAncestor: (n) => anc[n],
+    mainFirstParent: firstParent === null ? null : new Set(firstParent),
     exempt,
     now: NOW,
   });
@@ -80,6 +81,29 @@ test('MUTATION (grace period): a merged branch whose tip is younger than the gra
   const res = run([br('just-merged', FRESH)]);
   assert.deepEqual(res.reap, []);
   assert.equal(reasonOf(res, 'just-merged'), 'inside grace period');
+});
+
+// Item #1122. A branch pushed BEFORE its first commit points at a main commit: it is an ancestor of
+// main, and if main has not moved for longer than the grace period its tip is "old" too. Tip age
+// cannot tell it from a merged branch; main's first-parent history can — a PR merged with a merge
+// commit leaves its head on the SECOND-parent side, while a never-worked-on branch sits ON the chain.
+test("MUTATION (first-parent check): a zero-commit branch on main's first-parent history is kept, however old", () => {
+  const fresh = br('agent/just-created', OLD);
+  const res = run([fresh], { firstParent: [fresh.sha] });
+  assert.deepEqual(res.reap, []);
+  assert.equal(reasonOf(res, 'agent/just-created'), "tip is on main's first-parent history");
+});
+
+test('a branch merged through a merge commit (tip OFF the first-parent chain) is still reaped', () => {
+  const merged = br('feat/merged', OLD);
+  const res = run([merged], { firstParent: ['f'.repeat(40)] });
+  assert.deepEqual(res.reap, [{ name: 'feat/merged', sha: merged.sha }]);
+});
+
+test('first-parent history that could not be read keeps EVERY merged branch — fail closed', () => {
+  const res = run([br('feat/merged', OLD)], { firstParent: null });
+  assert.deepEqual(res.reap, []);
+  assert.equal(reasonOf(res, 'feat/merged'), 'first-parent history unreadable');
 });
 
 test('the grace period is a few hours, not zero and not days', () => {

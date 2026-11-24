@@ -208,8 +208,8 @@
     {
       "customType": "regex",
       "description": [
-        "Keep the pinned Trivy version current in EVERY workflow that installs it. Item #303. Three since",
-        "spec 084 US3: app-ci's app-image-scan scans the PR's images with the scanner the deploy will use.",
+        "Keep the pinned Trivy version current. Item #303; since item #1127 the pin lives in ONE file,",
+        "scripts/ci-install-trivy.sh, which app-ci, cd-deploy and infra-image-scan all call.",
         "WHAT WAS WRONG. Both installs fetched the install script from the MOVING branch `main` and",
         "piped it into sh, then passed NO tag — and the script's own usage says 'If tag is missing,",
         "then the latest will be used'. Two floating references on one line, in the tool that decides",
@@ -225,22 +225,14 @@
         "hand for a date-tagged object-store image. Trivy is actively released, so the pin must be maintained. github-releases is",
         "the correct datasource: Trivy ships GitHub releases, not an npm package, and the tag form",
         "(`v0.74.0`) is what both the URL and the positional install argument take.",
-        "ONE ASSIGNMENT, TWO USES — deliberately. The version is written once as TRIVY_VERSION and",
-        "interpolated into both the script URL and the install tag, so a bump cannot move one and",
-        "leave the other. Pinning the script to one release while installing a different one is a pin",
-        "that does not say what it means — the half-bump shape #194/#204/#225 already record.",
-        "EXTRACTION IS NOT GROUPING (same caveat as the Playwright entry above). This manager makes",
-        "the version VISIBLE to Renovate; it does not by itself keep the two FILES in step. The guard",
-        "in renovate-workflow.guard.test.mjs asserts the RESOLVED state — both pinned, both agreeing,",
-        "the script ref equal to the installed tag, and this manager's matchStrings actually capturing",
-        "a currentValue in each file. A manager whose regex misses is indistinguishable from no",
-        "manager at all, which is how the nx half-bump survived review twice."
+        "ONE PIN, WITH ITS CHECKSUMS (item #1127). TRIVY_VERSION, TRIVY_SHA256_FOR and a TRIVY_SHA256_* per",
+        "platform sit together in the installer. This manager moves TRIVY_VERSION ONLY. A bump therefore",
+        "arrives with TRIVY_SHA256_FOR naming the old version, and both the installer (run time) and",
+        "renovate-workflow.guard.test.mjs (offline) fail it until `node scripts/refresh-pinned-sha256.mjs",
+        "--write` has fetched the new release, hashed it and matched the publisher's checksums file. A",
+        "checksum is never re-trusted silently."
       ],
-      "managerFilePatterns": [
-        "/^\\.forgejo/workflows/infra-image-scan\\.yml$/",
-        "/^\\.forgejo/workflows/cd-deploy\\.yml$/",
-        "/^\\.forgejo/workflows/app-ci\\.yml$/"
-      ],
+      "managerFilePatterns": ["/^scripts/ci-install-trivy\\.sh$/"],
       "matchStrings": ["TRIVY_VERSION=(?<currentValue>v[\\d.]+)"],
       "depNameTemplate": "aquasecurity/trivy",
       "datasourceTemplate": "github-releases"

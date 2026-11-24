@@ -461,7 +461,10 @@ half-bumps, because it parses `fast-uri@<3.1.5` as an opaque depName and cannot 
   rustup still installs **no** toolchain (`--default-toolchain none`): the scan's `cargo tree` installs
   `rust-toolchain.toml`'s. **Bumping either pin:** Renovate moves `RUSTUP_VERSION` /
   `CARGO_AUDIT_VERSION` only, so its PR is red (`renovate-workflow.guard.test.mjs`, and the installer
-  itself) until the matching `*_SHA256` and `*_SHA256_FOR` are copied from the release — a checksum is
-  never re-trusted automatically.
+  itself) until the matching `*_SHA256` and `*_SHA256_FOR` follow. `node scripts/refresh-pinned-sha256.mjs
+  --write` does that (item #1127): it downloads the new release, hashes it, and writes the checksum only
+  when it equals what the publisher states — a checksum is never re-trusted on the download's word.
+  guardrails' `renovate-config` job runs `--check` on every PR, re-verifying every pinned sha256
+  (these two and Trivy's) against its publisher.
 - **Paths are normalized to forward slashes** so allowlist `locationPattern`s are portable across the
   Windows dev host and the Linux CI runner.

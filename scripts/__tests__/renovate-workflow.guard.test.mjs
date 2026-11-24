@@ -2039,93 +2039,78 @@ const TRIVY_WORKFLOWS = [
   '.forgejo/workflows/cd-deploy.yml',
   '.forgejo/workflows/app-ci.yml',
 ];
+const TRIVY_INSTALLER = 'scripts/ci-install-trivy.sh';
 
 /**
- * The Trivy install as configured in one workflow: { present, installedTag, pipesVendorScript }.
+ * The Trivy install as configured in one workflow: { present, passesVersion, pipesVendorScript }.
  *
- * The recipe (since PR #929) writes the version ONCE as TRIVY_VERSION and hands it to
- * scripts/ci-install-trivy.sh, which downloads that release's assets and verifies the checksum.
- * This resolves that ONE `${TRIVY_VERSION}` indirection against the assignment — and only that one,
- * so a hard-coded tag beside a different assignment is left as written and fails the agreement check.
+ * Since item #1127 the (version, sha256) pin lives in scripts/ci-install-trivy.sh ALONE, and each
+ * workflow calls it with only a <bindir>. A workflow that names a version again has re-grown a second
+ * pin — the drift the single source exists to end — so this reports that too.
  */
 function trivyInstall(file) {
   const text = readFileSync(resolve(REPO_ROOT, file), 'utf8');
-  const assigned = /TRIVY_VERSION=(v[\d.]+)/.exec(text)?.[1] ?? null;
-  const deref = (raw) => (raw === '${TRIVY_VERSION}' ? assigned : raw);
-
-  // The tag handed to the installer. Absent means nothing pins the version.
-  const call = /scripts\/ci-install-trivy\.sh\s+["']?([^"'\s]+)["']?\s+\S+/.exec(text);
+  const executable = text.split(/\r?\n/).filter((l) => !/^\s*#/.test(l)).join('\n');
+  // The INVOCATION — not a `paths:` filter entry naming the same file.
+  const call = /\bbash[ \t]+scripts\/ci-install-trivy\.sh(?:[ \t]+("[^"]*"|'[^']*'|[^\s"']+))*/.exec(executable);
+  const args = call
+    ? [...call[0].replace(/^\bbash[ \t]+scripts\/ci-install-trivy\.sh/, '').matchAll(/[ \t]+("[^"]*"|'[^']*'|[^\s"']+)/g)].map((m) => m[1])
+    : [];
   // The vendor's contrib/install.sh piped into sh: what this replaced. It fetched from get.trivy.dev
   // and exited SILENTLY on a non-200 (PR #929, runs 6696 and 6702), on top of running fetched code.
-  const executable = text.split(/\r?\n/).filter((l) => !/^\s*#/.test(l)).join('\n');
   const pipesVendorScript = /aquasecurity\/trivy\/[^\s"']*\/contrib\/install\.sh|get\.trivy\.dev/.test(executable);
-
-  return { present: Boolean(call), installedTag: call ? deref(call[1]) : null, pipesVendorScript, text };
+  return { present: Boolean(call), args, namesVersion: /TRIVY_VERSION|\bv\d+\.\d+\.\d+\b/.test(args.join(' ')) || /TRIVY_VERSION=/.test(executable), pipesVendorScript };
 }
 
 for (const file of TRIVY_WORKFLOWS) {
-  test(`Trivy is version-pinned in ${file}, installed by ci-install-trivy.sh`, () => {
+  test(`${file} installs Trivy through ci-install-trivy.sh, which alone holds the pin`, () => {
     const t = trivyInstall(file);
-    assert.ok(t.present, `${file} no longer installs Trivy through scripts/ci-install-trivy.sh — update the guard rather than deleting it.`);
+    assert.ok(t.present, `${file} no longer installs Trivy through ${TRIVY_INSTALLER} — update the guard rather than deleting it.`);
     assert.ok(
       !t.pipesVendorScript,
       `${file} runs Trivy's contrib/install.sh again. On a failed download it logs the HTTP status at\n` +
         '  DEBUG level and exits with no message (PR #929), and it is fetched code piped into sh.',
     );
-    assert.match(
-      t.installedTag ?? '',
-      /^v\d+\.\d+\.\d+$/,
-      `${file} installs Trivy '${t.installedTag}', which is not a version tag — the scanner deciding\n` +
-        '  whether a Critical blocks a deploy must be a version someone chose.',
+    assert.equal(t.args.length, 1, `${file} passes ${JSON.stringify(t.args)} to ${TRIVY_INSTALLER}; it takes only a <bindir>`);
+    assert.ok(
+      !t.namesVersion,
+      `${file} names a Trivy version again. Item #1127 moved the pin into ${TRIVY_INSTALLER} so the gates and\n` +
+        '  the deploy scan cannot disagree — a second pin here would let one move without the other.',
     );
   });
 }
 
-test('every workflow agrees on the Trivy version, so the gates and the deploy scan agree', () => {
-  const installs = TRIVY_WORKFLOWS.map(trivyInstall);
-
-  // Assert EVERY one is pinned before comparing them. Without this the test passes vacuously while
-  // none is pinned at all — `null === null` — which is the trivially-green shape the constitution
-  // requires be fixed before implementing, not a check.
-  TRIVY_WORKFLOWS.forEach((file, i) => {
-    assert.ok(installs[i].installedTag, `${file} pins no Trivy version, so "they agree" would compare nothing to nothing.`);
-  });
-
-  for (let i = 1; i < installs.length; i++) {
-    assert.equal(
-      installs[i].installedTag,
-      installs[0].installedTag,
-      `${TRIVY_WORKFLOWS[0]} and ${TRIVY_WORKFLOWS[i]} install DIFFERENT Trivy versions. All apply the\n` +
-        '  same CRITICAL-only criterion, so a disagreement means one can block what another passes and\n' +
-        '  neither result explains the other.',
-    );
+test('item #1127: the Trivy pin is a version tag with sha256s taken for THAT version', () => {
+  const text = readFileSync(resolve(REPO_ROOT, TRIVY_INSTALLER), 'utf8');
+  const v = (name) => new RegExp(`^${name}=(\\S+)$`, 'm').exec(text)?.[1] ?? null;
+  assert.match(String(v('TRIVY_VERSION')), /^v\d+\.\d+\.\d+$/, 'the scanner deciding whether a Critical blocks a deploy must be a version someone chose');
+  for (const sha of ['TRIVY_SHA256_LINUX_64BIT', 'TRIVY_SHA256_LINUX_ARM64']) {
+    assert.match(String(v(sha)), /^[0-9a-f]{64}$/, `${TRIVY_INSTALLER}: ${sha} is not a sha256`);
   }
+  assert.equal(
+    v('TRIVY_SHA256_FOR'), v('TRIVY_VERSION'),
+    `${TRIVY_INSTALLER}: TRIVY_VERSION is ${v('TRIVY_VERSION')} but its checksums were taken for ${v('TRIVY_SHA256_FOR')}.\n` +
+      '  Run: node scripts/refresh-pinned-sha256.mjs --write (downloads, hashes, matches the publisher).',
+  );
 });
 
-test('Renovate tracks the Trivy pin, so pinning does not simply mean going stale', () => {
-  // A pin with nothing maintaining it trades a floating reference for a rotting one. The existing
-  // Playwright-image customManager is the pattern this follows.
+test('Renovate tracks the Trivy pin in the installer, and its matchString cannot reach a checksum', () => {
+  // A pin with nothing maintaining it trades a floating reference for a rotting one.
   const managers = config.customManagers ?? [];
   const trivy = managers.filter((m) => (m.depNameTemplate ?? '') === 'aquasecurity/trivy');
   assert.equal(trivy.length, 1, 'expected exactly one customManager tracking aquasecurity/trivy');
-
   assert.equal(trivy[0].datasourceTemplate, 'github-releases', 'Trivy releases are GitHub releases, not an npm package');
 
   const patterns = trivy[0].managerFilePatterns ?? trivy[0].fileMatch ?? [];
-  for (const file of TRIVY_WORKFLOWS) {
-    assert.ok(
-      patterns.some((p) => new RegExp(p.replace(/^\/|\/$/g, '')).test(file)),
-      `the Trivy customManager does not cover ${file}, so that file's pin would rot while the other moved.`,
-    );
-  }
-
-  // And the regex must actually match what is in the files — a manager whose matchString misses is
-  // indistinguishable from no manager at all, which is how the nx half-bump (#194) survived review.
-  for (const file of TRIVY_WORKFLOWS) {
-    const text = readFileSync(resolve(REPO_ROOT, file), 'utf8');
-    const hit = trivy[0].matchStrings.some((ms) => new RegExp(ms, 'm').exec(text)?.groups?.currentValue);
-    assert.ok(hit, `the Trivy customManager's matchStrings capture no currentValue in ${file}`);
-  }
+  assert.ok(
+    patterns.some((p) => new RegExp(p.replace(/^\/|\/$/g, '')).test(TRIVY_INSTALLER)),
+    `the Trivy customManager does not cover ${TRIVY_INSTALLER}, so the pin would rot`,
+  );
+  // A manager whose matchString misses is indistinguishable from no manager at all (#194).
+  const text = readFileSync(resolve(REPO_ROOT, TRIVY_INSTALLER), 'utf8');
+  const captured = trivy[0].matchStrings.map((ms) => new RegExp(ms).exec(text)?.groups?.currentValue).filter(Boolean);
+  assert.deepEqual(captured, [/^TRIVY_VERSION=(\S+)$/m.exec(text)[1]], `the Trivy customManager must capture TRIVY_VERSION in ${TRIVY_INSTALLER}, and only it`);
+  for (const ms of trivy[0].matchStrings) assert.doesNotMatch(ms, /SHA256/, `a Renovate matchString reaches a checksum: ${ms}`);
 });
 
 // ── Docker Hub's tag API is capped at TEN pages, and one 403 costs every timestamp ─────────────

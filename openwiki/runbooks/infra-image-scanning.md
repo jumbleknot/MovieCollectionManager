@@ -3,10 +3,10 @@ type: Runbook
 title: Infra-image CVE scanning
 description: Trivy's keyless, twice-weekly sweep over the third-party server images this project pulls but does not build (Keycloak, Postgres, Mongo, Vault, OpenSearch, Langfuse, Grafana, Unleash, Caddy, RustFS and the rest of infrastructure-as-code), plus how to read or triage a red result — one scanner per image, the fixable-Critical-only gate, the allowlist cohorts and how an entry is discharged, the bounded retry, the one pinned installer all three scanning workflows share, the shared per-image pipeline both the PR and the deploy call, the labelled container holds that keep the PR's run-scoped scan tags alive across another run's prune, and the publish-versus-promote split.
 resource: docs/runbooks/infra-image-scanning.md
-resource-sha256: 23649e535d1c70dab2ad0ae88169bec391c6bf6bf2b61d0295276f230abfa250
+resource-sha256: cb20a5241bf7d21b97f91c3c9913a55dca4e69c35713b5b0d0b61f8e88122e48
 tags: [security, cve, trivy, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-14T22:34:20.357Z
+timestamp: 2026-11-24T14:07:38.560Z
 ---
 
 # Infra-image CVE scanning
@@ -86,7 +86,7 @@ neither can gate anything.
 | `node scripts/infra-image-scan.mjs` | enumerate → Trivy each image → write `security/infra-images/reports/{findings.json,summary.txt,trivy-*.json}`. `--list` enumerates only (needs no Trivy, works anywhere); `--emit-allowlist` also writes `allowlist.proposed.yaml`; `--image <ref>` scans exactly one image instead of enumerating the tree (this is how a builder scans its own artifact, and how the shared per-image script below drives both callers). |
 | `node scripts/check-infra-image-findings.mjs` | the gate: exit 1 on any `blocking` finding not suppressed by a live allowlist entry; `--check-expiring` is the report-only hygiene tier; `--selftest` proves fail/suppress/expiry without Trivy. |
 | `bash scripts/cd/scan-app-image.sh <local-tag>` | the SHARED per-image scan-and-verdict block (spec 084 US3): runs the scan then the gate on one local image and returns two exit codes — `0` clean, `10` scanner error (nothing was assessed), `11` blocking finding, `2` usage. Both push-time consumers call it rather than reimplementing the pipeline: `scripts/cd/scan-push.sh` before each `docker push`, and app-ci's `app-image-scan` job on the six images `app-e2e` built. It is the per-*image* contract, not the only caller of the two commands: `infra-image-scan.yml` runs `infra-image-scan.mjs` and then `check-infra-image-findings.mjs` itself, once per full sweep of the enumerated tree. |
-| `bash scripts/ci-install-trivy.sh <vX.Y.Z> <bindir>` | the ONE Trivy installer all three scanning workflows call, so the PR gates and the deploy scan cannot drift on the scanner. It downloads the pinned release tarball and checksums from GitHub, verifies the sha256, and refuses to finish unless the installed binary reports the pinned version — so a green install step means *this* version is on PATH, not that a version line was printed. |
+| `bash scripts/ci-install-trivy.sh <bindir>` | the ONE Trivy installer all three scanning workflows call, and the ONE place the Trivy (version, sha256) pin lives (item #1127), so the PR gates and the deploy scan cannot drift on the scanner. It downloads the pinned release tarball and checksums from GitHub, requires the sha256 committed in the script AND the publisher's checksums file to agree with the download, and refuses to finish unless the installed binary reports the pinned version — so a green install step means *this* version is on PATH, not that a version line was printed. |
 | `pnpm nx infra-scan infrastructure-as-code` | the Nx target wrapping the orchestrator, alongside the `sast`/`dast` targets. |
 | `security/infra-images/severity-map.yaml` | Trivy severity → normalized scale. An unmapped native value is a hard error in the orchestrator (no silent default); `UNKNOWN` maps conservatively to `Low` so it can never block. |
 
@@ -315,6 +315,10 @@ findings readable.
     unchanged pin. The date forces a re-check instead of an indefinite acceptance, and the 14-day
     warning window makes the weekly sweep red before it lapses. Cohorts are deliberately dated together
     so the re-triage is one sitting rather than a dribble.
+  - **Every key is anchored and digest-pinned (item #1130).** The gate refuses an `image` key that does
+    not start with `^` or carries no `@sha256:<at least 12 hex>`: unanchored, a key matches any image
+    whose name contains it; tag-only, it carries an acceptance over to every rebuild of the tag. A
+    version in the key is still useful for reading it, but the digest is what is required.
   - **Version-keyed, or version+digest-keyed.** The key names the pin the run actually scans, so a bump
     re-blocks and forces a fresh scan rather than inheriting the suppression.
   - **Digest-only-keyed.** Used where the suppression has to be discharged by a **rebuild** rather than
@@ -329,10 +333,11 @@ findings readable.
     advisory, the entry is **deleted** rather than re-keyed — a re-keyed entry would match nothing and
     fail the expiry check, and deleting is the direction that restores blocking. Comment blocks left
     above an absent entry are the file's history, not a live suppression.
-  - **Live inventory (2026-11-01): six entries.** Two un-expiring BASELINE entries carry the same
-    Go-stdlib Critical (`CVE-2025-68121`) on `postgres:18\.6-alpine3\.23` and `postgres:18-alpine`, each
+  - **Live inventory (2026-11-24): six entries.** Two un-expiring BASELINE entries carry the same
+    Go-stdlib Critical (`CVE-2025-68121`) on `postgres:18.6-alpine3.23` and `postgres:18-alpine`, each
     recording its own measurement because no reachable tag clears it (the shipped binary carrying it is
-    `usr/local/bin/gosu`). The other four are time-boxed to `2026-12-01`: the OpenSearch netty digest key
+    `usr/local/bin/gosu`). Both were tag-only keys until item #1130 re-keyed them, mechanically and
+    without a re-scan, to the digest pulled on 2026-11-24, so the next digest bump re-evaluates them. The other four are time-boxed to `2026-12-01`: the OpenSearch netty digest key
     (`CVE-2026-75595`) and three brotli digest keys (`CVE-2026-111497`) on caddy and both postgres lines.
     Everything else in the file is a comment block recording an entry that has been discharged — history,
     not a live suppression.
@@ -492,32 +497,38 @@ findings readable.
   direction that fails safe: a key covering a ref that turns out clean suppresses nothing extra; a key
   that omits an affected ref blocks the board.
 - **The scanner itself is version-pinned, installed through one shared script, and Renovate is what keeps
-  it from rotting.** `infra-image-scan.yml`, `cd-deploy.yml` and `app-ci.yml` each write the version once
-  as a `TRIVY_VERSION` assignment and hand it to `scripts/ci-install-trivy.sh <vX.Y.Z> <bindir>`, so a
-  bump cannot move one site and strand the other. There are **three** such sites since spec 084 US3:
+  it from rotting.** `infra-image-scan.yml`, `cd-deploy.yml` and `app-ci.yml` each call
+  `scripts/ci-install-trivy.sh <bindir>`, and the script alone holds `TRIVY_VERSION`, `TRIVY_SHA256_FOR`
+  and a `TRIVY_SHA256_*` per platform (item #1127), so a bump cannot move one site and strand another. There are **three** such sites since spec 084 US3:
   app-ci's `app-image-scan` job scans the PR's images with the scanner the deploy will use, so a green PR
-  that ran a different Trivy than the deploy would prove nothing. All three currently agree on `v0.76.2`.
+  that ran a different Trivy than the deploy would prove nothing. The pin is currently `v0.76.2`.
   The installer itself is the fix for a measured silent failure, not a preference: Trivy's own
   `contrib/install.sh` was fetched from a moving branch and piped into `sh`, and on PR #929 (runs 6696 and
   6702, 2026-11-04) it failed **twice with no error at all** — it fetches the tarball from `get.trivy.dev`
   rather than GitHub, logs a non-200 at DEBUG level, and `set -e` turns that into a silent exit. The shared
-  script downloads the release assets directly, retries a transient failure, verifies the checksum, and
-  names the URL and curl's exit when a download fails. The
+  script downloads the release assets directly, retries a transient failure, requires the tarball to
+  match the sha256 committed in the script AND the publisher's checksums file — two independent
+  sources, so a compromised release (which controls both of its own files) still fails — and names
+  the URL and curl's exit when a download fails. The
   floating form this replaced (script from `main`, no tag) had no digest underneath either, and it cost
   real comparability: during item #297 the local sweep ran `aquasec/trivy:0.74.0` while CI ran an
   unknown version, so two scans of byte-identical images could not be reconciled. A `customManagers`
-  entry (`depNameTemplate: aquasecurity/trivy`, datasource `github-releases`) covers all three
-  workflow files, and `renovate-workflow.guard.test.mjs` asserts the *resolved* state rather than the
-  presence of a version string: all three pinned, the tag handed to `ci-install-trivy.sh` equal to the
-  installed `TRIVY_VERSION` in each, all three agreeing on one version (a disagreement means one gate can
-  block what another passes, with neither result explaining the other), that none of them pipes the
-  vendor's script again, and the manager's `matchStrings` actually capturing a `currentValue` in each
-  file — a manager whose regex misses is indistinguishable from no manager at all.
+  entry (`depNameTemplate: aquasecurity/trivy`, datasource `github-releases`) covers the installer and
+  moves `TRIVY_VERSION` alone, so a bump arrives red (stale `TRIVY_SHA256_FOR`) until
+  `node scripts/refresh-pinned-sha256.mjs --write` downloads, hashes and matches the new release;
+  guardrails runs `--check` on every PR. `renovate-workflow.guard.test.mjs` asserts the *resolved*
+  state: each workflow calls the installer with only a `<bindir>` and names no version, none pipes the
+  vendor's script again, the pin is a `vX.Y.Z` with sha256s taken for that version, and the manager's
+  `matchStrings` capture exactly `TRIVY_VERSION` and never reach a checksum — a manager whose regex
+  misses is indistinguishable from no manager at all.
   `scripts/__tests__/ci-install-trivy.test.mjs` pins the installer's own behaviour offline against
-  `file://` fixtures: a good release installs the pinned version, a checksum mismatch installs nothing
-  and says so, a failed download names the URL instead of exiting silently (the PR #929 failure), a
-  binary reporting a different version fails, and a tag that is not `vX.Y.Z` is refused before anything
-  is fetched.
+  `file://` fixtures, running a copy of the script with its pin lines rewritten (there is no
+  environment override for the pin): a good release installs the pinned version, bytes that miss the
+  committed pin install nothing even when the release's own checksums agree with them, a publisher
+  checksum that disagrees with the pin fails, a version bumped without its checksums is refused before
+  any download, a failed download names the URL instead of exiting silently (the PR #929 failure), a
+  binary reporting a different version fails, and a pinned version that is not `vX.Y.Z` is refused before
+  anything is fetched.
 - **Is the advisory still the severity you triaged it at?** The gate blocks on fixable **Critical**
   only, so an advisory re-rated Critical→High stops blocking without anything upstream changing — and
   in the gate's output that is indistinguishable from remediation. Read the installed package version

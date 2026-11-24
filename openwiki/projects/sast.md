@@ -4,9 +4,9 @@ title: SAST & SCA static security scanning
 description: Keyless, config-as-code Static Application Security Testing (SAST) and Software Composition Analysis (SCA) across four scanners — Semgrep, cargo-audit, pnpm-audit, and pip-audit — feeding one normalized allowlist-gated CI job (sast) in guardrails.yml, plus a pull-request-only gate that fails any package resolution moving into a known advisory in any scope.
 tags: [security, sast, sca, supply-chain, semgrep, ci, gates, dependency-management]
 resource: docs/runbooks/sast-scanning.md
-resource-sha256: c982d579c4fe366a9d83bcfad6f67f401df1ff73e16fac667e9fac4fb051496a
+resource-sha256: 87de06209df092890a08d8fe7d97c0de4326bbe9a8a01beab6a1367f58e889ca
 generated: { by: "openwiki/0.7.1", at: "2026-10-11T16:36:45.100Z" }
-timestamp: 2026-11-24T00:07:06.592Z
+timestamp: 2026-11-24T14:07:38.555Z
 ---
 
 # SAST & SCA static security scanning
@@ -743,8 +743,11 @@ a scan that happened to pass.
   `curl sh.rustup.rs | sh` and a per-run `cargo install` compile, together with the apt step for
   `build-essential`/`pkg-config`/`libssl-dev` that existed only for that compile. rustup still installs
   no toolchain, because `rust-toolchain.toml` decides the version. Renovate moves only
-  `RUSTUP_VERSION`/`CARGO_AUDIT_VERSION`, so a bump PR stays red until a human copies the new checksum
-  and its `*_SHA256_FOR`.
+  `RUSTUP_VERSION`/`CARGO_AUDIT_VERSION`, so a bump PR stays red until the new checksum and its
+  `*_SHA256_FOR` follow: `node scripts/refresh-pinned-sha256.mjs --write` downloads the release, hashes
+  it, and writes the checksum only when it equals what the publisher states (item #1127). guardrails'
+  `renovate-config` job runs `--check` on every PR, re-verifying every pinned sha256 — these two and
+  Trivy's — against its publisher.
 
 - **Paths in `locationPattern` must use forward slashes.** Allowlist entries are matched against
   paths normalized to forward slashes so they are portable across the Windows dev host and the Linux

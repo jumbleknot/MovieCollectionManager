@@ -505,6 +505,13 @@ jobs:
       # Every release from 44.132.2 on is back on 4.9.1. Back on the major pin as of 2026-10-10 (44.149.2 installed).
       - name: Validate renovate.json (strict, as a repo config)
         run: bash scripts/ci-log-step.sh renovate-config-validate npx --yes --before="$(node -e 'process.stdout.write(new Date(Date.now()-3*864e5).toISOString())')" --package renovate@44 -- renovate-config-validator --strict --no-global renovate.json
+      # Item #1127 — every (version, sha256) pin in the CI installers (Trivy, rustup-init, cargo-audit)
+      # re-verified against what its PUBLISHER states for that version. A Renovate bump moves the
+      # version alone, so it arrives red here (stale *_SHA256_FOR) until `refresh-pinned-sha256.mjs
+      # --write` has downloaded, hashed and matched the new release. Node built-ins only: runs before
+      # any install. Three small GETs; GITHUB_COM_TOKEN is deliberately not needed (60/h anonymous).
+      - name: Re-verify pinned sha256s against their publishers
+        run: bash scripts/ci-log-step.sh renovate-config-pinned-sha256 node scripts/refresh-pinned-sha256.mjs --check
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
