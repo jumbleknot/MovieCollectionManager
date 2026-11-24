@@ -516,8 +516,10 @@ test('item #721: a ROOT pnpm override never yields lockfile advice for a nested 
 test('pip-audit is given its own --cache-dir, so it never asks platformdirs for one', () => {
   assert.deepEqual(pipAuditCacheArgs('/tmp/mcm-pip-audit-x'), ['--cache-dir', '/tmp/mcm-pip-audit-x/pip-audit']);
   const src = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), '..', 'sast-scan.mjs'), 'utf8');
-  const call = src.split('\n').find((line) => line.includes("'--with', 'pip-audit', 'pip-audit'"));
-  assert.ok(call, 'the pip-audit invocation was not found: this guard is reading the wrong thing');
-  assert.match(call, /\.\.\.pipAuditCacheArgs\(cacheDir\)/);
+  // Every pip-audit invocation, injected through the pin since item #1120: the audit itself AND the
+  // `--version` check that precedes it. Each one touches platformdirs, so each one needs the flag.
+  const calls = src.split('\n').filter((line) => line.includes("...pipAuditWith(), 'pip-audit'"));
+  assert.ok(calls.length >= 2, `expected the audit and the --version check (found ${calls.length}): this guard is reading the wrong thing`);
+  for (const call of calls) assert.match(call, /\.\.\.pipAuditCacheArgs\(cacheDir\)/, `a pip-audit invocation has no --cache-dir: ${call.trim()}`);
   assert.match(src, /mkdtempSync\(join\(tmpdir\(\), 'mcm-pip-audit-'\)\)/);
 });
