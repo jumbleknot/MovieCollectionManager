@@ -72,6 +72,7 @@ const PROBES = [
     'reap-merged-branches.mjs',
     'check-no-server-imports.mjs',
     'check-web-bundle-budget.mjs',
+    'check-version-pins.mjs',
   ].map((s) => [s, ['--help'], helpNames(s)]),
   ['e2e-failure-set.mjs', ['summary', '<fixture>'], /^failed=1 flaky=0 passed=2\b/m],
 ];

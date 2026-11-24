@@ -1097,6 +1097,9 @@ maintaining it trades a floating reference for a rotting one.** So every pin bel
 | **pip-audit** | `scripts/sast-scan.mjs` (`PIP_AUDIT_PIN`, item #1120) | one | customManager, `pypi` | no — one manager, one depName |
 | **python** (the interpreter minor) | `agents/movie-assistant/.python-version` (3.14) — the images are held to it by a docker `allowedVersions` ceiling derived from that pin (`<3.15`) | **1 pin + 8 image refs + 4 `requires-python` floors + 4 lockfiles** | pyenv for the pin and docker for the images — **the same depName AND the same datasource**, so a rule keyed on datasource+packageName reaches both; pep621 sees the floors on the *python-version* datasource, deliberately out (see below); the locks ride `lockFileMaintenance` | **yes** — `python toolchain` (feature 067, item #366) |
 | **uv** | the version string, at every site | 3 install-script URLs + 5 `setup-uv` inputs + **4 image tags** (#308) | customManager (`github-releases`) for the first two shapes; the built-in **docker** manager for the image tags | **yes** — `uv pin`, which is what joins the two managers |
+| **docker compose** (dev container plugin) | `.devcontainer/toolchain.Dockerfile` (`DOCKER_COMPOSE_VERSION`) | one | the annotation-driven customManager (§10): `# renovate: datasource=github-releases depName=docker/compose` | no |
+| **PowerShell** (dev container) | `.devcontainer/toolchain.Dockerfile` (`POWERSHELL_VERSION`) | one | the annotation-driven customManager (§10), with `extractVersion` because the tags carry a `v` the ARG does not | no |
+| **gradle**, **Android command-line tools**, **Spec Kit**, **ccusage** | `.devcontainer/toolchain.Dockerfile` (`GRADLE_VERSION`, `ANDROID_CLT_VERSION`, `SPECKIT_VERSION`) and `scripts/lib/cc-usage/write-oracle.mjs` (`CCUSAGE_VERSION`) | one each | **deliberately not managed**: each has a written reason in `.forgejo/version-pin-exclusions.json` (§10) | — |
 
 ### python: the group fixes the DESTINATION, and the re-lock question is answered (item #366)
 
@@ -1288,10 +1291,74 @@ catches a key Renovate does not know; the guard test catches a key it knows but 
 is written** (the `prPriority`-inside-`lockFileMaintenance` case, §5 and `renovate.json`'s own
 comment).
 
+## 10. The version-pin guard (item #1128)
+
+§8's principle has to hold for the pins nobody remembers, not only the ones in the table. Renovate
+proposes nothing for a pin no manager sees, and nothing reports that silence: before this guard,
+every such pin (Renovate's own version #1126, Trivy #303, uv/rust/semgrep/pip-audit/cargo-audit
+#307 #1114 #1119 #1120) was found by someone reading the right file. Two of them, docker compose
+and PowerShell, even carried `# renovate:` annotations that **no manager read**.
+
+`node scripts/check-version-pins.mjs` runs as a step in guardrails' `renovate-config` job (required,
+unconditional, offline, Node built-ins only). It fails a PR that adds a pin nothing manages, and it
+prints every pin with the manager or reason that accounts for it, on green runs too.
+
+**What it scans** (`SCANNED_SURFACES`, tracked files only): `.forgejo/workflows/*.yml`;
+`scripts/**/*.{sh,mjs,ps1}` except `scripts/__tests__/`; every Dockerfile; `.devcontainer/**`.
+Never: `*.md`, `specs/`, `docs/`, `__tests__/`, `fixtures/`, `*-lock.json`. Manifest files such as
+`package.json`, `Cargo.toml`, `pyproject.toml`, `FROM` lines and `uses:` refs are not scanned,
+because Renovate's built-in managers read them by construction.
+
+**What a pin is** (three shapes):
+
+| shape | where | recognises |
+| --- | --- | --- |
+| `assignment` | every scanned file | `NAME=v`, `NAME: v`, Dockerfile `ENV NAME v`, `const NAME = 'v'`, PowerShell `$NAME = 'v'`. NAME is UPPER_SNAKE with `VERSION` or `PIN` as a whole `_` token (so not `SPINNER_*`). `v` is dotted (`1.2`, `v0.76.2`), or digits only outside JS (`ANDROID_CLT_VERSION=11076708`); a digits-only JS constant is a format version such as `PARSER_VERSION = 2` |
+| `action-input` | workflows | a `version:` or `*-version:` key in a step's `with:`, block or flow form (`with: { node-version: … }`), named `<action>:<input>` |
+| `command-spec` | shell only: workflow `run:` blocks, `*.sh`, Dockerfile `RUN` and its continuations | `tool@1.2.3`, `tool==1.2.3`. JS is excluded: a string there is not a command |
+
+Comment lines are never pins. A version inside a URL path (`astral.sh/uv/0.13.9/install.sh`) is out
+of sight: that is the known limit, and the Dependency Dashboard (item #29) lists what Renovate
+actually extracts.
+
+**How "managed" is decided.** A pin is managed when a `renovate.json` customManager's `matchStrings`
+**captures `currentValue` on that pin's line**. A file pattern that names the file is not enough:
+that is the nx #194 shape, where the manager matched the file and captured nothing. A version input of
+`actions/setup-node`, `actions/setup-python`, `actions/setup-go` or `astral-sh/setup-uv` is also
+managed: Renovate 44's github-actions manager reads them (`BUILTIN_ACTION_INPUTS`, copied from
+`dist/modules/manager/github-actions/known-actions/github-releases.js`; re-read it when
+`.forgejo/renovate-version` crosses a major). The evaluator supports the regex features
+`renovate.json` uses and **exits 3** on anything else, such as `matchStringsStrategy: combination`,
+rather than guessing.
+
+**Resolving a red run.** The line reads `UNMANAGED <file>:<line> <NAME> = <value>`. There are two
+remedies, in order of preference:
+
+1. **Manage it.** For a Dockerfile `ARG`/`ENV`, put
+   `# renovate: datasource=<d> depName=<n>[ extractVersion=<e>]` on the line above. The
+   annotation-driven customManager reads it, so no new manager is needed. Anywhere else, add a
+   customManager whose `matchStrings` captures the value. Then confirm the check lists it `managed`.
+2. **Excuse it**, in `.forgejo/version-pin-exclusions.json`: `{ "file", "name", "reason" }`. `file`
+   and `name` are exact, with no `*` or `?`. The reason must be at least 20 characters and say **why
+   a manager is wrong for this pin**. Legitimate reasons: something else owns the version (an SDK, a
+   wrapper, a recorded oracle), or upgrading it is a reviewed procedure a bot bump would bypass.
+   "Not worth a manager" is not a reason.
+
+**Exclusions cannot rot.** An exclusion that matches no pin is `STALE`, and one whose pins are all
+managed is `REDUNDANT`. A missing field, a wildcard, a short reason or a duplicate is `INVALID`. Each
+fails the check, naming the entry.
+
+**Exit codes**: 0 all accounted for; 1 a finding; 2 bad arguments; 3 the check could not run (an
+unreadable `renovate.json` or exclusions file, an unsupported manager feature, or `git ls-files`
+failing). An instrument failure is never reported as a finding. `--json` prints the classification.
+
 ## Related
 
 - `renovate.json` — grouping, version locks, cooldowns, and the reasoning for each
-- `.forgejo/workflows/guardrails.yml` — the `renovate-config` job (§9), the required config validator
+- `.forgejo/workflows/guardrails.yml` — the `renovate-config` job (§9), the required config validator,
+  and the version-pin guard step (§10)
+- `scripts/check-version-pins.mjs` / `.forgejo/version-pin-exclusions.json` — the version-pin guard
+  and its reasoned exclusions (§10, item #1128)
 - `rust-toolchain.toml` — the Rust pin (§8), read by renovate@44's built-in `rust-toolchain` manager
 - `.forgejo/workflows/renovate.yml` — schedule, toolchains, dispatch inputs
 - `scripts/__tests__/renovate-workflow.guard.test.mjs` — the assertions that keep the above true

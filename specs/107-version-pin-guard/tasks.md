@@ -30,9 +30,9 @@ appears only where a task touches a different file.
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 Create `scripts/check-version-pins.mjs` as an `isMain` CLI shell (`scripts/lib/is-main.mjs`) over the shared argv contract (`scripts/lib/argv-contract.mjs`: `wantsHelp`, `partitionArgs`, `dieOnArgvError`). It accepts only `--json` and `--help`/`-h` (contracts/cli.md). Export stubs `detectPins`, `managedOccurrences`, `classifyPins`, `loadExclusions`, `formatReport` and `checkTree`, so the tests fail on behaviour, not on import. Node built-ins only.
+- [X] T001 Create `scripts/check-version-pins.mjs` as an `isMain` CLI shell (`scripts/lib/is-main.mjs`) over the shared argv contract (`scripts/lib/argv-contract.mjs`: `wantsHelp`, `partitionArgs`, `dieOnArgvError`). It accepts only `--json` and `--help`/`-h` (contracts/cli.md). Export stubs `detectPins`, `managedOccurrences`, `classifyPins`, `loadExclusions`, `formatReport` and `checkTree`, so the tests fail on behaviour, not on import. Node built-ins only.
   - **Done when**: `node scripts/check-version-pins.mjs --help` prints a usage text naming `node scripts/check-version-pins.mjs` and exits 0, and `--bogus` exits 2.
-- [ ] T002 Create `scripts/__tests__/check-version-pins.test.mjs` with fixture helpers: an in-memory tree `{ path: text }` and a minimal renovate config object. Every rule test is then a pure function call.
+- [X] T002 Create `scripts/__tests__/check-version-pins.test.mjs` with fixture helpers: an in-memory tree `{ path: text }` and a minimal renovate config object. Every rule test is then a pure function call.
   - **Done when**: `node --test scripts/__tests__/check-version-pins.test.mjs` exits 0.
 - [x] T003 **Doc-impact sweep** (REQUIRED; constitution "Documentation").
   - Terms:
@@ -62,7 +62,7 @@ appears only where a task touches a different file.
 
 **Purpose**: the coverage evaluator (research R1, R2).
 
-- [ ] T004 Write the coverage tests (test names prefixed `coverage:`) in `scripts/__tests__/check-version-pins.test.mjs`:
+- [X] T004 Write the coverage tests (test names prefixed `coverage:`) in `scripts/__tests__/check-version-pins.test.mjs`:
   - **(a)** a customManager whose `managerFilePatterns` match and whose `matchStrings` capture `currentValue` on line N covers line N only;
   - **(b)** the same file pattern with a `matchStrings` that captures nothing covers nothing (the nx #194 shape);
   - **(c)** `/regex/` and glob `managerFilePatterns` entries, resolved against repository-relative forward-slash paths;
@@ -72,7 +72,7 @@ appears only where a task touches a different file.
   - **(g)** `BUILTIN_ACTION_INPUTS` is exactly the four entries in research R2.
   - **Scenarios covered**: FR-003; spec Edge Case "file pattern covers but match pattern misses"; FR-010 bullet 2; research R1 Known limit; R2 Drift guard.
   - **Verify RED**: `node --test --test-name-pattern="coverage:" scripts/__tests__/check-version-pins.test.mjs` → expected: 6 failing, with (a), (c), (d), (e), (f) and (g) red: `expected line 12 covered`, `Missing expected exception`. **(b) passes against the empty stub**, so its RED is the mutation in T005.
-- [ ] T005 Implement `managedOccurrences(tree, renovateConfig)` and `BUILTIN_ACTION_INPUTS` in `scripts/check-version-pins.mjs`:
+- [X] T005 Implement `managedOccurrences(tree, renovateConfig)` and `BUILTIN_ACTION_INPUTS` in `scripts/check-version-pins.mjs`:
   - compile each `matchStrings` entry with flags `gd`;
   - run it over each file a `managerFilePatterns` entry matches;
   - map each `currentValue` capture's start index to a 1-based line (data-model.md `Pin.line`);
@@ -97,7 +97,7 @@ value and both remedies. A malformed exclusion fails.
 
 ### Tests for User Story 1 (REQUIRED — TDD checkpoint format) ⚠️
 
-- [ ] T006 [US1] Write the `assignment` tests (prefix `assignment:`) in `scripts/__tests__/check-version-pins.test.mjs`. Each case yields exactly one Pin with the right `file`, `line`, `shape`, `name` and `value`:
+- [X] T006 [US1] Write the `assignment` tests (prefix `assignment:`) in `scripts/__tests__/check-version-pins.test.mjs`. Each case yields exactly one Pin with the right `file`, `line`, `shape`, `name` and `value`:
   - `FOO_VERSION=1.2.3` in a `.sh` file;
   - `ARG GRADLE_VERSION=9.4.1` in a Dockerfile;
   - `ENV X_VERSION 1.2` in a Dockerfile;
@@ -113,7 +113,7 @@ value and both remedies. A malformed exclusion fails.
   - `X_VERSION=${Y}`.
   - **Scenarios covered**: US1-AC1; FR-002 bullet 1; data-model.md `Pin.value` and `Pin.name`.
   - **Verify RED**: `node --test --test-name-pattern="assignment:" scripts/__tests__/check-version-pins.test.mjs` → expected: 7 failing (`expected 1 pin, got 0`). The four negative cases pass against the stub; their RED is the mutation in T011.
-- [ ] T007 [US1] Write the `action-input` tests (prefix `action-input:`) in `scripts/__tests__/check-version-pins.test.mjs`. Each case yields a Pin named `<owner>/<action>:<input>` on the input's own line:
+- [X] T007 [US1] Write the `action-input` tests (prefix `action-input:`) in `scripts/__tests__/check-version-pins.test.mjs`. Each case yields a Pin named `<owner>/<action>:<input>` on the input's own line:
   - block form: `- uses: actions/setup-node@<sha>`, then a comment line, then `with:`, then an indented `node-version: 26.13.1`;
   - flow form: `with: { node-version: 26.13.1, cache: pnpm }`;
   - `version: '0.13.9' # uv-version` under `astral-sh/setup-uv`.
@@ -121,7 +121,7 @@ value and both remedies. A malformed exclusion fails.
   `cache:` yields nothing. A `with:` under a step with no `uses:` throws, naming file and line.
   - **Scenarios covered**: FR-002 bullet 2; research R3 (flow form).
   - **Verify RED**: `node --test --test-name-pattern="action-input:" scripts/__tests__/check-version-pins.test.mjs` → expected: 4 failing.
-- [ ] T008 [US1] Write the `command-spec` and not-a-pin tests (prefixes `command-spec:` and `not a pin:`) in `scripts/__tests__/check-version-pins.test.mjs`.
+- [X] T008 [US1] Write the `command-spec` and not-a-pin tests (prefixes `command-spec:` and `not a pin:`) in `scripts/__tests__/check-version-pins.test.mjs`.
 
   Each of these yields one Pin:
   - `npm install -g openwiki@1.2.3` in a workflow `run: |` block;
@@ -136,7 +136,7 @@ value and both remedies. A malformed exclusion fails.
   - any file outside `SCANNED_SURFACES`: a `*.md`, a `specs/` file, `pnpm-lock.yaml`, `.devcontainer/devcontainer-lock.json`, or a `scripts/__tests__/fixtures/` file.
   - **Scenarios covered**: FR-001; FR-002 bullet 3; FR-010 bullet 5; spec Edge Case "Versions that are not pins".
   - **Verify RED**: `node --test --test-name-pattern="command-spec:|not a pin:" scripts/__tests__/check-version-pins.test.mjs` → expected: 4 failing, the four positive cases. The negative cases pass against the stub; their RED is the mutation in T011.
-- [ ] T009 [US1] Write the verdict tests (prefix `verdict:`) in `scripts/__tests__/check-version-pins.test.mjs`:
+- [X] T009 [US1] Write the verdict tests (prefix `verdict:`) in `scripts/__tests__/check-version-pins.test.mjs`:
   - **(a)** an uncovered, unexcluded Pin → `unmanaged`, `ok: false`;
   - **(b)** a covered Pin → `managed` with its manager, and `coverage: "custom"`;
   - **(c)** a setup-node action-input → `managed` by `github-actions:actions/setup-node`, with `coverage: "builtin"`;
@@ -146,7 +146,7 @@ value and both remedies. A malformed exclusion fails.
   - **(g)** CLI exit codes, through `checkTree` with injected inputs: 1 for (a), 0 for (b)–(e), and 3 when renovate.json does not parse.
   - **Scenarios covered**: US1-AC1, US1-AC2, US1-AC3; FR-004; FR-008; FR-010 bullet 1; contracts/cli.md.
   - **Verify RED**: `node --test --test-name-pattern="verdict:" scripts/__tests__/check-version-pins.test.mjs` → expected: 7 failing.
-- [ ] T010 [US1] Write the exclusion-validity tests (prefix `invalid exclusion:`) in `scripts/__tests__/check-version-pins.test.mjs`. Each of these is invalid and names the entry:
+- [X] T010 [US1] Write the exclusion-validity tests (prefix `invalid exclusion:`) in `scripts/__tests__/check-version-pins.test.mjs`. Each of these is invalid and names the entry:
   - **(a)** a missing `reason`;
   - **(b)** `reason: "n/a"`, which is under 20 characters;
   - **(c)** a `name` containing `*`;
@@ -161,7 +161,7 @@ value and both remedies. A malformed exclusion fails.
 
 ### Implementation for User Story 1
 
-- [ ] T011 [US1] Implement `detectPins(tree)` and `SCANNED_SURFACES` in `scripts/check-version-pins.mjs`.
+- [X] T011 [US1] Implement `detectPins(tree)` and `SCANNED_SURFACES` in `scripts/check-version-pins.mjs`.
 
   The shapes (research R3; data-model.md `Pin.file`, `Pin.line`, `Pin.shape`, `Pin.name`, `Pin.value`):
   - `assignment`: in every scanned file;
@@ -183,11 +183,11 @@ value and both remedies. A malformed exclusion fails.
     - remove the surface filter.
 
     Each removal must turn its named test red.
-- [ ] T012 [US1] Implement `classifyPins(pins, coverage, exclusions)`, `formatReport`, the `--json` output and the exit codes in `scripts/check-version-pins.mjs`. Classification follows data-model.md `Verdict.managed`, `Verdict.excluded` and `Verdict.unmanaged`, with `Coverage.kind` custom before builtin. Failures go to stderr as well. Every instrument failure exits 3, never 1. (Prerequisite: T009 verified RED.)
+- [X] T012 [US1] Implement `classifyPins(pins, coverage, exclusions)`, `formatReport`, the `--json` output and the exit codes in `scripts/check-version-pins.mjs`. Classification follows data-model.md `Verdict.managed`, `Verdict.excluded` and `Verdict.unmanaged`, with `Coverage.kind` custom before builtin. Failures go to stderr as well. Every instrument failure exits 3, never 1. (Prerequisite: T009 verified RED.)
   - **Verify GREEN**: `node --test --test-name-pattern="verdict:" scripts/__tests__/check-version-pins.test.mjs` → `ℹ fail 0`, 7 passing. Then a **mutation RED for (d)**: swap the order to builtin first. (d) must turn red. Revert.
-- [ ] T013 [US1] Implement `loadExclusions(text)` in `scripts/check-version-pins.mjs`. The validity rules are data-model.md `Exclusion.file`, `Exclusion.name` and `Exclusion.reason`, plus the duplicate rule. Invalid entries are reported as `Verdict.invalidExclusions`. Unparseable input, or input that is not an array, throws, and the throw becomes exit 3. A missing exclusions file is an empty list. (Prerequisite: T010 verified RED.)
+- [X] T013 [US1] Implement `loadExclusions(text)` in `scripts/check-version-pins.mjs`. The validity rules are data-model.md `Exclusion.file`, `Exclusion.name` and `Exclusion.reason`, plus the duplicate rule. Invalid entries are reported as `Verdict.invalidExclusions`. Unparseable input, or input that is not an array, throws, and the throw becomes exit 3. A missing exclusions file is an empty list. (Prerequisite: T010 verified RED.)
   - **Verify GREEN**: `node --test --test-name-pattern="invalid exclusion:" scripts/__tests__/check-version-pins.test.mjs` → `ℹ fail 0`, 7 passing; then the whole file → `ℹ fail 0`.
-- [ ] T014 [US1] Run quickstart.md scenario 2 by hand on the real tree.
+- [X] T014 [US1] Run quickstart.md scenario 2 by hand on the real tree.
   - **Done when**: exit 1 with the `UNMANAGED scripts/ci-install-trivy.sh:<n> FOO_VERSION = 1.2.3` line and both remedies; then `git checkout -- scripts/ci-install-trivy.sh`. The day-one pins may also be listed; US2 resolves them.
 
 **Checkpoint**: detector, verdict and exclusion validity work on fixtures and on the real tree.
@@ -203,46 +203,55 @@ and the summary reads `0 unmanaged · 0 stale · 0 redundant · 0 invalid`.
 
 ### Tests for User Story 2 (REQUIRED — TDD checkpoint format) ⚠️
 
-- [ ] T015 [US2] Write the repository tests (prefix `repository tree:`) in `scripts/__tests__/check-version-pins.test.mjs`:
+- [X] T015 [US2] Write the repository tests (prefix `repository tree:`) in `scripts/__tests__/check-version-pins.test.mjs`:
   - **(a)** `checkTree()` on the real tree returns `ok: true`. On failure, the message lists each unmanaged pin as `file:line name = value`.
   - **(b)** Two `checkTree()` calls return deep-equal results (SC-004).
   - **(c)** The script's imports are only `node:` built-ins and `./lib/` modules, and it contains no `fetch(`, `node:http` or `node:https` (FR-009).
   - **Scenarios covered**: US2-AC2; SC-002; SC-004; FR-009; FR-011.
   - **Verify RED**: `node --test --test-name-pattern="repository tree:" scripts/__tests__/check-version-pins.test.mjs` → expected: (a) fails, listing the day-one pins (research R4: six). (b) and (c) pass by construction; their RED is a mutation in T026.
-- [ ] T016 [US2] Record the day-one inventory from `node scripts/check-version-pins.mjs --json` on the unmodified tree: the count by status, and every `unmanaged` entry.
+- [X] T016 [US2] Record the day-one inventory from `node scripts/check-version-pins.mjs --json` on the unmodified tree: the count by status, and every `unmanaged` entry.
   - **Done when**: pasted below. Any pin beyond research R4's six gets a resolution task appended here.
-  - Inventory: _(to be filled)_
+  - Inventory (2026-11-24, `node scripts/check-version-pins.mjs` on the unmodified tree): **44 pins: 38 managed, 0 excluded, 6 unmanaged**.
+    The 38 managed: 25 setup-node inputs (built-in), 5 setup-uv inputs (customManager `astral-sh/uv`, which wins over the built-in), and 8 customManager pins (openwiki, cargo-audit ×2, MAESTRO, RUSTUP, TRIVY, SEMGREP, PIP_AUDIT).
+    The 6 unmanaged pins, exactly research R4's six, so T025 had nothing to add:
+    - `.devcontainer/toolchain.Dockerfile:145 DOCKER_COMPOSE_VERSION = v5.3.1` → T017
+    - `.devcontainer/toolchain.Dockerfile:176 ANDROID_CLT_VERSION = 11076708` → T021
+    - `.devcontainer/toolchain.Dockerfile:224 GRADLE_VERSION = 9.4.1` → T022
+    - `.devcontainer/toolchain.Dockerfile:285 SPECKIT_VERSION = v1.4.2` → T020
+    - `.devcontainer/toolchain.Dockerfile:312 POWERSHELL_VERSION = 7.6.5` → T017 + T018
+    - `scripts/lib/cc-usage/write-oracle.mjs:13 CCUSAGE_VERSION = 20.0.48` → T023
+    After resolution: **44 pins: 40 managed, 4 excluded, 0 unmanaged · 0 stale · 0 redundant · 0 invalid** (found 6 = resolved 6, SC-003).
 
 ### Implementation for User Story 2
 
 The resolutions are in research R4. The repository test (T015) is the RED, and T026 is the GREEN.
 
-- [ ] T017 [US2] Add the annotation-driven customManager to `renovate.json` (research R4):
+- [X] T017 [US2] Add the annotation-driven customManager to `renovate.json` (research R4):
   - `managerFilePatterns`: Dockerfiles;
   - `matchStrings`: `# renovate: datasource=… depName=…[ extractVersion=…]` followed by an `ARG`/`ENV` `NAME=value` line;
   - capture groups: `datasource`, `depName`, `extractVersion`, `currentValue`;
   - a `description` saying why it exists (the two annotations no manager read).
   - **Done when**: `node scripts/check-version-pins.mjs` reports `DOCKER_COMPOSE_VERSION ← docker/compose` as managed.
-- [ ] T018 [P] [US2] Add `extractVersion=^v(?<version>.+)$` to the `POWERSHELL_VERSION` annotation in `.devcontainer/toolchain.Dockerfile`: the tags are `v7.6.5`, and the ARG is `7.6.5`.
+- [X] T018 [P] [US2] Add `extractVersion=^v(?<version>.+)$` to the `POWERSHELL_VERSION` annotation in `.devcontainer/toolchain.Dockerfile`: the tags are `v7.6.5`, and the ARG is `7.6.5`.
   - **Done when**: the check reports `POWERSHELL_VERSION ← PowerShell/PowerShell` as managed.
-- [ ] T019 [US2] Validate the edited config: `npx --yes --package renovate@"$(cat .forgejo/renovate-version)" -- renovate-config-validator --strict --no-global renovate.json` (the guardrails invocation).
+- [X] T019 [US2] Validate the edited config: `npx --yes --package renovate@"$(cat .forgejo/renovate-version)" -- renovate-config-validator --strict --no-global renovate.json` (the guardrails invocation).
   - **Done when**: exit 0.
-- [ ] T020 [US2] Create `.forgejo/version-pin-exclusions.json` (contracts/exclusions-file.md; data-model.md `Exclusion.file`, `Exclusion.name`, `Exclusion.reason`) with entries for `.devcontainer/toolchain.Dockerfile` `SPECKIT_VERSION`, carrying the research R4 reason.
+- [X] T020 [US2] Create `.forgejo/version-pin-exclusions.json` (contracts/exclusions-file.md; data-model.md `Exclusion.file`, `Exclusion.name`, `Exclusion.reason`) with entries for `.devcontainer/toolchain.Dockerfile` `SPECKIT_VERSION`, carrying the research R4 reason.
   - **Done when**: the check lists it `excluded` with that reason.
-- [ ] T021 [US2] Add the `ANDROID_CLT_VERSION` exclusion to `.forgejo/version-pin-exclusions.json` (research R4 reason).
+- [X] T021 [US2] Add the `ANDROID_CLT_VERSION` exclusion to `.forgejo/version-pin-exclusions.json` (research R4 reason).
   - **Done when**: listed `excluded`.
-- [ ] T022 [US2] Add the `GRADLE_VERSION` exclusion to `.forgejo/version-pin-exclusions.json`. The reason says it must equal the wrapper version that `expo prebuild` generates (`android/` is gitignored, CNG), so it moves with an Expo SDK upgrade.
+- [X] T022 [US2] Add the `GRADLE_VERSION` exclusion to `.forgejo/version-pin-exclusions.json`. The reason says it must equal the wrapper version that `expo prebuild` generates (`android/` is gitignored, CNG), so it moves with an Expo SDK upgrade.
   - **Done when**: listed `excluded`.
-- [ ] T023 [US2] Add the `scripts/lib/cc-usage/write-oracle.mjs` `CCUSAGE_VERSION` exclusion to `.forgejo/version-pin-exclusions.json`. The reason says the committed oracle records `ccusage@<this version>`, and a bump means a re-record plus a review (research R4).
+- [X] T023 [US2] Add the `scripts/lib/cc-usage/write-oracle.mjs` `CCUSAGE_VERSION` exclusion to `.forgejo/version-pin-exclusions.json`. The reason says the committed oracle records `ccusage@<this version>`, and a bump means a re-record plus a review (research R4).
   - **Done when**: listed `excluded`.
-- [ ] T024 [US2] Run `node --test scripts/__tests__/renovate-workflow.guard.test.mjs`. If one of its guards fails because of the new manager, update that guard at the cause so it asserts the new premise; never delete it (AGENTS.md).
+- [X] T024 [US2] Run `node --test scripts/__tests__/renovate-workflow.guard.test.mjs`. If one of its guards fails because of the new manager, update that guard at the cause so it asserts the new premise; never delete it (AGENTS.md).
   - **Done when**: `ℹ fail 0`.
-- [ ] T025 [US2] Resolve each additional unmanaged pin that T016 found, as in T017–T023.
+- [X] T025 [US2] Resolve each additional unmanaged pin that T016 found, as in T017–T023.
   - **Done when**: the count found equals the count resolved, recorded in T016 (SC-003).
-- [ ] T026 [US2] Make the repository tests pass. (Prerequisite: T015 verified RED; T017–T025 done.)
+- [X] T026 [US2] Make the repository tests pass. (Prerequisite: T015 verified RED; T017–T025 done.)
   - **Verify GREEN**: `node --test --test-name-pattern="repository tree:" scripts/__tests__/check-version-pins.test.mjs` → `ℹ fail 0`; `node scripts/check-version-pins.mjs` → exit 0 with the zero summary (SC-005).
   - Then the **mutation REDs** for (b) and (c), each reverted:
-    - make the report embed `Date.now()`, and (b) must turn red;
+    - add a `Math.random()` field to the result, and (b) must turn red;
     - add `import 'node:https'`, and (c) must turn red.
 
 **Checkpoint**: the real tree is green on a per-pin inventory.
@@ -257,7 +266,7 @@ The resolutions are in research R4. The repository test (T015) is the RED, and T
 
 ### Tests for User Story 3 (REQUIRED — TDD checkpoint format) ⚠️
 
-- [ ] T027 [US3] Write the stale and redundant tests (prefixes `stale:` and `redundant:`) in `scripts/__tests__/check-version-pins.test.mjs`:
+- [X] T027 [US3] Write the stale and redundant tests (prefixes `stale:` and `redundant:`) in `scripts/__tests__/check-version-pins.test.mjs`:
   - **(a)** an exclusion matching no Pin → `STALE exclusion {file: x, name: Y} matches no pin — delete it`;
   - **(b)** an exclusion whose Pins are all covered → `REDUNDANT`, naming the manager;
   - **(c)** an exclusion matching two occurrences, one covered and one not, is neither;
@@ -267,16 +276,16 @@ The resolutions are in research R4. The repository test (T015) is the RED, and T
 
 ### Implementation for User Story 3
 
-- [ ] T028 [US3] Extend `classifyPins` in `scripts/check-version-pins.mjs` with data-model.md `Verdict.staleExclusions` and `Verdict.redundantExclusions` and their report lines (contracts/cli.md). (Prerequisite: T027 verified RED.)
+- [X] T028 [US3] Extend `classifyPins` in `scripts/check-version-pins.mjs` with data-model.md `Verdict.staleExclusions` and `Verdict.redundantExclusions` and their report lines (contracts/cli.md). (Prerequisite: T027 verified RED.)
   - **Verify GREEN**: `node --test --test-name-pattern="stale:|redundant:" scripts/__tests__/check-version-pins.test.mjs` → `ℹ fail 0`. Then a **mutation RED**: change "redundant" to mean "any matched pin is covered". (c) must turn red. Revert. Then the whole file → `ℹ fail 0`.
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T029 Add the step `run: bash scripts/ci-log-step.sh renovate-config-version-pins node scripts/check-version-pins.mjs` to the `renovate-config` job in `.forgejo/workflows/guardrails.yml`, after the pinned-sha256 step (research R5). Add `check-version-pins.mjs` to `PROBES` in `scripts/__tests__/cli-entry-guard.guard.test.mjs`.
+- [X] T029 Add the step `run: bash scripts/ci-log-step.sh renovate-config-version-pins node scripts/check-version-pins.mjs` to the `renovate-config` job in `.forgejo/workflows/guardrails.yml`, after the pinned-sha256 step (research R5). Add `check-version-pins.mjs` to `PROBES` in `scripts/__tests__/cli-entry-guard.guard.test.mjs`.
   - **Done when**: `node --test scripts/__tests__/cli-entry-guard.guard.test.mjs` → `ℹ fail 0`, and every guard test naming `renovate-config` passes.
-- [ ] T030 [P] Add the section "The version-pin guard (item #1128)" to `docs/runbooks/renovate.md` after §9 (FR-012). It covers:
+- [X] T030 [P] Add the section "The version-pin guard (item #1128)" to `docs/runbooks/renovate.md` after §9 (FR-012). It covers:
   - the scanned surfaces, including `.ps1`, and what is out of sight;
   - the three shapes, and the value rules;
   - per-occurrence coverage, and the built-in table with its re-read on a Renovate major;
@@ -287,23 +296,31 @@ The resolutions are in research R4. The repository test (T015) is the RED, and T
 
   Also update the §9 "where" table and the Related entry (T003 hits).
   - **Done when**: the section exists, and the T003 hits are updated.
-- [ ] T031 [P] Add §8 pin-table rows in `docs/runbooks/renovate.md` for docker compose and PowerShell (managed by the annotation manager), and for gradle, Android command-line tools, Spec Kit and ccusage (excluded, with their file).
+- [X] T031 [P] Add §8 pin-table rows in `docs/runbooks/renovate.md` for docker compose and PowerShell (managed by the annotation manager), and for gradle, Android command-line tools, Spec Kit and ccusage (excluded, with their file).
   - **Done when**: there is one row per day-one pin.
-- [ ] T032 [P] In `docs/runbooks/spec-kit.md:47` (row 6), say that `SPECKIT_VERSION` is deliberately excluded from Renovate in `.forgejo/version-pin-exclusions.json`, so the upgrade procedure is the only way it moves.
+- [X] T032 [P] In `docs/runbooks/spec-kit.md:47` (row 6), say that `SPECKIT_VERSION` is deliberately excluded from Renovate in `.forgejo/version-pin-exclusions.json`, so the upgrade procedure is the only way it moves.
   - **Done when**: the row says so.
-- [ ] T033 Refresh the openwiki pages whose `resource` changed: `node scripts/wiki-refresh.mjs --stale`, then per page `--diff`, an edit, and `--record` (`.claude/skills/wiki-refresh/SKILL.md`).
+- [X] T033 Refresh the openwiki pages whose `resource` changed: `node scripts/wiki-refresh.mjs --stale`, then per page `--diff`, an edit, and `--record` (`.claude/skills/wiki-refresh/SKILL.md`).
   - **Done when**: `--stale` reports nothing.
-- [ ] T034 **Close-out re-search**: re-run T003's searches. Nothing was renamed, so confirm the converse: the new identifiers appear in `docs/runbooks/renovate.md` and its openwiki page, and every hit T003 sent to a task is updated.
+- [X] T034 **Close-out re-search**: re-run T003's searches. Nothing was renamed, so confirm the converse: the new identifiers appear in `docs/runbooks/renovate.md` and its openwiki page, and every hit T003 sent to a task is updated.
   - **Done when**: one line per term is recorded here.
-- [ ] T035 Run quickstart.md scenarios 1, 2 and 6 by hand.
+  - Result: `check-version-pins` → `docs/runbooks/renovate.md` §10 and Related, and `openwiki/runbooks/renovate.md`. `version-pin-exclusions` → those two plus `docs/runbooks/spec-kit.md` row 6 and `openwiki/runbooks/spec-kit.md`.
+    The T003 hits: §8 pin table (T031) updated; Related updated; spec-kit row 6 (T032) updated.
+    The §9 "where" table is left unchanged on reflection: it lists where the *validator* runs, and the guard is a separate step, documented in §10 and in Related.
+- [X] T035 Run quickstart.md scenarios 1, 2 and 6 by hand.
   - **Done when**: as stated there.
-- [ ] T036 Run the touched tiers against a `main` baseline:
+- [X] T036 Run the touched tiers against a `main` baseline:
   - `node --test scripts/__tests__/` on this branch and on `origin/main`, where any failure new on the branch is a regression;
   - `pnpm nx okf-lint infrastructure-as-code`;
   - `pnpm nx okf-governance infrastructure-as-code`;
   - `node scripts/check-toolchain-consistency.mjs`.
 
   No `backend/`, `frontend/`, `agents/` or `mcp-servers/` path changes, so the app tiers and the web E2E regression do not apply (`openwiki/invariants/feature-validation-checklist.md`). Record that here.
+  - Result (Windows host, Node 24.14.1):
+    - `node --test scripts/__tests__/*.test.mjs` (the CI glob): branch 2386 tests, 87 fail; `origin/main` 6dd409d1, 2329 tests, 87 fail. The failure sets are **identical** (`comm` of the sorted `✖` names: nothing new, nothing fixed). They are host-shaped (bash, pnpm on PATH, systemd units) and pass in CI. The 57 new tests all pass.
+    - `okf-lint` ✅ 78 concepts; `okf-governance` ✅; `check-toolchain-consistency` ✅.
+    - The strict validator (T019) exited 0: "Config validated successfully".
+    - All mutation REDs (T005, T011, T012, T026, T028) turned their named tests red, with the source restored after each.
   - **Done when**: every command passes, or each failure is shown identical on `origin/main`.
 - [ ] T037 **Open the PR** from a real branch: `git push origin HEAD:107-version-pin-guard`, then `node scripts/forge-pr.mjs open` (`docs/runbooks/ci-diagnostics.md`). Tick this task in the LAST commit, quoting the branch, the PR number and the sha. **No CI evidence here**: it goes in the PR's closing comment and item #1128's, posted with `MCM_FORGE_ISSUE_TOKEN`.
 

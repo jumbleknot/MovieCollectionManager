@@ -3,9 +3,9 @@ type: Runbook
 title: "Spec Kit: this repository's customisations, and upgrading it"
 description: The one inventory of every way the repository changes or adds to GitHub Spec Kit — the tasks-template override carrying the doc-impact sweep, the required tests and the Verify RED / Verify GREEN checkpoint format it shows, the three registered local edits (the /speckit-tasks skill's and the Copilot tasks agent's "tests are required" rule, and /speckit-converge appending its tasks in that format), the project-owned /speckit-taskstoissues skill that sends tasks to the Forgejo backlog, the constitution, the git and agent-context extension hooks, and the three CLI version pins — plus who owns which file, the order of preference for a new customisation, the guard that fails when any of them is lost or a Spec Kit-owned file is edited without being registered, its twelve failure codes, the upgrade procedure, and the known gaps (/speckit-constitution, the frozen Copilot files).
 resource: docs/runbooks/spec-kit.md
-resource-sha256: 35bb22c6bbce18540ec9f8cb0a9abdc6275175a677dedf66dbfcf19a5eda2cab
+resource-sha256: bd20548151b37142210849d2c3afdd56421f6caa8a15f9fff7a1eee8332de32e
 tags: [spec-kit, sdd, templates, guardrails, upgrade, runbook]
-timestamp: 2026-11-19T00:40:29.169Z
+timestamp: 2026-11-24T23:30:55.463Z
 ---
 
 # Spec Kit: this repository's customisations, and upgrading it
@@ -54,7 +54,9 @@ a core template.
    auto-commits, which run even when marked optional; the `agent-context` extension's rewrite of
    AGENTS.md's `SPECKIT` region; converge has `before_`/`after_converge` hooks like the rest, off in
    `git-config.yml` like every event, and re-added by hand because reinstalling the `git` extension
-   drops them) and **three CLI version pins** that must move together.
+   drops them) and **three CLI version pins** that must move together. `SPECKIT_VERSION` is
+   deliberately excluded from Renovate (`.forgejo/version-pin-exclusions.json`, item #1128), so the
+   upgrade procedure is the only way it moves.
 
 ## The guard
 

@@ -1,0 +1,22 @@
+[
+  {
+    "file": ".devcontainer/toolchain.Dockerfile",
+    "name": "ANDROID_CLT_VERSION",
+    "reason": "A build number in a dl.google.com zip name (commandlinetools-linux-<n>_latest.zip). Google publishes no release feed for the Android command-line tools that any Renovate datasource reads, so no manager can propose a bump; it is moved by hand together with the Android SDK layer it installs (ANDROID_API in the same Dockerfile)."
+  },
+  {
+    "file": ".devcontainer/toolchain.Dockerfile",
+    "name": "GRADLE_VERSION",
+    "reason": "Must equal the distributionUrl version in frontend/mcm-app/android/gradle/wrapper/gradle-wrapper.properties, which `expo prebuild` generates from the Expo SDK (android/ is gitignored, CNG). It therefore moves with an Expo SDK upgrade; a bump on Gradle's own release cadence would only make the baked distribution miss the wrapper."
+  },
+  {
+    "file": ".devcontainer/toolchain.Dockerfile",
+    "name": "SPECKIT_VERSION",
+    "reason": "Must equal .specify/init-options.json `speckit_version`. A Spec Kit upgrade is the reviewed procedure in docs/runbooks/spec-kit.md: the repository's overrides are re-checked against the new templates. A bot bump would install a CLI newer than the checked-in scripts and skills."
+  },
+  {
+    "file": "scripts/lib/cc-usage/write-oracle.mjs",
+    "name": "CCUSAGE_VERSION",
+    "reason": "Names the ccusage release that recorded the committed oracle (scripts/__tests__/fixtures/cc-usage/ccusage-oracle.json, \"tool\": \"ccusage@<version>\"). CI compares the parser with that file and never re-runs ccusage, so a bot bump would arrive green while the constant named a release the oracle was not recorded by. A bump means re-recording with `pnpm nx cc-usage-oracle infrastructure-as-code` and reviewing the changed totals."
+  }
+]

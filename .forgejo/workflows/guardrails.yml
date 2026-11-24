@@ -513,6 +513,13 @@ jobs:
       # any install. Three small GETs; GITHUB_COM_TOKEN is deliberately not needed (60/h anonymous).
       - name: Re-verify pinned sha256s against their publishers
         run: bash scripts/ci-log-step.sh renovate-config-pinned-sha256 node scripts/refresh-pinned-sha256.mjs --check
+      # Item #1128 (feature 107) — every hand-written version pin (workflows, scripts/, Dockerfiles,
+      # .devcontainer/) is captured by a renovate.json customManager or Renovate's built-in
+      # github-actions inputs, or excused with a reason in .forgejo/version-pin-exclusions.json. A pin
+      # no manager sees ages silently; this makes the next one red on the PR that adds it. Offline,
+      # Node built-ins only, tracked files only. Exit 3 = the check could not run, never a finding.
+      - name: Every version pin is managed by Renovate or excused
+        run: bash scripts/ci-log-step.sh renovate-config-version-pins node scripts/check-version-pins.mjs
       # Feature 042 — publish an agent-readable failure digest. The forge API exposes no log or
       # artifact endpoint, so each job PUSHES a distilled, redacted digest into a channel the API can
       # already read (a PR comment, or a commit status on push).
