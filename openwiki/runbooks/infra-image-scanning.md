@@ -3,10 +3,10 @@ type: Runbook
 title: Infra-image CVE scanning
 description: Trivy's keyless, twice-weekly sweep over the third-party server images this project pulls but does not build (Keycloak, Postgres, Mongo, Vault, OpenSearch, Langfuse, Grafana, Unleash, Caddy, RustFS and the rest of infrastructure-as-code), plus how to read or triage a red result — one scanner per image, the fixable-Critical-only gate, the allowlist cohorts and how an entry is discharged, the bounded retry, the one pinned installer all three scanning workflows share, the shared per-image pipeline both the PR and the deploy call, the labelled container holds that keep the PR's run-scoped scan tags alive across another run's prune, and the publish-versus-promote split.
 resource: docs/runbooks/infra-image-scanning.md
-resource-sha256: 8729a23c059a742ca7fd67a511046453c140361ee9463d44a5cdd7f18f4ff2ff
+resource-sha256: 9a69db745cee248d2f21c840d2982908fa9f9e16b42076707dee1f835c4f4531
 tags: [security, cve, trivy, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-25T01:14:36.830Z
+timestamp: 2026-11-25T18:54:41.460Z
 ---
 
 # Infra-image CVE scanning
@@ -216,7 +216,11 @@ findings readable.
   failure message is the **tail** (`readTail`, last 2000 chars), never the head: Trivy opens with
   `INFO` lines, and a head-truncated sample ended mid-URL, exactly where the HTTP status would have
   been. No DB cache and no extra mirror were adopted: Trivy's default `--db-repository` is already a
-  fallback list, and cross-run caching is not available on this forge.
+  fallback list, and cross-run caching is not available on this forge. The two host-runner scans
+  (`app-image-scan`, `build-deploy`) deliberately start empty too. They keep Trivy and its database in
+  a job-private `${{ runner.temp }}/mcm-trivy` and remove it afterwards, because that host's
+  `~/.local/bin` and `~/.cache/trivy` are shared with another project's runner (item #1146). A fresh
+  database costs about 5 s, and the Java database about 24 s more.
 - **Keyless and fail-closed**, matching the posture in
   [Secrets management](../invariants/secrets-management.md) and
   [SAST/SCA scanning](./sast-scanning.md) — a Trivy/pull/parse failure fails the job

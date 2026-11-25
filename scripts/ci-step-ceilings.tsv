@@ -59,6 +59,7 @@ mcp-integration-web-api	300	n=40 max=4s x3=12s -> floor 300s; runs 3503..3103
 # app-e2e-remove-pnpm	-	new in item #1144; NO observations yet. One rm -rf; the backstop bounds it.
 # app-image-scan-install-pnpm	-	new in item #1144; NO observations yet. As app-e2e-install-pnpm.
 # app-image-scan-remove-pnpm	-	new in item #1144; NO observations yet. One rm -rf.
+# app-image-scan-remove-trivy	-	new in item #1146; NO observations yet. One rm -rf of the job-private Trivy + DB.
 #   The `app-image-scan` steps run in their own job, bounded by its CI_STEP_TIMEOUT_SECONDS (900s).
 # app-e2e-build-images	-	split out of app-e2e-bring-up-keycloak (feature 073); NO observations
 #   yet under this name. It is the cache-dependent half: ~0s when the Docker layer cache hits,
