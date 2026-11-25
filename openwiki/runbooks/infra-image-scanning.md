@@ -338,12 +338,13 @@ findings readable.
     advisory, the entry is **deleted** rather than re-keyed — a re-keyed entry would match nothing and
     fail the expiry check, and deleting is the direction that restores blocking. Comment blocks left
     above an absent entry are the file's history, not a live suppression.
-  - **Live inventory (2026-11-24, after item #1140): one entry.** An un-expiring BASELINE entry carries the
-    Go-stdlib Critical (`CVE-2025-68121`) on `postgres:18.6-alpine3.23`, recording its own measurement because no tag on that line clears it (the shipped binary carrying it is
-    `usr/local/bin/gosu`). It was a tag-only key until item #1130 re-keyed it, mechanically and
-    without a re-scan, to the digest pulled on 2026-11-24, so the next digest bump re-evaluates it. Item #1140 moved the observability
-    `postgres:18-alpine` to `sha256:0115267ab5a5` (PostgreSQL 18.7, gosu 1.20, Alpine 3.24.4), whose scan cleared both its
-    `CVE-2025-68121` and brotli (`CVE-2026-111497`) entries, so both were deleted. The OpenSearch netty key
+  - **Live inventory (2026-11-24, after item #1140): two entries.** Two un-expiring BASELINE entries carry the same
+    Go-stdlib Critical (`CVE-2025-68121`) on `postgres:18.6-alpine3.23` and `postgres:18-alpine`, each
+    recording its own measurement because no reachable tag clears it (the shipped binary carrying it is
+    `usr/local/bin/gosu`). The 18.6 one was re-keyed by item #1130 mechanically, without a re-scan. Item #1140 moved the observability
+    `postgres:18-alpine` to `sha256:0115267ab5a5` (PostgreSQL 18.7, gosu 1.20, Alpine 3.24.4). Its scan cleared the brotli
+    `CVE-2026-111497` Critical, so that entry was deleted, but gosu 1.20 still ships stdlib v1.24.6, so that entry was re-keyed
+    to the new digest on that measurement. The OpenSearch netty key
     (`CVE-2026-75595`) and the caddy and postgres-18.6 brotli keys were deleted on 2026-11-24: each named a
     digest the repository no longer pulls, and `infra-image-scan` passes on the new digests unsuppressed.
     Everything else in the file is a comment block recording an entry that has been discharged — history,
