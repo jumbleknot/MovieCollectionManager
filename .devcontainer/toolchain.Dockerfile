@@ -308,7 +308,7 @@ RUN curl -LsSf https://astral.sh/uv/0.13.9/install.sh | sh \
 # above is the bulk of the one-time build cost (SC-011). Inserting this beside the other root-level
 # tools would rebuild that for a 100 MB tarball. Slow->fast ordering (research D4) puts it here.
 #
-# renovate: datasource=github-releases depName=PowerShell/PowerShell
+# renovate: datasource=github-releases depName=PowerShell/PowerShell extractVersion=^v(?<version>.+)$
 ARG POWERSHELL_VERSION=7.6.5
 USER root
 RUN set -eux; \

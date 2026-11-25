@@ -425,6 +425,24 @@
       "matchStrings": ["npm install -g openwiki@(?<currentValue>[\\d.]+)"],
       "depNameTemplate": "openwiki",
       "datasourceTemplate": "npm"
+    },
+    {
+      "customType": "regex",
+      "description": [
+        "Item #1128 (feature 107): make a `# renovate: datasource=<d> depName=<n>[ extractVersion=<e>]`",
+        "comment manage the ARG/ENV pin on the line below it, in any Dockerfile.",
+        "WHY. DOCKER_COMPOSE_VERSION and POWERSHELL_VERSION in .devcontainer/toolchain.Dockerfile carried",
+        "exactly those annotations, and NOTHING READ THEM: no manager matched `# renovate:` comments, so",
+        "both pins looked managed and aged silently. scripts/check-version-pins.mjs found them; it decides",
+        "management by evaluating these matchStrings per captured line, so an annotation that this regex",
+        "does not capture still reports UNMANAGED. Annotate a new Dockerfile pin instead of adding a",
+        "manager per pin. extractVersion is for tags that differ from the value (PowerShell's `v7.6.5`",
+        "tags vs its `7.6.5` ARG)."
+      ],
+      "managerFilePatterns": ["/(^|/)(Dockerfile[^/]*|[^/]+\\.Dockerfile)$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>\\S+)(?: extractVersion=(?<extractVersion>\\S+))?\\s*\\n(?:ARG|ENV)\\s+[A-Z0-9_]+[= ][\"']?(?<currentValue>[^\\s\"']+)"
+      ]
     }
   ],
   "docker-compose": {

@@ -1,12 +1,12 @@
 ---
 type: Runbook
 title: Renovate dependency bot
-description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0, and -1 for the OpenWiki generator's lock refresh) that allocates the six in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated.
+description: Operating the Renovate dependency bot — the security, lockfile-refresh, docker-base-image, docker-digest-pin and routine channels with their Friday-window versus nightly-cron cadences and the prPriority ranking (5/3/2/0, and -1 for the OpenWiki generator's lock refresh) that allocates the six in-window PR slots, the CVE sweep's Friday-and-Tuesday slots ordered strictly ahead of the window, the one-runner Friday cron ladder, the PR budget that binds before the schedule and blocks branch creation too, the dispatch-and-verify procedure with the renovate/mode status, the Dependency Dashboard tick reference, the version holds and approval gates (including the item 912 upload-artifact ceiling and the item 913 java-jdk regex hold), the pinned toolchains and the answered python re-lock question, the floating-tag cooldown treadmill, the silent failure modes (pinDigest collisions, timestamp-pending registries, unmatched files, rules with no extractor), the accepted residuals, and the two-place config validator that is deliberately not path-gated, and the version-pin guard that fails any pin no manager captures and no reasoned exclusion excuses.
 resource: docs/runbooks/renovate.md
-resource-sha256: e4763f5dd6310bb987e0254ec72b402ff474094b5f4887af54ddd7f569fbd27c
+resource-sha256: d54269129d1debd2e5d489f3715705beb5568ca14dc9d074e8cd07eea82ed1a0
 tags: [renovate, ci, dependencies, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-24T14:19:25.397Z
+timestamp: 2026-11-24T23:30:55.459Z
 ---
 
 # Renovate dependency bot
@@ -329,6 +329,8 @@ at every site, and tracked by something that will move it.
 | **pip-audit** | `scripts/sast-scan.mjs` (`PIP_AUDIT_PIN`, item #1120) | customManager, `pypi` | no |
 | **python** (interpreter minor) | `agents/movie-assistant/.python-version` — docker `allowedVersions` ceiling is derived from it | 1 pin + 8 image refs share depName/datasource with pyenv; `requires-python` floors and 4 lockfiles ride other paths | yes — `python toolchain` (item #366) |
 | **uv** | one version string repeated at every site (3 install-script URLs + 5 `setup-uv` inputs + 4 image tags) | customManager (`github-releases`) for script/action shapes; built-in docker manager for image tags | yes — `uv pin` |
+| **docker compose**, **PowerShell** (dev container) | `.devcontainer/toolchain.Dockerfile` (`DOCKER_COMPOSE_VERSION`, `POWERSHELL_VERSION`) | the annotation-driven customManager reading `# renovate: datasource=… depName=…[ extractVersion=…]` | no |
+| **gradle**, **Android command-line tools**, **Spec Kit**, **ccusage** | `.devcontainer/toolchain.Dockerfile` and `scripts/lib/cc-usage/write-oracle.mjs` | deliberately not managed, each with a written reason in `.forgejo/version-pin-exclusions.json` | — |
 
 **The Renovate run pins its own runtime, and that pin is not about `engines`.** The runner's
 `ubuntu-latest` container ships Node 22; renovate 44.14.12 raised `engines.node` to `^24.11.0` *inside*
@@ -605,6 +607,34 @@ The plan assumed the ~240 MB `npx` pull was too heavy to run on every PR; measur
 path filter would have bought seconds and cost the property that matters — that a green board means the
 validator *ran*. The guard test asserts the job carries no `if:` and no `needs:`, so a future "make it
 conditional" edit reddens rather than going quiet.
+
+## The version-pin guard (item #1128)
+
+A pin no manager sees ages silently. Before this guard, every such pin was found by someone reading
+the right file, and two (docker compose, PowerShell) carried `# renovate:` annotations that no
+manager read. `node scripts/check-version-pins.mjs` runs in guardrails' `renovate-config` job (required,
+unconditional, offline, Node built-ins only) and fails a PR adding a pin nothing accounts for. It
+prints every pin with its manager or reason, on green runs too.
+
+- **Scanned** (tracked files only): workflows; `scripts/**/*.{sh,mjs,ps1}` except `scripts/__tests__/`;
+  Dockerfiles; `.devcontainer/**`. Never `*.md`, `specs/`, `docs/`, fixtures or `*-lock.json`. Manifests,
+  `FROM` and `uses:` are left to Renovate's built-in managers.
+- **Three shapes**: `assignment` (an UPPER_SNAKE name with a whole `VERSION`/`PIN` token, and a dotted
+  value; a digits-only value counts outside JS, which catches build numbers but not format versions);
+  `action-input` (a `version`/`*-version` key in a step's `with:`, block or flow form); `command-spec`
+  (`tool@1.2.3` / `tool==1.2.3`, in shell contexts only). A version inside a URL path is out of sight.
+- **Managed** means a customManager's `matchStrings` **captures `currentValue` on that line**: a file
+  pattern alone is the nx #194 shape and does not count. setup-node/python/go and setup-uv inputs count
+  via Renovate's built-in github-actions table, which is re-read on a Renovate major. An unsupported
+  manager feature exits 3 rather than guessing.
+- **Remedies**, in order: annotate a Dockerfile `ARG`/`ENV` with
+  `# renovate: datasource=<d> depName=<n>[ extractVersion=<e>]`, or add a customManager. Otherwise add
+  `{file, name, reason}` to `.forgejo/version-pin-exclusions.json`: exact names, and a reason of 20+
+  characters saying why a manager is wrong (something else owns the version, or the upgrade is a
+  reviewed procedure). "Not worth a manager" is not a reason.
+- **Exclusions cannot rot**: a stale entry (no pin), a redundant one (the pin is now managed) or an
+  invalid one (a wildcard, a short reason, a duplicate) fails the check. Exit 3 means the check could
+  not run, and is never reported as a finding.
 
 ## Accepted residuals — decided, not overlooked
 
