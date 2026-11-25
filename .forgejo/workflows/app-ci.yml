@@ -309,8 +309,8 @@ jobs:
       # proposes the images and these pins as two separate majors, so move them as ONE change. (Never
       # below engines.node either: Node 20 under pnpm 11 broke `affected` and `mc-service-checks`.) The pnpm install step must stay BEFORE
       # this step — setup-node's `cache: pnpm` runs `pnpm store path`, so pnpm must be on PATH already.
-      # Which installer is decided by the runner: scripts/install-pnpm.sh in a container job (this one),
-      # pnpm/action-setup on the persistent `kvm:host` runner (renovate-workflow.guard.test.mjs).
+      # scripts/install-pnpm.sh everywhere; on the shared `kvm:host` runner it installs into a job-private
+      # PNPM_PREFIX AFTER setup-node, with no `cache: pnpm` (item #1144, renovate-workflow.guard.test.mjs).
         with: { node-version: 26.13.1, cache: pnpm }
       - name: Set up uv
         uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
@@ -487,9 +487,16 @@ jobs:
           chmod +x ~/.docker/cli-plugins/docker-compose
           docker compose version
           CI_LOG_STEP
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with: { node-version: 26.13.1, cache: pnpm }
+        with: { node-version: 26.13.1 }
+      # pnpm into a JOB-PRIVATE prefix (item #1144), AFTER setup-node so its PATH entry wins over the
+      # shared tool-cache Node's bin. This host runner shares $HOME and ~/.cache/act/tool_cache with
+      # other projects' runners: a global install, pnpm/action-setup's ~/setup-pnpm, or setup-node's
+      # `cache: pnpm` (which needs pnpm on PATH first) would all read or write shared state.
+      - name: Install pnpm (job-private, version from package.json packageManager)
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh mc-service-it-install-pnpm sh scripts/install-pnpm.sh
       # The pnpm on PATH must be the packageManager pin (item #1025): this persistent host runner
       # can carry an older global pnpm, and nested workspaces run on the installed one.
       - name: Verify pnpm matches packageManager
@@ -582,6 +589,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
+      - name: Remove the job-private pnpm
+        if: always()
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh mc-service-it-remove-pnpm rm -rf "$PNPM_PREFIX"
 
   # Feature 105 (research R20) — the usage store's integration tier: real Postgres + PostgREST + a
   # throwaway Keycloak importing ci-realm.json, brought up and torn down by the Nx target itself
@@ -622,9 +634,16 @@ jobs:
           chmod +x ~/.docker/cli-plugins/docker-compose
           docker compose version
           CI_LOG_STEP
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with: { node-version: 26.13.1, cache: pnpm }
+        with: { node-version: 26.13.1 }
+      # pnpm into a JOB-PRIVATE prefix (item #1144), AFTER setup-node so its PATH entry wins over the
+      # shared tool-cache Node's bin. This host runner shares $HOME and ~/.cache/act/tool_cache with
+      # other projects' runners: a global install, pnpm/action-setup's ~/setup-pnpm, or setup-node's
+      # `cache: pnpm` (which needs pnpm on PATH first) would all read or write shared state.
+      - name: Install pnpm (job-private, version from package.json packageManager)
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh dev-usage-it-install-pnpm sh scripts/install-pnpm.sh
       - name: Verify pnpm matches packageManager
         run: bash scripts/ci-log-step.sh dev-usage-it-check-pnpm-version node scripts/check-pnpm-version.mjs
       - name: Install dependencies
@@ -640,6 +659,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
+      - name: Remove the job-private pnpm
+        if: always()
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh dev-usage-it-remove-pnpm rm -rf "$PNPM_PREFIX"
 
   # ── Containerized web + mobile agent E2E (FR-006..FR-010) ─────────────────────────────────────
   app-e2e:
@@ -832,10 +856,17 @@ jobs:
           docker compose version
           CI_LOG_STEP
 
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
-        with: { node-version: 26.13.1, cache: pnpm }
+        with: { node-version: 26.13.1 }
+      # pnpm into a JOB-PRIVATE prefix (item #1144), AFTER setup-node so its PATH entry wins over the
+      # shared tool-cache Node's bin. This host runner shares $HOME and ~/.cache/act/tool_cache with
+      # other projects' runners: a global install, pnpm/action-setup's ~/setup-pnpm, or setup-node's
+      # `cache: pnpm` (which needs pnpm on PATH first) would all read or write shared state.
+      - name: Install pnpm (job-private, version from package.json packageManager)
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh app-e2e-install-pnpm sh scripts/install-pnpm.sh
       # The pnpm on PATH must be the packageManager pin (item #1025): this persistent host runner
       # can carry an older global pnpm, and nested workspaces run on the installed one.
       - name: Verify pnpm matches packageManager
@@ -1835,6 +1866,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
+      - name: Remove the job-private pnpm
+        if: always()
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh app-e2e-remove-pnpm rm -rf "$PNPM_PREFIX"
 
   # ── DAST security scan (feature 031) ──────────────────────────────────────────────────────────
   # OWASP ZAP FULL (active BFF + mc-service, passive gateway) against the ephemeral throwaway stack.
@@ -1902,10 +1938,17 @@ jobs:
           docker compose version
           CI_LOG_STEP
 
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
       # Node >= 22.13 required by pnpm 11; matches the BFF runtime image + cd-deploy (see `affected`).
-        with: { node-version: 26.13.1, cache: pnpm }
+        with: { node-version: 26.13.1 }
+      # pnpm into a JOB-PRIVATE prefix (item #1144), AFTER setup-node so its PATH entry wins over the
+      # shared tool-cache Node's bin. This host runner shares $HOME and ~/.cache/act/tool_cache with
+      # other projects' runners: a global install, pnpm/action-setup's ~/setup-pnpm, or setup-node's
+      # `cache: pnpm` (which needs pnpm on PATH first) would all read or write shared state.
+      - name: Install pnpm (job-private, version from package.json packageManager)
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh dast-install-pnpm sh scripts/install-pnpm.sh
       # The pnpm on PATH must be the packageManager pin (item #1025): this persistent host runner
       # can carry an older global pnpm, and nested workspaces run on the installed one.
       - name: Verify pnpm matches packageManager
@@ -2089,6 +2132,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
+      - name: Remove the job-private pnpm
+        if: always()
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh dast-remove-pnpm rm -rf "$PNPM_PREFIX"
 
   # ── Trigger CD once CI is green on main (CD hardening Option 2, 2026-07-03) ────────────────────
   # Replaces cd-deploy's old POLLING ci-gate (which raced an 80-min wall clock against app-e2e queued on
@@ -2148,11 +2196,18 @@ jobs:
           echo "RUN_SCAN=true" >> "$GITHUB_ENV"
           CI_LOG_STEP
 
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
-        if: ${{ env.RUN_SCAN == 'true' }}
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         if: ${{ env.RUN_SCAN == 'true' }}
-        with: { node-version: 26.13.1, cache: pnpm }
+        with: { node-version: 26.13.1 }
+      # pnpm into a JOB-PRIVATE prefix (item #1144), AFTER setup-node so its PATH entry wins over the
+      # shared tool-cache Node's bin. This host runner shares $HOME and ~/.cache/act/tool_cache with
+      # other projects' runners: a global install, pnpm/action-setup's ~/setup-pnpm, or setup-node's
+      # `cache: pnpm` (which needs pnpm on PATH first) would all read or write shared state.
+      - name: Install pnpm (job-private, version from package.json packageManager)
+        if: ${{ env.RUN_SCAN == 'true' }}
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh app-image-scan-install-pnpm sh scripts/install-pnpm.sh
       # The pnpm on PATH must be the packageManager pin (item #1025): this persistent host runner
       # can carry an older global pnpm, and nested workspaces run on the installed one.
       - name: Verify pnpm matches packageManager
@@ -2243,6 +2298,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
+      - name: Remove the job-private pnpm
+        if: always()
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh app-image-scan-remove-pnpm rm -rf "$PNPM_PREFIX"
 
   trigger-cd:
     needs: [affected, mc-service-checks, mc-service-checks-integration, app-e2e, dast, app-image-scan]

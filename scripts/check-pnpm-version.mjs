@@ -18,7 +18,7 @@
 //   node scripts/check-pnpm-version.mjs                  # check against the root package.json
 //   node scripts/check-pnpm-version.mjs path/to/package.json
 // Exit: 0 match, 1 mismatch or no pnpm on PATH, 2 usage error (bad argument or packageManager).
-// Runs after every install in scripts/install-pnpm.sh, and as a step after pnpm/action-setup.
+// Runs after every install in scripts/install-pnpm.sh, and as its own CI step after that install.
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
