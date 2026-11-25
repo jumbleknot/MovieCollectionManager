@@ -28,6 +28,7 @@ import { dirname, resolve } from 'node:path';
 import {
   WARNING_WINDOW_DAYS, classifyExpiry, selectUnmatched, formatExpiring, formatExpired, formatUnmatched,
 } from './allowlist-expiry.mjs';
+import { enumerateImages, readInfraFiles } from './infra-image-scan.mjs';
 
 /**
  * This gate has ONE scanner (Trivy), so the per-scanner guard in `selectUnmatched` collapses to a
@@ -125,8 +126,46 @@ function matchesFinding(entry, f) {
   return entry.imageRe.test(f.image) && entry.idRe.test(f.id);
 }
 
+/**
+ * The image set that may judge an entry STALE (item #1136), or null when this run may not.
+ *
+ * Item #423 scopes UNMATCHED to the images the run scanned, which is right for a single-image run and
+ * a hole on the full sweep: an entry keyed to a digest the repository has moved off targets an image
+ * no run scans, so it was out of scope on EVERY run and silent until its expiry. Staleness is a
+ * property of the allowlist against the REPOSITORY, so its input is the enumerated set — what
+ * `infra-image-scan.mjs --list` prints — never the scanned set, and only a sweep may apply it.
+ *
+ *   scope 'sweep'           → the enumerated set
+ *   scope 'image'           → null (item #423: one image scanned, every other entry is out of scope)
+ *   reportAbsent (ENOENT)   → the enumerated set. Only the weekly sweep job runs --check-expiring, and
+ *                             staleness needs no scan, so a broken scan step must not blind it too.
+ *   anything else           → GateError. Guessing either way reintroduces a defect silently.
+ *
+ * An enumeration with an UNRESOLVED ref (a `${REGISTRY_HOST}` image with the variable unset) is
+ * incomplete, and an entry for that image would be flagged falsely — refused, as the scanner refuses.
+ *
+ * `enumerate` is injectable for the selftest; main() passes the real enumeration.
+ */
+export function staleScope(report, enumerate = enumerateRepoImages) {
+  if (report?.scope === 'image') return null;
+  if (report?.scope !== 'sweep' && report?.reportAbsent !== true) {
+    throw new GateError(`report has no recognised \`scope\` (got ${JSON.stringify(report?.scope)}; expected 'sweep' or 'image') — regenerate it with scripts/infra-image-scan.mjs. Stale-entry detection runs only on a full sweep (item #1136) and cannot tell one from a single-image run without it.`);
+  }
+  const { refs, unresolved } = enumerate();
+  if (unresolved.length) {
+    throw new GateError(`REGISTRY_HOST is not set, so ${unresolved.length} image ref(s) could not be enumerated (${unresolved.join(', ')}) — stale-entry detection needs the repository's COMPLETE image set. Set REGISTRY_HOST and re-run.`);
+  }
+  return refs;
+}
+
+/** The repository's third-party image refs, exactly as `infra-image-scan.mjs --list` enumerates them. */
+function enumerateRepoImages() {
+  const refs = enumerateImages(readInfraFiles()).map((i) => i.ref);
+  return { refs, unresolved: [...enumerateImages.unresolved] };
+}
+
 /** Partition findings into { failures, warnings, suppressed } plus the allowlist-hygiene review. */
-export function evaluate(report, allowlist, now = today()) {
+export function evaluate(report, allowlist, now = today(), { repoImages = null } = {}) {
   const findings = report?.findings ?? [];
   const failures = [];
   const warnings = [];
@@ -140,6 +179,12 @@ export function evaluate(report, allowlist, now = today()) {
 
   const expiring = allowlist.filter((e) => classifyExpiry(e.expiry, now) === 'expiring');
   const expired = allowlist.filter((e) => classifyExpiry(e.expiry, now) === 'expired');
+
+  // STALE (item #1136): on a sweep, an entry whose image regex matches NO image the repository
+  // references. `repoImages` is null on a single-image run (see staleScope), which keeps item #423.
+  // Computed before the absent-report exemption below: it needs no scan, only the repository.
+  const stale = Array.isArray(repoImages) ? allowlist.filter((e) => !repoImages.some((img) => e.imageRe.test(img))) : [];
+  const staleKeys = new Set(stale.map((e) => e.key));
 
   // A scan that failed or was skipped produces no findings, and must therefore flag none of its
   // entries — that fault belongs to the scanning job to report, not to this check to misattribute.
@@ -170,16 +215,17 @@ export function evaluate(report, allowlist, now = today()) {
   // Keyed on the explicit marker: a report that EXISTS and omits the field still throws, which is what
   // item #423 wrote this check for. Nothing is waved through — an absent report has zero findings, so
   // there is no in-scope entry whose match could go unchecked.
-  if (report?.reportAbsent === true) return { failures, warnings, suppressed, expiring, expired, unmatched: [] };
+  if (report?.reportAbsent === true) return { failures, warnings, suppressed, expiring, expired, unmatched: [], stale };
 
   const scanned = report?.generatedForImages;
   if (!Array.isArray(scanned)) {
     throw new GateError('report has no `generatedForImages` array — regenerate it with scripts/infra-image-scan.mjs. Unmatched-entry detection is scoped to the images this run actually scanned (item #423), and cannot be computed without it.');
   }
   const scopedAllowlist = allowlist.map((e) => ({ ...e, inScope: scanned.some((img) => e.imageRe.test(img)) }));
-  const unmatched = selectUnmatched(scopedAllowlist, matchedKeys, scannersWithFindings);
+  // A stale entry is reported once, under STALE — never also under UNMATCHED.
+  const unmatched = selectUnmatched(scopedAllowlist, matchedKeys, scannersWithFindings).filter((e) => !staleKeys.has(e.key));
 
-  return { failures, warnings, suppressed, expiring, expired, unmatched };
+  return { failures, warnings, suppressed, expiring, expired, unmatched, stale };
 }
 
 function line(f) {
@@ -187,7 +233,7 @@ function line(f) {
   return `  [${f.image}] ${f.severity} ${f.id} — ${f.pkg} ${f.installed}${fix}`;
 }
 
-function printAllowlistReview({ expiring, expired, unmatched }, now) {
+function printAllowlistReview({ expiring, expired, unmatched, stale }, now) {
   if (expiring.length) {
     console.log('EXPIRING SOON (suppressing for now)');
     console.log(formatExpiring(expiring, now));
@@ -199,6 +245,10 @@ function printAllowlistReview({ expiring, expired, unmatched }, now) {
   if (unmatched.length) {
     console.log('UNMATCHED ENTRIES (suppressed nothing this run)');
     console.log(formatUnmatched(unmatched));
+  }
+  if (stale.length) {
+    console.log('STALE ENTRIES (image matches no image the repository references — delete or re-key after a re-scan)');
+    for (const e of stale) console.log(`  ${e.id}  image: ${e.image}  addedBy: ${e.addedBy}`);
   }
 }
 
@@ -226,21 +276,22 @@ function printSummary({ failures, warnings, suppressed }) {
  * `checkExpiring` is REPORT-ONLY: it skips the blocking-finding gate entirely and fails on allowlist
  * hygiene alone, so the weekly signal is never ambiguous about which of the two went wrong.
  */
-export function gate(report, allowlist, now = today(), { checkExpiring = false } = {}) {
-  const result = evaluate(report, allowlist, now);
+export function gate(report, allowlist, now = today(), { checkExpiring = false, repoImages = null } = {}) {
+  const result = evaluate(report, allowlist, now, { repoImages });
 
   if (checkExpiring) {
     printAllowlistReview(result, now);
-    const total = result.expiring.length + result.expired.length + result.unmatched.length;
+    const total = result.expiring.length + result.expired.length + result.unmatched.length + result.stale.length;
     if (total) {
       console.error(
         `✗ allowlist expiry check FAILED: ${result.expiring.length} expiring within ${WARNING_WINDOW_DAYS} days, ` +
-        `${result.expired.length} expired, ${result.unmatched.length} matching nothing this run. ` +
+        `${result.expired.length} expired, ${result.unmatched.length} matching nothing this run, ` +
+        `${result.stale.length} stale (image no longer referenced by the repository). ` +
         'Remediate or re-justify before the expiry blocks every branch.',
       );
       return 1;
     }
-    console.log(`✓ allowlist expiry check passed (no entry expiring within ${WARNING_WINDOW_DAYS} days, expired, or unmatched).`);
+    console.log(`✓ allowlist expiry check passed (no entry expiring within ${WARNING_WINDOW_DAYS} days, expired, unmatched, or stale).`);
     return 0;
   }
 
@@ -407,11 +458,62 @@ function selftest() {
     failures.push('(g10) a report without generatedForImages must be rejected, not treated as all-in-scope');
   } catch (e) { if (!(e instanceof GateError)) failures.push('(g10) a report without generatedForImages must throw GateError'); }
 
+  // ── (g11) STALE: an entry whose image the REPOSITORY no longer references (item #1136) ─────────
+  //
+  // The item #423 scoping above silences an entry whose image this run did not scan. On a single-image
+  // run that is correct. On the full sweep it is a hole: the sweep scans every image the repository
+  // references, so an entry keyed to a digest the repository has moved off targets an image NOBODY
+  // scans — out of scope on every run, silent until its expiry. Measured 2026-11-24: three such
+  // entries (opensearch, caddy, postgres), none ever reported.
+  //
+  // The judge is the ENUMERATED set (infra-image-scan.mjs's enumerateImages — what `--list` prints),
+  // not the scanned set, and only on a sweep. Each case goes through `staleScope` with a fake
+  // enumeration, the same call main() makes with the real one — so the wiring is what is tested.
+  const enumerated = (refs, unresolved = []) => () => ({ refs, unresolved });
+  const run = (report, allowlist, opts = {}, refs = [KC]) =>
+    capture(() => gate(report, allowlist, NOW, { ...opts, repoImages: staleScope(report, enumerated(refs)) }));
+  const sweep = (findings, images = [KC]) => ({ ...rep(findings, images), scope: 'sweep' });
+  const single = (findings, images = [KC]) => ({ ...rep(findings, images), scope: 'image' });
+
+  // (g11a) the acceptance case: full sweep, entry keyed to a digest absent from the enumerated set.
+  const g11a = run(sweep([F()]), g8allow);
+  if (!/STALE ENTRIES/.test(g11a.out) || !/CVE-2026-1000/.test(g11a.out)) failures.push('(g11a) a sweep must report an entry whose image the repository no longer references under STALE ENTRIES');
+  if (run(sweep([F()]), g8allow, { checkExpiring: true }).code !== 1) failures.push('(g11a) --check-expiring on a sweep must exit 1 on a STALE entry');
+  // …and a normal sweep gate run stays advisory: reporting it MUST NOT move the exit code (FR-021).
+  // (A non-blocking finding, so the only thing that could move the code is the STALE report.)
+  if (run(sweep([F({ blocking: false })]), g8allow).code !== 0) failures.push('(g11a) a STALE entry on a normal (non --check-expiring) run must be advisory (exit 0)');
+
+  // (g11b) item #423 preserved: the SAME entry on a single-image (--image) run is silent.
+  const g11b = run(single([F()]), g8allow, { checkExpiring: true });
+  if (/STALE ENTRIES|UNMATCHED ENTRIES/.test(g11b.out)) failures.push('(g11b) a single-image run must stay silent about an entry for an image it did not scan');
+  if (g11b.code !== 0) failures.push('(g11b) --check-expiring on a single-image run must exit 0 on another image\'s entry');
+
+  // (g11c) an entry whose digest the repository DOES reference is not stale, even when the scan
+  // produced no findings for it — staleness is about the repository, not about this run's results.
+  if (/STALE ENTRIES/.test(run(sweep([]), al, { checkExpiring: true }).out)) failures.push('(g11c) an entry matching an enumerated image must not be reported as STALE');
+  if (run(sweep([F()]), al, { checkExpiring: true }).code !== 0) failures.push('(g11c) a sweep with every entry live and referenced must exit 0');
+
+  // (g11d) an ABSENT report (the scan step did not run) still judges staleness: it needs only the
+  // allowlist and the repository, so a broken scan must not also blind this check.
+  const g11d = run({ findings: [], reportAbsent: true }, g8allow, { checkExpiring: true });
+  if (g11d.code !== 1 || !/STALE ENTRIES/.test(g11d.out)) failures.push('(g11d) --check-expiring with an absent report must still fail on a STALE entry');
+
+  // (g11e) a report that names no scope is a HARD ERROR — guessing "sweep" would flag every other
+  // image's entries on a single-image run (item #423 again), guessing "single" would silently restore
+  // the hole this check closes. Same reasoning as (g10).
+  try { staleScope(rep([F()]), enumerated([KC])); failures.push('(g11e) a report without `scope` must be rejected'); }
+  catch (e) { if (!(e instanceof GateError)) failures.push('(g11e) a report without `scope` must throw GateError'); }
+
+  // (g11f) an incomplete enumeration (a REGISTRY_HOST-interpolated ref left unresolved) cannot judge
+  // staleness — an entry for the unresolved image would be flagged falsely. Refuse, as the scanner does.
+  try { staleScope(sweep([F()]), enumerated([KC], ['infrastructure-as-code/x.yaml:3'])); failures.push('(g11f) an enumeration with unresolved refs must be rejected'); }
+  catch (e) { if (!(e instanceof GateError) || !/REGISTRY_HOST/.test(e.message)) failures.push('(g11f) an incomplete enumeration must throw a GateError naming REGISTRY_HOST'); }
+
   if (failures.length) {
     console.error('✗ check-infra-image-findings --selftest FAILED:\n  ' + failures.join('\n  '));
     process.exit(1);
   }
-  console.log('✓ check-infra-image-findings --selftest passed (fail on fixable-Critical, allowlist-suppress, fixable-High warn, unfixable warn, medium warn, clean, blank-justification reject, expiry, warning tier + unmatched + --check-expiring + the absent-report path).');
+  console.log('✓ check-infra-image-findings --selftest passed (fail on fixable-Critical, allowlist-suppress, fixable-High warn, unfixable warn, medium warn, clean, blank-justification reject, expiry, warning tier + unmatched + --check-expiring + the absent-report path + stale on a sweep only).');
   process.exit(0);
 }
 
@@ -438,7 +540,7 @@ function main() {
     // unmatched entries; expiry classification needs only the allowlist. Announced, never assumed.
     // A report that exists but will not parse is still exit 2.
     if (checkExpiring && e.code === 'ENOENT') {
-      console.log(`ℹ no scan report at ${reportPath} — expiry/expired classification still runs from the allowlist; UNMATCHED detection is skipped (no scanner produced findings).`);
+      console.log(`ℹ no scan report at ${reportPath} — expiry/expired classification still runs from the allowlist, and STALE detection from the repository's image references; UNMATCHED detection is skipped (no scanner produced findings).`);
       // `reportAbsent` is what the exemption in `evaluate()` keys on. Set ONLY here, on the announced
       // ENOENT path — a report read off disk never carries it, so a real report missing
       // `generatedForImages` is still a hard error.
@@ -455,7 +557,14 @@ function main() {
     console.error(`✗ ${e.message}`);
     process.exit(2);
   }
-  process.exit(gate(report, allowlist, today(), { checkExpiring }));
+  let repoImages;
+  try {
+    repoImages = staleScope(report);
+  } catch (e) {
+    console.error(`✗ ${e.message}`);
+    process.exit(2);
+  }
+  process.exit(gate(report, allowlist, today(), { checkExpiring, repoImages }));
 }
 
 const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';

@@ -149,7 +149,8 @@
 # EXPIRY 2026-10-01 is deliberate: these are time-boxed to force re-triage, not accepted permanently.
 # The 14-day warning window starts reporting them 2026-09-17. Per item #303, DELETE each entry when
 # its image is remediated rather than letting the date pass — an entry that matches nothing keeps
-# failing under UNMATCHED ENTRIES instead of ageing out quietly.
+# failing under UNMATCHED ENTRIES (or STALE ENTRIES once its image leaves the repository, item #1136)
+# instead of ageing out quietly.
 # ── ALL FIVE REMAINING CVE-2026-56854 ENTRIES REMOVED 2026-09-14 (item #329, re-triage) ───────────
 # caddy:2.11.4-alpine · grafana/otel-lgtm:0.32.1 · hashicorp/vault:1.18 ·
 # mongodb/mongodb-community-server:8.0.8-ubi9 · ollama/ollama:0.32.1 — gone, and NOT for the reason
@@ -258,13 +259,18 @@
 # EXPIRY 2026-12-01 matched the object-store image entries (deleted by feature 080), so the next
 # re-triage is again one sitting rather than a dribble — the same grouping trick, re-aimed after the 2026-10-01 cohort emptied.
 # Per item #303, DELETE each entry when its image is remediated rather than letting the date pass — an
-# entry that matches nothing keeps failing under UNMATCHED ENTRIES instead of ageing out quietly.
+# entry that matches nothing keeps failing instead of ageing out quietly: under UNMATCHED ENTRIES when
+# the sweep scanned its image and found nothing it describes, under STALE ENTRIES when its image regex
+# matches no image the repository references any more (item #1136 — see the note below).
 # DELETED 2026-11-24 (CVE-2026-75595, opensearch digest bcc17975…): the repository now pulls
 # opensearch:3@sha256:3b55f6b6…, and infra-image-scan on that digest passes with no entry covering it
 # (PR #1131's run and main's), so the rebuild discharged it. The entry had matched nothing since the
 # digest moved and was NEVER reported: the expiry check treats an entry whose image the run did not scan
 # as OUT OF SCOPE and stays silent (item #423's scoping), so the "keeps failing under UNMATCHED ENTRIES"
-# promise above does not hold for a digest-keyed entry. Item #1136 tracks closing that gap.
+# promise above did not hold for a digest-keyed entry. Item #1136 closed that gap: on the full sweep
+# (and on the weekly --check-expiring run), an entry whose image regex matches none of the repository's
+# enumerated images (`infra-image-scan.mjs --list`) is reported under STALE ENTRIES and fails
+# --check-expiring. A single-image (--image) run still ignores other images' entries (item #423).
 
 # ── otel-lgtm amqp091-go CVE-2026-77405 / -77408 / -77411: ALL THREE ENTRIES DELETED 2026-10-02 ────────
 # Discharged by the 2026-10-02 `docker base images` bump (PR #639) to 0.34.0@sha256:b966ea10, exactly

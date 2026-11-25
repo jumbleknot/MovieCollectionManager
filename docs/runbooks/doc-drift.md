@@ -25,7 +25,7 @@ template is not used. The final validation checklist carries the close-out step.
 The search is literal and cheap on purpose:
 
 ```bash
-git grep -n -F "<term>" -- '*.md' ':!specs/' ':!docs/proposals/' ':!docs/decisions/'
+git grep --untracked -n -F "<term>" -- '*.md' ':!specs/' ':!docs/proposals/' ':!docs/decisions/'
 ```
 
 Each hit becomes a named doc task, or gets a one-line reason it needs no change. Dated records
@@ -69,8 +69,10 @@ written.
 8. **Record the measure** in the audit log below: lines read, proven drift fixed, and the rate per
    1,000 lines. SM-2 expects the rate to fall from one audit to the next.
 9. **Refresh [MCM-Learnings.md](../MCM-Learnings.md)** in the same PR. On `main`, run
-   `node scripts/count-repo-metrics.mjs` and append its column to the measurement log (Part 3)
-   unchanged, never editing an earlier column. Update a ledger line's status (Part 2) only if a
+   `node scripts/count-repo-metrics.mjs --append-log docs/MCM-Learnings.md`: it writes the
+   measurement-log column (Part 3) itself, in commit-date order and stamped with the counting
+   script's version, and refuses (exit 1) a commit already logged or a shallow clone. Never paste a
+   column by hand or edit an earlier one. Update a ledger line's status (Part 2) only if a
    lesson changed, and rewrite Part 1 only where this audit proved it wrong. The document's own
    "How to update this document" section has the rules for each part.
 10. **Check SM-3**: would a `describes:` link have caught any of the drift, on a feature whose sweep

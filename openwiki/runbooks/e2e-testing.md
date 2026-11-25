@@ -3,10 +3,10 @@ type: Runbook
 title: E2E testing (BFF container modes & flakiness diagnosis)
 description: The three BFF-fronting modes for end-to-end tests (Metro dev, dev-container HTTP, prod-container HTTPS), the CI integration-tier gate with its per-suite skip-escalation flags, the two agent-test tiers that decide what blocks a merge, the security-policy walk that only the browser can see, why the dev-container run is the deterministic baseline for flaky-vs-broken triage, and the shared-state, instrument and Playwright-image-pin traps that make a green run prove less than it looks.
 resource: docs/runbooks/e2e-testing.md
-resource-sha256: ccddb4ccd2fafd00cab86bd713a80c031f35bbe35a81273ab6a97b184a3b3611
+resource-sha256: 1c5ceebb8065d5b4b7e75861209b3ff6b7eb8bca6a3369e8e1a2b4d070d49db4
 tags: [e2e, testing, playwright, ci, flakiness, runbook, integration, keycloak, backups]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-17T03:42:47.672Z
+timestamp: 2026-11-25T01:11:36.025Z
 ---
 
 # E2E testing (BFF container modes & flakiness diagnosis)
@@ -446,6 +446,8 @@ For mobile-specific tunneling and APK-rebuild decisions, see
 - **Agent tests are split into two tiers by `E2E_TIER` — unclassified tests fail the gate.** `@gate` tests (blocking — what a PR pays for) and `@model-decision` tests (non-blocking, same job, `main` + dispatch only, `continue-on-error: true`) are separate slices. `E2E_TIER=gate pnpm exec playwright test` / `E2E_TIER=model pnpm exec playwright test`; without the flag everything runs (local default). At the split (2026-08-12) the tiers were 155 / 22 of 177, but the guard asserts the PARTITION, not those counts. An agent test with no classification fails the gate rather than defaulting into a tier — enforced by `scripts/__tests__/agent-test-classification.test.mjs`.
 - **`--grep-invert` is accepted by Playwright 1.60 but does nothing.** `--grep CORS` lists 1 test; `--grep-invert CORS` lists the whole suite (all 177 at the time of measurement). The tier split must be applied via `E2E_TIER` → `grep`/`grepInvert` in `playwright.config.ts`, not as a CLI flag. A CLI-based split would appear to run only the selected tier while silently running the whole suite.
 - **`node --test <file> --test-name-pattern "x"` silently runs everything.** Node stops parsing its own flags at the script path; anything after the path becomes the script's `argv` and is ignored. `--test-name-pattern` never applied. Nothing warns; the filter simply does not exist. The safe form is flags-before-path: `node --test --test-name-pattern "x" tests/foo.test.js`. Always verify a filter by checking that the reported test COUNT actually dropped — a filter that changes nothing was not applied.
+- **`node --test` prints the spec reporter even when piped.** Summary lines are `ℹ tests N` / `ℹ pass N` / `ℹ fail N` (Node 24 and 26), so a grep for TAP's `^# (pass|fail)` matches nothing and reads as "no output". Grep `^ℹ (tests|pass|fail|skipped)`, or pass `--test-reporter=tap`.
+- **`spawnSync`'s `encoding` also applies to `input`.** With `encoding: 'buffer'`, a string `input` throws `Unknown encoding: buffer` (Node 24.14.1); pass `input` as a `Buffer`.
 - **An argument a tool does not recognise and does not REJECT leaves the default action running — FIXED, items #497/#500.** Measured 2026-09-19: `node scripts/agent-stack.mjs --help` began building `movie-mcp:latest` within a second during a session whose entire purpose was tearing things down. It was caught only because the call happened to carry a timeout. The same class was live in three other scripts: `renovate-health.mjs --dryrun` posted a public comment to item #311; `check-lockfile-refresh.mjs --dryrun` posted a public comment; `prune-bff-runtime-modules.mjs --dry_run` deleted files for real. All four now route argv through one shared rejecting parser, `scripts/lib/argv-contract.mjs`:
 
   | script | the default that used to fire on a typo | now |

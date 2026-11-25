@@ -236,7 +236,9 @@ passages:
     # Re-fingerprinted 2026-11-08 (spec 095) — the passage gained the measured RTK rewrite of
     # `prettier --file-info` (`ignored: true` printed as "All files formatted correctly").
     # Re-fingerprinted 2026-11-10 (feature 098 review) — passage-corrected: dropped the stale "rtk 0.42.4" pin; nothing in the repo pins RTK and the dev container runs a later release.
-    fingerprint: "sha256:1aa0e6b5ee2090a16c993ba9960e62f2cfe33831bc995a2119ba5918c5949296"
+    # Re-fingerprinted 2026-11-24 (item #1135) — the passage gained the measured trap that a history
+    # search (`git log -S`/`-G`/`--reverse`) through RTK returns empty; run it under `rtk proxy`.
+    fingerprint: "sha256:06bc1ec48854b4ebdd95cfc92190b4d20352e876b0fccb79efc01dadb8acf67e"
     origin: "CLAUDE.md"
     relocatedAt: "2026-07-30"
   - concept: "invariants/testing-tiers.md"

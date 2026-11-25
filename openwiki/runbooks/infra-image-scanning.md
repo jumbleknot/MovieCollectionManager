@@ -3,10 +3,10 @@ type: Runbook
 title: Infra-image CVE scanning
 description: Trivy's keyless, twice-weekly sweep over the third-party server images this project pulls but does not build (Keycloak, Postgres, Mongo, Vault, OpenSearch, Langfuse, Grafana, Unleash, Caddy, RustFS and the rest of infrastructure-as-code), plus how to read or triage a red result — one scanner per image, the fixable-Critical-only gate, the allowlist cohorts and how an entry is discharged, the bounded retry, the one pinned installer all three scanning workflows share, the shared per-image pipeline both the PR and the deploy call, the labelled container holds that keep the PR's run-scoped scan tags alive across another run's prune, and the publish-versus-promote split.
 resource: docs/runbooks/infra-image-scanning.md
-resource-sha256: cb20a5241bf7d21b97f91c3c9913a55dca4e69c35713b5b0d0b61f8e88122e48
+resource-sha256: 8729a23c059a742ca7fd67a511046453c140361ee9463d44a5cdd7f18f4ff2ff
 tags: [security, cve, trivy, ci, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-24T14:07:38.560Z
+timestamp: 2026-11-25T01:14:36.830Z
 ---
 
 # Infra-image CVE scanning
@@ -258,14 +258,18 @@ findings readable.
   fails loudly and asks for a declared exception rather than passing vacuously.
 - **Re-keying an allowlist entry is required whenever a pinned tag changes, not optional tidy-up.**
   An entry keyed to the old tag matches nothing after the bump, the finding it covered becomes
-  un-allowlisted, and the gate blocks — while reporting the entry only as an `UNMATCHED ENTRIES` line,
-  which reads like housekeeping rather than like the cause. Check that line before assuming a new CVE
+  un-allowlisted, and the gate blocks — while reporting the entry only as a `STALE ENTRIES` line (its old ref
+  is no longer in the repository; an `UNMATCHED ENTRIES` line before item #1136), which reads like housekeeping rather than like the cause. Check that line before assuming a new CVE
   appeared. Unmatched detection is also **scoped to the images the run actually scanned**
   (`generatedForImages`, item #423), because two jobs consult this one allowlist — the full sweep and
   the single-image `cd-deploy` scan-push loop, whose findings both carry the same literal scanner
   label — and each used to report the other's live entries as stale. The field is required, not
   defaulted: a producer that stops writing it fails the gate rather than silently restoring the old
-  behaviour.
+  behaviour. That scoping alone left a digest-keyed entry whose digest left the repository silent for
+  ever, so since item #1136 the full sweep, and the weekly `--check-expiring` run even with no report,
+  also enumerates the repository's images in-process (the set `infra-image-scan.mjs --list` prints) and
+  fails any entry matching none of them as STALE. The run kind comes from the report's required
+  `scope` field (`sweep` / `image`); a single-image run never reports STALE.
 - **A version-keyed entry cannot be re-keyed on `main` and in the bump PR at once.** A version-keyed
   entry names one version, but during a bump two are live: `main` still references the old tag, the
   Renovate branch references the new one. Whichever single version the key names, the other side blocks.
@@ -325,8 +329,9 @@ findings readable.
     by a tag move. Renovate proposes from the registry rather than from this file, so every rebuild is
     still offered, the new digest is scanned unsuppressed, and the Renovate PR's own scan proves whether
     the rebuild carries the fix instead of inheriting the acceptance. The price is stated below: once
-    the digest moves, the key matches nothing — and, until item #1136, nothing REPORTS that: the expiry
-    check scopes "unmatched" to images the run scanned, and a retired digest is scanned by no run. The
+    the digest moves, the key matches nothing — and, until item #1136, nothing REPORTED that: the expiry
+    check scoped "unmatched" to images the run scanned, and a retired digest is scanned by no run. It
+    is now reported as a `STALE ENTRIES` line on the full sweep. The
     live example is the `CVE-2026-111497` brotli entry `^postgres:18-alpine@sha256:77f585114c32`; its
     caddy and postgres-18.6 siblings were found stale by hand on 2026-11-24 and deleted.
   - **Discharged, not re-keyed.** Where a bump or a same-version digest refresh measurably clears the
@@ -460,7 +465,7 @@ findings readable.
   tip is not something an observability step has standing to raise. It is posted on every
   non-`pull_request` run; if the POST itself fails, the status is simply **absent**, which is its own
   tell. **`expiry_step=failure` covers two causes the status cannot separate**: an entry needs action
-  (expiring within 14 days, already expired, or matching nothing), or the checker itself crashed —
+  (expiring within 14 days, already expired, matching nothing, or stale), or the checker itself crashed —
   item #562, where from 2026-09-12 until 2026-10-02 both checkers threw on the absent report they
   announce as legitimate, and because the step runs `cmd1 && cmd2` under `bash -e` the infra-image half
   never ran at all. Look for a `GateError` stack trace in the step log before treating it as an

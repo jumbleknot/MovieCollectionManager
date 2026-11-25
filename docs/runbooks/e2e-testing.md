@@ -469,6 +469,23 @@ Every one of these produced a confident, wrong answer, and every one was checkab
 
   **Check it, do not trust it**: run the filtered form and confirm the reported test COUNT actually
   dropped. A filter that changes nothing is a filter that was not applied.
+- **`node --test` prints the SPEC reporter even when piped, so a TAP grep matches nothing** (Node 24
+  and 26; item #1135, measured 2026-11-24). The summary lines are `ℹ tests N` / `ℹ pass N` /
+  `ℹ fail N`, not TAP's `# tests N`, so a filter written for TAP reads as "no output":
+
+  ```bash
+  node --test scripts/__tests__/check-speckit-overrides.test.mjs 2>&1 | grep -E "^# (pass|fail)"   # ❌ nothing
+  node --test scripts/__tests__/check-speckit-overrides.test.mjs 2>&1 | grep -E "^ℹ (tests|pass|fail|skipped)" # ✅
+  node --test --test-reporter=tap scripts/__tests__/check-speckit-overrides.test.mjs | grep -E "^# (pass|fail)" # ✅ ask for TAP
+  ```
+- **`spawnSync`'s `encoding` also applies to its `input`** (Node 24.14.1; item #1135, measured
+  2026-11-24). With `encoding: 'buffer'`, a *string* `input` throws `Unknown encoding: buffer` — a
+  test helper that wants raw stdout bytes fails before the child ever runs:
+
+  ```js
+  spawnSync('cat', [], { encoding: 'buffer', input: 'hi' });              // ❌ throws Unknown encoding: buffer
+  spawnSync('cat', [], { encoding: 'buffer', input: Buffer.from('hi') }); // ✅ pass input as a Buffer
+  ```
 - **An argument a tool does not recognise and does not REJECT.** `node scripts/agent-stack.mjs
   --help` used to build and deploy the whole agent stack. The dispatcher matched `--down` and
   `--status` and let everything else fall through to `deploy()`, and `resolveBuildMode` only looks
