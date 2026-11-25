@@ -804,24 +804,31 @@ test('pnpm has ONE source: no image names a pnpm version, each installs it from 
   );
 });
 
-// ...and CI installs it ONE way PER RUNNER KIND. After #992 the installer depended on the file, not on
-// the runner: scripts/install-pnpm.sh in guardrails/renovate/wiki-maintain, `pnpm/action-setup` in ten
-// other steps. Both read `packageManager`, so the VERSION could not drift; the rule that decides
-// between them is where the job runs.
+// ...and CI installs it ONE way, with ONE extra rule on the shared host. Every job runs
+// scripts/install-pnpm.sh, which reads `packageManager`, so the VERSION cannot drift. Where the job
+// runs decides WHERE pnpm goes:
 //
-//   container jobs (`ubuntu-latest` = an ephemeral node:22-bookworm container, root) → install-pnpm.sh.
-//     `npm install --global` writes into a container that is thrown away with the job.
+//   container jobs (`ubuntu-latest` = an ephemeral node:22-bookworm container, root) → install-pnpm.sh
+//     as is. `npm install --global` writes into a container that is thrown away with the job.
 //   host jobs (`runs-on: kvm` = the `kvm:host` label: directly on the persistent CI host as the
-//     unprivileged `ci` user, docs/runbooks/Server-Setup-Runbook.md) → pnpm/action-setup, which
-//     installs into a per-job location. install-pnpm.sh there would `npm install --global` into the
-//     host's system prefix (EACCES) or, after setup-node, into the tool cache concurrent jobs share.
+//     unprivileged `ci` user, docs/runbooks/Server-Setup-Runbook.md) → install-pnpm.sh with
+//     PNPM_PREFIX under `${{ runner.temp }}`, AFTER setup-node, and removed by an `always()` step
+//     (item #1144). That host's $HOME, and so ~/.cache/act/tool_cache and ~/setup-pnpm, is shared
+//     with another project's runner (same `ci` user). Measured 2026-11-25: its global install of pnpm
+//     12.22.0 into the tool-cache Node failed our check-pnpm-version and skipped a deploy. This was
+//     pnpm/action-setup until then, on the belief that it "installs into a per-job location"; it
+//     installs into ~/setup-pnpm, which is shared. So on the host: no pnpm/action-setup, no global
+//     install, no setup-node `cache: pnpm` (it needs pnpm on PATH BEFORE setup-node, and the pnpm
+//     store on a persistent host is already on disk).
 //
-// Either way pnpm must be installed BEFORE its first use, which includes setup-node's `cache: pnpm`
-// (it runs `pnpm store path`). PNPM_COMMAND matches pnpm in COMMAND position only, so prose inside
-// an `echo` (prod-apk's disk report) is not a use.
+// pnpm must be installed BEFORE its first use, which includes setup-node's `cache: pnpm` (it runs
+// `pnpm store path`). PNPM_COMMAND matches pnpm in COMMAND position only, so prose inside an `echo`
+// (prod-apk's disk report) is not a use.
 const WORKFLOW_DIR = resolve(REPO_ROOT, '.forgejo/workflows');
 const PNPM_COMMAND = /(^\s*|ci-log-step\.sh\s+\S+\s+|&&\s*|\|\|\s*|;\s*|\$\(\s*)pnpm\s/m;
 const HOST_RUNNERS = new Set(['kvm']);
+const JOB_PRIVATE = /^\$\{\{\s*runner\.temp\s*\}\}\//;
+const GLOBAL_INSTALL = /\bnpm\s+(i|install|add)\b[^\n]*\s(-g|--global)\b|\bcorepack\s+enable\b/;
 
 function pnpmInstallFindings(dir = WORKFLOW_DIR) {
   const findings = [];
@@ -829,21 +836,45 @@ function pnpmInstallFindings(dir = WORKFLOW_DIR) {
     const doc = parseYaml(readFileSync(resolve(dir, file), 'utf8'));
     for (const [job, def] of Object.entries(doc?.jobs ?? {})) {
       const onHost = HOST_RUNNERS.has(String(def?.['runs-on'] ?? ''));
-      const want = onHost ? 'pnpm/action-setup (a kvm:host job)' : '`sh scripts/install-pnpm.sh` (a container job)';
+      const want = onHost
+        ? '`sh scripts/install-pnpm.sh` with PNPM_PREFIX under ${{ runner.temp }}, after setup-node (a kvm:host job)'
+        : '`sh scripts/install-pnpm.sh` (a container job)';
       const jobSteps = def?.steps ?? [];
       const at = (i) => `${file} › ${job} › step ${i + 1}${jobSteps[i]?.name ? ` (${jobSteps[i].name})` : ''}`;
+      const prefixOf = (step) => String(step?.env?.PNPM_PREFIX ?? def?.env?.PNPM_PREFIX ?? doc?.env?.PNPM_PREFIX ?? '');
       let installedAt = -1;
+      let setupNodeAt = -1;
       jobSteps.forEach((step, i) => {
+        const run = String(step?.run ?? '');
         const viaAction = /(^|\/)pnpm\/action-setup@/.test(String(step?.uses ?? ''));
-        const viaScript = /scripts\/install-pnpm\.sh/.test(String(step?.run ?? ''));
-        if (viaAction && !onHost) findings.push(`${at(i)} uses pnpm/action-setup — install with ${want}`);
-        if (viaScript && onHost) findings.push(`${at(i)} runs install-pnpm.sh on the persistent host — install with ${want}`);
+        const viaScript = /scripts\/install-pnpm\.sh/.test(run);
+        const isSetupNode = /(^|\/)actions\/setup-node@/.test(String(step?.uses ?? ''));
+        if (isSetupNode && setupNodeAt === -1) setupNodeAt = i;
+        if (viaAction) findings.push(`${at(i)} uses pnpm/action-setup — install with ${want}`);
+        if (onHost && viaScript && !JOB_PRIVATE.test(prefixOf(step))) {
+          findings.push(`${at(i)} runs install-pnpm.sh on the shared host without a job-private PNPM_PREFIX — install with ${want}`);
+        }
+        if (onHost && viaScript && setupNodeAt === -1 && jobSteps.some((s) => /(^|\/)actions\/setup-node@/.test(String(s?.uses ?? '')))) {
+          findings.push(`${at(i)} installs pnpm BEFORE setup-node, whose tool-cache bin would then shadow it — install with ${want}`);
+        }
+        if (onHost && GLOBAL_INSTALL.test(run)) findings.push(`${at(i)} installs globally on the shared host (npm -g / corepack enable)`);
+        if (onHost && isSetupNode && /pnpm/.test(String(step?.with?.cache ?? ''))) {
+          findings.push(`${at(i)} sets setup-node \`cache: pnpm\` on the shared host — drop it; pnpm is installed after setup-node`);
+        }
         if ((viaAction || viaScript) && installedAt === -1) installedAt = i;
-        const needsPnpm = PNPM_COMMAND.test(String(step?.run ?? '')) || /pnpm/.test(String(step?.with?.cache ?? ''));
+        const needsPnpm = PNPM_COMMAND.test(run) || /pnpm/.test(String(step?.with?.cache ?? ''));
         if (needsPnpm && !viaScript && installedAt === -1) {
           findings.push(`${at(i)} needs pnpm, but no earlier step installs it — add ${want} before it`);
         }
       });
+      if (onHost && installedAt !== -1) {
+        const cleanup = jobSteps.find((s) => /rm -rf "\$PNPM_PREFIX"/.test(String(s?.run ?? '')));
+        if (!cleanup) findings.push(`${file} › ${job}: no step removes "$PNPM_PREFIX" at the end of the job`);
+        else {
+          if (!/always\(\)/.test(String(cleanup.if ?? ''))) findings.push(`${file} › ${job}: the "$PNPM_PREFIX" cleanup must be \`if: always()\``);
+          if (!JOB_PRIVATE.test(prefixOf(cleanup))) findings.push(`${file} › ${job}: the cleanup removes something other than the job-private prefix`);
+        }
+      }
     }
   }
   return findings;
@@ -861,22 +892,37 @@ test('the pnpm-installer rule rejects each wrong shape (control)', async () => {
   const AS = '      - uses: pnpm/action-setup@abc\n';
   const SCRIPT = '      - run: sh scripts/install-pnpm.sh\n';
   const NODE = '      - uses: actions/setup-node@abc\n        with: { node-version: 26.13.1, cache: pnpm }\n';
+  const HNODE = '      - uses: actions/setup-node@abc\n        with: { node-version: 26.13.1 }\n';
+  const PRIV = '      - env:\n          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm\n        run: sh scripts/install-pnpm.sh\n';
+  const SHARED = '      - env:\n          PNPM_PREFIX: /home/ci/pnpm\n        run: sh scripts/install-pnpm.sh\n';
+  const CLEAN = '      - if: always()\n        env:\n          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm\n        run: rm -rf "$PNPM_PREFIX"\n';
+  const CLEAN_ON_SUCCESS = '      - env:\n          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm\n        run: rm -rf "$PNPM_PREFIX"\n';
+  const GLOBAL = '      - run: npm install -g pnpm@12.22.0\n';
   const USE = '      - run: pnpm install --frozen-lockfile\n';
   const ECHO = '      - run: echo "the pnpm setup step below needs npm"\n';
   const job = (runsOn, body) => `jobs:\n  j:\n    runs-on: ${runsOn}\n    steps:\n${body}`;
   const cases = [
     ['container + script first', job('ubuntu-latest', SCRIPT + NODE + USE), 0],
-    ['host + action first', job('kvm', AS + NODE + USE), 0],
+    ['host + setup-node, private script, cleanup', job('kvm', HNODE + PRIV + USE + CLEAN), 0],
     ['prose mentioning pnpm is not a use', job('ubuntu-latest', ECHO + SCRIPT + USE), 0],
     ['container + action-setup', job('ubuntu-latest', AS + NODE + USE), 1],
-    ['host + script', job('kvm', SCRIPT + NODE + USE), 1],
+    ['host + action-setup (it installs into the shared ~/setup-pnpm)', job('kvm', AS + HNODE + USE), 1],
+    ['host + script with no prefix (global install)', job('kvm', HNODE + SCRIPT + USE + CLEAN), 1],
+    ['host + script with a prefix outside runner.temp', job('kvm', HNODE + SHARED + USE + CLEAN), 1],
+    ['host + private script BEFORE setup-node', job('kvm', PRIV + HNODE + USE + CLEAN), 1],
+    ['host + setup-node cache: pnpm', job('kvm', NODE + PRIV + USE + CLEAN), 1],
+    ['host + no cleanup', job('kvm', HNODE + PRIV + USE), 1],
+    ['host + cleanup only on success', job('kvm', HNODE + PRIV + USE + CLEAN_ON_SUCCESS), 1],
+    ['host + an npm -g step', job('kvm', HNODE + PRIV + GLOBAL + USE + CLEAN), 1],
     ['cache: pnpm before the install', job('ubuntu-latest', NODE + SCRIPT + USE), 1],
     ['pnpm used with no install', job('ubuntu-latest', USE), 1],
   ];
   for (const [label, yml, expected] of cases) {
     for (const f of readdirSync(d)) writeFileSync(resolve(d, f), '');
     writeFileSync(resolve(d, 'w.yml'), yml);
-    assert.equal(pnpmInstallFindings(d).length, expected, `${label}: ${JSON.stringify(pnpmInstallFindings(d))}`);
+    // 0 = clean; 1 = at least one finding (a wrong shape may legitimately trip more than one rule).
+    const n = pnpmInstallFindings(d).length;
+    assert.equal(Math.min(n, 1), expected, `${label}: ${JSON.stringify(pnpmInstallFindings(d))}`);
   }
 });
 

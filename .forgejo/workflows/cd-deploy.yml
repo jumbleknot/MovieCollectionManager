@@ -142,14 +142,21 @@ jobs:
           docker system df || true
           CI_LOG_STEP
 
-      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
       # Node >= 22.13 (package.json `engines.node`) — pnpm 11 refuses to run below it. This job was
       # left on Node 20 by the pnpm 11 bump: app-ci's four sites and prod-apk were fixed, this one
       # was MISSED, and it is the job that builds, pushes and deploys all six production images — so
       # the next deploy would have died at `pnpm install`. Found by check-toolchain-consistency.mjs
       # on its first run, before it fired. 24.14.1 matches the BFF runtime image and prod-apk.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
-        with: { node-version: 26.13.1, cache: pnpm }
+        with: { node-version: 26.13.1 }
+      # pnpm into a JOB-PRIVATE prefix (item #1144), AFTER setup-node so its PATH entry wins over the
+      # shared tool-cache Node's bin. This host runner shares $HOME and ~/.cache/act/tool_cache with
+      # other projects' runners: a global install, pnpm/action-setup's ~/setup-pnpm, or setup-node's
+      # `cache: pnpm` (which needs pnpm on PATH first) would all read or write shared state.
+      - name: Install pnpm (job-private, version from package.json packageManager)
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh build-deploy-install-pnpm sh scripts/install-pnpm.sh
       # The pnpm on PATH must be the packageManager pin (item #1025): this persistent host runner
       # can carry an older global pnpm, and nested workspaces run on the installed one.
       - name: Verify pnpm matches packageManager
@@ -319,6 +326,11 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
+      - name: Remove the job-private pnpm
+        if: always()
+        env:
+          PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
+        run: bash scripts/ci-log-step.sh build-deploy-remove-pnpm rm -rf "$PNPM_PREFIX"
 
   # ── Prod APK with the PUBLIC BFF host baked (T018a, FR-026) ───────────────────────────────────
   # Ports .github/workflows/android-apk.yml. The release APK's BFF/Keycloak URLs are the public hosts
@@ -450,8 +462,8 @@ jobs:
             -d "{\"context\":\"cd-deploy/prod-apk-disk\",\"state\":\"success\",\"description\":\"$desc\"}" >/dev/null
           CI_LOG_STEP
       # pnpm at exactly package.json `packageManager`, via scripts/install-pnpm.sh — the installer for
-      # every container job (this one runs in node:22-bookworm); host (`kvm`) jobs such as build-deploy
-      # use pnpm/action-setup instead (renovate-workflow.guard.test.mjs). Never name a version here: this
+      # every job; this one runs in node:22-bookworm, so a global install is the job's own. Host (`kvm`) jobs
+      # such as build-deploy set a job-private PNPM_PREFIX (item #1144, renovate-workflow.guard.test.mjs). Never name a version here: this
       # job once pinned `version: 10.33.0`, which made the pin DUAL-sourced, so a `packageManager` bump
       # left it installing the old pnpm against a new-format lockfile and `pnpm install --frozen-lockfile`
       # failed — with nothing gating on it, because `prod-apk` is non-blocking.

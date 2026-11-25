@@ -176,8 +176,10 @@ Then:
    `tools/openwiki-generator` declare no `packageManager`, so `pnpm --dir <ws> …` (the sast audit, the
    openwiki generator install) runs on the **installed** pnpm. `scripts/check-pnpm-version.mjs` asks
    pnpm from an empty temp directory, and fails with both versions named when they differ. It also
-   runs after every `install-pnpm.sh` install and after each `pnpm/action-setup` step in CI
-   (item #1025). Re-run it after any global pnpm change on the host.
+   runs after every `install-pnpm.sh` install, and as its own step after that install in CI
+   (item #1025). Re-run it after any global pnpm change on the host. On the shared `kvm` CI host,
+   jobs install pnpm into a job-private `PNPM_PREFIX` and never globally, because another
+   project's runner shares the `ci` user's tool cache (item #1144).
 
 2. **EAS (Expo Application Services):**
 
