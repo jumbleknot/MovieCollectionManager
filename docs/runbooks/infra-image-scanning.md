@@ -133,7 +133,12 @@ run. Both alternatives were checked and **neither is available or needed here**:
   is keyless.
 - **Cross-run caching is not on offer.** `actions/cache` is not mirrored on this forge (see the
   `guardrails.yml` cargo-audit step, which installs fresh for the same reason), and each job runs in a
-  fresh container, so `~/.cache/trivy` starts empty every time.
+  fresh container, so `~/.cache/trivy` starts empty every time. The two **host-runner** scans
+  (`app-ci / app-image-scan`, `cd-deploy / build-deploy`) start empty too, by design (item #1146).
+  They install Trivy and point `TRIVY_CACHE_DIR` at `${{ runner.temp }}/mcm-trivy`, and an `always()`
+  step removes it, because that host's `~/.local/bin` and `~/.cache/trivy` are shared with another
+  project's runner (same `ci` user). A fresh database cost 5 s, and the Java database 24 s more,
+  measured on the host on 2026-11-25. `host-runner-shared-state.guard.test.mjs` holds this.
 
 So a bounded retry is the whole of the available fix, not a stopgap. Revisit if `actions/cache` is ever
 mirrored.

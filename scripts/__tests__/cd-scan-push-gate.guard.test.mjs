@@ -114,8 +114,9 @@ test('(#499) the build-deploy job still installs what the shared pipeline needs'
   const wf = readFileSync(resolve(REPO_ROOT, '.forgejo/workflows/cd-deploy.yml'), 'utf8');
   const job = wf.slice(wf.indexOf('build-deploy:'));
   assert.match(job, /pnpm install --frozen-lockfile/, 'the deploy job must install JS deps for the scanner');
-  // Item #1127: the pin lives in the installer, which the deploy job must still call.
-  assert.match(job, /bash scripts\/ci-install-trivy\.sh "\$HOME\/\.local\/bin"/, 'the deploy job must still install the PINNED Trivy');
+  // Item #1127: the pin lives in the installer, which the deploy job must still call. Item #1146: into a
+  // JOB-PRIVATE dir (host-runner-shared-state.guard.test.mjs), never the shared ~/.local/bin.
+  assert.match(job, /bash scripts\/ci-install-trivy\.sh "\$MCM_TRIVY_DIR\/bin"/, 'the deploy job must still install the PINNED Trivy');
 });
 
 // ── The control: a genuine fixable CRITICAL still blocks, and is NOT retried ─────────────────────

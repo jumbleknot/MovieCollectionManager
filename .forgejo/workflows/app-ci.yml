@@ -2219,9 +2219,11 @@ jobs:
         run: bash scripts/ci-log-step.sh app-image-scan-install-js-dependencies pnpm install --frozen-lockfile
 
       # The kvm runner executes as the unprivileged `ci` user — no sudo / no write to /usr/local/bin.
-      # Install Trivy to a user-writable dir and put it on PATH (same as cd-deploy's Trivy step).
+      # Install Trivy to a JOB-PRIVATE dir under runner.temp and put it on PATH (same as cd-deploy).
       - name: Install Trivy
         if: ${{ env.RUN_SCAN == 'true' }}
+        env:
+          MCM_TRIVY_DIR: ${{ runner.temp }}/mcm-trivy
         run: |
           bash scripts/ci-log-step.sh app-image-scan-install-trivy bash -e /dev/stdin <<'CI_LOG_STEP'
           # PINNED — items #303 and #1127. The (version, sha256) pin lives in ci-install-trivy.sh, ONE
@@ -2229,9 +2231,13 @@ jobs:
           # deploy uses. Renovate moves its version (customManagers in renovate.json); the tarball must
           # match the committed sha256 AND the publisher's checksums file. It replaced trivy's
           # contrib/install.sh, which failed silently on PR #929 (see the script's header).
-          bash scripts/ci-install-trivy.sh "$HOME/.local/bin"
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-          "$HOME/.local/bin/trivy" --version
+          # JOB-PRIVATE binary AND cache (item #1146): ~/.local/bin and ~/.cache/trivy are shared with
+          # another project's runner (same `ci` user), so a Trivy bump on either side would swap the other's
+          # scanner, even mid-scan. A fresh DB costs ~5 s (+24 s for the Java DB), measured 2026-11-25.
+          bash scripts/ci-install-trivy.sh "$MCM_TRIVY_DIR/bin"
+          echo "$MCM_TRIVY_DIR/bin" >> "$GITHUB_PATH"
+          echo "TRIVY_CACHE_DIR=$MCM_TRIVY_DIR/cache" >> "$GITHUB_ENV"
+          "$MCM_TRIVY_DIR/bin/trivy" --version
           CI_LOG_STEP
 
       - name: Verify the six scan tags exist (app-e2e built and tagged them)
@@ -2303,6 +2309,11 @@ jobs:
         env:
           PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
         run: bash scripts/ci-log-step.sh app-image-scan-remove-pnpm rm -rf "$PNPM_PREFIX"
+      - name: Remove the job-private Trivy (binary + DB cache)
+        if: always()
+        env:
+          MCM_TRIVY_DIR: ${{ runner.temp }}/mcm-trivy
+        run: bash scripts/ci-log-step.sh app-image-scan-remove-trivy rm -rf "$MCM_TRIVY_DIR"
 
   trigger-cd:
     needs: [affected, mc-service-checks, mc-service-checks-integration, app-e2e, dast, app-image-scan]
