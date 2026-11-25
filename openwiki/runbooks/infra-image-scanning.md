@@ -332,18 +332,18 @@ findings readable.
     the digest moves, the key matches nothing — and, until item #1136, nothing REPORTED that: the expiry
     check scoped "unmatched" to images the run scanned, and a retired digest is scanned by no run. It
     is now reported as a `STALE ENTRIES` line on the full sweep. The
-    live example is the `CVE-2026-111497` brotli entry `^postgres:18-alpine@sha256:77f585114c32`; its
-    caddy and postgres-18.6 siblings were found stale by hand on 2026-11-24 and deleted.
+    caddy and postgres-18.6 brotli entries were found stale by hand on 2026-11-24 and deleted; the last
+    one, `^postgres:18-alpine@sha256:77f585114c32`, was discharged the same day by a digest bump (item #1140).
   - **Discharged, not re-keyed.** Where a bump or a same-version digest refresh measurably clears the
     advisory, the entry is **deleted** rather than re-keyed — a re-keyed entry would match nothing and
     fail the expiry check, and deleting is the direction that restores blocking. Comment blocks left
     above an absent entry are the file's history, not a live suppression.
-  - **Live inventory (2026-11-24, after the stale-digest cleanup): three entries.** Two un-expiring BASELINE entries carry the same
-    Go-stdlib Critical (`CVE-2025-68121`) on `postgres:18.6-alpine3.23` and `postgres:18-alpine`, each
-    recording its own measurement because no reachable tag clears it (the shipped binary carrying it is
-    `usr/local/bin/gosu`). Both were tag-only keys until item #1130 re-keyed them, mechanically and
-    without a re-scan, to the digest pulled on 2026-11-24, so the next digest bump re-evaluates them. The third is the brotli digest key
-    (`CVE-2026-111497`) on `postgres:18-alpine`, time-boxed to `2026-12-01`. The OpenSearch netty key
+  - **Live inventory (2026-11-24, after item #1140): one entry.** An un-expiring BASELINE entry carries the
+    Go-stdlib Critical (`CVE-2025-68121`) on `postgres:18.6-alpine3.23`, recording its own measurement because no tag on that line clears it (the shipped binary carrying it is
+    `usr/local/bin/gosu`). It was a tag-only key until item #1130 re-keyed it, mechanically and
+    without a re-scan, to the digest pulled on 2026-11-24, so the next digest bump re-evaluates it. Item #1140 moved the observability
+    `postgres:18-alpine` to `sha256:0115267ab5a5` (PostgreSQL 18.7, gosu 1.20, Alpine 3.24.4), whose scan cleared both its
+    `CVE-2025-68121` and brotli (`CVE-2026-111497`) entries, so both were deleted. The OpenSearch netty key
     (`CVE-2026-75595`) and the caddy and postgres-18.6 brotli keys were deleted on 2026-11-24: each named a
     digest the repository no longer pulls, and `infra-image-scan` passes on the new digests unsuppressed.
     Everything else in the file is a comment block recording an entry that has been discharged — history,
