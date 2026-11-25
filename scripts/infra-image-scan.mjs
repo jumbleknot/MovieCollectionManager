@@ -197,7 +197,7 @@ export function normalizeTrivy(trivyJson, image, locations, severityMap) {
 }
 
 /** Read the infra tree into [{ path, content }] (paths repo-relative, forward-slashed). */
-function readInfraFiles() {
+export function readInfraFiles() {
   const abs = globSync(INFRA_GLOB, { cwd: REPO_ROOT });
   return abs.map((p) => ({
     path: relative(REPO_ROOT, resolve(REPO_ROOT, p)).replaceAll('\\', '/'),
@@ -265,9 +265,13 @@ export function scanImage(ref, opts = {}) {
   );
 }
 
-function writeReports(images, findings) {
+function writeReports(images, findings, scope) {
   mkdirSync(REPORT_DIR, { recursive: true });
-  const report = { schemaVersion: 1, generatedForImages: images.map((i) => i.ref), findings };
+  // `scope` says WHICH KIND of run wrote this report: 'sweep' (every image the repository references)
+  // or 'image' (one ref via --image). The gate needs it to judge staleness (item #1136): only a sweep
+  // may call an entry stale for targeting an image the repository no longer references; a single-image
+  // run must stay silent about every other image's entries (item #423). The gate REQUIRES the field.
+  const report = { schemaVersion: 1, scope, generatedForImages: images.map((i) => i.ref), findings };
   writeFileSync(resolve(REPORT_DIR, 'findings.json'), JSON.stringify(report, null, 2));
   const blocking = findings.filter((f) => f.blocking).length;
   const lines = [
@@ -398,7 +402,7 @@ function main() {
     process.exit(1); // fail-closed — never write/leave a clean report on scan failure
   }
 
-  const report = writeReports(images, findings);
+  const report = writeReports(images, findings, singleImage ? 'image' : 'sweep');
   if (emitAllowlist) emitProposedAllowlist(findings);
   console.log(`✓ scanned ${images.length} images → ${report.findings.length} findings (${findings.filter((f) => f.blocking).length} blocking). Report: security/infra-images/reports/findings.json`);
   process.exit(0);

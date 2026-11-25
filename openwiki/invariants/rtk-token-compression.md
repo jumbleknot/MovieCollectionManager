@@ -57,6 +57,14 @@ reaches the assistant.
   was re-run as `rtk bypass npx prettier --file-info …`. When a result is surprising, or when a command is
   a *query* rather than a check (`--file-info`, `--find-config-path`, `check-ignore`), re-run it under
   `rtk bypass` before concluding anything from it.
+- **A history search through RTK can come back EMPTY, or wrong.** Measured 2026-11-24 (item #1135,
+  first reported by BELAY's feature 013):
+  `git log --reverse --format='%h %ad' --date=short -S "selectReapable" | head -1` printed nothing,
+  while the same command as `rtk proxy git log …` printed `a818353a 2026-08-29`. BELAY also saw it
+  return a *later* commit than the true first one for other phrases. Run every history search
+  (`-S`, `-G`, `--reverse`) under `rtk proxy`. The same session saw `grep -n "test(" <file>` print
+  nothing through the hook while `rtk proxy grep` worked — an empty answer from a search is a reason
+  to re-run it under `rtk proxy`, not a finding.
 - **`rtk gain` is also the last item on the [feature validation checklist](./feature-validation-checklist.md)**, run after every other check specifically because it measures the token cost of the runs that preceded it.
 
 See [Feature validation checklist](./feature-validation-checklist.md) for where

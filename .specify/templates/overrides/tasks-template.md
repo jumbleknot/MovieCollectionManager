@@ -71,7 +71,7 @@ description: "Task list template for feature implementation"
     /speckit-tasks: RUN these searches NOW, while generating tasks.md, and write the outcome into
     this task as checked-off evidence: the exact command, the term list, and one line per hit with
     its disposition (→ T0NN, or "no change: <reason>"). Use, per term:
-      git grep -n -F "<term>" -- '*.md' ':!specs/' ':!docs/proposals/' ':!docs/decisions/'
+      git grep --untracked -n -F "<term>" -- '*.md' ':!specs/' ':!docs/proposals/' ':!docs/decisions/'
     Each hit needing a change becomes its own task in the Polish phase, naming the file.
     Dated records ("measured on …", incident logs, version history) are history: "no change".
   -->

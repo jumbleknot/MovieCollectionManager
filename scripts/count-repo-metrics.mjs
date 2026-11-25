@@ -3,7 +3,8 @@
 //
 // WHY THIS EXISTS. The log's July and October columns were first counted by hand, two different
 // ways, so part of every difference between them was method, not growth. This script is the one
-// method from 2026-11-17 on: run it at each refresh and append its column to the log unchanged.
+// method from 2026-11-17 on: run it at each refresh with `--append-log docs/MCM-Learnings.md`,
+// which writes the column itself (item #1133): a pasted column can be mis-copied like a hand count.
 //
 // WHAT IT READS. The files COMMITTED at one revision (`git ls-tree` + `git cat-file --batch`), never
 // the working tree. So uncommitted edits, node_modules, build output and anything gitignored
@@ -20,21 +21,28 @@
 // about the tool" trap in AGENTS.md. An input that exists but does not parse fails the run.
 
 import { execFileSync } from 'node:child_process';
-import { basename, extname, resolve } from 'node:path';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { basename, dirname, extname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ArgvError, partitionArgsWithValues, wantsHelp } from './lib/argv-contract.mjs';
 import { isMain } from './lib/is-main.mjs';
 
 export const USAGE = [
   'Usage: node scripts/count-repo-metrics.mjs [--json] [--rev <commit>] [--root <dir>]',
+  '       node scripts/count-repo-metrics.mjs [--rev <commit>] [--root <dir>] --append-log <file>',
   '',
-  '  (no flags)      print a markdown column for the measurement log in docs/MCM-Learnings.md',
-  '  --json          print every metric as JSON, for diffing two runs',
-  '  --rev <commit>  count the files committed at this revision (default HEAD)',
-  '  --root <dir>    count the repository containing <dir> (default: the current directory)',
-  '  --help, -h      print this text and count nothing',
+  '  (no flags)           print a markdown column for the measurement log in docs/MCM-Learnings.md',
+  '  --json               print every metric as JSON, for diffing two runs',
+  '  --rev <commit>       count the files committed at this revision (default HEAD)',
+  '  --root <dir>         count the repository containing <dir> (default: the current directory)',
+  '  --append-log <file>  write the column into the table between <!-- metrics-log:start --> and',
+  '                       <!-- metrics-log:end --> in <file>, in commit-date order, stamped with',
+  "                       this script's version (its blob; +dirty when edited). Refuses a commit",
+  '                       already logged and a shallow clone. Back-fill an older commit with --rev.',
+  '  --help, -h           print this text and count nothing',
   '',
-  'Reads committed files only, never the working tree. Exit 0 on success, 1 on a failed count,',
-  '2 on an unrecognised argument.',
+  'Reads committed files only, never the working tree. Exit 0 counted (and written), 1 refused',
+  '(a failed count, or --append-log refused, leaving the file unchanged), 2 bad arguments.',
 ].join('\n');
 
 // ── Reading a revision ──────────────────────────────────────────────────────────────────────────
@@ -105,6 +113,9 @@ export function readRevision(dir, rev = 'HEAD') {
     }
   }
 
+  const shallow =
+    git(['rev-parse', '--is-shallow-repository'], { encoding: 'utf8' }).trim() === 'true';
+
   const text = new Map();
   for (const entry of entries) {
     if (entry.mode === '120000') text.set(entry.path, '');
@@ -117,7 +128,11 @@ export function readRevision(dir, rev = 'HEAD') {
     commit,
     // The column is dated by the commit it counted, in the committer's recorded offset.
     date: git(['show', '-s', '--format=%cs', commit], { encoding: 'utf8' }).trim(),
-    commits: Number(git(['rev-list', '--count', commit], { encoding: 'utf8' }).trim()),
+    // A shallow clone's rev-list stops at the shallow boundary: a confident wrong count. Null.
+    shallow,
+    commits: shallow
+      ? null
+      : Number(git(['rev-list', '--count', commit], { encoding: 'utf8' }).trim()),
   };
 }
 
@@ -377,7 +392,8 @@ export function countMetrics(snapshot) {
   return {
     date: snapshot.date,
     commit: snapshot.commit.slice(0, 8),
-    commits: snapshot.commits,
+    commits: snapshot.commits ?? null,
+    shallow: snapshot.shallow ?? false,
     missingInputs,
     specKit,
     code: {
@@ -403,9 +419,10 @@ export function countMetrics(snapshot) {
 // ── Rendering ───────────────────────────────────────────────────────────────────────────────────
 
 const ABSENT = 'absent';
+const SHALLOW = 'unavailable (shallow clone)';
 
-/** The markdown column for the measurement log. */
-export function renderColumn(metrics) {
+/** The measures of one column, in log order, as [label, value] pairs. */
+export function columnRows(metrics) {
   const { specKit, code, documentation, constitution, instructionFile, knowledgePages } = metrics;
   const { decisionsAndRunbooks, ci, security, renovate } = metrics;
   const { production, test, testCases } = code;
@@ -420,7 +437,7 @@ export function renderColumn(metrics) {
       'Features',
       `${specKit.featureFolders} (numbered to ${specKit.highestFeatureNumber ?? ABSENT}${reused})`,
     ],
-    ['Commits', n(metrics.commits)],
+    ['Commits', metrics.shallow ? SHALLOW : n(metrics.commits)],
     [
       'Production code',
       `${n(production.lines)} lines in ${n(production.files)} files: ${k(code.applicationLines)} application, ${k(code.toolingLines)} CI/gate scripts and shell`,
@@ -473,16 +490,188 @@ export function renderColumn(metrics) {
         : `${renovate.packageRules} / ${renovate.customManagers} / ${renovate.groups}`,
     ],
   ];
+  return rows;
+}
+
+/** The markdown column for the measurement log. */
+export function renderColumn(metrics) {
   return [
     `| Measure | ${metrics.date} |`,
     '| --- | --- |',
-    ...rows.map(([measure, value]) => `| ${measure} | ${value} |`),
+    ...columnRows(metrics).map(([measure, value]) => `| ${measure} | ${value} |`),
   ].join('\n');
+}
+
+// ── The log table (--append-log) ────────────────────────────────────────────────────────────────
+//
+// WHY THE SCRIPT WRITES THE COLUMN. A pasted column fails the same way a hand-counted one does:
+// BELAY, which ported this log, measured the copying step as causing as much of the 4.5% hand-count
+// gap as the counting did. So the column goes from the count to the file with no human between.
+
+export const LOG_START = '<!-- metrics-log:start -->';
+export const LOG_END = '<!-- metrics-log:end -->';
+const NOT_RECORDED = 'not recorded';
+const SCRIPT_REL = 'scripts/count-repo-metrics.mjs';
+
+/** A refusal to write the log: exit 1, and the file is left byte-for-byte as it was. */
+export class LogRefusal extends Error {}
+
+/**
+ * Which version of the counting script is running: the short id of its committed blob, with
+ * `+dirty` when the file differs from that blob (edited, staged or not), or `untracked` when its
+ * repository's HEAD has no such file. A blob, not a commit: two commits that leave the script
+ * unchanged give the same version, so the version changes exactly when the counting can.
+ * Only columns with the same version were counted the same way.
+ */
+export function scriptVersion(scriptPath) {
+  const dir = dirname(scriptPath);
+  const name = basename(scriptPath);
+  const git = (args) =>
+    execFileSync('git', ['-C', dir, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  let blob;
+  try {
+    blob = git(['rev-parse', '--verify', '--quiet', '--short=8', `HEAD:./${name}`]).trim();
+  } catch {
+    return 'untracked';
+  }
+  if (!blob) return 'untracked';
+  let status = '';
+  try {
+    status = git(['status', '--porcelain', '--', name]).trim();
+  } catch {
+    // status failing after rev-parse succeeded would be a broken repository: say so in the stamp
+    return `${blob}+unknown`;
+  }
+  return status ? `${blob}+dirty` : blob;
+}
+
+/** The column --append-log writes: the method, the script version, then the counted measures. */
+export function logColumn(metrics, { rev, today, version }) {
+  if (metrics.shallow) {
+    throw new LogRefusal(
+      'refusing to log a shallow clone: its commit count is unavailable (git rev-list stops at ' +
+        'the shallow boundary). Count from a full clone, or run `git fetch --unshallow` first.',
+    );
+  }
+  const method =
+    rev === undefined
+      ? `\`${SCRIPT_REL}\``
+      : `\`${SCRIPT_REL} --rev ${metrics.commit}\`, back-filled ${today}`;
+  const [blob, suffix] = version.split('+');
+  const stamp =
+    version === 'untracked' ? version : `blob \`${blob}\`${suffix ? `+${suffix}` : ''}`;
+  return {
+    date: metrics.date,
+    commit: metrics.commit,
+    rows: [['Method', method], ['Script version', stamp], ...columnRows(metrics)],
+  };
+}
+
+// Split a table row on its unescaped pipes; the outer pipes are dropped.
+const cellsOf = (line) =>
+  line
+    .trim()
+    .replace(/^\|/, '')
+    .replace(/(?<!\\)\|$/, '')
+    .split(/(?<!\\)\|/)
+    .map((cell) => cell.trim());
+const rowLine = (cells) => `| ${cells.join(' | ')} |`;
+const escapeCell = (value) => String(value).replace(/(?<!\\)\|/g, '\\|');
+const dateOf = (header) => /\d{4}-\d{2}-\d{2}/.exec(header)?.[0] ?? '';
+const commitOf = (cell) => /`([0-9a-f]{7,40})`/.exec(cell ?? '')?.[1] ?? null;
+const sameCommit = (a, b) => a.startsWith(b) || b.startsWith(a);
+
+/**
+ * Return `markdown` with `column` ({date, commit, rows}) merged in between the log markers as a
+ * new column, in commit-date order. Pure. Throws LogRefusal rather than write a doubtful table:
+ * no markers, a commit already logged, or a body that is not one table.
+ *
+ * Order: after every column dated earlier or the same day, except that a same-day column whose
+ * commit descends from the new one (`isAncestor(new, existing)`) stays after it: a back-fill of
+ * an earlier commit lands before its descendant even when both have one date.
+ */
+export function mergeLogColumn(markdown, column, { isAncestor = () => false } = {}) {
+  const start = markdown.indexOf(LOG_START);
+  const end = markdown.indexOf(LOG_END);
+  if (start === -1 || end === -1 || end < start) {
+    throw new LogRefusal(`the log needs both markers, ${LOG_START} then ${LOG_END}`);
+  }
+  const eol = markdown.includes('\r\n') ? '\r\n' : '\n';
+  const body = markdown.slice(start + LOG_START.length, end).trim();
+  const lines = body ? body.split(/\r?\n/) : [];
+
+  let headers = [];
+  let labels = [];
+  const values = new Map();
+  if (lines.length > 0) {
+    if (lines.length < 2 || !lines.every((line) => line.trim().startsWith('|'))) {
+      throw new LogRefusal('the text between the log markers is not a single markdown table');
+    }
+    headers = cellsOf(lines[0]).slice(1);
+    for (const line of lines.slice(2)) {
+      const [label, ...rest] = cellsOf(line);
+      if (rest.length !== headers.length) {
+        throw new LogRefusal(`log row "${label}" has ${rest.length} cells for ${headers.length} columns`);
+      }
+      labels.push(label);
+      values.set(label, rest);
+    }
+  }
+
+  const logged = (values.get('Commit') ?? []).map(commitOf);
+  if (logged.some((sha) => sha && sameCommit(sha, column.commit))) {
+    throw new LogRefusal(
+      `${column.commit} is already logged; a column is never edited. To back-fill an older ` +
+        'commit, pass it with --rev.',
+    );
+  }
+
+  // A measure the table has not seen yet goes after the measure that precedes it in the column.
+  let previous = -1;
+  for (const [label] of column.rows) {
+    const at = labels.indexOf(label);
+    if (at === -1) {
+      labels.splice(previous + 1, 0, label);
+      values.set(label, headers.map(() => NOT_RECORDED));
+      previous += 1;
+    } else {
+      previous = at;
+    }
+  }
+
+  const fresh = new Map(column.rows.map(([label, value]) => [label, escapeCell(value)]));
+  let at = headers.findIndex((header, i) => {
+    const date = dateOf(header);
+    if (date !== column.date) return date > column.date;
+    const sha = logged[i];
+    return Boolean(sha) && isAncestor(column.commit, sha);
+  });
+  if (at === -1) at = headers.length;
+  headers.splice(at, 0, column.date);
+  for (const label of labels) values.get(label).splice(at, 0, fresh.get(label) ?? NOT_RECORDED);
+
+  const table = [
+    rowLine(['Measure', ...headers]),
+    rowLine(['---', ...headers.map(() => '---')]),
+    ...labels.map((label) => rowLine([label, ...values.get(label)])),
+  ].join(eol);
+  return `${markdown.slice(0, start + LOG_START.length)}${eol}${table}${eol}${markdown.slice(end)}`;
 }
 
 // ── CLI ─────────────────────────────────────────────────────────────────────────────────────────
 
-export function main(argv, { cwd = process.cwd(), out = console.log, err = console.error } = {}) {
+const localDate = () => new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD, local time
+
+export function main(
+  argv,
+  {
+    cwd = process.cwd(),
+    out = console.log,
+    err = console.error,
+    scriptPath = fileURLToPath(import.meta.url),
+    today = localDate(),
+  } = {},
+) {
   // Asking what the script does must never do it.
   if (wantsHelp(argv)) {
     out(USAGE);
@@ -492,9 +681,12 @@ export function main(argv, { cwd = process.cwd(), out = console.log, err = conso
   try {
     parsed = partitionArgsWithValues(argv, {
       accepted: ['--json'],
-      withValues: ['--rev', '--root'],
+      withValues: ['--rev', '--root', '--append-log'],
       usage: USAGE,
     });
+    if (parsed.flags.has('--json') && parsed.values.has('--append-log')) {
+      throw new ArgvError(`--json and --append-log cannot be combined\n\n${USAGE}`);
+    }
   } catch (error) {
     if (!(error instanceof ArgvError)) throw error;
     // Exit 2, the shared contract, but RETURNED rather than set on the process: main() is also
@@ -504,8 +696,8 @@ export function main(argv, { cwd = process.cwd(), out = console.log, err = conso
   }
 
   let metrics;
+  const root = resolve(cwd, parsed.values.get('--root') ?? '.');
   try {
-    const root = resolve(cwd, parsed.values.get('--root') ?? '.');
     metrics = countMetrics(readRevision(root, parsed.values.get('--rev') ?? 'HEAD'));
   } catch (error) {
     err(`count-repo-metrics: ${error.message}`);
@@ -518,6 +710,46 @@ export function main(argv, { cwd = process.cwd(), out = console.log, err = conso
         metrics.missingInputs.join(', '),
     );
   }
+  if (metrics.shallow) {
+    err(`count-repo-metrics: ${root} is a shallow clone, so the commit count is unavailable`);
+  }
+
+  const logFile = parsed.values.get('--append-log');
+  if (logFile !== undefined) {
+    const path = resolve(cwd, logFile);
+    try {
+      let text;
+      try {
+        text = readFileSync(path, 'utf8');
+      } catch (error) {
+        throw new LogRefusal(`cannot read ${logFile}: ${error.message}`);
+      }
+      const column = logColumn(metrics, {
+        rev: parsed.values.get('--rev'),
+        today,
+        version: scriptVersion(scriptPath),
+      });
+      const isAncestor = (ancestor, descendant) => {
+        try {
+          execFileSync('git', ['-C', root, 'merge-base', '--is-ancestor', ancestor, descendant], {
+            stdio: 'ignore',
+          });
+          return true;
+        } catch {
+          return false; // not an ancestor, or a commit this repository does not have
+        }
+      };
+      writeFileSync(path, mergeLogColumn(text, column, { isAncestor }));
+    } catch (error) {
+      if (!(error instanceof LogRefusal)) throw error;
+      err(`count-repo-metrics: ${error.message}`);
+      return 1;
+    }
+    out(renderColumn(metrics));
+    out(`count-repo-metrics: logged ${metrics.commit} (${metrics.date}) in ${logFile}`);
+    return 0;
+  }
+
   out(parsed.flags.has('--json') ? JSON.stringify(metrics, null, 2) : renderColumn(metrics));
   return 0;
 }

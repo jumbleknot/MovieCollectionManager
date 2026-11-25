@@ -251,8 +251,21 @@ curl -sS -H "Authorization: token $MCM_FORGE_TOKEN" "$API/commits/<sha>/statuses
 
 `expiry_step=failure` covers two different causes, and the status cannot separate them:
 
-- **An entry needs action.** It is expiring within 14 days, already expired, or matches nothing. The
-  step log names it.
+- **An entry needs action.** It is expiring within 14 days, already expired, matches nothing
+  (`UNMATCHED ENTRIES`: its image was scanned and no finding fits it), or is stale (`STALE ENTRIES`:
+  its image regex matches no image the repository references any more — usually a digest bump left it
+  behind). The step log names it.
+
+  **Stale vs unmatched, and why both exist (item #1136).** Unmatched-entry detection is scoped to the
+  images the run *scanned* (item #423), so a single-image run (`--image`, `scan-app-image.sh`) does not
+  flag every other image's entries. That scoping alone made a digest-keyed entry whose digest left the
+  repository silent for ever — it targets an image no run scans. So on the full sweep, and on the weekly
+  `--check-expiring` run even when the scan report is absent, the checker also enumerates the
+  repository's images in-process (the same `enumerateImages` that `infra-image-scan.mjs --list` prints)
+  and reports any entry matching none of them as STALE. It reads the run kind from the report's `scope`
+  field (`sweep` / `image`, written by `infra-image-scan.mjs`); a report without it is a gate error
+  (exit 2), as is an enumeration with an unresolved `${REGISTRY_HOST}` ref. A single-image run never
+  reports STALE.
 - **The checker itself crashed.** Item #562: from 2026-09-12 until 2026-10-02 both checkers threw on
   the absent report they announce as legitimate. Because the step runs `cmd1 && cmd2` under `bash -e`,
   the infra-image half never ran at all.
@@ -573,8 +586,9 @@ matches the reference in the compose files today, **and** stops matching a later
 
 **Re-keying is required whenever a pinned tag changes**, not optional tidy-up. An entry keyed to the
 old tag matches nothing after the bump, the finding it covered becomes un-allowlisted, and the gate
-blocks — while reporting the entry only as an `UNMATCHED ENTRIES` line, which reads like housekeeping
-rather than like the cause. Check that line before assuming a new CVE appeared.
+blocks — while reporting the entry only as a `STALE ENTRIES` line (its old ref is no longer in the
+repository; an `UNMATCHED ENTRIES` line before item #1136), which reads like housekeeping rather than
+like the cause. Check that line before assuming a new CVE appeared.
 
 ### A "later version" fixture must be DERIVED from the pin (item #561)
 

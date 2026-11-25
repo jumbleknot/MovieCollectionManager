@@ -571,8 +571,9 @@ One line per lesson. **Landed** is the date the lesson was first written down, n
 
 ## Part 3. Measurement log
 
-Each column is one refresh. From 2026-11-17 on, a column is the output of [`scripts/count-repo-metrics.mjs`](../scripts/count-repo-metrics.mjs), pasted unchanged, and is dated by the commit it counted. The script reads the files committed at that commit, so an earlier commit can be counted later with `--rev`: the 2026-07-18 and 2026-10-22 columns were back-filled that way, each beside the hand count it re-measures.
+Each column is one refresh. From 2026-11-17 on, a column is the output of [`scripts/count-repo-metrics.mjs`](../scripts/count-repo-metrics.mjs), and is dated by the commit it counted. Since 2026-11-24 the script writes the column itself (`--append-log`), between the `metrics-log` markers and in commit-date order, because copying a column by hand caused as much error as counting by hand did. Each scripted column names the version of the script that counted it (`Script version`), and only columns with the same version are comparable. The script reads the files committed at that commit, so an earlier commit can be counted later with `--rev`: the 2026-07-18 and 2026-10-22 columns were back-filled that way, each beside the hand count it re-measures.
 
+<!-- metrics-log:start -->
 | Measure | 2026-07-17 | 2026-07-18 | 2026-10-21 | 2026-10-22 | 2026-11-17 |
 | --- | --- | --- | --- | --- | --- |
 | Method | Author's count in the LinkedIn post | `scripts/count-repo-metrics.mjs --rev e4be5ae8`, back-filled 2026-11-17 | One-off count of the working tree | `scripts/count-repo-metrics.mjs --rev 1f0e2cfd`, back-filled 2026-11-17 | `scripts/count-repo-metrics.mjs` |
@@ -595,6 +596,7 @@ Each column is one refresh. From 2026-11-17 on, a column is the output of [`scri
 | Task lists with Verify RED | not counted | 26 of 36 (27 counting "Expected RED") | not counted | 66 of 78 (67 counting "Expected RED") | 84 of 98 (86 counting "Expected RED") |
 | Allowlist entries (SAST / DAST / image) | not counted | 5 / 1 / 13 | 9 / 1 / 5 | 9 / 1 / 5 | 8 / 1 / 6 |
 | Renovate rules / managers / groups | not counted | 9 / 0 / 5 | 43 / 10 / 23 | 43 / 10 / 23 | 44 / 9 / 21 |
+<!-- metrics-log:end -->
 
 Reading the log:
 
@@ -633,9 +635,10 @@ The shape of the journey: two product features, then nine features of test and s
 
 1. **A learning goes to its canonical home first.** The routing rule is in [AGENTS.md](../AGENTS.md) under "Where a new learning goes". This document gets a ledger line only when the learning changes the story, and the line links to that home.
 2. **Ledger (Part 2): append.** Add a line under a new dated heading. To record that a lesson changed, edit its *Status* cell and say when. Never edit the lesson text or delete a line.
-3. **Log (Part 3): append a column.** Run `node scripts/count-repo-metrics.mjs` on `main` and add its column to the table. Never edit an earlier column. Add a row to the feature timeline when an era closes.
+3. **Log (Part 3): append a column.** On `main`, run `node scripts/count-repo-metrics.mjs --append-log docs/MCM-Learnings.md`; never paste a column by hand. It refuses (exit 1, file unchanged) a commit already logged and a shallow clone. To back-fill an older commit, add `--rev <sha>`. Never edit an earlier column. Add a row to the feature timeline when an era closes.
 4. **Story (Part 1): rewrite in place.** No "superseded" notes; git holds the history. If a passage starts to explain how to do something, replace it with a link to the runbook that owns it.
 5. **Refresh the first line**: the date and commit of the newest log column.
+6. **Check every cited commit before merging.** Run `git show <sha>` on each commit a ledger line or story passage cites as evidence, and confirm it is the measurement it is said to be. BELAY's first draft of its ledger cited a proposal and a port as measurements (item #1135).
 
 **When.** At each quarterly drift audit, as a step of its procedure ([doc-drift runbook](runbooks/doc-drift.md#the-quarterly-drift-audit-layer-3)), and whenever a ledger status changes.
 
