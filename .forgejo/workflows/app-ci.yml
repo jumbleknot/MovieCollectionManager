@@ -466,6 +466,22 @@ jobs:
       KEYCLOAK_SERVICE_CLIENT_SECRET: ${{ secrets.KEYCLOAK_SERVICE_CLIENT_SECRET }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # JOB-PRIVATE Docker config + PINNED Compose (item #1147). This host runner shares $HOME with another
+      # project's runner (same `ci` user), and the Docker CLI reads its plugins AND registry logins from
+      # $DOCKER_CONFIG (default ~/.docker). This job used to curl `releases/latest` into the shared
+      # ~/.docker/cli-plugins. Now it points DOCKER_CONFIG at its own dir BEFORE its first docker call, with
+      # scripts/ci-install-compose.sh's (version, sha256) pin in it (Renovate-managed), and the last step
+      # removes the dir. The per-stack aggregators override `include:`d services to attach profiles, which
+      # needs a recent Compose; the system plugin in /usr/libexec/docker/cli-plugins is older. buildx is
+      # still found there, because Docker searches the system plugin dirs whatever DOCKER_CONFIG is.
+      - name: Private Docker config + pinned Compose plugin (job-private)
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: |
+          bash scripts/ci-log-step.sh mc-service-it-install-compose bash -e /dev/stdin <<'CI_LOG_STEP'
+          bash scripts/ci-install-compose.sh "$MCM_DOCKER_CONFIG"
+          echo "DOCKER_CONFIG=$MCM_DOCKER_CONFIG" >> "$GITHUB_ENV"
+          CI_LOG_STEP
       - name: Set up Docker CLI (host runner talks to the ci rootless daemon)
         run: |
           bash scripts/ci-log-step.sh mc-service-it-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
@@ -477,15 +493,6 @@ jobs:
             echo "::error::the ci rootless daemon is not reachable at DOCKER_HOST=$DOCKER_HOST (see app-e2e's identical step)."
             exit 1
           fi
-          CI_LOG_STEP
-      - name: Install latest Docker Compose plugin
-        run: |
-          bash scripts/ci-log-step.sh mc-service-it-install-latest-docker bash -e /dev/stdin <<'CI_LOG_STEP'
-          mkdir -p ~/.docker/cli-plugins
-          curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-            -o ~/.docker/cli-plugins/docker-compose
-          chmod +x ~/.docker/cli-plugins/docker-compose
-          docker compose version
           CI_LOG_STEP
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with: { node-version: 26.13.1 }
@@ -594,6 +601,11 @@ jobs:
         env:
           PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
         run: bash scripts/ci-log-step.sh mc-service-it-remove-pnpm rm -rf "$PNPM_PREFIX"
+      - name: Remove the job-private Docker config (plugins, registry logins)
+        if: always()
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: bash scripts/ci-log-step.sh mc-service-it-remove-docker-config rm -rf "$MCM_DOCKER_CONFIG"
 
   # Feature 105 (research R20) — the usage store's integration tier: real Postgres + PostgREST + a
   # throwaway Keycloak importing ci-realm.json, brought up and torn down by the Nx target itself
@@ -613,6 +625,22 @@ jobs:
       MCM_REQUIRE_LIVE_STACK: '1'
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      # JOB-PRIVATE Docker config + PINNED Compose (item #1147). This host runner shares $HOME with another
+      # project's runner (same `ci` user), and the Docker CLI reads its plugins AND registry logins from
+      # $DOCKER_CONFIG (default ~/.docker). This job used to curl `releases/latest` into the shared
+      # ~/.docker/cli-plugins. Now it points DOCKER_CONFIG at its own dir BEFORE its first docker call, with
+      # scripts/ci-install-compose.sh's (version, sha256) pin in it (Renovate-managed), and the last step
+      # removes the dir. The per-stack aggregators override `include:`d services to attach profiles, which
+      # needs a recent Compose; the system plugin in /usr/libexec/docker/cli-plugins is older. buildx is
+      # still found there, because Docker searches the system plugin dirs whatever DOCKER_CONFIG is.
+      - name: Private Docker config + pinned Compose plugin (job-private)
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: |
+          bash scripts/ci-log-step.sh dev-usage-it-install-compose bash -e /dev/stdin <<'CI_LOG_STEP'
+          bash scripts/ci-install-compose.sh "$MCM_DOCKER_CONFIG"
+          echo "DOCKER_CONFIG=$MCM_DOCKER_CONFIG" >> "$GITHUB_ENV"
+          CI_LOG_STEP
       - name: Set up Docker CLI (host runner talks to the ci rootless daemon)
         run: |
           bash scripts/ci-log-step.sh dev-usage-it-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
@@ -624,15 +652,6 @@ jobs:
             echo "::error::the ci rootless daemon is not reachable at DOCKER_HOST=$DOCKER_HOST (see app-e2e's identical step)."
             exit 1
           fi
-          CI_LOG_STEP
-      - name: Install latest Docker Compose plugin
-        run: |
-          bash scripts/ci-log-step.sh dev-usage-it-install-latest-docker bash -e /dev/stdin <<'CI_LOG_STEP'
-          mkdir -p ~/.docker/cli-plugins
-          curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-            -o ~/.docker/cli-plugins/docker-compose
-          chmod +x ~/.docker/cli-plugins/docker-compose
-          docker compose version
           CI_LOG_STEP
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with: { node-version: 26.13.1 }
@@ -664,6 +683,11 @@ jobs:
         env:
           PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
         run: bash scripts/ci-log-step.sh dev-usage-it-remove-pnpm rm -rf "$PNPM_PREFIX"
+      - name: Remove the job-private Docker config (plugins, registry logins)
+        if: always()
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: bash scripts/ci-log-step.sh dev-usage-it-remove-docker-config rm -rf "$MCM_DOCKER_CONFIG"
 
   # ── Containerized web + mobile agent E2E (FR-006..FR-010) ─────────────────────────────────────
   app-e2e:
@@ -791,6 +815,22 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # JOB-PRIVATE Docker config + PINNED Compose (item #1147). This host runner shares $HOME with another
+      # project's runner (same `ci` user), and the Docker CLI reads its plugins AND registry logins from
+      # $DOCKER_CONFIG (default ~/.docker). This job used to curl `releases/latest` into the shared
+      # ~/.docker/cli-plugins. Now it points DOCKER_CONFIG at its own dir BEFORE its first docker call, with
+      # scripts/ci-install-compose.sh's (version, sha256) pin in it (Renovate-managed), and the last step
+      # removes the dir. The per-stack aggregators override `include:`d services to attach profiles, which
+      # needs a recent Compose; the system plugin in /usr/libexec/docker/cli-plugins is older. buildx is
+      # still found there, because Docker searches the system plugin dirs whatever DOCKER_CONFIG is.
+      - name: Private Docker config + pinned Compose plugin (job-private)
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: |
+          bash scripts/ci-log-step.sh app-e2e-install-compose bash -e /dev/stdin <<'CI_LOG_STEP'
+          bash scripts/ci-install-compose.sh "$MCM_DOCKER_CONFIG"
+          echo "DOCKER_CONFIG=$MCM_DOCKER_CONFIG" >> "$GITHUB_ENV"
+          CI_LOG_STEP
       # Agent images + Android SDK/NDK + Gradle caches exhaust the default runner disk. Free first.
       # This job runs ON THE ci HOST (`runs-on: kvm`, a `kvm:host` runner label — see the job header),
       # not in a job container. Install the Docker CLI only if the host lacks one, and confirm it reaches
@@ -842,18 +882,6 @@ jobs:
             echo "::error::/dev/kvm not present on the ci host (this job runs on the host via the kvm:host runner label, not in a container). Check KVM is enabled on the host (kvm_intel/kvm_amd loaded), that the ci user is in the kvm group (as root on the host: usermod -aG kvm ci; /dev/kvm group kvm, mode 660 or 666), and that the runner still registers the kvm:host label."
             exit 1
           fi
-          CI_LOG_STEP
-
-      # The per-stack aggregators override `include:`d services to attach profiles; that needs a
-      # recent Docker Compose (the bundled one rejects it). Install the latest plugin.
-      - name: Install latest Docker Compose plugin
-        run: |
-          bash scripts/ci-log-step.sh app-e2e-install-latest-docker bash -e /dev/stdin <<'CI_LOG_STEP'
-          mkdir -p ~/.docker/cli-plugins
-          curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-            -o ~/.docker/cli-plugins/docker-compose
-          chmod +x ~/.docker/cli-plugins/docker-compose
-          docker compose version
           CI_LOG_STEP
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
@@ -1598,22 +1626,19 @@ jobs:
       # ── Emulator + Maestro agent flows (FR-009) ─────────────────────────────────────────────────
       - name: Install Maestro
         if: ${{ github.event_name != 'pull_request' || needs.changes.outputs.mobile == 'true' || contains(github.event.pull_request.labels.*.name, 'mobile-e2e') || contains(github.event.pull_request.labels.*.name, 'mobile-e2e-full') }}
+        env:
+          MCM_MAESTRO_DIR: ${{ runner.temp }}/mcm-maestro
         run: |
           bash scripts/ci-log-step.sh app-e2e-install-maestro bash -e /dev/stdin <<'CI_LOG_STEP'
-          # PINNED (item #224, the uv/Trivy shape of item #307/#303). The installer URL is fixed but
-          # what it INSTALLS was not: its own source reads
-          #   if [ -z "$MAESTRO_VERSION" ]; then .../releases/latest/download/maestro.zip
-          #   else                              .../releases/download/cli-$MAESTRO_VERSION/maestro.zip
-          # so with the variable unset every run silently took whatever was newest that day, in the
-          # runner for the mobile agent flows. Unlike uv and Trivy the version cannot live in the URL
-          # — the vendor publishes no versioned endpoint — so it is passed by environment instead.
-          # Renovate keeps it current (customManagers in renovate.json, datasource github-releases,
-          # extractVersion strips the `cli-` tag prefix); renovate-workflow.guard.test.mjs asserts
-          # both the pin and the manager that maintains it are still here.
-          MAESTRO_VERSION=2.12.1
-          export MAESTRO_VERSION
-          curl -Ls https://get.maestro.mobile.dev | bash
-          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+          # PINNED (item #224) and JOB-PRIVATE (item #1147). scripts/ci-install-maestro.sh holds the
+          # (version, sha256) pin, Renovate-managed, and checks the release zip against it. It replaced
+          # `curl https://get.maestro.mobile.dev | bash`, which installed into the shared ~/.maestro and,
+          # because maestro is never on PATH when it runs, appended `export PATH=…` to ~/.bashrc and
+          # ~/.zshrc on every run (644 copies of each on the ci host by 2026-11-26). The last step
+          # removes this dir. Maestro still writes run output to ~/.maestro/tests, which it derives
+          # from $HOME, not from where it is installed.
+          bash scripts/ci-install-maestro.sh "$MCM_MAESTRO_DIR"
+          echo "$MCM_MAESTRO_DIR/bin" >> "$GITHUB_PATH"
           # Mark this run's start: the maestro-debug upload takes only Maestro output newer than this,
           # not the ci host's ~/.maestro/tests history (spec 084 FR-019b; scripts/ci-maestro-debug.sh).
           bash scripts/ci-maestro-debug.sh start
@@ -1871,6 +1896,16 @@ jobs:
         env:
           PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
         run: bash scripts/ci-log-step.sh app-e2e-remove-pnpm rm -rf "$PNPM_PREFIX"
+      - name: Remove the job-private Maestro
+        if: always()
+        env:
+          MCM_MAESTRO_DIR: ${{ runner.temp }}/mcm-maestro
+        run: bash scripts/ci-log-step.sh app-e2e-remove-maestro rm -rf "$MCM_MAESTRO_DIR"
+      - name: Remove the job-private Docker config (plugins, registry logins)
+        if: always()
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: bash scripts/ci-log-step.sh app-e2e-remove-docker-config rm -rf "$MCM_DOCKER_CONFIG"
 
   # ── DAST security scan (feature 031) ──────────────────────────────────────────────────────────
   # OWASP ZAP FULL (active BFF + mc-service, passive gateway) against the ephemeral throwaway stack.
@@ -1903,6 +1938,22 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # JOB-PRIVATE Docker config + PINNED Compose (item #1147). This host runner shares $HOME with another
+      # project's runner (same `ci` user), and the Docker CLI reads its plugins AND registry logins from
+      # $DOCKER_CONFIG (default ~/.docker). This job used to curl `releases/latest` into the shared
+      # ~/.docker/cli-plugins. Now it points DOCKER_CONFIG at its own dir BEFORE its first docker call, with
+      # scripts/ci-install-compose.sh's (version, sha256) pin in it (Renovate-managed), and the last step
+      # removes the dir. The per-stack aggregators override `include:`d services to attach profiles, which
+      # needs a recent Compose; the system plugin in /usr/libexec/docker/cli-plugins is older. buildx is
+      # still found there, because Docker searches the system plugin dirs whatever DOCKER_CONFIG is.
+      - name: Private Docker config + pinned Compose plugin (job-private)
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: |
+          bash scripts/ci-log-step.sh dast-install-compose bash -e /dev/stdin <<'CI_LOG_STEP'
+          bash scripts/ci-install-compose.sh "$MCM_DOCKER_CONFIG"
+          echo "DOCKER_CONFIG=$MCM_DOCKER_CONFIG" >> "$GITHUB_ENV"
+          CI_LOG_STEP
       - name: Set up Docker CLI (job talks to the runner's daemon socket)
         run: |
           bash scripts/ci-log-step.sh dast-set-up-docker-cli bash -e /dev/stdin <<'CI_LOG_STEP'
@@ -1926,16 +1977,6 @@ jobs:
           # (checked — `|| true` must not be allowed to turn a bad flag into a silent no-op).
           docker builder prune -f --reserved-space 50GB || true
           docker system df || true
-          CI_LOG_STEP
-
-      - name: Install latest Docker Compose plugin
-        run: |
-          bash scripts/ci-log-step.sh dast-install-latest-docker bash -e /dev/stdin <<'CI_LOG_STEP'
-          mkdir -p ~/.docker/cli-plugins
-          curl -fsSL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
-            -o ~/.docker/cli-plugins/docker-compose
-          chmod +x ~/.docker/cli-plugins/docker-compose
-          docker compose version
           CI_LOG_STEP
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
@@ -2137,6 +2178,11 @@ jobs:
         env:
           PNPM_PREFIX: ${{ runner.temp }}/mcm-pnpm
         run: bash scripts/ci-log-step.sh dast-remove-pnpm rm -rf "$PNPM_PREFIX"
+      - name: Remove the job-private Docker config (plugins, registry logins)
+        if: always()
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: bash scripts/ci-log-step.sh dast-remove-docker-config rm -rf "$MCM_DOCKER_CONFIG"
 
   # ── Trigger CD once CI is green on main (CD hardening Option 2, 2026-07-03) ────────────────────
   # Replaces cd-deploy's old POLLING ci-gate (which raced an 80-min wall clock against app-e2e queued on
@@ -2176,6 +2222,19 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # JOB-PRIVATE Docker config (item #1147). This host runner shares $HOME with another project's runner
+      # (same `ci` user), and the Docker CLI keeps registry logins and plugins in $DOCKER_CONFIG (default
+      # ~/.docker). DOCKER_CONFIG points at this job's own dir BEFORE its first docker call, and the last step
+      # removes the dir, so a `docker login` here leaves no token in the shared ~/.docker/config.json. The
+      # system plugins (buildx) in /usr/libexec/docker/cli-plugins are still found, whatever DOCKER_CONFIG is.
+      - name: Private Docker config (job-private DOCKER_CONFIG)
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: |
+          bash scripts/ci-log-step.sh app-image-scan-docker-config bash -e /dev/stdin <<'CI_LOG_STEP'
+          mkdir -p "$MCM_DOCKER_CONFIG"
+          echo "DOCKER_CONFIG=$MCM_DOCKER_CONFIG" >> "$GITHUB_ENV"
+          CI_LOG_STEP
       - name: Decide whether there is anything to scan
         env:
           APP_CHANGED: ${{ needs.changes.outputs.app }}
@@ -2314,6 +2373,11 @@ jobs:
         env:
           MCM_TRIVY_DIR: ${{ runner.temp }}/mcm-trivy
         run: bash scripts/ci-log-step.sh app-image-scan-remove-trivy rm -rf "$MCM_TRIVY_DIR"
+      - name: Remove the job-private Docker config (plugins, registry logins)
+        if: always()
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: bash scripts/ci-log-step.sh app-image-scan-remove-docker-config rm -rf "$MCM_DOCKER_CONFIG"
 
   trigger-cd:
     needs: [affected, mc-service-checks, mc-service-checks-integration, app-e2e, dast, app-image-scan]

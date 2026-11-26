@@ -3,9 +3,9 @@ type: Runbook
 title: Android emulator & APK builds (mobile E2E)
 description: The decision rule for where each mobile E2E flow runs — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone release APK with its in-bundle localhost guard and explicit Gradle heap, the launch check that must pass before any flow and the app-ci / android-launch commit status that reports it, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
-resource-sha256: f7c39c3bbc6d2d856b9f7e03b088b35944c33cc2ccf944eb81857d27cbf1a9bc
+resource-sha256: 80b897f364bc400a0f3b427dded31743cbbabd505d18870cd0e36a43b7a040aa
 tags: [android, mobile, emulator, apk, ci, runbook]
-timestamp: 2026-11-17T07:04:50.432Z
+timestamp: 2026-11-26T01:25:15.742Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -128,9 +128,12 @@ Several details of the mobile half are load-bearing when editing it:
 - **The action's `script:` block is executed line-by-line in separate shells**, so multi-line
   constructs (a `for` loop with backslash continuations) break there — that is why the whole flow loop
   lives in `scripts/ci-mobile-agent-flows.sh` and the step is a single `bash` invocation.
-- **The Maestro CLI is pinned** (`MAESTRO_VERSION=2.10.0`): the vendor installer fetches
-  `releases/latest` when that variable is unset, so without the pin the mobile tier silently tracked
-  whatever Maestro released that day. Renovate maintains the pin.
+- **The Maestro CLI is pinned and job-private**: `scripts/ci-install-maestro.sh` holds a (version,
+  sha256) pair that Renovate maintains, and installs the release zip into `${{ runner.temp }}/mcm-maestro`,
+  removed at job end (items #224, #1147). The vendor installer it replaced fetched `releases/latest`
+  unless `MAESTRO_VERSION` was set, installed into the shared `~/.maestro`, and appended a PATH line to
+  `~/.bashrc` and `~/.zshrc` on every run. Run output still lands in `~/.maestro/tests` (derived from
+  `$HOME`).
 - **The Android SDK install names its packages explicitly, and `platform-tools` is not optional.**
   The `android-actions/setup-android` step passes `packages: 'platform-tools'` rather than relying on
   the action's default: the old default was `tools platform-tools`, and `tools` — the legacy SDK Tools

@@ -62,6 +62,13 @@ test('every step after the gate except the failure digest is conditioned on it',
   assert.equal(checkout.with?.['fetch-depth'], 0, 'the gate diffs against before, so it needs history');
   for (const s of steps.slice(gateAt + 1)) {
     if (/ci-failure-digest\.mjs/.test(s.run ?? '')) continue;
+    // Item #1147: the job-private DOCKER_CONFIG is created before the gate, so its removal runs
+    // whatever the gate decided. Allowed only as exactly that: always(), and nothing but the rm -rf.
+    if (/rm -rf "\$MCM_DOCKER_CONFIG"$/.test(s.run ?? '')) {
+      assert.equal(s.if, 'always()', `step "${s.name}" removes the job-private Docker config and must be always()`);
+      assert.match(s.run, /^bash scripts\/ci-log-step\.sh [a-z-]+ rm -rf "\$MCM_DOCKER_CONFIG"$/, `step "${s.name}" must only remove the config`);
+      continue;
+    }
     assert.equal(s.if, "steps.gate.outputs.build == 'true'", `step "${s.name}" must be gated`);
   }
 });

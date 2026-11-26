@@ -57,6 +57,19 @@ jobs:
         with:
           # The gate diffs against the push's `before` sha, which a depth-1 clone does not contain.
           fetch-depth: 0
+      # JOB-PRIVATE Docker config (item #1147). This host runner shares $HOME with another project's runner
+      # (same `ci` user), and the Docker CLI keeps registry logins and plugins in $DOCKER_CONFIG (default
+      # ~/.docker). DOCKER_CONFIG points at this job's own dir BEFORE its first docker call, and the last step
+      # removes the dir, so a `docker login` here leaves no token in the shared ~/.docker/config.json. The
+      # system plugins (buildx) in /usr/libexec/docker/cli-plugins are still found, whatever DOCKER_CONFIG is.
+      - name: Private Docker config (job-private DOCKER_CONFIG)
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: |
+          bash scripts/ci-log-step.sh build-publish-docker-config bash -e /dev/stdin <<'CI_LOG_STEP'
+          mkdir -p "$MCM_DOCKER_CONFIG"
+          echo "DOCKER_CONFIG=$MCM_DOCKER_CONFIG" >> "$GITHUB_ENV"
+          CI_LOG_STEP
       # Pin Node (item #992): without this the job runs the runner's implicit Node, not the repo's —
       # check-toolchain-consistency.mjs rule 4 fails a Node-running job that has no setup-node.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
@@ -147,3 +160,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
           CI_DIGEST_JOB_STATUS: ${{ job.status }}
         run: node scripts/ci-failure-digest.mjs
+      - name: Remove the job-private Docker config (plugins, registry logins)
+        if: always()
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: bash scripts/ci-log-step.sh build-publish-remove-docker-config rm -rf "$MCM_DOCKER_CONFIG"

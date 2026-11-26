@@ -18,6 +18,8 @@ const sha = (s) => createHash('sha256').update(s).digest('hex');
 const trivy = PINS.find((p) => p.name === 'trivy');
 const rustup = PINS.find((p) => p.name === 'rustup-init');
 const audit = PINS.find((p) => p.name === 'cargo-audit');
+const compose = PINS.find((p) => p.name === 'docker-compose');
+const maestro = PINS.find((p) => p.name === 'maestro');
 
 const TRIVY_TEXT = (version, shaFor, a64, arm) =>
   `#!/usr/bin/env bash\nset -euo pipefail\n\nTRIVY_VERSION=${version}\nTRIVY_SHA256_FOR=${shaFor}\nTRIVY_SHA256_LINUX_64BIT=${a64}\nTRIVY_SHA256_LINUX_ARM64=${arm}\n\necho rest-of-script\n`;
@@ -38,6 +40,10 @@ function stubIo(artifacts, { checksumsOverride = {} } = {}) {
           .join('\n');
       }
       if (url.endsWith('rustup-init.sha256')) return `${sha(artifacts[url.slice(0, -'.sha256'.length)])}  *rustup-init\n`;
+      const c = /\/docker\/compose\/releases\/download\/(v[\d.]+)\/checksums\.txt$/.exec(url);
+      if (c) return compose.assets(c[1]).map((a) => `${checksumsOverride[a.name] ?? sha(artifacts[a.url] ?? '')} *${a.name}`).join('\n');
+      const mz = /\/cli-([\d.]+)\/checksums_sha256\.txt$/.exec(url);
+      if (mz) return maestro.assets(mz[1]).map((a) => `${checksumsOverride[a.name] ?? sha(artifacts[a.url] ?? '')}  ${a.name}`).join('\n');
       throw new Error(`GET ${url} → 404`);
     },
     async json(url) {
@@ -107,6 +113,25 @@ test('rustup-init and cargo-audit refresh through their own publishers', async (
   const cText = 'CARGO_AUDIT_VERSION=0.24.0\nCARGO_AUDIT_SHA256_FOR=0.23.0\nCARGO_AUDIT_SHA256=' + '0'.repeat(64) + '\n';
   const cOut = await refreshPin(audit, cText, stubIo({ [c.url]: 'audit bytes' }));
   assert.equal(readPin(audit, cOut).hashes.CARGO_AUDIT_SHA256, sha('audit bytes'));
+});
+
+test('docker-compose and maestro (item #1147) refresh through their own publishers, and a disagreeing download writes nothing', async () => {
+  const cArt = Object.fromEntries(compose.assets('v9.9.9').map((a) => [a.url, `bytes of ${a.name}`]));
+  const cText = `COMPOSE_VERSION=v9.9.9\nCOMPOSE_SHA256_FOR=v9.9.8\nCOMPOSE_SHA256_LINUX_X86_64=${'0'.repeat(64)}\nCOMPOSE_SHA256_LINUX_AARCH64=${'0'.repeat(64)}\n`;
+  const cOut = await refreshPin(compose, cText, stubIo(cArt));
+  assert.equal(readPin(compose, cOut).hashes.COMPOSE_SHA256_LINUX_X86_64, sha('bytes of docker-compose-linux-x86_64'));
+  assert.equal(readPin(compose, cOut).hashes.COMPOSE_SHA256_LINUX_AARCH64, sha('bytes of docker-compose-linux-aarch64'));
+  assert.deepEqual(await checkPin(compose, cOut, stubIo(cArt)), []);
+  await assert.rejects(
+    refreshPin(compose, cText, stubIo(cArt, { checksumsOverride: { 'docker-compose-linux-x86_64': 'e'.repeat(64) } })),
+    /nothing written/,
+  );
+
+  const [m] = maestro.assets('9.9.9');
+  const mText = `MAESTRO_VERSION=9.9.9\nMAESTRO_SHA256_FOR=9.9.8\nMAESTRO_SHA256=${'0'.repeat(64)}\n`;
+  const mOut = await refreshPin(maestro, mText, stubIo({ [m.url]: 'maestro zip' }));
+  assert.equal(readPin(maestro, mOut).hashes.MAESTRO_SHA256, sha('maestro zip'));
+  assert.equal(readPin(maestro, mOut).shaFor, '9.9.9');
 });
 
 test('a checksums file with zero or two entries for the asset is refused, never guessed', () => {
