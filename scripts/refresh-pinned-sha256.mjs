@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // Item #1127 — the (version, sha256) pins in the CI installers, verified against their publishers.
 //
-// THREE INSTALLERS pin a downloaded binary by version AND sha256: Trivy, rustup-init and cargo-audit.
+// FIVE INSTALLERS pin a downloaded binary by version AND sha256: Trivy, rustup-init, cargo-audit and,
+// since item #1147, Docker Compose and Maestro.
 // Renovate moves the `*_VERSION` alone (its managers match nothing else), and the `*_SHA256_FOR` beside
 // the checksum names the version it was taken for — so a bump arrives RED until the checksum follows.
 // Before this script, following meant a human reading a hash off a release page and pasting it.
@@ -15,7 +16,8 @@
 //             writes nothing and exits 1 — the hash is never taken on the download's word alone.
 //
 // Publishers: Trivy's `trivy_<v>_checksums.txt`; rustup's `rustup-init.sha256` beside the binary;
-// cargo-audit's release-asset `digest` from the GitHub releases API.
+// cargo-audit's release-asset `digest` from the GitHub releases API; Compose's `checksums.txt` and
+// Maestro's `checksums_sha256.txt`, each beside its release assets.
 //
 // Node built-ins only: guardrails runs this before any `pnpm install`.
 
@@ -31,6 +33,8 @@ const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const TRIVY = 'https://github.com/aquasecurity/trivy/releases/download';
 const RUSTUP = 'https://static.rust-lang.org/rustup/archive';
 const RUSTSEC = 'https://github.com/rustsec/rustsec/releases/download';
+const COMPOSE = 'https://github.com/docker/compose/releases/download';
+const MAESTRO = 'https://github.com/mobile-dev-inc/maestro/releases/download';
 
 /**
  * Every pinned (version, sha256) pair. `assets(version)` lists each checksum line with the URL of the
@@ -87,6 +91,38 @@ export const PINS = [
       const digest = /^sha256:([0-9a-f]{64})$/.exec(asset?.digest ?? '')?.[1];
       if (!digest) throw new Error(`the cargo-audit v${v} release states no sha256 digest for ${name}`);
       return { CARGO_AUDIT_SHA256: digest };
+    },
+  },
+  {
+    name: 'docker-compose',
+    file: 'scripts/ci-install-compose.sh',
+    version: 'COMPOSE_VERSION',
+    shaFor: 'COMPOSE_SHA256_FOR',
+    assets: (v) =>
+      [
+        ['COMPOSE_SHA256_LINUX_X86_64', 'linux-x86_64'],
+        ['COMPOSE_SHA256_LINUX_AARCH64', 'linux-aarch64'],
+      ].map(([variable, platform]) => ({
+        variable,
+        name: `docker-compose-${platform}`,
+        url: `${COMPOSE}/${v}/docker-compose-${platform}`,
+      })),
+    async published(v, io) {
+      const text = await io.text(`${COMPOSE}/${v}/checksums.txt`);
+      const out = {};
+      for (const a of this.assets(v)) out[a.variable] = checksumFileEntry(text, a.name);
+      return out;
+    },
+  },
+  {
+    name: 'maestro',
+    file: 'scripts/ci-install-maestro.sh',
+    version: 'MAESTRO_VERSION',
+    shaFor: 'MAESTRO_SHA256_FOR',
+    assets: (v) => [{ variable: 'MAESTRO_SHA256', name: 'maestro.zip', url: `${MAESTRO}/cli-${v}/maestro.zip` }],
+    async published(v, io) {
+      const text = await io.text(`${MAESTRO}/cli-${v}/checksums_sha256.txt`);
+      return { MAESTRO_SHA256: checksumFileEntry(text, 'maestro.zip') };
     },
   },
 ];

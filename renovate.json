@@ -272,13 +272,32 @@
         "without stripping the prefix Renovate compares `2.10.0` against `cli-*` tags, finds nothing",
         "comparable, and proposes NOTHING — the silent-no-op failure mode that makes a manager",
         "indistinguishable from no manager. renovate-workflow.guard.test.mjs asserts the matchString",
-        "actually captures the pin in app-ci.yml rather than trusting that it does."
+        "actually captures the pin rather than trusting that it does.",
+        "SINCE ITEM #1147 the pin lives in scripts/ci-install-maestro.sh, as a (version, sha256) pair like",
+        "Trivy's. The vendor installer it replaced also appended a PATH line to the shared ~ci/.bashrc on",
+        "every run. This manager moves MAESTRO_VERSION ONLY, so a bump arrives red until",
+        "`node scripts/refresh-pinned-sha256.mjs --write` takes the new checksum."
       ],
-      "managerFilePatterns": ["/^\\.forgejo/workflows/app-ci\\.yml$/"],
+      "managerFilePatterns": ["/^scripts/ci-install-maestro\\.sh$/"],
       "matchStrings": ["MAESTRO_VERSION=(?<currentValue>[\\d.]+)"],
       "depNameTemplate": "mobile-dev-inc/maestro",
       "datasourceTemplate": "github-releases",
       "extractVersionTemplate": "^cli-(?<version>.+)$"
+    },
+    {
+      "customType": "regex",
+      "description": [
+        "Item #1147 — keep the pinned Docker Compose plugin current. Four host-runner jobs used to curl",
+        "`releases/latest` into the `ci` user's shared ~/.docker/cli-plugins. That took whatever Compose",
+        "shipped that day, for every process running as `ci`. Now scripts/ci-install-compose.sh installs",
+        "a (version, sha256) pin into each job's private DOCKER_CONFIG. Same shape as the Trivy manager:",
+        "it moves COMPOSE_VERSION ONLY, COMPOSE_SHA256_FOR names the version the checksums were taken for,",
+        "and `node scripts/refresh-pinned-sha256.mjs --write` refreshes them against the release's checksums.txt."
+      ],
+      "managerFilePatterns": ["/^scripts/ci-install-compose\\.sh$/"],
+      "matchStrings": ["COMPOSE_VERSION=(?<currentValue>v[\\d.]+)"],
+      "depNameTemplate": "docker/compose",
+      "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",

@@ -22,7 +22,6 @@ app-e2e-bring-up-keycloak	300	n=40 max=91s x3=273s -> 300s; runs 3503..3103
 app-e2e-first-time-docker-setup	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
 app-e2e-free-daemon-disk-space	300	n=40 max=2s x3=6s -> floor 300s; runs 3503..3103
 app-e2e-install-dependencies	300	n=40 max=8s x3=24s -> floor 300s; runs 3503..3103
-app-e2e-install-latest-docker	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
 app-e2e-install-maestro	300	n=27 max=8s x3=24s -> floor 300s; runs 3503..3103
 app-e2e-mint-per-stack-secrets	300	n=40 max=1s x3=3s -> floor 300s; runs 3503..3103
 app-e2e-reset-stateful-ci-data	300	n=40 max=8s x3=24s -> floor 300s; runs 3503..3103
@@ -60,6 +59,12 @@ mcp-integration-web-api	300	n=40 max=4s x3=12s -> floor 300s; runs 3503..3103
 # app-image-scan-install-pnpm	-	new in item #1144; NO observations yet. As app-e2e-install-pnpm.
 # app-image-scan-remove-pnpm	-	new in item #1144; NO observations yet. One rm -rf.
 # app-image-scan-remove-trivy	-	new in item #1146; NO observations yet. One rm -rf of the job-private Trivy + DB.
+# app-e2e-install-compose	-	new in item #1147 (renamed from app-e2e-install-latest-docker, n=40 max=1s); NO
+#   observations yet under this name. One pinned, sha256-checked download into the job-private DOCKER_CONFIG.
+# app-e2e-remove-docker-config	-	new in item #1147; NO observations yet. One rm -rf; the backstop bounds it.
+# app-e2e-remove-maestro	-	new in item #1147; NO observations yet. One rm -rf of the job-private Maestro.
+# app-image-scan-docker-config	-	new in item #1147; NO observations yet. A mkdir and one $GITHUB_ENV line.
+# app-image-scan-remove-docker-config	-	new in item #1147; NO observations yet. One rm -rf.
 #   The `app-image-scan` steps run in their own job, bounded by its CI_STEP_TIMEOUT_SECONDS (900s).
 # app-e2e-build-images	-	split out of app-e2e-bring-up-keycloak (feature 073); NO observations
 #   yet under this name. It is the cache-dependent half: ~0s when the Docker layer cache hits,

@@ -3139,17 +3139,29 @@ test('the uv image refs ride the `uv pin` group, not `docker base images`', () =
 // and a manager whose regex misses is indistinguishable from no manager — the failure that let the
 // nx half-bump through twice.
 
-test('the Maestro install is pinned to a version rather than resolving latest at run time', () => {
+// Item #1147 moved the pin out of app-ci.yml into scripts/ci-install-maestro.sh, as a (version,
+// sha256) pair like Trivy's. The vendor installer it replaced also installed into the shared
+// ~/.maestro and appended `export PATH=…` to ~/.bashrc and ~/.zshrc on every run (644 copies each on
+// the host runner by 2026-11-26). The home-dir half is host-runner-shared-state.guard.test.mjs; this
+// half is the pin and the manager that keeps it current.
+const MAESTRO_INSTALLER = 'scripts/ci-install-maestro.sh';
+
+test('the Maestro install is pinned to a version and checksum rather than resolving latest at run time', () => {
   const appCi = readFileSync(resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml'), 'utf8');
-  const install = /curl\s+-Ls\s+https:\/\/get\.maestro\.mobile\.dev\s*\|\s*bash/.exec(appCi);
-  assert.ok(install, 'expected the Maestro installer invocation in app-ci.yml');
-  const pins = [...appCi.matchAll(/MAESTRO_VERSION=([\d.]+)/g)];
-  assert.equal(pins.length, 1, 'expected exactly one MAESTRO_VERSION pin');
-  // The pin must be EXPORTED and must precede the pipe, or the installer never sees it and falls
-  // back to `latest` while the diff still shows a version number — a pin that reads as one and is not.
-  const pinAt = appCi.indexOf('MAESTRO_VERSION=');
-  assert.ok(appCi.includes('export MAESTRO_VERSION'), 'MAESTRO_VERSION must be exported to the installer');
-  assert.ok(pinAt < install.index, 'the pin must be set BEFORE the installer runs');
+  const executable = appCi.split(/\r?\n/).filter((l) => !/^\s*#/.test(l)).join('\n');
+  assert.match(executable, /\bbash[ \t]+scripts\/ci-install-maestro\.sh[ \t]+"\$[A-Z_]+"/, `app-ci.yml no longer installs Maestro through ${MAESTRO_INSTALLER}`);
+  assert.doesNotMatch(executable, /get\.maestro\.mobile\.dev/, 'app-ci.yml runs the vendor Maestro installer again (it writes ~/.bashrc and ~/.zshrc)');
+  assert.doesNotMatch(executable, /MAESTRO_VERSION=/, 'app-ci.yml names a Maestro version again; the pin lives in the installer alone');
+
+  const text = readFileSync(resolve(REPO_ROOT, MAESTRO_INSTALLER), 'utf8');
+  const v = (name) => new RegExp(`^${name}=(\\S+)$`, 'm').exec(text)?.[1] ?? null;
+  assert.match(String(v('MAESTRO_VERSION')), /^\d+\.\d+\.\d+$/);
+  assert.match(String(v('MAESTRO_SHA256')), /^[0-9a-f]{64}$/, `${MAESTRO_INSTALLER}: MAESTRO_SHA256 is not a sha256`);
+  assert.equal(
+    v('MAESTRO_SHA256_FOR'), v('MAESTRO_VERSION'),
+    `${MAESTRO_INSTALLER}: MAESTRO_VERSION is ${v('MAESTRO_VERSION')} but its checksum was taken for ${v('MAESTRO_SHA256_FOR')}.\n` +
+      '  Run: node scripts/refresh-pinned-sha256.mjs --write (downloads, hashes, matches the publisher).',
+  );
 });
 
 test('a customManager keeps the Maestro pin current, and its regex actually captures it', () => {
@@ -3157,14 +3169,53 @@ test('a customManager keeps the Maestro pin current, and its regex actually capt
   assert.ok(manager, 'expected a customManagers entry for mobile-dev-inc/maestro');
   assert.equal(manager.datasourceTemplate, 'github-releases');
   // The repository tags releases `cli-2.10.0`. Without stripping that prefix Renovate has nothing
-  // comparable to the bare version in the workflow and proposes NOTHING — silently.
+  // comparable to the bare version in the installer and proposes NOTHING — silently.
   assert.ok(manager.extractVersionTemplate, 'the cli- tag prefix must be stripped or the manager no-ops');
   assert.match('cli-2.10.0', new RegExp(manager.extractVersionTemplate));
 
-  const appCi = readFileSync(resolve(REPO_ROOT, '.forgejo/workflows/app-ci.yml'), 'utf8');
-  const found = manager.matchStrings.flatMap((str) => [...appCi.matchAll(new RegExp(str, 'g'))]);
-  assert.equal(found.length, 1, 'the manager matchString must capture the pin that is actually in the file');
-  assert.match(found[0].groups.currentValue, /^\d+\.\d+\.\d+$/);
+  const patterns = manager.managerFilePatterns ?? [];
+  assert.ok(patterns.some((p) => new RegExp(p.replace(/^\/|\/$/g, '')).test(MAESTRO_INSTALLER)), `the Maestro customManager does not cover ${MAESTRO_INSTALLER}`);
+  const text = readFileSync(resolve(REPO_ROOT, MAESTRO_INSTALLER), 'utf8');
+  const found = manager.matchStrings.flatMap((str) => [...text.matchAll(new RegExp(str, 'g'))]);
+  assert.equal(found.length, 1, 'the manager matchString must capture the pin that is actually in the installer');
+  assert.equal(found[0].groups.currentValue, /^MAESTRO_VERSION=(\S+)$/m.exec(text)[1]);
+  for (const ms of manager.matchStrings) assert.doesNotMatch(ms, /SHA256/, `a Renovate matchString reaches a checksum: ${ms}`);
+});
+
+// ── Docker Compose plugin pin (item #1147) ───────────────────────────────────
+//
+// Four host-runner jobs curl'd `releases/latest` into the shared ~/.docker/cli-plugins. Now each
+// installs scripts/ci-install-compose.sh's (version, sha256) pin into its private DOCKER_CONFIG.
+const COMPOSE_INSTALLER = 'scripts/ci-install-compose.sh';
+
+test('no workflow installs a floating Docker Compose; the pin is a version tag with checksums taken for it', () => {
+  for (const f of readdirSync(resolve(REPO_ROOT, '.forgejo/workflows')).filter((x) => /\.ya?ml$/.test(x))) {
+    const executable = readFileSync(resolve(REPO_ROOT, '.forgejo/workflows', f), 'utf8').split(/\r?\n/).filter((l) => !/^\s*#/.test(l)).join('\n');
+    assert.doesNotMatch(executable, /docker\/compose\/releases\/(latest|download)\//, `${f} downloads Compose itself; use ${COMPOSE_INSTALLER}`);
+  }
+  const text = readFileSync(resolve(REPO_ROOT, COMPOSE_INSTALLER), 'utf8');
+  const v = (name) => new RegExp(`^${name}=(\\S+)$`, 'm').exec(text)?.[1] ?? null;
+  assert.match(String(v('COMPOSE_VERSION')), /^v\d+\.\d+\.\d+$/);
+  for (const sha of ['COMPOSE_SHA256_LINUX_X86_64', 'COMPOSE_SHA256_LINUX_AARCH64']) {
+    assert.match(String(v(sha)), /^[0-9a-f]{64}$/, `${COMPOSE_INSTALLER}: ${sha} is not a sha256`);
+  }
+  assert.equal(
+    v('COMPOSE_SHA256_FOR'), v('COMPOSE_VERSION'),
+    `${COMPOSE_INSTALLER}: COMPOSE_VERSION is ${v('COMPOSE_VERSION')} but its checksums were taken for ${v('COMPOSE_SHA256_FOR')}.\n` +
+      '  Run: node scripts/refresh-pinned-sha256.mjs --write (downloads, hashes, matches the publisher).',
+  );
+});
+
+test('Renovate tracks the Compose pin in the installer, and its matchString cannot reach a checksum', () => {
+  const managers = (config.customManagers ?? []).filter((m) => (m.depNameTemplate ?? '') === 'docker/compose');
+  assert.equal(managers.length, 1, 'expected exactly one customManager tracking docker/compose');
+  assert.equal(managers[0].datasourceTemplate, 'github-releases');
+  const patterns = managers[0].managerFilePatterns ?? [];
+  assert.ok(patterns.some((p) => new RegExp(p.replace(/^\/|\/$/g, '')).test(COMPOSE_INSTALLER)), `the Compose customManager does not cover ${COMPOSE_INSTALLER}`);
+  const text = readFileSync(resolve(REPO_ROOT, COMPOSE_INSTALLER), 'utf8');
+  const captured = managers[0].matchStrings.map((ms) => new RegExp(ms).exec(text)?.groups?.currentValue).filter(Boolean);
+  assert.deepEqual(captured, [/^COMPOSE_VERSION=(\S+)$/m.exec(text)[1]], `the Compose customManager must capture COMPOSE_VERSION in ${COMPOSE_INSTALLER}, and only it`);
+  for (const ms of managers[0].matchStrings) assert.doesNotMatch(ms, /SHA256/, `a Renovate matchString reaches a checksum: ${ms}`);
 });
 
 // ── Item #487 — the weekly CVE sweep must decide before Renovate opens the PRs it will block ─────

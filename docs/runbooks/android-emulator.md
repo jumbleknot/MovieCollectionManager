@@ -20,7 +20,15 @@ inlined), runs it against the **containerized dev BFF (:8082) + containerized pr
 MCP** on a **KVM emulator on the `kvm` host runner**, `adb reverse`s 8082/8099 (Keycloak's issuer is
 pinned to `localhost`, so `10.0.2.2` would break login — see
 [below](#which-address-for-which-service--10022-for-metro-adb-reverse-for-keycloakbff)), and runs
-the flows per-file in two halves:
+the flows per-file in two halves.
+
+The Maestro CLI it runs is pinned. `scripts/ci-install-maestro.sh` holds a (version, sha256) pair,
+Renovate moves the version (item #224), and the script installs the release zip into the job-private
+`${{ runner.temp }}/mcm-maestro`, removed when the job ends (item #1147). It replaced
+`curl https://get.maestro.mobile.dev | bash`. That installer took `releases/latest` unless
+`MAESTRO_VERSION` was set, installed into the `ci` user's shared `~/.maestro`, and appended a PATH line
+to `~/.bashrc` and `~/.zshrc` on every run. Maestro's run output still lands in `~/.maestro/tests`,
+since the CLI derives it from `$HOME`.
 
 1. **Agent half — always** (`MOBILE_SUITE=agents`, the default): `scripts/ci-mobile-agent-flows.sh` —
    gating → enable-anthropic → the agent flows → disable, then `admin-settings-access` last after a

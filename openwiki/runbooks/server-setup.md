@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: 210dd092e267be48dcf44a95f26f1f59de9b8ad7f618b395581fdc483770e9f5
+resource-sha256: 36b0bc20cb8e05d61a12b010e8b50211260ef9e0c3217d2392a83cb837eeba24
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-22T18:08:46.893Z
+timestamp: 2026-11-26T01:25:15.856Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -329,6 +329,13 @@ The bring-up spine: every phase consumes state an earlier one created, so a rebu
     `app-ci`'s equivalent was corrected on 2026-10-04 to name the host execution. The *host* runs the
     corrected reality (the jobs execute on the host and reach the socket through `DOCKER_HOST`), so
     read the message as stale wording, not as a setup step.
+- **Host jobs keep tools and Docker state job-private** (items #1144, #1146, #1147). Another project's
+  runner runs as the same `ci` user, so `$HOME` is shared. Each `runs-on: kvm` job installs pnpm,
+  Trivy (+ DB), the pinned Docker Compose plugin and Maestro under `${{ runner.temp }}` and removes
+  them in `always()` steps. Every host job that runs the Docker CLI sets a private `DOCKER_CONFIG`
+  before its first docker call, so plugins and `docker login` tokens never touch `~/.docker`. buildx
+  still resolves from `/usr/libexec/docker/cli-plugins`. `host-runner-shared-state.guard.test.mjs`
+  fails each wrong shape.
 - **A default Periphery root lives on a tmpfs and is wiped by every reboot.** Rootless Docker
   copy-ups `/etc` into a per-daemon tmpfs, so Komodo's stock `/etc/komodo` root — and with it the
   cloned repo checkout that every stack's relative bind-mounts resolve against — does not survive.

@@ -110,6 +110,19 @@ jobs:
           token: ${{ secrets.CD_PUSH_TOKEN }}
           persist-credentials: true
 
+      # JOB-PRIVATE Docker config (item #1147). This host runner shares $HOME with another project's runner
+      # (same `ci` user), and the Docker CLI keeps registry logins and plugins in $DOCKER_CONFIG (default
+      # ~/.docker). DOCKER_CONFIG points at this job's own dir BEFORE its first docker call, and the last step
+      # removes the dir, so a `docker login` here leaves no token in the shared ~/.docker/config.json. The
+      # system plugins (buildx) in /usr/libexec/docker/cli-plugins are still found, whatever DOCKER_CONFIG is.
+      - name: Private Docker config (job-private DOCKER_CONFIG)
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: |
+          bash scripts/ci-log-step.sh build-deploy-docker-config bash -e /dev/stdin <<'CI_LOG_STEP'
+          mkdir -p "$MCM_DOCKER_CONFIG"
+          echo "DOCKER_CONFIG=$MCM_DOCKER_CONFIG" >> "$GITHUB_ENV"
+          CI_LOG_STEP
       # Mirror app-e2e: install the Docker CLI if the job image lacks it, then confirm the daemon is
       # reachable over the mounted socket. Fail LOUD if not — the build can't proceed without Docker.
       - name: Set up Docker CLI (talk to the runner's daemon socket)
@@ -342,6 +355,11 @@ jobs:
         env:
           MCM_TRIVY_DIR: ${{ runner.temp }}/mcm-trivy
         run: bash scripts/ci-log-step.sh build-deploy-remove-trivy rm -rf "$MCM_TRIVY_DIR"
+      - name: Remove the job-private Docker config (plugins, registry logins)
+        if: always()
+        env:
+          MCM_DOCKER_CONFIG: ${{ runner.temp }}/mcm-docker
+        run: bash scripts/ci-log-step.sh build-deploy-remove-docker-config rm -rf "$MCM_DOCKER_CONFIG"
 
   # ── Prod APK with the PUBLIC BFF host baked (T018a, FR-026) ───────────────────────────────────
   # Ports .github/workflows/android-apk.yml. The release APK's BFF/Keycloak URLs are the public hosts

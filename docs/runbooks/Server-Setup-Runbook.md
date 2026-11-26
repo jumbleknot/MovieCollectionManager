@@ -708,6 +708,40 @@ The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once con
 > runner provisioned that way still has that config, which is harmless — but it must also carry the
 > `kvm:host` label.
 
+> **Host jobs keep their tools and Docker state job-private (items #1144, #1146, #1147).** Another
+> project's runner (`~ci/runner-belay`) runs as the same `ci` user, so `$HOME` is shared: `~/.local/bin`,
+> `~/.cache/*`, `~/.cache/act/tool_cache`, `~/.docker`, `~/.bashrc`. On 2026-11-25 that project's global
+> pnpm install landed in the shared tool cache and broke `main` here. So every `runs-on: kvm` job
+> installs what it needs under `${{ runner.temp }}` (a per-job dir under `~/.cache/act/<id>/tmp`) and
+> removes it in an `if: always()` step at the end of the job:
+>
+> | Tool | Installer (pin + sha256, Renovate-managed) | Job-private location |
+> |---|---|---|
+> | pnpm | `scripts/install-pnpm.sh` (`PNPM_PREFIX`; version from `packageManager`) | `${{ runner.temp }}/mcm-pnpm` |
+> | Trivy + its DB | `scripts/ci-install-trivy.sh "$MCM_TRIVY_DIR/bin"`, `TRIVY_CACHE_DIR` | `${{ runner.temp }}/mcm-trivy` |
+> | Docker config: Compose plugin + registry logins | `scripts/ci-install-compose.sh "$MCM_DOCKER_CONFIG"`, then `DOCKER_CONFIG` via `$GITHUB_ENV` | `${{ runner.temp }}/mcm-docker` |
+> | Maestro | `scripts/ci-install-maestro.sh "$MCM_MAESTRO_DIR"` | `${{ runner.temp }}/mcm-maestro` |
+>
+> Every host job that runs the Docker CLI points `DOCKER_CONFIG` at its own dir **before its first
+> docker call**. Docker reads CLI plugins and logins from there, so the four Compose jobs
+> (`mc-service-checks-integration`, `dev-usage-integration`, `app-e2e`, `dast`) get the pinned plugin,
+> and the two `docker login` jobs (`build-deploy` via `scripts/cd/scan-push.sh`, `build-publish`) leave
+> no token in `~/.docker/config.json`. Docker still searches the system plugin dir
+> `/usr/libexec/docker/cli-plugins` (buildx, an older Compose), whatever `DOCKER_CONFIG` is. The shared
+> config's `currentContext: rootless` is not needed, because every host job sets `DOCKER_HOST`.
+> Maestro's vendor installer is not used: it installs into `~/.maestro` and appends a PATH line to
+> `~/.bashrc` and `~/.zshrc` on every run. Maestro still writes its run output to `~/.maestro/tests`,
+> because the CLI derives that path from `$HOME`. `scripts/ci-maestro-debug.sh` reads it from there.
+>
+> `scripts/__tests__/host-runner-shared-state.guard.test.mjs` fails each wrong shape: a `$HOME` dir on
+> PATH, a write into `~/.local/bin` or `~/.docker`, the vendor Maestro installer, a docker call against
+> the shared config, and a job-private dir with no `always()` cleanup or one removed too early.
+> `pnpmInstallFindings` in `renovate-workflow.guard.test.mjs` holds the pnpm half. To add a host-job
+> tool, install it after setup-node into a `runner.temp` path, put it on PATH via `$GITHUB_PATH`, set
+> env via `$GITHUB_ENV`, and remove it in an `always()` step wrapped in `bash scripts/ci-log-step.sh`.
+> The digest-coverage gate requires that wrapper. Leftovers from a cancelled job:
+> `ls -d ~/.cache/act/*/tmp/mcm-*`.
+
 **4. Make it a persistent systemd-user service:**
 ```bash
 ci$ mkdir -p ~/.config/systemd/user
