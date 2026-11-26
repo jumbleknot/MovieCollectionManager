@@ -36,7 +36,18 @@ node scripts/ci-status.mjs watch --pr 82 --required-only  # poll only until the 
 node scripts/ci-status.mjs failure --pr 82             # why did it fail?
 node scripts/ci-status.mjs failure --pr 82 --full      # + fetch the full evidence bundle
 node scripts/ci-status.mjs durations                   # how long does each app-e2e step take?
+node scripts/ci-status.mjs queue --from 2026-11-27T02:00:00Z --to 2026-11-27T12:00:00Z  # how long did jobs wait for the runner?
 ```
+
+**`queue` derives wait time, because the forge does not record it** (item #925). A task row in
+`/actions/tasks` is created when a runner *picks the job up*, so its `created_at` always equals its
+`run_started_at`. `/actions/runs/{id}/jobs` does not exist on this forge, and `/actions/runners/jobs`
+lists only the jobs waiting right now, with no timestamps. So `queue` takes a job's runnable time as
+the later of its run's `created` (from `/actions/runs`) and the finish (`updated_at`) of each job in
+its `needs:`, read from the workflow at that commit. The wait is pickup minus runnable, reported per
+job and event as n, median, p90 and max. A job whose needs it cannot resolve is listed as
+undetermined, never as zero. Another repository's tasks on the same runner don't appear. Read those
+from the runner journal on the host: `journalctl --user -u forgejo-runner | grep 'repo is'`.
 
 ### Evidence package name (feature 106)
 
