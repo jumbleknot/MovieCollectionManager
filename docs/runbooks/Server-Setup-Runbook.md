@@ -812,8 +812,9 @@ projects' stacks to be up at once.
 
 **The switch (operator; needs root).** Tell BELAY first. Their workflow change lands in the middle of
 the procedure (step 5), and they re-check their image build afterwards. Schedule it **Monday to
-Thursday, 10:00–16:00 UTC**. That avoids BELAY's Friday 06:00 host job, MCM's Friday Renovate window
-(02:00–04:59 UTC), and BELAY's Tuesday/Friday 04:00 image scan and Wednesday 05:00 Renovate. Start only
+Thursday, 10:00–16:00 UTC**. That avoids BELAY's Friday 06:00 host job, MCM's Friday 07:00 UTC Renovate
+window run and its nightly 03:00 UTC security run, and BELAY's Tuesday/Friday 04:00 image scan and
+Wednesday 05:00 Renovate. Start only
 when no job is queued or running: `node scripts/ci-status.mjs status --branch main`, and the
 forge's `GET /repos/{owner}/mcm/actions/runners/jobs` returns `[]`.
 
