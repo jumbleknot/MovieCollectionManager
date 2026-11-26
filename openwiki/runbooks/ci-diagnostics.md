@@ -3,10 +3,10 @@ type: Runbook
 title: CI self-serve diagnostics
 description: How scripts/ci-status.mjs answers "is this commit mergeable" and "why did it fail" from a curated in-repo digest because the forge exposes no log, artifact or per-run-jobs endpoint and refuses actions/upload-artifact v4 or later — the four entry points and exit codes 0-4 including the item 823 exit 4 for a mergeable commit whose dispatched deploy failed, the derived check states and the skip-cause annotation model, exit 3 as runner starvation rather than failure, the advisory-versus-required divergence and the pipe-throws-the-exit-code trap, the dispatched-deploy resolver that reads runs because the deploy posts no commit status, the required app-ci / app-image-scan job that scans the six app images on the PR through the deploy gate's own scanner (spec 084 US3) with its exit 10 scanner-error versus exit 11 blocking-finding split, the one pinned Trivy installer all three scanning workflows share, and the labelled container holds that stop another run's prune deleting the scan tags, the event-versus-trigger_event split (including which run posted a check) and the measured quirks of GET /actions/runs including a queued run's epoch started, the bundle-named-after-the-job rule, the live-fetched required-check set, the read/write token split and the degraded fallback when the write token is empty, the container-registry credential trap where docker manifest inspect answers no such manifest when the CLI is unauthenticated, the AGit detached-head rule, the merge-verification traps, the item 879 branch reaper that deletes a merged branch heading no open PR on every push to main, on a daily 02:30 UTC cron and on dispatch, and the spec 084 US5 registry-retention posture — what the registry keeps, why children are kept by reference rather than by age, the two keys that gate a delete, and the generic packages that prune themselves at publish time.
 resource: docs/runbooks/ci-diagnostics.md
-resource-sha256: 30bbe3973513d873ef364422cb06e0c503a5746800fdf914a65aee3504ab21f4
+resource-sha256: 852e584d45d3b6fc0e78b461083d4baa55875d2fe1ea51eaba21f096e78bc0b9
 tags: [ci, forgejo, diagnostics, deploy, tooling, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T19:55:04.696Z" }
-timestamp: 2026-11-24T14:07:38.557Z
+timestamp: 2026-11-26T01:44:22.422Z
 ---
 
 # CI self-serve diagnostics
@@ -15,8 +15,12 @@ The forge API in this build (`15.0.3+gitea-1.22.0`, measured) exposes **no log, 
 endpoint**, and no re-run endpoint either. So `scripts/ci-status.mjs` inverts the usual direction: CI
 pushes a curated digest into channels the API can already read, and the script reads it back to answer
 "is this commit/PR mergeable" and "why did it fail" without a human copy-pasting logs into the session.
-Its four entry points are `status`, `watch`, `failure` and `durations`, plus `--selftest`; it resolves the
+Its five entry points are `status`, `watch`, `failure`, `durations` and `queue`, plus `--selftest`; it resolves the
 forge host from the `origin` remote **at runtime**, so no host literal exists to keep in sync.
+
+`queue --from --to` (item #925) reports how long jobs waited for the runner. The forge stamps a task
+only when a runner picks it up, so wait time is derived: the later of run creation and the finish of
+each `needs` job, up to pickup. A job whose needs can't be resolved is shown as undetermined, never as zero.
 
 **Workflows cannot use `actions/upload-artifact` v4 or later on this forge either.** It refuses any
 server other than github.com *before* it uploads anything (`GHESNotSupportedError`), measured four

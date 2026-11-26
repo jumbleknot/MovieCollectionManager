@@ -878,6 +878,15 @@ export function parseTargetArgs(argv) {
         throw new CiStatusError(`--runs must be a positive whole number of runs, got ${JSON.stringify(raw)}`);
       }
     }
+    // `queue` (item #925): the window whose job pickups are measured. ISO-8601 UTC, e.g.
+    // 2026-11-27T02:00:00Z. A bad value is a usage error, never a silently empty window.
+    else if (flag === '--from' || flag === '--to') {
+      const raw = valueOf(flag, i++);
+      if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?Z$/.test(raw) || !Number.isFinite(Date.parse(raw))) {
+        throw new CiStatusError(`${flag} must be an ISO-8601 UTC time like 2026-11-27T02:00:00Z, got ${JSON.stringify(raw)}`);
+      }
+      target[flag.slice(2)] = raw;
+    }
     else if (flag === '--event') {
       target.event = valueOf(flag, i++);
       if (!['push', 'pull_request'].includes(target.event)) {
@@ -2056,6 +2065,154 @@ function emitBundleDrops(meta = {}) {
   }
 }
 
+// --- Queue wait (item #925) -----------------------------------------------------------------------
+//
+// "How long did a job wait for the runner?" The forge records no "became runnable" time: a task row
+// (`/actions/tasks`) is created only when a runner PICKS the job up, so its `created_at` equals its
+// `run_started_at` and reads as zero wait. Waiting is derived instead. A job becomes runnable at the
+// LATER of its run's creation (`/actions/runs` `created`) and the moment the last job it `needs`
+// finished (that task's `updated_at`). Its queue wait is pickup minus that.
+//
+// Measured 2026-11-26 against this forge: a task carries id, name, run_number (= the run's
+// `index_in_repo`), workflow_id, event, status, created_at, updated_at, run_started_at and head_sha.
+// `/actions/runs/{id}/jobs` does not exist (404). `/actions/runners/jobs` lists only the jobs waiting
+// NOW, with no timestamps.
+
+/**
+ * Queue wait per picked-up task. Pure.
+ *
+ * @param {object[]} tasks  `/actions/tasks` rows, any order
+ * @param {Map<number, {created: string}>} runsByIndex  `/actions/runs` keyed by `index_in_repo`
+ * @param {(workflowFile: string, job: string, sha: string) => string[]|null} needsOf  the job's
+ *        `needs:` as job ids of the same workflow; null when the workflow could not be read
+ */
+export function computeQueueWaits(tasks, runsByIndex, needsOf) {
+  // The newest attempt of each (workflow, run, job): a re-run's task replaces the earlier one.
+  const keyOf = (wf, run, job) => `${wf}#${run}#${job}`;
+  const latest = new Map();
+  for (const t of tasks) {
+    const k = keyOf(t.workflow_id, t.run_number, t.name);
+    if (!latest.has(k) || latest.get(k).id < t.id) latest.set(k, t);
+  }
+  const out = [];
+  for (const t of latest.values()) {
+    // A skipped job never waited for a runner: the forge decides it without one.
+    if (t.status === 'skipped') continue;
+    const row = {
+      task: t.id, workflow: String(t.workflow_id).replace(/\.ya?ml$/, ''), job: t.name, event: t.event,
+      run: t.run_number, pickedAt: t.created_at, readyAt: null, waitSeconds: null, why: '',
+    };
+    out.push(row);
+    const run = runsByIndex.get(t.run_number);
+    if (!run?.created) { row.why = 'run not in the sample'; continue; }
+    const needs = needsOf(t.workflow_id, t.name, t.head_sha);
+    if (needs === null) { row.why = 'workflow unreadable'; continue; }
+    let ready = Date.parse(run.created);
+    const missing = needs.find((dep) => !latest.has(keyOf(t.workflow_id, t.run_number, dep)));
+    if (missing) { row.why = `needs ${missing}, which has no task in the sample`; continue; }
+    for (const dep of needs) ready = Math.max(ready, Date.parse(latest.get(keyOf(t.workflow_id, t.run_number, dep)).updated_at));
+    row.readyAt = new Date(ready).toISOString().replace('.000Z', 'Z');
+    row.waitSeconds = Math.max(0, Math.round((Date.parse(t.created_at) - ready) / 1000));
+    row.why = needs.length ? `after ${needs.join(', ')}` : 'after run created';
+  }
+  return out.sort((a, b) => Date.parse(a.pickedAt) - Date.parse(b.pickedAt) || a.task - b.task);
+}
+
+/** Per `workflow / job (event)`: n, median, p90 and max seconds, and the worst task. Pure. */
+export function summarizeQueue(rows) {
+  const known = rows.filter((r) => r.waitSeconds !== null);
+  const groups = new Map();
+  for (const r of known) {
+    const k = `${r.workflow} / ${r.job} (${r.event})`;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(r);
+  }
+  const all = known.map((r) => r.waitSeconds).sort((a, b) => a - b);
+  const jobs = [...groups].map(([key, rs]) => {
+    const w = rs.map((r) => r.waitSeconds).sort((a, b) => a - b);
+    const worst = rs.reduce((a, b) => (b.waitSeconds > a.waitSeconds ? b : a));
+    return { key, n: w.length, median: percentile(w, 0.5), p90: percentile(w, 0.9), max: w[w.length - 1], worst };
+  }).sort((a, b) => b.max - a.max || a.key.localeCompare(b.key));
+  return {
+    n: all.length, median: percentile(all, 0.5), p90: percentile(all, 0.9), max: all.length ? all[all.length - 1] : null,
+    undetermined: rows.length - known.length, jobs,
+  };
+}
+
+export const fmtWait = (s) => (s === null ? '—' : s < 60 ? `${s}s` : `${Math.floor(s / 60)}m${String(s % 60).padStart(2, '0')}s`);
+
+export function renderQueue(summary, rows, { from, to }) {
+  const lines = [
+    `Queue wait (runnable → picked up) for jobs picked up ${from} → ${to}.`,
+    `All jobs: n=${summary.n}  median ${fmtWait(summary.median)}  p90 ${fmtWait(summary.p90)}  max ${fmtWait(summary.max)}` +
+      (summary.undetermined ? `  (${summary.undetermined} undetermined, listed below)` : ''),
+    '',
+    '| job (event) | n | median | p90 | max | worst: task · run · picked up |',
+    '|---|---|---|---|---|---|',
+    ...summary.jobs.map((j) => `| ${j.key} | ${j.n} | ${fmtWait(j.median)} | ${fmtWait(j.p90)} | ${fmtWait(j.max)} | ${j.worst.task} · ${j.worst.run} · ${j.worst.pickedAt} |`),
+  ];
+  const und = rows.filter((r) => r.waitSeconds === null);
+  if (und.length) lines.push('', 'Undetermined (no wait computed):', ...und.map((r) => `  task ${r.task} ${r.workflow} / ${r.job} run ${r.run}: ${r.why}`));
+  lines.push(
+    '',
+    'Runnable time is derived: max(run created, finish of each `needs` job). Another repository\'s tasks',
+    'on the same runner are not in this listing; the runner journal on the host has them.',
+  );
+  return lines.join('\n');
+}
+
+/** A job's `needs:` from the workflow AS COMMITTED at `sha`, falling back to the working tree. */
+const needsCache = new Map();
+function needsFromGit(workflowFile, job, sha) {
+  const key = `${workflowFile}@${sha}`;
+  if (!needsCache.has(key)) {
+    let text = null;
+    try {
+      text = execFileSync('git', ['show', `${sha}:.forgejo/workflows/${workflowFile}`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+    } catch {
+      try { text = readFileSync(join(WORKFLOWS_DIR, workflowFile), 'utf8'); } catch { text = null; }
+    }
+    needsCache.set(key, text === null ? null : parseWorkflowNeeds(text, 'w'));
+  }
+  const graph = needsCache.get(key);
+  if (!graph) return null;
+  return (graph.get(`w / ${job}`) ?? []).map((d) => d.replace(/^w \/ /, ''));
+}
+
+/** Read newest-first pages until one ends before `stopAt`. */
+async function readBack(path, conn, rowsOf, timeOf, stopAt) {
+  const out = [];
+  for (let page = 1; page <= 400; page++) {
+    const { text } = await forgeGet(`${path}${path.includes('?') ? '&' : '?'}page=${page}&limit=50`, conn);
+    const rows = rowsOf(JSON.parse(text));
+    out.push(...rows);
+    if (!rows.length || Date.parse(timeOf(rows[rows.length - 1])) < stopAt) break;
+  }
+  return out;
+}
+
+export async function cmdQueue(target, conn) {
+  if (!target.from || !target.to) throw new CiStatusError('queue needs --from and --to (ISO-8601 UTC)');
+  const from = Date.parse(target.from);
+  const to = Date.parse(target.to);
+  if (to <= from) throw new CiStatusError('--to must be after --from');
+  const actions = `/repos/${conn.owner}/${conn.repo}/actions`;
+  // A job picked up in the window can wait on a run, or a `needs` job, from before it: read back a
+  // margin past --from. 6 h is longer than any run on record.
+  const stopAt = from - 6 * 3600 * 1000;
+  emit(`reading tasks and runs back to ${new Date(stopAt).toISOString()}…`);
+  const tasks = await readBack(`${actions}/tasks`, conn, (d) => d.workflow_runs ?? [], (r) => r.created_at, stopAt);
+  const runs = await readBack(`${actions}/runs`, conn, (d) => d.workflow_runs ?? [], (r) => r.created, stopAt);
+  const runsByIndex = new Map(runs.map((r) => [r.index_in_repo, { created: r.created }]));
+  const rows = computeQueueWaits(tasks, runsByIndex, needsFromGit).filter((r) => {
+    const at = Date.parse(r.pickedAt);
+    return at >= from && at < to;
+  });
+  emit('');
+  emit(renderQueue(summarizeQueue(rows), rows, { from: target.from, to: target.to }));
+  return EXIT.OK;
+}
+
 export async function cmdWatch(target, conn, { timeoutSeconds, intervalSeconds, requiredOnly = false }) {
   const deadline = Date.now() + timeoutSeconds * 1000;
   for (;;) {
@@ -2167,7 +2324,11 @@ const USAGE = `Usage:
   node scripts/ci-status.mjs watch  [--sha … | --pr … | --branch … | --run <id>] [--timeout <seconds>] [--required-only]
   node scripts/ci-status.mjs failure [--sha … | --pr … | --branch … | --run <id>] [--job <name>] [--full]
   node scripts/ci-status.mjs durations [--job <name>] [--runs <n>] [--propose]
+  node scripts/ci-status.mjs queue --from <ISO UTC> --to <ISO UTC>
   node scripts/ci-status.mjs --selftest
+
+\`queue\` reports how long each job waited for the runner (runnable → picked up), for the jobs picked
+up in the window, per job and event (item #925).
 
 --run <id> selects the commit that run was for. --event narrows the VIEW only: the verdict always
 evaluates every event, because branch protection does (its globs end in \`*\`).
@@ -2204,6 +2365,7 @@ async function main(argv) {
   // Per-step wall-clock durations across recent runs (item #338). Defaults to app-e2e — the job
   // whose per-step ceiling this exists to calibrate — over the last 25 published runs.
   if (command === 'durations') return cmdDurations(target, conn);
+  if (command === 'queue') return cmdQueue(target, conn);
   console.error(`Unknown command: ${command}\n\n${USAGE}`);
   return EXIT.USAGE;
 }
