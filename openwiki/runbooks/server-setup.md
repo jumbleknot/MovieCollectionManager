@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: 36b0bc20cb8e05d61a12b010e8b50211260ef9e0c3217d2392a83cb837eeba24
+resource-sha256: 87e4af4ca9cec8713f11c0f88b26b5cff90cdca9867cde22ca3b3f1e0b37f00a
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-26T01:25:15.856Z
+timestamp: 2026-11-26T03:58:14.185Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -83,6 +83,23 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   Docker-image-building jobs, which need a reachable `ci` rootless daemon. The complete set today is
   `app-e2e`, `dast` and `app-image-scan` (`app-ci`), `build-deploy` (`cd-deploy`) and `build-publish`
   (`devcontainer-image`).
+- **7.5 — A second project's runner never runs as `ci`** (item #1142). Everything a `ci` process
+  reaches is shared: `$HOME`, the tool cache, `~/.npm`, the rootless daemon with MCM's prunes, and
+  MCM's capacity-1 runner slot. A shared tool cache broke main on 2026-11-25. So another repository's
+  runner gets its own Unix user with linger and its own rootless daemon and socket, and MCM's runner is
+  registered to the `mcm` repository rather than instance-wide. As measured 2026-11-26, BELAY's host job
+  (`runs-on: kvm`) ran on MCM's instance-wide runner, and its container jobs used MCM's daemon. The
+  runbook holds the operator procedure:
+  - move the runner's binary, config, token and unit;
+  - add a `belay-host:host` label;
+  - BELAY re-points `runs-on` and `DOCKER_HOST`;
+  - re-scope MCM's runner, keeping the old registration disabled, not deleted, until verified.
+
+  It also holds the rollback per step, and the read-only measurement
+  `scripts/host-runner-isolation-check.sh --since <switch>`. Its baseline before the switch failed 3 of
+  6 checks. Separate daemons do **not** separate ports, because each user's rootlesskit binds the host.
+  So BELAY, which publishes none today, has **19100–19199** reserved, beside MCM prod's 19000–19099 and
+  MCM CI's fixed ports.
 - **8 — Self-hosted Nx remote cache, RustFS-backed (feature 080).** The open-source Rust
   `nx-cache-server` binary runs as a `prod`-user systemd-user service implementing Nx's built-in
   custom remote-cache-server API (Nx ≥ 20.8) — the first-party `@nx/s3-cache` / `@nx/shared-fs-cache`

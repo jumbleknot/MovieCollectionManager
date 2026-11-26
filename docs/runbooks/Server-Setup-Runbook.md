@@ -768,6 +768,161 @@ ci$ systemctl --user status forgejo-runner --no-pager       # active (running)
 Logs: `journalctl --user -u forgejo-runner -f`. Linger (Phase 5.1) keeps it running headless
 and across reboots. Replace `1001` with `id -u ci` if different.
 
+### 7.5 A second project's runner gets its own Unix user, never `ci` (item #1142)
+
+**The rule.** A runner for any other repository runs as its **own Unix user**, with its own `$HOME`
+and its own rootless Docker daemon (Phase 5). It never runs as `ci`. MCM's runner is also registered
+**to the `mcm` repository**, not instance-wide, so another repository's `runs-on: kvm` cannot land on it.
+
+**Why.** Everything a `ci` process can reach is shared by every job that runs as `ci`:
+
+- `$HOME`, including `~/.cache/act/tool_cache`, `~/.npm`, `~/.docker` and `~/.bashrc`;
+- the rootless daemon at `/run/user/1001/docker.sock`, with its images, build cache, containers,
+  networks and volumes, and MCM's `docker image prune -af` / `builder prune`;
+- MCM's capacity-1 runner slot.
+
+On 2026-11-25 a global pnpm installed by BELAY's host job landed in the shared tool cache. 22 s later
+MCM's `check-pnpm-version` failed, and main was not deployed (item #1144). Job-private installs under
+`${{ runner.temp }}` (pnpm, Trivy, the Docker config with Compose, and Maestro; items #1144, #1146 and
+#1147) remove the *tool* sharing. They cannot remove the
+shared daemon, `$HOME` or the runner slot. Only a separate user and a repo-scoped runner do that.
+
+**As measured 2026-11-26** (before the switch):
+
+| | MCM | BELAY |
+|---|---|---|
+| Runner | `~ci/runner`, **instance-wide**, labels `ubuntu-latest:docker://node:22-bookworm`, `kvm:host`, capacity 1 | `~ci/runner-belay` (Forgejo name `ci-belay`), **repo-scoped** to BELAY, label `belay:docker://node:26-bookworm`, capacity 1 |
+| Host job | seven `runs-on: kvm` jobs | `devcontainer-image › build-publish`, `runs-on: kvm`. That label exists only on **MCM's** runner, so it runs there, as `ci`, in MCM's runner slot (tasks 29136, 29179 and 29253 on 2026-11-25). Cron Friday 06:00 UTC, plus pushes to main. |
+| Daemon | `/run/user/1001` | the same: its container jobs and its host job's `docker build` |
+| Docker housekeeping | prunes images and build cache, `compose down -v` per project | none: no prune, no compose |
+| Published host ports | the fixed CI ports below | none |
+
+**Host-port reservations.** A separate rootless daemon does **not** separate ports. Each user's
+`rootlesskit` binds on the host, so all daemons share one port space. This follows the
+published-port convention in [prod-reboot-resilience.md](prod-reboot-resilience.md):
+
+| Owner | Host ports | Enforced by |
+|---|---|---|
+| MCM prod | 19000–19099 (today 19002, 19030, 19040, 19099) | `check-prod-ci-port-collision.mjs` |
+| MCM CI/dev | the fixed ports in the tracked non-prod compose files: 1025, 3001, 3002, 3030, 4242, 4317, 4318, 5432, 6379, 8025, 8081, 8082, 8099, 8123, 8181, 8200, 8443, 9100, 9102, 9200, 27017, 27018 | the same gate; `node scripts/check-prod-ci-port-collision.mjs` lists them |
+| BELAY | **none published today** (no `-p`/`--publish` in its workflows, no compose file). Reserved for it: **19100–19199** | BELAY's own review; MCM's gate cannot see BELAY's repository |
+
+A BELAY publish outside 19100–19199, or an MCM publish inside it, is a collision waiting for both
+projects' stacks to be up at once.
+
+**The switch (operator; needs root).** Tell BELAY first. Their workflow change lands in the middle of
+the procedure (step 5), and they re-check their image build afterwards. Schedule it **Monday to
+Thursday, 10:00–16:00 UTC**. That avoids BELAY's Friday 06:00 host job, MCM's Friday 07:00 UTC Renovate
+window run and its nightly 03:00 UTC security run, and BELAY's Tuesday/Friday 04:00 image scan and
+Wednesday 05:00 Renovate. Start only
+when no job is queued or running: `node scripts/ci-status.mjs status --branch main`, and the
+forge's `GET /repos/{owner}/mcm/actions/runners/jobs` returns `[]`.
+
+1. **User, linger, sub-IDs.** Use Phase 5.1's commands with the new name (`belay-ci` here), then
+   verify that its `/etc/subuid` and `/etc/subgid` lines do not overlap `ci`'s or `prod`'s. BELAY needs
+   no `kvm` group.
+   ```bash
+   $ sudo useradd -m -s /bin/bash belay-ci
+   $ sudo loginctl enable-linger belay-ci
+   $ grep -E '^(ci|prod|belay-ci):' /etc/subuid /etc/subgid      # one line each, non-overlapping
+   ```
+2. **Its own rootless daemon and socket** (Phase 5.2 and 5.3 as that user). Copy `ci`'s
+   `~/.config/docker/daemon.json` for the log rotation and `live-restore`.
+   ```bash
+   $ sudo machinectl shell belay-ci@
+   belay-ci$ dockerd-rootless-setuptool.sh install && systemctl --user enable --now docker
+   belay-ci$ docker context use rootless; docker info | grep -i -E 'rootless|Docker Root Dir'
+   belay-ci$ id -u            # → <uid>; the socket is unix:///run/user/<uid>/docker.sock
+   ```
+3. **Stop BELAY's runner under `ci`.** Keep its files: they are the rollback.
+   ```bash
+   ci$ systemctl --user disable --now forgejo-runner-belay
+   ```
+4. **Move the runner: binary, `config.yaml`, registration token and unit.** The runner's identity is
+   its UUID plus the secret in `runner-token`. Moving them keeps the same Forgejo runner `ci-belay`,
+   still scoped to BELAY, so no re-registration is needed. Labels are declared on the daemon command
+   line, so add a **host** label now, `belay-host:host`, which BELAY's host job will use instead of
+   `kvm`.
+   ```bash
+   $ sudo install -d -o belay-ci -g belay-ci -m 0750 /home/belay-ci/runner
+   $ sudo install -o belay-ci -g belay-ci -m 0755 /home/ci/runner-belay/forgejo-runner /home/belay-ci/runner/
+   $ sudo install -o belay-ci -g belay-ci -m 0644 /home/ci/runner-belay/config.yaml   /home/belay-ci/runner/
+   $ sudo install -o belay-ci -g belay-ci -m 0600 /home/ci/runner-belay/runner-token  /home/belay-ci/runner/
+   $ sudo machinectl shell belay-ci@
+   belay-ci$ mkdir -p ~/.config/systemd/user && cat > ~/.config/systemd/user/forgejo-runner.service <<EOF
+   [Unit]
+   Description=Forgejo Actions runner (BELAY)
+   Wants=docker.service
+   After=docker.service
+
+   [Service]
+   Environment=DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+   WorkingDirectory=/home/belay-ci/runner
+   ExecStart=/home/belay-ci/runner/forgejo-runner daemon --config /home/belay-ci/runner/config.yaml --url http://server.tailnet.ts.net:3000/ --uuid <ci-belay UUID, as in ~ci/.config/systemd/user/forgejo-runner-belay.service> --token-url file:///home/belay-ci/runner/runner-token --label belay:docker://node:26-bookworm --label belay-host:host
+   Restart=always
+   RestartSec=5
+
+   [Install]
+   WantedBy=default.target
+   EOF
+   belay-ci$ systemctl --user daemon-reload && systemctl --user enable --now forgejo-runner
+   belay-ci$ journalctl --user -u forgejo-runner -n 20 --no-pager     # "runner: ci-belay ... declared successfully"
+   ```
+   Site Administration → Actions → Runners should show `ci-belay` online with both labels.
+5. **Re-point BELAY's rootless-Docker access (BELAY's PR).** In `devcontainer-image.yml › build-publish`,
+   change `runs-on: kvm` to `runs-on: belay-host`, and `DOCKER_HOST: unix:///run/user/1001/docker.sock`
+   to `unix:///run/user/<uid>/docker.sock`. BELAY merges it only after step 4 shows the runner online.
+   Then BELAY dispatches `devcontainer-image` once and confirms the image built and pushed.
+6. **Scope MCM's runner to `mcm`.** Until this step, any repository's `runs-on: kvm` still runs as
+   `ci`. In the `mcm` repository: Settings → Actions → Runners → **Create new runner**. Then replace the
+   UUID in `~ci/.config/systemd/user/forgejo-runner.service` and the secret in `~ci/runner/runner-token`
+   (`chmod 600`), and run `systemctl --user restart forgejo-runner`. Confirm in the journal that it
+   declared itself with the same labels, and that the new runner shows online under the repo. Then mark
+   the old instance-wide runner **disabled** in Site Administration. Delete it only after the
+   measurement passes, because deleting it cannot be undone. Keep the old UUID and secret
+   (`~ci/runner/runner-token.instance-wide`, mode 600) until then.
+7. **Measure** (below). If it passes after BELAY's next host job, remove BELAY's old files from `ci`:
+   `rm -r ~ci/runner-belay ~ci/.config/systemd/user/forgejo-runner-belay.service`, then
+   `systemctl --user daemon-reload` as `ci`. Delete the old instance-wide runner and
+   `~ci/runner/runner-token.instance-wide`.
+
+**The measurement.** `scripts/host-runner-isolation-check.sh` runs on the host as `ci`, read-only:
+
+```bash
+ssh ci@<ci-host> 'bash -s -- --since <switch time, e.g. 2026-12-01T10:00:00Z>' < scripts/host-runner-isolation-check.sh
+```
+
+It reports six PASS/FAIL lines and exits 0 only when all pass:
+
+1. MCM's runner took no BELAY task.
+2. The tool-cache Node holds only npm and corepack.
+3. Every job container on MCM's daemon belongs to a task MCM's runner ran.
+4. MCM's daemon holds no image named `*belay*`.
+5. BELAY's runner process, unit and directory are gone from `ci`.
+6. No `belay-*` job dir is under `~ci/.cache/act/*/tmp`.
+
+Run it within a few hours of a BELAY job (both a host job and a container job), because the daemon
+keeps only a bounded recent event history. The **baseline** run, before the switch with
+`--since 2026-11-25T00:00:00Z`, reported **NOT ISOLATED** with checks 1, 3 and 5 failing (BELAY tasks
+29136, 29179 and 29253 on MCM's runner, a BELAY job container on MCM's daemon, `runner-belay` under
+`ci`). So each check can see what it looks for. The positive control is on the new user's side: its
+`journalctl --user -u forgejo-runner` shows the BELAY task, and its daemon holds the built image.
+
+**Rollback** (any step fails, or BELAY's build breaks):
+
+- **After step 4 or 5:** as `belay-ci`, run `systemctl --user disable --now forgejo-runner`. As `ci`,
+  run `systemctl --user enable --now forgejo-runner-belay`. The files are still there (step 3 kept
+  them), and both copies hold the same UUID and secret, so only one may run at a time. BELAY reverts
+  its PR to `runs-on: kvm` and the `1001` socket.
+- **After step 6:** this also needs `kvm` back on an instance-wide runner, or BELAY's reverted host job
+  queues for ever. Re-enable the old runner in Site Administration. Restore its UUID in the `ci` unit
+  and `runner-token.instance-wide` as `runner-token`, then restart. Disable the repo-scoped one.
+- **Leave alone:** `belay-ci`'s user, daemon and data can stay until a retry. They hold nothing of MCM's.
+
+**What stays shared after the switch:** the host's disk (both daemons' data roots are on `/`, so
+MCM's `--reserved-space 50GB` builder prune frees only MCM's cache) and the port space (reserved
+above). The Forgejo instance is shared too, but that is not host state.
+
 ---
 
 ## Phase 8 — Self-hosted Nx remote cache (RustFS + custom cache server)
