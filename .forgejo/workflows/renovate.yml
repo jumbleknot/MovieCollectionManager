@@ -36,7 +36,13 @@ on:
     # The nightly run is OUTSIDE renovate.json's permitted window, and that is deliberate: security
     # PRs are schedule-EXEMPT (`vulnerabilityAlerts` inherits an empty schedule from its preset), so
     # they land promptly from this trigger while routine updates correctly defer.
-    - cron: '0 3 * * *' # nightly 03:00 UTC — schedule-EXEMPT security PRs only; routine updates defer here
+    #
+    # Item #1129: every 12 h, not nightly, with vulnerabilityAlerts.minimumReleaseAge 12 hours, so a
+    # fix reaches a PR within ~24 h instead of ~48 h. The hours are chosen to stay OUT of the routine
+    # window (06:00-08:59 UTC in EDT, 07:00-09:59 in EST), or that run would do routine updates
+    # ahead of the 04:00 Friday CVE sweep (item #487). A 6-hourly variant must keep the same property:
+    # `0 5,11,17,23 * * *` does, while `0 */6 * * *` and `0 3,9,15,21 * * *` do not.
+    - cron: '0 3,15 * * *' # 03:00 + 15:00 UTC — schedule-EXEMPT security PRs only; routine updates defer here
     # The window run. This is the one that was missing: until 2026-08-13 the nightly cron above
     # carried the comment "matches the renovate.json schedule window", which was false — 03:00 UTC is
     # 23:00 THURSDAY in New York, and the window is Friday. The two sets never intersected, so every

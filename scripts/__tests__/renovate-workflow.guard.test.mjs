@@ -3228,6 +3228,40 @@ test('(#487) the weekly CVE sweep runs STRICTLY EARLIER than the Renovate window
   );
 });
 
+// ── Item #1129 — the security cadence ─────────────────────────────────────────────────────────
+//
+// Security PRs are schedule-exempt, so they arrive on whichever run comes first: worst case, one
+// interval between runs, plus vulnerabilityAlerts.minimumReleaseAge. Decided with item #925's
+// queue-wait figures: at most 24 h. The security cron must also never fire inside the routine window:
+// a run there does routine updates too, ahead of the Friday CVE sweep (item #487). `0 */6 * * *` is
+// exactly that mistake, at 06:00 UTC under EDT and 09:00 UTC under EST.
+const AGE_HOURS = { hour: 1, hours: 1, day: 24, days: 24 };
+
+test('(#1129) security PRs land within 24 h: cron interval + minimumReleaseAge, and the cron stays out of the routine window', () => {
+  const security = (workflow?.on?.schedule ?? []).map((e) => e.cron).filter((c) => cronSlots(c).size > 1);
+  assert.equal(security.length, 1, `expected exactly one multi-slot (security) cron in renovate.yml, got ${JSON.stringify(security)}`);
+  const [cron] = security;
+  const [, hourField, dom, month, dow] = cron.trim().split(/\s+/);
+  assert.deepEqual([dom, month, dow], ['*', '*', '*'], `the security cron '${cron}' must fire every day`);
+  const hours = [...expandCronField(hourField, 0, 23)].sort((a, b) => a - b);
+  const gaps = hours.map((h, i) => ((hours[(i + 1) % hours.length] - h + 24) % 24) || 24);
+  const interval = Math.max(...gaps);
+
+  const m = /^(\d+)\s*(hours?|days?)$/.exec(String(config.vulnerabilityAlerts?.minimumReleaseAge ?? ''));
+  assert.ok(m, `vulnerabilityAlerts.minimumReleaseAge '${config.vulnerabilityAlerts?.minimumReleaseAge}' is not "<n> hours|days"`);
+  const age = Number(m[1]) * AGE_HOURS[m[2]];
+  assert.ok(
+    interval + age <= 24,
+    `a security fix can wait ${interval} h for a run + ${age} h minimumReleaseAge = ${interval + age} h; item #1129 decided <= 24 h`,
+  );
+
+  for (const [label, offset] of Object.entries(TIMEZONE_OFFSETS[config.timezone] ?? {})) {
+    const routine = new Set((config.schedule ?? []).flatMap((w) => [...windowSlotsInUtc(w, offset)]));
+    const inside = [...cronSlots(cron)].filter((s) => routine.has(s));
+    assert.deepEqual(inside, [], `under ${label} the security cron '${cron}' fires inside the routine window at ${inside.join(', ')} (dow:hour UTC)`);
+  }
+});
+
 test('(#487) both crons are UTC-fixed, so DST cannot narrow the gap', () => {
   // Actions cron is UTC-only and does not observe DST. The renovate.json WINDOW is local-time and
   // does drift — but the distance between these two UTC crons cannot. This asserts the property the

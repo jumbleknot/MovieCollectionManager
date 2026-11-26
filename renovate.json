@@ -84,9 +84,13 @@
       "minimumReleaseAge is dropped to 1 day (vs the 3-day global supply-chain cooldown): a targeted",
       "security patch from an existing dep should remediate FAST — the churn this codifies against was CVEs",
       "sitting un-fixed for days while every PR's SAST/Trivy gate went red (fast-uri/brace-expansion/js-yaml/",
-      "shell-quote/axios/tar, 2026-07). 1 day still clears the initial compromised-release window (feature 034)."
+      "shell-quote/axios/tar, 2026-07). 1 day still clears the initial compromised-release window (feature 034).",
+      "ITEM #1129: 12 hours, with renovate.yml's security cron every 12 h (`0 3,15 * * *`). A fix reaches a",
+      "PR within ~24 h (cadence + wait), not ~48 h. The runner cost, measured by item #925: <FILL IN from #925>.",
+      "renovate-workflow.guard.test.mjs holds the cadence + wait <= 24 h, and keeps the security cron out of the",
+      "routine window under both DST offsets."
     ],
-    "minimumReleaseAge": "1 day"
+    "minimumReleaseAge": "12 hours"
   },
   "lockFileMaintenance": {
     "description": [
