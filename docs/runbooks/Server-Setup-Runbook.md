@@ -821,49 +821,58 @@ asked for this on 2026-11-26, for two reasons:
 - **Queueing.** `ci-belay` has `capacity: 1`. The weekly image build (up to 60 min) would queue
   BELAY's guardrails behind it.
 
-**What the split does not do.** A PR can still write `runs-on: belay-host` and reach the host. The
-split only keeps that job away from `ci-belay`'s secret and job slot. And if both runners run as
-`belay-ci`, a host job can still reach the daemon that runs BELAY's container jobs, and read
-`ci-belay`'s `runner-token`. Two things keep the rule:
+**Two runners, two Unix users** (BELAY's decision, 2026-11-26):
 
-- BELAY's push restriction (only the maintainer and the bot can push);
-- optionally, a second user (`belay-host-ci`, with its own daemon) for `ci-belay-host`. That user
-  is BELAY's decision. The steps below assume one user, and step 4b applies unchanged under a
-  second user.
+| Runner | Unix user | Label | Daemon |
+|---|---|---|---|
+| `ci-belay` (moved, same UUID and secret) | `belay-ci` | `belay:docker://node:26-bookworm` | `belay-ci`'s own |
+| `ci-belay-host` (new, scoped to BELAY) | `belay-host-ci` | `belay-host:host` | `belay-host-ci`'s own |
+
+**What this does and does not do.** A PR can still write `runs-on: belay-host` and reach the host.
+Because that job runs as a separate user, it cannot reach the daemon that runs BELAY's container
+jobs, nor read `ci-belay`'s `runner-token`, nor take `ci-belay`'s job slot. Under one shared user it
+could do all three. What remains is that the PR gets the host as `belay-host-ci`, with that
+user's daemon and `ci-belay-host`'s own secret. BELAY's push restriction (only the maintainer and the
+bot can push) covers that. The cost of the second user is a separate build cache: host builds
+start cold and share no layers with container jobs.
 
 MCM's own runner mixes `ubuntu-latest:docker://…` and `kvm:host` in one runner on purpose: MCM's PR
 jobs (`app-e2e`, `dast`, …) need the host, so splitting the runner would not change what PR code can
 reach.
 
 **The switch (operator; needs root).** Tell BELAY first. Their workflow change lands in the middle of
-the procedure (step 5), and they re-check their image build afterwards. Schedule it **Monday to
-Thursday, 10:00–13:00 UTC**. That avoids:
+the procedure (step 5), and they re-check their image build afterwards. The agreed slot is
+**Saturday 10:00–13:00 UTC**, with **Sunday 10:00–13:00 UTC** as the fallback for a retry or
+rollback. Nothing either project schedules runs then:
 
-- BELAY's daily 13:17 UTC Renovate security run;
-- BELAY's Friday 06:00 host job, its Tuesday/Friday 04:00 image scan and its Wednesday 05:00
-  Renovate;
-- MCM's Friday 07:00 UTC Renovate window run and its nightly 03:00 UTC security run.
+- MCM's weekend crons are `branch-reaper` (02:30 daily), the Renovate security run (03:00 daily)
+  and `registry-retention` (Sunday 06:00). Every other MCM schedule is on a weekday.
+- BELAY reports the weekend slot clear. Its daily 13:17 UTC Renovate security run is why the
+  window closes at 13:00.
 
-**BELAY holds pushes for the duration**, because their CI runs on every PR push. Start only when no
-job is queued or running: `node scripts/ci-status.mjs status --branch main` is clear, and the
-forge's `GET /repos/{owner}/mcm/actions/runners/jobs` returns `[]`.
+Re-check MCM's crons first (`grep -h 'cron:' .forgejo/workflows/*.yml`) if the date moves.
 
-1. **User, linger, sub-IDs.** Use Phase 5.1's commands with the new name (`belay-ci` here), then
-   verify that its `/etc/subuid` and `/etc/subgid` lines do not overlap `ci`'s or `prod`'s. BELAY needs
-   no `kvm` group.
+**Both projects hold merges and pushes for the duration.** BELAY's CI runs on every PR push. MCM's
+runner restarts in step 6, and a merge in that gap leaves its jobs queued. Start only when no job
+is queued or running: `node scripts/ci-status.mjs status --branch main` is clear, and the forge's
+`GET /repos/{owner}/mcm/actions/runners/jobs` returns `[]`.
+
+1. **Two users, linger, sub-IDs.** Use Phase 5.1's commands for **both** `belay-ci` and
+   `belay-host-ci`. Then verify that their `/etc/subuid` and `/etc/subgid` lines overlap neither each
+   other nor `ci`'s or `prod`'s. Neither user needs the `kvm` group.
    ```bash
-   $ sudo useradd -m -s /bin/bash belay-ci
-   $ sudo loginctl enable-linger belay-ci
-   $ grep -E '^(ci|prod|belay-ci):' /etc/subuid /etc/subgid      # one line each, non-overlapping
+   $ for u in belay-ci belay-host-ci; do sudo useradd -m -s /bin/bash "$u" && sudo loginctl enable-linger "$u"; done
+   $ grep -E '^(ci|prod|belay-ci|belay-host-ci):' /etc/subuid /etc/subgid   # one line each, non-overlapping
    ```
-2. **Its own rootless daemon and socket** (Phase 5.2 and 5.3 as that user). Copy `ci`'s
-   `~/.config/docker/daemon.json` for the log rotation and `live-restore`.
+2. **A rootless daemon and socket for each user** (Phase 5.2 and 5.3, once as each user). Copy
+   `ci`'s `~/.config/docker/daemon.json` into each for the log rotation and `live-restore`.
    ```bash
-   $ sudo machinectl shell belay-ci@
+   $ sudo machinectl shell belay-ci@          # then again as belay-host-ci@
    belay-ci$ dockerd-rootless-setuptool.sh install && systemctl --user enable --now docker
    belay-ci$ docker context use rootless; docker info | grep -i -E 'rootless|Docker Root Dir'
    belay-ci$ id -u            # → <uid>; the socket is unix:///run/user/<uid>/docker.sock
    ```
+   Note **`belay-host-ci`'s** uid: it goes into BELAY's `build-publish` `DOCKER_HOST` (step 5).
 3. **Stop BELAY's runner under `ci`.** Keep its files: they are the rollback.
    ```bash
    ci$ systemctl --user disable --now forgejo-runner-belay
@@ -898,12 +907,21 @@ forge's `GET /repos/{owner}/mcm/actions/runners/jobs` returns `[]`.
    belay-ci$ journalctl --user -u forgejo-runner -n 20 --no-pager     # "runner: ci-belay ... declared successfully"
    ```
    Site Administration → Actions → Runners should show `ci-belay` online with its one container label.
-4b. **Register `ci-belay-host`, a new runner.** In the BELAY repository: Settings → Actions → Runners →
-   **Create new runner**. That gives a UUID and a secret. Put them in a second directory and unit, as
-   in step 4, but with `/home/belay-ci/runner-host/` and `forgejo-runner-host.service`. Give it its
-   own `config.yaml` with `capacity: 1`. The daemon's only label is `--label belay-host:host`. The
-   journal should say "runner: ci-belay-host ... declared successfully". The runner list should show
-   it online, scoped to BELAY, with only `belay-host`.
+4b. **Register `ci-belay-host`, a new runner, as `belay-host-ci`.** In the BELAY repository: Settings →
+   Actions → Runners → **Create new runner**. That gives a UUID and a secret. Install the same
+   `forgejo-runner` binary and a copy of `config.yaml` (`capacity: 1`) into
+   `/home/belay-host-ci/runner/`, owned by `belay-host-ci`. Put the secret in `runner-token` there,
+   mode 0600. Then write the unit as in step 4, as `belay-host-ci`:
+   `Description=Forgejo Actions runner (BELAY host jobs)`,
+   paths under `/home/belay-host-ci/runner`, the new UUID, and **only** `--label belay-host:host`.
+   Its `DOCKER_HOST` is `belay-host-ci`'s own socket.
+   ```bash
+   belay-host-ci$ systemctl --user daemon-reload && systemctl --user enable --now forgejo-runner
+   belay-host-ci$ journalctl --user -u forgejo-runner -n 20 --no-pager   # "runner: ci-belay-host ... declared successfully"
+   ```
+   The runner list should show it online, scoped to BELAY, with only `belay-host`. No file of either
+   BELAY user may be readable by the other: `ls -ld /home/belay-ci /home/belay-host-ci` should show
+   mode `0750` or tighter.
 5. **BELAY's PR (merged only after steps 4 and 4b show both runners online).** BELAY measured that
    more than the two job lines must change. The PR covers:
    - `devcontainer-image.yml › build-publish`: `runs-on: kvm` → `runs-on: belay-host`, and
@@ -951,19 +969,20 @@ Run it within a few hours of a BELAY job (both a host job and a container job), 
 keeps only a bounded recent event history. The **baseline** run, before the switch with
 `--since 2026-11-25T00:00:00Z`, reported **NOT ISOLATED** with checks 1, 3 and 5 failing (BELAY tasks
 29136, 29179 and 29253 on MCM's runner, a BELAY job container on MCM's daemon, `runner-belay` under
-`ci`). So each check can see what it looks for. The positive control is on the new user's side: its
-`journalctl --user -u forgejo-runner` shows the BELAY task, and its daemon holds the built image.
+`ci`). So each check can see what it looks for. The positive control is on the new users' side:
+`journalctl --user -u forgejo-runner` shows BELAY's container task as `belay-ci`, and its host task
+as `belay-host-ci`, whose daemon holds the built image.
 
 **Rollback** (any step fails, or BELAY's build breaks):
 
-- **After step 4, 4b or 5:** as `belay-ci`, run `systemctl --user disable --now forgejo-runner forgejo-runner-host`.
-  As `ci`, run `systemctl --user enable --now forgejo-runner-belay`. The files are still there (step 3
-  kept them), and both copies hold the same UUID and secret, so only one may run at a time. BELAY
-  reverts its PR (one revert) and disables `ci-belay-host` in its runner list.
+- **After step 4, 4b or 5:** run `systemctl --user disable --now forgejo-runner` as `belay-ci`, and
+  again as `belay-host-ci`. As `ci`, run `systemctl --user enable --now forgejo-runner-belay`. The
+  files are still there (step 3 kept them). Both copies hold the same UUID and secret, so only one
+  may run at a time. BELAY reverts its PR (one revert) and disables `ci-belay-host` in its runner list.
 - **After step 6:** this also needs `kvm` back on an instance-wide runner, or BELAY's reverted host job
   queues for ever. Re-enable the old runner in Site Administration. Restore its UUID in the `ci` unit
   and `runner-token.instance-wide` as `runner-token`, then restart. Disable the repo-scoped one.
-- **Leave alone:** `belay-ci`'s user, daemon and data can stay until a retry. They hold nothing of MCM's.
+- **Leave alone:** `belay-ci`'s and `belay-host-ci`'s users, daemons and data can stay until a retry. They hold nothing of MCM's.
 
 **What stays shared after the switch:** the host's disk (both daemons' data roots are on `/`, so
 MCM's `--reserved-space 50GB` builder prune frees only MCM's cache) and the port space (reserved
