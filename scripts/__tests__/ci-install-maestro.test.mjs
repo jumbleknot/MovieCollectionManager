@@ -9,7 +9,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, readFileSync, existsSync, mkdirSync, readdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync, mkdirSync, readdirSync, lstatSync, readlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -82,14 +82,40 @@ function install(base, pin, { args } = {}) {
   return { ...r, dir, home, out: `${r.stdout}${r.stderr}` };
 }
 
-test('a good release lays out <dir>/bin and <dir>/lib, and writes nothing under $HOME', { skip: !hasUnzip && 'no unzip on this host' }, () => {
+// The installer links <dir>/home/.android (below), which Git Bash's `ln -s` cannot do to a missing
+// target; guardrails runs this file on Linux, where the script itself runs.
+const POSIX_LN = process.platform === 'win32' && 'POSIX symlinks only (Git Bash ln -s copies)';
+
+test('a good release lays out <dir>/bin and <dir>/lib, and writes nothing under $HOME', { skip: (!hasUnzip && 'no unzip on this host') || POSIX_LN }, () => {
   const { base, sha } = release();
   const r = install(base, { sha });
   assert.equal(r.status, 0, r.out);
   assert.ok(existsSync(join(r.dir, 'bin', 'maestro')), 'no <dir>/bin/maestro');
   assert.ok(existsSync(join(r.dir, 'lib', 'maestro-cli-9.9.9.jar')), 'no <dir>/lib');
   assert.deepEqual(readdirSync(r.home), [], 'the installer wrote into $HOME (the vendor installer appended to ~/.bashrc)');
-  assert.match(r.stdout, /Maestro 9\.9\.9 in /);
+  assert.match(r.stdout, /Maestro 9\.9\.9 in .*, state home .*\/home/);
+});
+
+// Item #1152: Maestro's state follows user.home, which the caller points at <dir>/home. Its .android
+// must be the REAL ~/.android: dadb reads the adb key from user.home/.android and generates a new one
+// when it is missing. The job's `rm -rf <dir>` must remove the link, never the key behind it.
+test('<dir>/home is Maestro\'s state home; its .android links the real ~/.android and survives rm -rf <dir>',
+  { skip: (!hasUnzip && 'no unzip on this host') || POSIX_LN }, () => {
+  const { base, sha } = release();
+  const home = mkdtempSync(join(tmpdir(), 'maestro-home-'));
+  mkdirSync(join(home, '.android'));
+  writeFileSync(join(home, '.android', 'adbkey'), 'key');
+  const dir = join(mkdtempSync(join(tmpdir(), 'maestro-dir-')), 'mcm-maestro');
+  const r = spawnSync('bash', [pinnedCopy({ version: '9.9.9', sha }), dir], {
+    cwd: REPO_ROOT, encoding: 'utf8', env: { ...process.env, HOME: home, MCM_MAESTRO_BASE_URL: base },
+  });
+  assert.equal(r.status, 0, `${r.stdout}${r.stderr}`);
+  assert.ok(lstatSync(join(dir, 'home', '.android')).isSymbolicLink(), '<dir>/home/.android is not a symlink');
+  assert.equal(readlinkSync(join(dir, 'home', '.android')), join(home, '.android'));
+  assert.deepEqual(readdirSync(join(dir, 'home')), ['.android'], 'the installer started Maestro (it writes .maestro on start)');
+  assert.deepEqual(readdirSync(home), ['.android'], 'the installer wrote into $HOME');
+  assert.equal(spawnSync('rm', ['-rf', dir]).status, 0);
+  assert.equal(readFileSync(join(home, '.android', 'adbkey'), 'utf8'), 'key', 'rm -rf <dir> followed the link into ~/.android');
 });
 
 test('bytes that do not match the committed sha256 are refused and never unpacked', () => {

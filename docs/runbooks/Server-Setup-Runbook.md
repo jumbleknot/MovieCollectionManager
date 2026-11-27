@@ -730,11 +730,17 @@ The runner should flip to **Idle/Online** in the Runners list. `Ctrl-C` once con
 > `/usr/libexec/docker/cli-plugins` (buildx, an older Compose), whatever `DOCKER_CONFIG` is. The shared
 > config's `currentContext: rootless` is not needed, because every host job sets `DOCKER_HOST`.
 > Maestro's vendor installer is not used: it installs into `~/.maestro` and appends a PATH line to
-> `~/.bashrc` and `~/.zshrc` on every run. Maestro still writes its run output to `~/.maestro/tests`,
-> because the CLI derives that path from `$HOME`. `scripts/ci-maestro-debug.sh` reads it from there.
+> `~/.bashrc` and `~/.zshrc` on every run. Maestro's state is job-private too (item #1152). The CLI
+> takes `tests/`, `deps/`, `sessions/` and `analytics.json` from the JVM's `user.home`, so the install
+> step writes `MAESTRO_OPTS=-Duser.home=${{ runner.temp }}/mcm-maestro/home` (read by `bin/maestro`
+> only) and `MCM_MAESTRO_HOME` (read by `scripts/ci-maestro-debug.sh`, `ci-mobile-lib.sh` and the
+> failure digest) to `$GITHUB_ENV`. That home's `.android` is a symlink to the real `~/.android`,
+> because Maestro's adb client reads its key from `user.home` and generates a new one when it's missing.
+> The shared `~ci/.maestro` had reached 7.2G of run output.
 >
 > `scripts/__tests__/host-runner-shared-state.guard.test.mjs` fails each wrong shape: a `$HOME` dir on
-> PATH, a write into `~/.local/bin` or `~/.docker`, the vendor Maestro installer, a docker call against
+> PATH, a write into `~/.local/bin` or `~/.docker`, the vendor Maestro installer, a Maestro run whose
+> state would land in `$HOME` (no private `MAESTRO_OPTS`, or one overridden), a docker call against
 > the shared config, and a job-private dir with no `always()` cleanup or one removed too early.
 > `pnpmInstallFindings` in `renovate-workflow.guard.test.mjs` holds the pnpm half. To add a host-job
 > tool, install it after setup-node into a `runner.temp` path, put it on PATH via `$GITHUB_PATH`, set

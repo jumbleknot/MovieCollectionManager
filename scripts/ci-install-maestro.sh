@@ -3,8 +3,22 @@
 #
 #   bash scripts/ci-install-maestro.sh <dir>
 #
-# It lays the release's maestro/ tree out as <dir>/bin/maestro and <dir>/lib/*.jar. The caller adds
-# <dir>/bin to $GITHUB_PATH and removes <dir> in an `if: always()` step.
+# It lays the release's maestro/ tree out as <dir>/bin/maestro and <dir>/lib/*.jar, and creates
+# <dir>/home, Maestro's job-private state home (item #1152). The caller adds <dir>/bin to $GITHUB_PATH,
+# writes MAESTRO_OPTS=-Duser.home=<dir>/home and MCM_MAESTRO_HOME=<dir>/home to $GITHUB_ENV, and removes
+# <dir> in an `if: always()` step.
+#
+# WHY user.home, not an output flag (item #1152). The CLI's state paths all come from the JVM's
+# user.home, checked by disassembling the 2.12.1 jars: ~/.maestro/tests (TestDebugReporter, one dir per
+# flow per run, never pruned on the host; 7.2G by 2026-11-26), ~/.maestro/deps (Unpacker),
+# ~/.maestro/sessions (SessionStore) and ~/.maestro/analytics.json. --test-output-dir and --debug-output
+# move only the first. MAESTRO_OPTS is read by bin/maestro alone, so no other JVM in the job (Gradle's
+# APK build) sees it; JAVA_TOOL_OPTIONS would reach them all.
+#
+# <dir>/home/.android is a symlink to the real ~/.android. dadb, Maestro's adb client, reads its key
+# from user.home/.android/adbkey and GENERATES a new pair when that is missing (seen locally with a
+# bare user.home). The link keeps the one key adb already uses, and keeps it out of <dir>. Maestro only
+# reads there, as it did before.
 #
 # WHY NOT the vendor installer (curl https://get.maestro.mobile.dev | bash). app-e2e runs on the shared
 # host runner (`runs-on: kvm`, the `ci` user). That installer installs into ~/.maestro by default.
@@ -19,9 +33,8 @@
 # renovate-workflow.guard.test.mjs. To refresh the checksum, run
 # `node scripts/refresh-pinned-sha256.mjs --write`. It verifies it against the release's checksums_sha256.txt.
 #
-# Out of scope: Maestro still writes each run's output to ~/.maestro/tests, because the CLI derives
-# that path from the user's home, not from where it is installed. scripts/ci-maestro-debug.sh and
-# ci-mobile-lib.sh read it from there.
+# scripts/ci-maestro-debug.sh, ci-mobile-lib.sh and ci-failure-digest.mjs read run output from
+# ${MCM_MAESTRO_HOME:-$HOME}/.maestro/tests.
 #
 # Test seams (scripts/__tests__/ci-install-maestro.test.mjs, offline against file://):
 #   MCM_MAESTRO_BASE_URL     release-asset base, default https://github.com/mobile-dev-inc/maestro/releases/download
@@ -61,7 +74,8 @@ unzip -q "$WORK/maestro.zip" -d "$WORK/x" || die "maestro.zip did not unpack"
 [ -f "$WORK/x/maestro/lib/maestro-cli-$MAESTRO_VERSION.jar" ] ||
   die "maestro.zip does not carry maestro-cli-$MAESTRO_VERSION.jar — it is not the pinned release"
 
-rm -rf "$DEST/bin" "$DEST/lib"
-mkdir -p "$DEST"
+rm -rf "$DEST/bin" "$DEST/lib" "$DEST/home"
+mkdir -p "$DEST/home"
 cp -r "$WORK/x/maestro/." "$DEST/"
-echo "ci-install-maestro: Maestro $MAESTRO_VERSION in $DEST/bin"
+ln -s "$HOME/.android" "$DEST/home/.android"
+echo "ci-install-maestro: Maestro $MAESTRO_VERSION in $DEST/bin, state home $DEST/home"

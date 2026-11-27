@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # app-e2e — stage THIS run's Maestro output for the `maestro-debug` artifact (spec 084 FR-019b).
 #
-# app-e2e runs ON the ci host (`runs-on: kvm`), so `~/.maestro/tests` is the ci user's persistent
-# home directory and Maestro only prunes it at ~14 days. Uploading it whole re-shipped every earlier
-# run on each failure: 330,497 rows / 11 GB of artifacts by 2026-10-26, half of the nightly backup.
+# app-e2e runs ON the ci host (`runs-on: kvm`). Maestro's output used to land in the ci user's
+# persistent ~/.maestro/tests, which Maestro only prunes at ~14 days, and uploading it whole re-shipped
+# every earlier run on each failure: 330,497 rows / 11 GB of artifacts by 2026-10-26, half of the
+# nightly backup. It now lands in the job-private $MCM_MAESTRO_HOME (item #1152,
+# scripts/ci-install-maestro.sh). When that is unset, as on a dev machine, $HOME is used.
 #
 #   start    — (Install Maestro step) reset the staging dir and mark the run's start
 #   collect  — (failure, before the upload) copy only the Maestro runs newer than the mark
@@ -15,7 +17,7 @@ set -euo pipefail
 
 STAGE=maestro-debug
 MARK="$STAGE/.run-start"
-SRC="$HOME/.maestro/tests"
+SRC="${MCM_MAESTRO_HOME:-$HOME}/.maestro/tests"
 
 usage() { echo "usage: $0 start|collect" >&2; exit 2; }
 [ "$#" -eq 1 ] || usage

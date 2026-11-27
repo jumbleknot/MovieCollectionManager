@@ -5,7 +5,8 @@
 // `~/.maestro/tests/**` whole, so every failure re-shipped every earlier run. Measured 2026-10-26
 // from the forge database (spec 084 FR-019b): rows per upload went 6, 9, 12, 15, 18 … 5,819 — three
 // more each run — and `maestro-debug` reached 330,497 rows / 11 GB, half of all Actions artifacts and
-// half of the nightly backup. The host directory held 967 entries / 5.8 G.
+// half of the nightly backup. The host directory held 967 entries / 5.8 G. Since item #1152 the
+// output lands in the job-private $MCM_MAESTRO_HOME instead; $HOME is the fallback off CI.
 //
 // `scripts/ci-maestro-debug.sh start` marks the run's start; `collect` copies only entries newer
 // than the mark into the staging directory the upload reads. Pinned here by RUNNING it, plus a guard
@@ -89,6 +90,21 @@ test('collect without a start mark never falls back to the whole history, and ne
   assert.equal(r.status, 0, 'a diagnostic step must not change the job outcome');
   assert.match(r.stdout, /no start mark/);
   assert.equal(existsSync(join(fx.work, 'maestro-debug/tests/2026-10-12_232420')), false);
+});
+
+// Item #1152: on the host, Maestro's user.home is the job-private $MCM_MAESTRO_HOME, so its output is
+// there; the shared $HOME/.maestro must not be read at all.
+test('collect reads Maestro output from $MCM_MAESTRO_HOME when set, not from $HOME', () => {
+  const fx = fixture();
+  const maestroHome = join(dirname(fx.home), 'maestro-home');
+  const env = { ...process.env, HOME: fx.home, MCM_MAESTRO_HOME: maestroHome };
+  const go = (a) => spawnSync('bash', [SCRIPT, a], { cwd: fx.work, env, encoding: 'utf8' });
+  assert.equal(go('start').status, 0);
+  newRun(fx, '2026-11-27_100000'); // in $HOME: must be ignored
+  newRun({ home: maestroHome }, '2026-11-27_100100');
+  const r = go('collect');
+  assert.equal(r.status, 0, r.stderr);
+  assert.deepEqual(readdirSync(join(fx.work, 'maestro-debug/tests')), ['2026-11-27_100100']);
 });
 
 test('an unknown or missing subcommand is REJECTED, not treated as one of the two', () => {

@@ -951,7 +951,9 @@ export function collectEvidence({ home = process.env.HOME ?? '', cwd = process.c
   if (!existsSync(join(cwd, 'frontend/mcm-app/playwright-report/index.html'))) {
     absent.push('playwright report — not present');
   }
-  absent.push(...describeDeviceCapture([...excerpts.map((e) => e.source), ...binaries.map((b) => b.source)], home));
+  // Maestro's own home is job-private on the host (MCM_MAESTRO_HOME, item #1152), not the runner's $HOME.
+  const maestroHome = env.MCM_MAESTRO_HOME || home;
+  absent.push(...describeDeviceCapture([...excerpts.map((e) => e.source), ...binaries.map((b) => b.source)], maestroHome));
 
   if (!excerpts.length && !health.length && !binaries.length) {
     absent.push('no log output was captured for this job');
@@ -992,7 +994,7 @@ const isDeviceEvidence = (p) => String(p).split('/')[0] === DEVICE_DIAGNOSTICS_D
  * capture happened and this bundle could not carry it" demand opposite next steps from a reader,
  * so they must not render identically.
  */
-export function describeDeviceCapture(collectedPaths, home) {
+export function describeDeviceCapture(collectedPaths, home) { // home: Maestro's user.home
   if (collectedPaths.some(isDeviceEvidence)) return []; // carried — the sources speak for themselves
   if (existsSync(join(home, '.maestro', 'tests'))) {
     return [
