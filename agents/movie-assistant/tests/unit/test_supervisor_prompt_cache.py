@@ -124,9 +124,11 @@ def test_the_built_messages_survive_the_ollama_adapter():
         "unknown keys on a text part; if that changed, the single-shape design no longer holds "
         "for the default provider and classify_intent needs a provider branch."
     )
-    # The converter accumulates with `content += f"\\n{text}"` from an empty string, so the rendered
-    # system content carries a LEADING NEWLINE the single-string prompt did not. Expected, not
-    # corruption — asserted so a future change to that behaviour is visible rather than surprising.
-    assert system_text.startswith("\n")
-    assert "You route a user's message" in system_text
+    # Up to langchain-ollama 1.1.0 the converter accumulated with `content += f"\\n{text}"` from
+    # an empty string, so the rendered system content carried a LEADING NEWLINE the single-string
+    # prompt did not. 1.2.0 (lock refresh, Renovate PR #1157) inserts "\n" only BETWEEN parts, so
+    # the text Ollama receives now begins with the instruction itself. Asserted both ways so a
+    # change to that behaviour, in either direction, is visible rather than surprising.
+    assert not system_text.startswith("\n")
+    assert system_text.startswith("You route a user's message")
     assert converted[1]["content"] == "find the movie Dune"
