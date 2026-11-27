@@ -842,7 +842,7 @@ reach.
 
 **The switch (operator; needs root).** Tell BELAY first. Their workflow change lands in the middle of
 the procedure (step 5), and they re-check their image build afterwards. The agreed slot is
-**Saturday 10:00–13:00 UTC**, with **Sunday 10:00–13:00 UTC** as the fallback for a retry or
+**Saturday 10:00–13:00 UTC** (confirmed with BELAY for 2026-11-28), with **Sunday 10:00–13:00 UTC** as the fallback for a retry or
 rollback. Nothing either project schedules runs then:
 
 - MCM's weekend crons are `branch-reaper` (02:30 daily), the Renovate security run (03:00 daily)
@@ -872,7 +872,7 @@ is queued or running: `node scripts/ci-status.mjs status --branch main` is clear
    belay-ci$ docker context use rootless; docker info | grep -i -E 'rootless|Docker Root Dir'
    belay-ci$ id -u            # → <uid>; the socket is unix:///run/user/<uid>/docker.sock
    ```
-   Note **`belay-host-ci`'s** uid: it goes into BELAY's `build-publish` `DOCKER_HOST` (step 5).
+   BELAY needs no uid from us. Its build derives the socket from `id -u` at run time (BELAY PR #93).
 3. **Stop BELAY's runner under `ci`.** Keep its files: they are the rollback.
    ```bash
    ci$ systemctl --user disable --now forgejo-runner-belay
@@ -922,10 +922,12 @@ is queued or running: `node scripts/ci-status.mjs status --branch main` is clear
    The runner list should show it online, scoped to BELAY, with only `belay-host`. No file of either
    BELAY user may be readable by the other: `ls -ld /home/belay-ci /home/belay-host-ci` should show
    mode `0750` or tighter.
-5. **BELAY's PR (merged only after steps 4 and 4b show both runners online).** BELAY measured that
-   more than the two job lines must change. The PR covers:
-   - `devcontainer-image.yml › build-publish`: `runs-on: kvm` → `runs-on: belay-host`, and
-     `DOCKER_HOST: unix:///run/user/1001/docker.sock` → `unix:///run/user/<uid>/docker.sock`;
+5. **BELAY's PR #93 (in BELAY's repository; merged only after steps 4 and 4b show both runners
+   online).** Tell BELAY when both are online. BELAY checks that the PR is unchanged and merges it.
+   The PR covers:
+   - `devcontainer-image.yml › build-publish`: `runs-on: kvm` → `runs-on: belay-host`, and a
+     `DOCKER_HOST` derived from `id -u` at run time instead of the hard-coded `/run/user/1001`. Two
+     new BELAY guards fail a workflow still on `kvm` and a hard-coded uid in the socket path;
    - `scripts/lib/host-runner-rules.mjs`, which checks only `kvm` jobs. Without this change the
      build job would quietly stop being checked. `host-runner-shared-state.guard.test.mjs` catches
      that, and changes in the same PR;
@@ -935,8 +937,11 @@ is queued or running: `node scripts/ci-status.mjs status --branch main` is clear
    - `RUNNER_IMPLICIT_NODE` in `check-toolchain-consistency.mjs`, which needs an entry for the new label;
    - BELAY's `docs/runbooks/ci.md` (the Runner section and how to recreate the runner) and its wiki page.
 
-   It is still a single revert. Then BELAY dispatches `devcontainer-image` once and confirms the
-   image built and pushed. The new daemon starts with an empty build cache, so that build is a cold one.
+   It is still a single revert. **Merging it starts the image build by itself**, with no separate
+   dispatch: BELAY watches it run on `ci-belay-host` and confirms the image pushed. The new daemon
+   starts with an empty build cache, so that build is a cold one. CI on the merge commit is the
+   check that container jobs work on the moved `ci-belay`. Together the build and that CI run are
+   the host job and the container job the measurement (step 7) needs.
 6. **Scope MCM's runner to `mcm`.** Until this step, any repository's `runs-on: kvm` still runs as
    `ci`. In the `mcm` repository: Settings → Actions → Runners → **Create new runner**. Then replace the
    UUID in `~ci/.config/systemd/user/forgejo-runner.service` and the secret in `~ci/runner/runner-token`
