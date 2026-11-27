@@ -206,7 +206,7 @@ importers:
         version: 24.0.6(@babel/traverse@7.29.14(supports-color@8.1.1))(@nx/jest@24.0.6(@babel/traverse@7.29.14(supports-color@8.1.1))(@types/node@26.6.6)(babel-plugin-macros@3.1.0)(jest@30.5.2(@types/node@26.6.6)(babel-plugin-macros@3.1.0)(supports-color@8.1.1))(nx@24.0.6)(supports-color@8.1.1)(typescript@6.0.3))(@playwright/test@1.65.1)(@zkochan/js-yaml@0.0.7)(eslint@10.15.0(supports-color@8.1.1))(nx@24.0.6)(supports-color@8.1.1)
       '@nxlv/python':
         specifier: ^23.2.1
-        version: 23.5.0(@nx/devkit@24.0.6(nx@24.0.6))(bare-buffer@3.7.3)
+        version: 23.6.0(@nx/devkit@24.0.6(nx@24.0.6))(bare-buffer@3.7.3)
       '@playwright/test':
         specifier: 1.65.1
         version: 1.65.1
@@ -233,7 +233,7 @@ importers:
         version: 1.87.1(28b6f571ed79aeba9395cfd88fa9c8de)
       '@copilotkit/runtime':
         specifier: 1.87.1
-        version: 1.87.1(d01b641f61ddf715634f297c3043b326)
+        version: 1.87.1(c228ea25ba0bc6943685844bd1cb1b9c)
       '@expo-google-fonts/inter':
         specifier: ^0.4.0
         version: 0.4.2
@@ -254,7 +254,7 @@ importers:
         version: 2.2.0(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))
       '@react-native-picker/picker':
         specifier: ^2.11.4
-        version: 2.11.5(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)
+        version: 2.13.0(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)
       '@tamagui/core':
         specifier: 3.3.3
         version: 3.3.3(react-dom@19.3.0(react@19.3.0))(react-native-gesture-handler@3.3.0(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0))(react-native-safe-area-context@5.11.1(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0))(react-native-web@0.21.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)
@@ -317,7 +317,7 @@ importers:
         version: 5.12.1
       ioredis:
         specifier: ^6.0.0
-        version: 6.0.0(supports-color@8.1.1)
+        version: 6.1.0(supports-color@8.1.1)
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.3
@@ -326,10 +326,10 @@ importers:
         version: 3.7.2
       mongodb:
         specifier: ^7.3.0
-        version: 7.9.0
+        version: 7.9.1
       openai:
         specifier: ^7.34.0
-        version: 7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7)
+        version: 7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7)
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -375,7 +375,7 @@ importers:
         version: 7.29.13(supports-color@8.1.1)
       '@babel/runtime':
         specifier: ^7.25.0
-        version: 7.29.14
+        version: 7.29.15
       '@eslint/compat':
         specifier: ^2.1.1
         version: 2.1.1(eslint@10.15.0(supports-color@8.1.1))
@@ -408,7 +408,7 @@ importers:
         version: 30.5.2(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1)
       babel-preset-expo:
         specifier: ~58.0.24
-        version: 58.0.26(@babel/core@7.29.13(supports-color@8.1.1))(@babel/runtime@7.29.14)(expo@58.0.26)(react-refresh@0.14.2)(supports-color@8.1.1)
+        version: 58.0.26(@babel/core@7.29.13(supports-color@8.1.1))(@babel/runtime@7.29.15)(expo@58.0.26)(react-refresh@0.14.2)(supports-color@8.1.1)
       eslint:
         specifier: ^10.12.0
         version: 10.15.0(supports-color@8.1.1)
@@ -1341,8 +1341,8 @@ packages:
     peerDependencies:
       '@babel/core': ^7.0.0-0
 
-  '@babel/runtime@7.29.14':
-    resolution: {integrity: sha512-Y5tqevQaUAZhhj82BpYMNC1ssvLQTVAfwKdm8iy8qwmhvC2/CpcAu8OC+QEtjM7pMk7knx83u1Qj8gzkicyelw==}
+  '@babel/runtime@7.29.15':
+    resolution: {integrity: sha512-304gsbbGVmQc+cNGHzwHBlqepYdWLKj3VXCQBGt/EGcV7PUPfKI7kAUNW1FZEOCwlQiLvQjg1JEaAlRQ616h+Q==}
     engines: {node: '>=6.9.0'}
 
   '@babel/template@7.29.7':
@@ -2123,8 +2123,8 @@ packages:
       '@types/node':
         optional: true
 
-  '@ioredis/commands@2.0.0':
-    resolution: {integrity: sha512-vrx0AE/T0h7cRZwfo1M39Cr+ZhZrkf0V8mQN75wucKCxCLD9l/VX6no3gFvrLqD1IlG/1LtzWovqEw3t0Vr9zg==}
+  '@ioredis/commands@2.4.0':
+    resolution: {integrity: sha512-fyu7ZM5RvtsYZ3pz4DFlPqSGB3aoVD9ir0vL6/TLtRo8EMuC7f0Z+qGBskDkUL/gJs5fzelxityZAfNNUCrVrQ==}
 
   '@isaacs/cliui@8.0.2':
     resolution: {integrity: sha512-O8jcjabXaleOG9DQ0+ARXWZBTfnP4WNAqzuiJK7ll44AmxGKv/J2M4TPjxjY3znBCfvBXFzucm1twdyFybFqEA==}
@@ -3017,8 +3017,8 @@ packages:
   '@nx/workspace@24.0.6':
     resolution: {integrity: sha512-kOANsH9ks4A+s4iD7IgHpYhdk2tX5PPUxrQg5fuSWOdc/t9LmQjp/2e9HnKbzszp1i+vjl/1E/sPcLRU5U/Ztg==}
 
-  '@nxlv/python@23.5.0':
-    resolution: {integrity: sha512-AOScETGyxn1vQOmPaT7ji2RF59R/HNCbwyYovHJSKPvKrynaZ7EojxDKwzU1ou9RpCVjCxRat0YqIOvWpCnsWQ==}
+  '@nxlv/python@23.6.0':
+    resolution: {integrity: sha512-bR9kQ6HfSZRvndgxojVBpSnSh+vyppHlsxtEv5bGndXFLLrdceVOsM1Khhx6AW5io5sxxsQzlzHSEb+Px5OS0w==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
       '@nx/devkit': '>=22.0.0'
@@ -3530,8 +3530,8 @@ packages:
       react: '>=16'
       react-native: '>=0.57'
 
-  '@react-native-picker/picker@2.11.5':
-    resolution: {integrity: sha512-tzd+lWqKT1R17dJaHNQwxvKQWvAiPjAIOtJwfDOEiyHT65uCVJKe+vlFTVKcYgHH0O+uP+73uocHT/vDA3sM1A==}
+  '@react-native-picker/picker@2.13.0':
+    resolution: {integrity: sha512-TJePQ2Mc0877McaNVaRW7BkTRC4YECEzy6WvaO7DRVTfif6ZH5kJFiMiiJUIdQ5j9zEnq3jm5hQn61MxqYIzpw==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -5188,10 +5188,6 @@ packages:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
 
-  cluster-key-slot@1.1.1:
-    resolution: {integrity: sha512-rwHwUfXL40Chm1r08yrhU3qpUvdVlgkKNeyeGPOxnW8/SyVDvgRaed/Uz54AqWNaTCAThlj6QAs3TZcKI0xDEw==}
-    engines: {node: '>=0.10.0'}
-
   co@4.6.0:
     resolution: {integrity: sha512-QVb0dM5HvG+uaxitm8wONl7jltx8dqhfU33DcqtOZcLSVIKSDDLDi7+0LbAKiyI8hD9u42m2YxXSkMGWThaecQ==}
     engines: {iojs: '>= 1.0.0', node: '>= 0.12.0'}
@@ -6793,8 +6789,8 @@ packages:
   invariant@2.2.4:
     resolution: {integrity: sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==}
 
-  ioredis@6.0.0:
-    resolution: {integrity: sha512-f+Dtubxfpf6KYFq7WVXJoOLn0bk4TJrMrN9SzeE+jrWrCWj7XX3fA6vkryafhADX+GMymRxgDJDOI33COkJc0w==}
+  ioredis@6.1.0:
+    resolution: {integrity: sha512-0ooWUoxEiWEcCA0FFBsmCnYHnjiFgWPQwA144NxpQzLIVkW20JUjAoKtMg+7spFn+6OAI68XwpcLcGKW5xe4UA==}
     engines: {node: '>=20.0.0'}
 
   ip-address@10.7.6:
@@ -8074,8 +8070,8 @@ packages:
     resolution: {integrity: sha512-5I/pX3C2gPEz1EDdYMdZwBx1b/jE/f+J+KItSUJ02uQZ66bbe7kHKjv2uqCHJWaMCagem3dyfWqoAcv+XYZ6aw==}
     engines: {node: '>=20.19.0'}
 
-  mongodb@7.9.0:
-    resolution: {integrity: sha512-HfpNb8qmfmNxno+Ml5JgHn/nyshK+8xF4ESLCXedRKuGLGRyAvkjcpjk19T2Q+rqC6/FlnZKll4if21R6xs/Tg==}
+  mongodb@7.9.1:
+    resolution: {integrity: sha512-OWtk/bcf8tx4Qe6lB8OsMksOwGGhC2FH+zl5UNwE+L7uz2VQDhCcnJThAvInEaBrEDaSsUWlMRbuFR4/TjF44w==}
     engines: {node: '>=20.19.0'}
     peerDependencies:
       '@aws-sdk/credential-providers': ^3.806.0
@@ -8301,8 +8297,8 @@ packages:
     resolution: {integrity: sha512-7x81NCL719oNbsq/3mh+hVrAWmFuEYUqrq/Iw3kUzH8ReypT9QQ0BLoJS7/G9k6N81XjW4qHWtjWwe/9eLy1EQ==}
     engines: {node: '>=12'}
 
-  openai@7.60.0:
-    resolution: {integrity: sha512-vipS79MnBZX6zpWjMGdRQazRcbYc3CxGUNZYLpd8YANeq1ZlTAZeHctkeUJvqDVcET7+kHI2osGWyhk3Co9odg==}
+  openai@7.63.0:
+    resolution: {integrity: sha512-bTRCHcdcYHu9k+2+jjPuzWTNaCORLBCNLrYkTFGmotQIec2D/lIWWMZ6uc9AIazc0MA4lYw62xpdcjUMjt98xg==}
     engines: {node: '>=22.0.0'}
     peerDependencies:
       '@aws-sdk/credential-provider-node': '>=3.972.0 <4'
@@ -10289,14 +10285,14 @@ snapshots:
       '@ag-ui/proto': 1.0.5(zod@3.25.76)
       zod: 3.25.76
 
-  '@ag-ui/langgraph@0.0.44(@ag-ui/client@1.0.2)(@ag-ui/core@1.0.2(zod@3.25.76))(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(ws@8.23.0)':
+  '@ag-ui/langgraph@0.0.44(@ag-ui/client@1.0.2)(@ag-ui/core@1.0.2(zod@3.25.76))(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(ws@8.23.0)':
     dependencies:
       '@ag-ui/a2ui-toolkit': 0.0.4
       '@ag-ui/client': 1.0.2
       '@ag-ui/core': 1.0.2(zod@3.25.76)
-      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
-      '@langchain/langgraph-sdk': 1.17.0(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
-      langchain: 1.6.7(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(ws@8.23.0)
+      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
+      '@langchain/langgraph-sdk': 1.17.0(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      langchain: 1.6.7(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(ws@8.23.0)
       partial-json: 0.1.7
       rxjs: 7.8.1
     transitivePeerDependencies:
@@ -11291,7 +11287,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@babel/runtime@7.29.14': {}
+  '@babel/runtime@7.29.15': {}
 
   '@babel/template@7.29.7':
     dependencies:
@@ -11612,13 +11608,13 @@ snapshots:
       - '@ag-ui/core'
       - encoding
 
-  '@copilotkit/runtime@1.87.1(d01b641f61ddf715634f297c3043b326)':
+  '@copilotkit/runtime@1.87.1(c228ea25ba0bc6943685844bd1cb1b9c)':
     dependencies:
       '@ag-ui/a2ui-middleware': 0.0.16(@ag-ui/client@1.0.2)(rxjs@7.8.1)
       '@ag-ui/client': 1.0.2
       '@ag-ui/core': 1.0.2(zod@3.25.76)
       '@ag-ui/encoder': 1.0.2(zod@3.25.76)
-      '@ag-ui/langgraph': 0.0.44(@ag-ui/client@1.0.2)(@ag-ui/core@1.0.2(zod@3.25.76))(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(ws@8.23.0)
+      '@ag-ui/langgraph': 0.0.44(@ag-ui/client@1.0.2)(@ag-ui/core@1.0.2(zod@3.25.76))(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(ws@8.23.0)
       '@ag-ui/mcp-apps-middleware': 0.1.1(@ag-ui/client@1.0.2)(@cfworker/json-schema@4.1.6)(rxjs@7.8.1)(supports-color@8.1.1)(zod@3.25.76)
       '@ag-ui/mcp-middleware': 0.0.2(@ag-ui/client@1.0.2)(@cfworker/json-schema@4.1.6)(rxjs@7.8.1)(supports-color@8.1.1)(zod@3.25.76)
       '@ai-sdk/anthropic': 3.0.143(zod@3.25.76)
@@ -11633,7 +11629,7 @@ snapshots:
       '@copilotkit/shared': 1.87.1(@ag-ui/core@1.0.2(zod@3.25.76))
       '@graphql-yoga/plugin-defer-stream': 3.24.6(graphql-yoga@5.24.6(graphql@16.15.0))(graphql@16.15.0)
       '@hono/node-server': 1.19.19(hono@4.13.19)
-      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
+      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
       '@modelcontextprotocol/sdk': 1.32.2(@cfworker/json-schema@4.1.6)(supports-color@8.1.1)(zod@3.25.76)
       '@remix-run/node-fetch-server': 0.13.3
       '@scarf/scarf': 1.4.0
@@ -11647,7 +11643,7 @@ snapshots:
       graphql-scalars: 1.26.0(graphql@16.15.0)
       graphql-yoga: 5.24.6(graphql@16.15.0)
       hono: 4.13.19
-      openai: 7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7)
+      openai: 7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7)
       partial-json: 0.1.7
       phoenix: 1.8.16
       pino: 10.4.0
@@ -11660,9 +11656,9 @@ snapshots:
       yauzl: 2.10.0
       zod: 3.25.76
     optionalDependencies:
-      '@langchain/langgraph-sdk': 1.17.0(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@langchain/langgraph-sdk': 1.17.0(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       express: 5.3.0(supports-color@8.1.1)
-      langchain: 1.6.7(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(ws@8.23.0)
+      langchain: 1.6.7(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(ws@8.23.0)
     transitivePeerDependencies:
       - '@microsoft/agents-activity'
       - '@microsoft/agents-hosting'
@@ -12508,7 +12504,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 26.6.6
 
-  '@ioredis/commands@2.0.0': {}
+  '@ioredis/commands@2.4.0': {}
 
   '@isaacs/cliui@8.0.2':
     dependencies:
@@ -12816,12 +12812,12 @@ snapshots:
 
   '@keyv/serialize@1.1.1': {}
 
-  '@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)':
+  '@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)':
     dependencies:
       '@cfworker/json-schema': 4.1.6
       '@standard-schema/spec': 1.1.0
       js-tiktoken: 1.0.21
-      langsmith: 0.13.0(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
+      langsmith: 0.13.0(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
       mustache: 4.2.0
       p-queue: 6.6.2
       zod: 4.6.7
@@ -12832,13 +12828,13 @@ snapshots:
       - openai
       - ws
 
-  '@langchain/langgraph-checkpoint@1.2.3(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))':
+  '@langchain/langgraph-checkpoint@1.2.3(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))':
     dependencies:
-      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
+      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
 
-  '@langchain/langgraph-sdk@1.17.0(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@langchain/langgraph-sdk@1.17.0(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
-      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
+      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
       '@langchain/protocol': 0.0.21
       '@types/json-schema': 7.0.15
       p-queue: 9.3.5
@@ -12847,11 +12843,11 @@ snapshots:
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
 
-  '@langchain/langgraph@1.7.5(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(zod@4.6.7)':
+  '@langchain/langgraph@1.7.5(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(zod@4.6.7)':
     dependencies:
-      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
-      '@langchain/langgraph-checkpoint': 1.2.3(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))
-      '@langchain/langgraph-sdk': 1.17.0(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
+      '@langchain/langgraph-checkpoint': 1.2.3(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))
+      '@langchain/langgraph-sdk': 1.17.0(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@langchain/protocol': 0.0.21
       '@standard-schema/spec': 1.1.0
       zod: 4.6.7
@@ -13418,7 +13414,7 @@ snapshots:
       '@babel/plugin-transform-runtime': 7.29.7(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1)
       '@babel/preset-env': 7.29.14(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1)
       '@babel/preset-typescript': 7.29.7(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1)
-      '@babel/runtime': 7.29.14
+      '@babel/runtime': 7.29.15
       '@nx/devkit': 24.0.6(nx@24.0.6)
       '@nx/workspace': 24.0.6
       '@zkochan/js-yaml': 0.0.7
@@ -13647,7 +13643,7 @@ snapshots:
       - '@swc-node/register'
       - '@swc/core'
 
-  '@nxlv/python@23.5.0(@nx/devkit@24.0.6(nx@24.0.6))(bare-buffer@3.7.3)':
+  '@nxlv/python@23.6.0(@nx/devkit@24.0.6(nx@24.0.6))(bare-buffer@3.7.3)':
     dependencies:
       '@iarna/toml': 2.2.5
       '@nx/devkit': 24.0.6(nx@24.0.6)
@@ -14133,7 +14129,7 @@ snapshots:
       react: 19.3.0
       react-native: 0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1)
 
-  '@react-native-picker/picker@2.11.5(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)':
+  '@react-native-picker/picker@2.13.0(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)':
     dependencies:
       react: 19.3.0
       react-native: 0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1)
@@ -15640,7 +15636,7 @@ snapshots:
 
   babel-plugin-macros@3.1.0:
     dependencies:
-      '@babel/runtime': 7.29.14
+      '@babel/runtime': 7.29.15
       cosmiconfig: 7.1.0
       resolve: 1.22.14
 
@@ -15718,7 +15714,7 @@ snapshots:
       '@babel/plugin-syntax-private-property-in-object': 7.14.5(@babel/core@7.29.13(supports-color@8.1.1))
       '@babel/plugin-syntax-top-level-await': 7.14.5(@babel/core@7.29.13(supports-color@8.1.1))
 
-  babel-preset-expo@58.0.26(@babel/core@7.29.13(supports-color@8.1.1))(@babel/runtime@7.29.14)(expo@58.0.26)(react-refresh@0.14.2)(supports-color@8.1.1):
+  babel-preset-expo@58.0.26(@babel/core@7.29.13(supports-color@8.1.1))(@babel/runtime@7.29.15)(expo@58.0.26)(react-refresh@0.14.2)(supports-color@8.1.1):
     dependencies:
       '@babel/generator': 7.29.14
       '@babel/helper-module-imports': 7.29.7(supports-color@8.1.1)
@@ -15764,7 +15760,7 @@ snapshots:
       debug: 4.4.3(supports-color@8.1.1)
       react-refresh: 0.14.2
     optionalDependencies:
-      '@babel/runtime': 7.29.14
+      '@babel/runtime': 7.29.15
       expo: 58.0.26(@babel/core@7.29.13(supports-color@8.1.1))(@expo/metro-runtime@58.0.17)(expo-router@58.0.32)(react-dom@19.3.0(react@19.3.0))(react-native-web@0.21.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-native-worklets@0.13.0(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1)(typescript@6.0.3)
     transitivePeerDependencies:
       - '@babel/core'
@@ -16035,8 +16031,6 @@ snapshots:
   clone@1.0.4: {}
 
   clsx@2.1.1: {}
-
-  cluster-key-slot@1.1.1: {}
 
   co@4.6.0: {}
 
@@ -17168,7 +17162,7 @@ snapshots:
 
   expo@58.0.26(@babel/core@7.29.13(supports-color@8.1.1))(@expo/metro-runtime@58.0.17)(expo-router@58.0.32)(react-dom@19.3.0(react@19.3.0))(react-native-web@0.21.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-native-worklets@0.13.0(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1)(typescript@6.0.3):
     dependencies:
-      '@babel/runtime': 7.29.14
+      '@babel/runtime': 7.29.15
       '@expo/cli': 58.1.21(@expo/dom-webview@58.0.2)(@expo/metro-runtime@58.0.17)(expo-constants@58.0.16)(expo-font@58.0.12(expo@58.0.26)(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0))(expo-router@58.0.32)(expo@58.0.26)(react-dom@19.3.0(react@19.3.0))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1)(typescript@6.0.3)
       '@expo/config': 58.0.12(supports-color@8.1.1)(typescript@6.0.3)
       '@expo/config-plugins': 58.0.13(supports-color@8.1.1)(typescript@6.0.3)
@@ -17181,7 +17175,7 @@ snapshots:
       '@expo/metro': 58.0.0(supports-color@8.1.1)
       '@expo/metro-config': 58.0.23(expo@58.0.26)(supports-color@8.1.1)(typescript@6.0.3)
       '@ungap/structured-clone': 1.4.0
-      babel-preset-expo: 58.0.26(@babel/core@7.29.13(supports-color@8.1.1))(@babel/runtime@7.29.14)(expo@58.0.26)(react-refresh@0.14.2)(supports-color@8.1.1)
+      babel-preset-expo: 58.0.26(@babel/core@7.29.13(supports-color@8.1.1))(@babel/runtime@7.29.15)(expo@58.0.26)(react-refresh@0.14.2)(supports-color@8.1.1)
       expo-asset: 58.0.21(expo@58.0.26)(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1)(typescript@6.0.3)
       expo-constants: 58.0.16(expo@58.0.26)(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(supports-color@8.1.1)(typescript@6.0.3)
       expo-file-system: 58.0.14(expo@58.0.26)(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))
@@ -17960,10 +17954,9 @@ snapshots:
     dependencies:
       loose-envify: 1.4.0
 
-  ioredis@6.0.0(supports-color@8.1.1):
+  ioredis@6.1.0(supports-color@8.1.1):
     dependencies:
-      '@ioredis/commands': 2.0.0
-      cluster-key-slot: 1.1.1
+      '@ioredis/commands': 2.4.0
       debug: 4.4.3(supports-color@8.1.1)
       denque: 2.1.0
       redis-errors: 1.2.0
@@ -18785,12 +18778,12 @@ snapshots:
 
   lan-network@0.2.1: {}
 
-  langchain@1.6.7(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(ws@8.23.0):
+  langchain@1.6.7(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(ws@8.23.0):
     dependencies:
-      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
-      '@langchain/langgraph': 1.7.5(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(zod@4.6.7)
-      '@langchain/langgraph-checkpoint': 1.2.3(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))
-      langsmith: 0.13.0(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
+      '@langchain/core': 1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
+      '@langchain/langgraph': 1.7.5(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(zod@4.6.7)
+      '@langchain/langgraph-checkpoint': 1.2.3(@langchain/core@1.4.2(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0))
+      langsmith: 0.13.0(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0)
       zod: 4.6.7
     transitivePeerDependencies:
       - '@opentelemetry/api'
@@ -18801,12 +18794,12 @@ snapshots:
       - react-dom
       - ws
 
-  langsmith@0.13.0(@opentelemetry/api@1.10.0)(openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0):
+  langsmith@0.13.0(@opentelemetry/api@1.10.0)(openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7))(ws@8.23.0):
     dependencies:
       p-queue: 6.6.2
     optionalDependencies:
       '@opentelemetry/api': 1.10.0
-      openai: 7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7)
+      openai: 7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7)
       ws: 8.23.0
 
   layout-base@1.0.2: {}
@@ -19373,12 +19366,12 @@ snapshots:
 
   metro-runtime@0.87.1:
     dependencies:
-      '@babel/runtime': 7.29.14
+      '@babel/runtime': 7.29.15
       flow-enums-runtime: 0.0.6
 
   metro-runtime@0.87.3:
     dependencies:
-      '@babel/runtime': 7.29.14
+      '@babel/runtime': 7.29.15
       flow-enums-runtime: 0.0.6
 
   metro-source-map@0.87.1(supports-color@8.1.1):
@@ -20012,7 +20005,7 @@ snapshots:
       '@types/whatwg-url': 13.0.0
       whatwg-url: 15.1.0
 
-  mongodb@7.9.0:
+  mongodb@7.9.1:
     dependencies:
       '@mongodb-js/saslprep': 1.6.3
       bson: 7.3.4
@@ -20298,7 +20291,7 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  openai@7.60.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7):
+  openai@7.63.0(google-auth-library@10.9.1(supports-color@8.1.1))(undici@6.29.1)(ws@8.23.0)(zod@4.6.7):
     optionalDependencies:
       google-auth-library: 10.9.1(supports-color@8.1.1)
       undici: 6.29.1
@@ -20802,7 +20795,7 @@ snapshots:
 
   react-native-web@0.21.4(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:
-      '@babel/runtime': 7.29.14
+      '@babel/runtime': 7.29.15
       '@react-native/normalize-colors': 0.74.89
       fbjs: 3.0.5
       inline-style-prefixer: 7.0.1
