@@ -626,7 +626,7 @@ pnpm nx up-mcm infrastructure-as-code     # --profile app
 |-----------|-----------------|---------|
 | `movie-assistant-gateway` | Custom Python image (`agents/movie-assistant/Dockerfile` — `python:3.14-slim` + uvicorn) | FastAPI app that mounts the compiled LangGraph supervisor graph over AG-UI via `ag_ui_langgraph`; emits AG-UI natively (NOT the stock LangGraph Platform server) |
 | `movie-assistant-gateway-metro` | Same image | Metro-dev only (`--profile agents-metro`): the same gateway with a loopback host port (`127.0.0.1:8123`) so a host-run BFF can reach it; never started under `--profile agents` |
-| `movie-assistant-store-postgres` | `postgres:18.6-alpine3.23` | LangGraph checkpoints (isolated from `mc-service-store-mongo`) |
+| `movie-assistant-store-postgres` | `postgres:18.7-alpine3.23` | LangGraph checkpoints (isolated from `mc-service-store-mongo`) |
 | `movie-assistant-mcp-movie` | Custom Python Docker image | MCP wrapper over `mc-service` REST API |
 | `movie-assistant-mcp-webapi` | Custom Python Docker image | TMDB/IMDB lookups + HTTP fetch |
 | `movie-assistant-mcp-spreadsheet` | Custom Python Docker image | Token-free CSV/`.xlsx` parsing and export-workbook building over a transient, single-use Redis handle |

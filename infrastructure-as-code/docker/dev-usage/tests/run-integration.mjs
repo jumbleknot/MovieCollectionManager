@@ -17,7 +17,7 @@ const STACK = resolve(HERE, '..');
 const REPO = resolve(STACK, '..', '..', '..');
 const COMPOSE = join(STACK, 'compose.yaml');
 const PROJECT = process.env.DEV_USAGE_IT_PROJECT || 'dev-usage-it';
-const SEED_IMAGE = 'postgres:18.6-alpine3.23@sha256:f1031bf693d8d60b0a0380c51a3510607c7a93c7c1d18bf7af94a3a8dbeb40b8';
+const SEED_IMAGE = 'postgres:18.7-alpine3.23@sha256:339a86bf416979bb4d3d2e30a1f9e096e7302564faff4151b804cf53463059d5';
 const requireLive = process.env.MCM_REQUIRE_LIVE_STACK === '1';
 
 const mint = () => randomBytes(18).toString('hex');

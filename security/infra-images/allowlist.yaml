@@ -94,9 +94,14 @@
 # This was the bare tag, so it suppressed every rebuild of 18.6-alpine3.23; it now names the digest the
 # repository pulls today (f1031bf693d8). Re-keyed mechanically, NOT re-measured — the old key already
 # covered these bytes, so behaviour is unchanged until the next digest bump, which re-evaluates it.
-- image: '^postgres:18\.6-alpine3\.23@sha256:f1031bf693d8'
+# RE-KEYED 2026-11-27, MEASURED: this PR carries Renovate's `docker base images` window (PR #1158), which
+# moves every 18.6-alpine3.23 ref to 18.7-alpine3.23@sha256:339a86bf4169. A full local sweep of that tree
+# (Trivy 0.76.2, the gate unmodified, this entry still on 18.6) blocked on exactly ONE finding: this CVE,
+# in gosu's stdlib v1.24.6. 18.7 is no remediation, so the acceptance moves to the new digest. The 18.6
+# digest is no longer referenced anywhere, so it is not kept (it would be STALE).
+- image: '^postgres:18\.7-alpine3\.23@sha256:339a86bf4169'
   id: 'CVE-2025-68121'
-  justification: 'Baseline (035): fixable Critical in Go stdlib. Now on 18.6 (PR #362), which is NOT a remediation — that PR measured 18.6-alpine3.23 carrying the SAME pre-fix stdlib v1.24.6 that 18.3 did, and 18.7-alpine3.23 does not exist upstream (registry checked 2026-09-10); feature 036 had separately verified 18.4-alpine3.24 was no better. Internal-only. NARROWED 2026-09-10 (item #406) from the transitional `18\.[36]` span, now that #362 has landed and 18.3 is no longer referenced — see the otel-lgtm entry below for why the span existed for exactly one merge.'
+  justification: 'Baseline (035): fixable Critical in Go stdlib (v1.24.6 inside usr/local/bin/gosu, the entrypoint privilege-drop helper, not PostgreSQL). Carried from 18.3 to 18.6 (PR #362, measured the same pre-fix stdlib) and to 18.7-alpine3.23@sha256:339a86bf4169 (measured 2026-11-27 by a full local sweep: the only blocking finding); feature 036 had separately verified 18.4-alpine3.24 was no better. Internal-only. NARROWED 2026-09-10 (item #406) from the transitional `18\.[36]` span, now that #362 has landed and 18.3 is no longer referenced — see the otel-lgtm entry below for why the span existed for exactly one merge.'
   addedBy: 'seed'
 # RE-KEYED 2026-11-24 (item #1140), and MEASURED, not mechanical: the observability postgres moved to
 # 18-alpine@sha256:0115267ab5a5 (PostgreSQL 18.7, gosu 1.20, Alpine 3.24.4). That PR's infra-image-scan
