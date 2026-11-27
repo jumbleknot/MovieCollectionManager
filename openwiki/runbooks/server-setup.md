@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: 7fb4c86f7a657ad74d0bebc3e095ef25ff1a699bafdc304e2a51ed5d1dca2cf3
+resource-sha256: 0f53b8fc2c4600cc857e082903dbfc8f41d7ca9b6a2fed64faf2ffe8af4848a0
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-26T16:15:37.962Z
+timestamp: 2026-11-27T01:21:13.130Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -91,12 +91,13 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   (`runs-on: kvm`) ran on MCM's instance-wide runner, and its container jobs used MCM's daemon. The
   runbook holds the operator procedure:
   - move the runner's binary, config, token and unit;
-  - register a **separate** host runner, `ci-belay-host` (`belay-host:host`), rather than add a host
-    label to `ci-belay`. This keeps that runner's secret and its one job slot away from PR code that
-    targets the host label. PR code can still reach the host, so the push restriction (and,
-    optionally, a second Unix user) is what keeps BELAY's container-only rule;
-  - schedule the switch Monday to Thursday, 10:00–13:00 UTC, clear of BELAY's 13:17 security run,
-    with BELAY holding pushes;
+  - register a **separate** host runner, `ci-belay-host` (`belay-host:host`), under a **second Unix
+    user** (`belay-host-ci`, with its own daemon), rather than add a host label to `ci-belay`. PR
+    code that targets the host label can then reach neither the container jobs' daemon nor
+    `ci-belay`'s secret and job slot. It still gets the host as `belay-host-ci`, which BELAY's push
+    restriction covers;
+  - schedule the switch for Saturday 10:00–13:00 UTC (Sunday as the fallback), clear of every MCM
+    cron and of BELAY's 13:17 security run, with both projects holding merges and pushes;
   - BELAY's PR re-points `runs-on` and `DOCKER_HOST` and updates its guards and docs, as one revert;
   - re-scope MCM's runner, keeping the old registration disabled, not deleted, until verified.
 
