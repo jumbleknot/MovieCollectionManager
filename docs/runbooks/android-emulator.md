@@ -27,8 +27,12 @@ Renovate moves the version (item #224), and the script installs the release zip 
 `${{ runner.temp }}/mcm-maestro`, removed when the job ends (item #1147). It replaced
 `curl https://get.maestro.mobile.dev | bash`. That installer took `releases/latest` unless
 `MAESTRO_VERSION` was set, installed into the `ci` user's shared `~/.maestro`, and appended a PATH line
-to `~/.bashrc` and `~/.zshrc` on every run. Maestro's run output still lands in `~/.maestro/tests`,
-since the CLI derives it from `$HOME`.
+to `~/.bashrc` and `~/.zshrc` on every run. Maestro's state (`tests/`, `deps/`, `sessions/`,
+`analytics.json`) is job-private as well (item #1152). The CLI derives it from the JVM's `user.home`,
+so the install step writes `MAESTRO_OPTS=-Duser.home=<dir>/home` and `MCM_MAESTRO_HOME=<dir>/home` to
+`$GITHUB_ENV`, and the debug readers use `MCM_MAESTRO_HOME`. `<dir>/home/.android` links to the real
+`~/.android`, so Maestro keeps the adb key adb already uses. Off CI, with neither variable set,
+Maestro and the readers use `~/.maestro` as before.
 
 1. **Agent half — always** (`MOBILE_SUITE=agents`, the default): `scripts/ci-mobile-agent-flows.sh` —
    gating → enable-anthropic → the agent flows → disable, then `admin-settings-access` last after a

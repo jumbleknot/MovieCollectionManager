@@ -18,6 +18,11 @@
 //     `export PATH=...` line to ~/.bashrc and ~/.zshrc on every run — 644 copies in each by then. It
 //     is replaced by scripts/ci-install-maestro.sh into a job-private dir.
 //
+// Item #1152: Maestro's STATE too. The CLI derives ~/.maestro/{tests,deps,sessions} and analytics.json
+// from the JVM's user.home, so after #1147 every run still added a folder per flow to the shared
+// ~ci/.maestro (7.2G by 2026-11-26). The install step writes MAESTRO_OPTS=-Duser.home=<dir>/home and
+// MCM_MAESTRO_HOME to $GITHUB_ENV, no step may override them, and no step may run Maestro before that.
+//
 // The pnpm half of this rule lives in renovate-workflow.guard.test.mjs (pnpmInstallFindings). This
 // file holds the rest: no $HOME directory on PATH, nothing written into ~/.local/bin or ~/.docker, the
 // Docker config private, and Trivy, Compose and Maestro job-private and removed when the job ends.
@@ -142,13 +147,37 @@ export function sharedStateFindings(dir = WORKFLOW_DIR, root = REPO_ROOT) {
         }
       }
 
-      // ── Maestro: job-private, removed when the job ends ──
+      // ── Maestro: job-private binary AND state, removed when the job ends ──
       const mi = steps.findIndex((s) => /ci-install-maestro\.sh/.test(String(s?.run ?? '')));
+      const mVar = mi >= 0 ? String(steps[mi].run).match(/ci-install-maestro\.sh\s+"?\$([A-Z_]+)"?/)?.[1] : null;
       if (mi >= 0) {
-        const mVar = String(steps[mi].run).match(/ci-install-maestro\.sh\s+"?\$([A-Z_]+)"?/)?.[1];
         if (!mVar || !privateVar(steps[mi], mVar)) findings.push(`${at(mi)} installs Maestro outside a job-private dir — use ci-install-maestro.sh "$<VAR>" with <VAR> under \${{ runner.temp }}`);
-        else requireCleanup(mVar, 'Maestro');
+        else {
+          requireCleanup(mVar, 'Maestro');
+          // Item #1152: Maestro keeps tests/, deps/, sessions/ and analytics.json under the JVM's
+          // user.home, i.e. the shared ~/.maestro, unless bin/maestro is told otherwise.
+          const run = String(steps[mi].run);
+          for (const [name, want] of [['MAESTRO_OPTS', `-Duser.home=$${mVar}/home`], ['MCM_MAESTRO_HOME', `$${mVar}/home`]]) {
+            const m = run.match(new RegExp(`echo\\s+"${name}=([^"]*)"\\s*>>\\s*"?\\$GITHUB_ENV`));
+            if (!m) findings.push(`${at(mi)} leaves Maestro's state in the shared ~/.maestro — write ${name}=${want} to $GITHUB_ENV`);
+            else if (m[1] !== want) findings.push(`${at(mi)} writes ${name}=${m[1]} to $GITHUB_ENV, expected ${name}=${want}`);
+          }
+        }
       }
+      // Anything that would put Maestro's state back in $HOME: a step (or job/workflow) env that
+      // overrides those values, or a Maestro run with no private state home set up before it.
+      steps.forEach((step, i) => {
+        const env = envOf(step);
+        for (const name of ['MAESTRO_OPTS', 'MCM_MAESTRO_HOME', 'JAVA_TOOL_OPTIONS', 'JAVA_OPTS']) {
+          if (name in env) findings.push(`${at(i)} sets ${name} in its env, which overrides Maestro's job-private state home`);
+        }
+        for (const line of executable(texts[i].run)) {
+          if (/\b(MAESTRO_OPTS|MCM_MAESTRO_HOME)=/.test(line) && i !== mi) findings.push(`${at(i)} redefines Maestro's state home outside the install step: ${line.trim()}`);
+          if (/user\.home=(\$HOME|\$\{HOME\}|~|\/home\/)/.test(line)) findings.push(`${at(i)} points Maestro's user.home at the shared home: ${line.trim()}`);
+        }
+        const runsMaestro = executable(texts[i].all).some((l) => /(^|[\s;&|(`])maestro\s+test\b|\bmaestro-run\.sh\b/.test(unquoted(l)));
+        if (runsMaestro && !(mVar && mi < i)) findings.push(`${at(i)} runs Maestro before a job-private state home is set (ci-install-maestro.sh + MAESTRO_OPTS in an earlier step) — its state lands in ~/.maestro`);
+      });
     }
   }
   return findings;
@@ -166,6 +195,8 @@ test('the scan finds the host-runner installs it guards (not vacuous)', () => {
   const appCi = readFileSync(resolve(WORKFLOW_DIR, 'app-ci.yml'), 'utf8');
   assert.equal([...appCi.matchAll(/ci-install-compose\.sh "\$MCM_DOCKER_CONFIG"/g)].length, 4, 'app-ci.yml: expected the pinned Compose in its four compose jobs');
   assert.match(appCi, /ci-install-maestro\.sh "\$MCM_MAESTRO_DIR"/, 'app-ci.yml no longer installs Maestro the guarded way');
+  assert.match(appCi, /echo "MAESTRO_OPTS=-Duser\.home=\$MCM_MAESTRO_DIR\/home" >> "\$GITHUB_ENV"/, 'app-ci.yml no longer gives Maestro a job-private state home');
+  assert.ok(sharedStateFindings().length === 0 && /maestro-run\.sh|ci-mobile-agent-flows\.sh/.test(appCi), 'app-ci.yml runs no Maestro flow for the state-home rule to check');
   // Every host job that runs the Docker CLI, including the two that `docker login` (build-deploy via
   // scripts/cd/scan-push.sh, build-publish inline). If this count drops, a job lost its private config
   // or stopped using Docker — find out which before changing the number.
@@ -213,8 +244,12 @@ test('the shared-state rule rejects each wrong shape (control)', () => {
   const MINSTALL =
     '      - name: Install Maestro\n' + MENV + '        run: |\n' +
     '          bash scripts/ci-install-maestro.sh "$MCM_MAESTRO_DIR"\n' +
-    '          echo "$MCM_MAESTRO_DIR/bin" >> "$GITHUB_PATH"\n';
+    '          echo "$MCM_MAESTRO_DIR/bin" >> "$GITHUB_PATH"\n' +
+    '          echo "MAESTRO_OPTS=-Duser.home=$MCM_MAESTRO_DIR/home" >> "$GITHUB_ENV"\n' +
+    '          echo "MCM_MAESTRO_HOME=$MCM_MAESTRO_DIR/home" >> "$GITHUB_ENV"\n';
   const MCLEAN = '      - if: always()\n' + MENV + '        run: rm -rf "$MCM_MAESTRO_DIR"\n';
+  const MRUN = '      - run: bash scripts/maestro-run.sh flows/a.yaml\n';
+  const MTEST = '      - run: maestro test flows/_skip.yaml\n';
 
   const job = (runsOn, body) => `jobs:\n  j:\n    runs-on: ${runsOn}\n    steps:\n${body}`;
   const cases = [
@@ -248,6 +283,18 @@ test('the shared-state rule rejects each wrong shape (control)', () => {
     ['host + Maestro into a dir outside runner.temp', job('kvm', MINSTALL.replace('${{ runner.temp }}/mcm-maestro', '/home/ci/.maestro') + MCLEAN), 1],
     ['host + private Maestro, no cleanup', job('kvm', MINSTALL), 1],
     ['host + Maestro on PATH from $HOME', job('kvm', '      - run: echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"\n'), 1],
+
+    // Maestro's state (item #1152): tests/, deps/, sessions/, analytics.json follow user.home
+    ['host + private Maestro state, flows run after it, cleanup', job('kvm', MINSTALL + MRUN + MTEST + MCLEAN), 0],
+    ['host + private binary, state left in ~/.maestro (no MAESTRO_OPTS)', job('kvm', MINSTALL.replace(/.*MAESTRO_OPTS.*\n/, '') + MRUN + MCLEAN), 1],
+    ['host + readers not told the state home (no MCM_MAESTRO_HOME)', job('kvm', MINSTALL.replace(/.*MCM_MAESTRO_HOME.*\n/, '') + MRUN + MCLEAN), 1],
+    ['host + MAESTRO_OPTS user.home = $HOME', job('kvm', MINSTALL.replace('-Duser.home=$MCM_MAESTRO_DIR/home', '-Duser.home=$HOME') + MRUN + MCLEAN), 1],
+    ['host + a later step env overrides MAESTRO_OPTS', job('kvm', MINSTALL + '      - env:\n          MAESTRO_OPTS: -Xmx1g\n        run: bash scripts/maestro-run.sh flows/a.yaml\n' + MCLEAN), 1],
+    ['host + JAVA_TOOL_OPTIONS in the job env', job('kvm', MINSTALL + MRUN + MCLEAN).replace('    steps:\n', '    env:\n      JAVA_TOOL_OPTIONS: -Duser.home=/home/ci\n    steps:\n'), 1],
+    ['host + a step re-exports MAESTRO_OPTS', job('kvm', MINSTALL + '      - run: |\n          export MAESTRO_OPTS=-Xmx1g\n          maestro test flows/a.yaml\n' + MCLEAN), 1],
+    ['host + Maestro run before the state home is set', job('kvm', MTEST + MINSTALL + MCLEAN), 1],
+    ['host + Maestro run with no private install at all', job('kvm', MRUN), 1],
+    ['container job may run Maestro with its default home', job('ubuntu-latest', MRUN + MTEST), 0],
   ];
   for (const [label, yml, expected] of cases) {
     for (const f of readdirSync(d)) writeFileSync(resolve(d, f), '');

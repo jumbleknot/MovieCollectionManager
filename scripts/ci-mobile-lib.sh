@@ -45,9 +45,10 @@ capture_mobile_diagnostics() {
   # reached back barely a second, so the event that failed the flow (Chrome, ActivityManager, the
   # app) had already been overwritten. See begin_attempt_device_log for the other half of the fix.
   adb logcat -d -v time 'Maestro:S' '*:V' > "$dest/logcat-full.log" 2>&1 || true
-  # Maestro writes a timestamped directory per flow run; take the newest.
+  # Maestro writes a timestamped directory per flow run under its user.home (job-private on CI:
+  # MCM_MAESTRO_HOME, item #1152); take the newest.
   local latest
-  latest="$(ls -1dt "$HOME"/.maestro/tests/*/ 2>/dev/null | head -1)"
+  latest="$(ls -1dt "${MCM_MAESTRO_HOME:-$HOME}"/.maestro/tests/*/ 2>/dev/null | head -1)"
   [ -n "$latest" ] && cp -r "$latest" "$dest/maestro/" 2>/dev/null || true
   echo "--- captured device diagnostics -> $dest ---"
 }

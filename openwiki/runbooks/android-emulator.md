@@ -3,9 +3,9 @@ type: Runbook
 title: Android emulator & APK builds (mobile E2E)
 description: The decision rule for where each mobile E2E flow runs — agent flows in the always-on agent half of CI's app-e2e job on the kvm host runner, non-agent flows for a native-layer change in the opt-in full suite on a second phone-sized AVD, everything else on a local or dev-container emulator — plus the Metro-less standalone release APK with its in-bundle localhost guard and explicit Gradle heap, the launch check that must pass before any flow and the app-ci / android-launch commit status that reports it, the per-service address split between Metro and Keycloak/BFF, why the job is a host job, the dev-container emulator that can emulate but not build, the Windows CMAKE_OBJECT_PATH_MAX wall, the job and per-step ceilings, the in-script device-evidence capture with its per-run maestro-debug staging, and the emulator-state traps that mimic app bugs.
 resource: docs/runbooks/android-emulator.md
-resource-sha256: 80b897f364bc400a0f3b427dded31743cbbabd505d18870cd0e36a43b7a040aa
+resource-sha256: 3c09855998a37c07205c2eb088e86976ea6a06d8ab9039c5199151e764608ffd
 tags: [android, mobile, emulator, apk, ci, runbook]
-timestamp: 2026-11-26T01:25:15.742Z
+timestamp: 2026-11-27T23:29:35.352Z
 ---
 
 # Android emulator & APK builds (mobile E2E)
@@ -132,8 +132,11 @@ Several details of the mobile half are load-bearing when editing it:
   sha256) pair that Renovate maintains, and installs the release zip into `${{ runner.temp }}/mcm-maestro`,
   removed at job end (items #224, #1147). The vendor installer it replaced fetched `releases/latest`
   unless `MAESTRO_VERSION` was set, installed into the shared `~/.maestro`, and appended a PATH line to
-  `~/.bashrc` and `~/.zshrc` on every run. Run output still lands in `~/.maestro/tests` (derived from
-  `$HOME`).
+  `~/.bashrc` and `~/.zshrc` on every run. Maestro's **state** is job-private too (item #1152): the CLI
+  derives `tests/`, `deps/`, `sessions/` and `analytics.json` from the JVM's `user.home`, so the install
+  step writes `MAESTRO_OPTS=-Duser.home=<dir>/home` and `MCM_MAESTRO_HOME=<dir>/home` to `$GITHUB_ENV`
+  and the debug readers use `MCM_MAESTRO_HOME`; `<dir>/home/.android` links the real `~/.android` so the
+  adb key is not regenerated. Off CI both fall back to `~/.maestro`.
 - **The Android SDK install names its packages explicitly, and `platform-tools` is not optional.**
   The `android-actions/setup-android` step passes `packages: 'platform-tools'` rather than relying on
   the action's default: the old default was `tools platform-tools`, and `tools` — the legacy SDK Tools
