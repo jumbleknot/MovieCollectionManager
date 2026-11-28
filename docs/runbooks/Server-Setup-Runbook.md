@@ -870,14 +870,29 @@ is queued or running: `node scripts/ci-status.mjs status --branch main` is clear
    $ for u in belay-ci belay-host-ci; do sudo useradd -m -s /bin/bash "$u" && sudo loginctl enable-linger "$u"; done
    $ grep -E '^(ci|prod|belay-ci|belay-host-ci):' /etc/subuid /etc/subgid   # one line each, non-overlapping
    ```
-2. **A rootless daemon and socket for each user** (Phase 5.2 and 5.3, once as each user). Copy
-   `ci`'s `~/.config/docker/daemon.json` into each for the log rotation and `live-restore`.
+2. **A rootless daemon and socket for each user** (Phase 5.2 and 5.3, once as each user). Do not
+   copy `ci`'s `~/.config/docker/daemon.json`: it holds only `insecure-registries` (no log rotation,
+   no `live-restore`). Write the Phase 5.3 file **plus** that entry, which BELAY's image push to the
+   forge registry over HTTP needs.
    ```bash
    $ sudo machinectl shell belay-ci@          # then again as belay-host-ci@
-   belay-ci$ dockerd-rootless-setuptool.sh install && systemctl --user enable --now docker
-   belay-ci$ docker context use rootless; docker info | grep -i -E 'rootless|Docker Root Dir'
+   belay-ci$ echo $XDG_RUNTIME_DIR            # /run/user/<uid>, not ~/.docker/run
+   belay-ci$ dockerd-rootless-setuptool.sh install
+   belay-ci$ mkdir -p ~/.config/docker && cat > ~/.config/docker/daemon.json <<'EOF'
+   {
+     "insecure-registries": ["<forge host>:3000"],
+     "live-restore": true,
+     "log-driver": "json-file",
+     "log-opts": { "max-size": "10m", "max-file": "3" }
+   }
+   EOF
+   belay-ci$ systemctl --user enable --now docker && systemctl --user restart docker
+   belay-ci$ export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+   belay-ci$ docker context use rootless; docker info | grep -i -E 'rootless|Docker Root Dir|Live Restore|Insecure' -A2
    belay-ci$ id -u            # → <uid>; the socket is unix:///run/user/<uid>/docker.sock
    ```
+   `<forge host>:3000` is the entry in `ci`'s `daemon.json`. The `Deleting nftables ... No such
+   file or directory` lines on a daemon's first start are info-level and harmless.
    BELAY needs no uid from us. Its build derives the socket from `id -u` at run time (BELAY PR #93).
 3. **Stop BELAY's runner under `ci`.** Keep its files: they are the rollback.
    ```bash
@@ -912,12 +927,24 @@ is queued or running: `node scripts/ci-status.mjs status --branch main` is clear
    belay-ci$ systemctl --user daemon-reload && systemctl --user enable --now forgejo-runner
    belay-ci$ journalctl --user -u forgejo-runner -n 20 --no-pager     # "runner: ci-belay ... declared successfully"
    ```
-   Site Administration → Actions → Runners should show `ci-belay` online with its one container label.
-4b. **Register `ci-belay-host`, a new runner, as `belay-host-ci`.** In the BELAY repository: Settings →
-   Actions → Runners → **Create new runner**. That gives a UUID and a secret. Install the same
-   `forgejo-runner` binary and a copy of `config.yaml` (`capacity: 1`) into
-   `/home/belay-host-ci/runner/`, owned by `belay-host-ci`. Put the secret in `runner-token` there,
-   mode 0600. Then write the unit as in step 4, as `belay-host-ci`:
+   The `--url` above is the placeholder used throughout this runbook. Copy the real `--url` and
+   `--uuid` from the `ExecStart` line in `~ci/.config/systemd/user/forgejo-runner-belay.service`.
+   The `Missing env file ".env" is ignored` warning is expected, because `config.yaml` names an
+   `env_file` that none of the runners has. The BELAY repository's runner list (or
+   `GET /repos/{owner}/BELAY/actions/runners`) should show `ci-belay` idle with the label `belay`.
+4b. **Register `ci-belay-host`, a new runner, as `belay-host-ci`.** In the BELAY repository (the
+   repository's own Settings tab, not Site Administration): Settings → Actions → Runners → **Create
+   new runner**. The setup screen shows a `--uuid` and a 40-character secret. Keep it open until the
+   secret is written, because it may not be shown again. Install the same `forgejo-runner` binary and a
+   copy of `config.yaml` (`capacity: 1`) into `/home/belay-host-ci/runner/`, owned by `belay-host-ci`.
+   Put the secret in `runner-token` there, mode 0600, with no trailing newline. Read it without
+   echo, so it reaches neither the shell history nor a terminal transcript:
+   ```bash
+   belay-host-ci$ install -m 600 /dev/null ~/runner/runner-token
+   belay-host-ci$ read -rsp 'secret: ' S; printf '%s' "$S" > ~/runner/runner-token; unset S; echo
+   belay-host-ci$ wc -c < ~/runner/runner-token     # 40
+   ```
+   Then write the unit as in step 4, as `belay-host-ci`:
    `Description=Forgejo Actions runner (BELAY host jobs)`,
    paths under `/home/belay-host-ci/runner`, the new UUID, and **only** `--label belay-host:host`.
    Its `DOCKER_HOST` is `belay-host-ci`'s own socket.
@@ -951,15 +978,23 @@ is queued or running: `node scripts/ci-status.mjs status --branch main` is clear
 6. **Scope MCM's runner to `mcm`.** Until this step, any repository's `runs-on: kvm` still runs as
    `ci`. In the `mcm` repository: Settings → Actions → Runners → **Create new runner**. Then replace the
    UUID in `~ci/.config/systemd/user/forgejo-runner.service` and the secret in `~ci/runner/runner-token`
-   (`chmod 600`), and run `systemctl --user restart forgejo-runner`. Confirm in the journal that it
-   declared itself with the same labels, and that the new runner shows online under the repo. Then mark
-   the old instance-wide runner **disabled** in Site Administration. Delete it only after the
-   measurement passes, because deleting it cannot be undone. Keep the old UUID and secret
-   (`~ci/runner/runner-token.instance-wide`, mode 600) until then.
+   (`chmod 600`; write it with `read -rsp` as in step 4b), and run `systemctl --user restart
+   forgejo-runner`. Confirm in the journal that it declared itself with the same labels, and that the
+   new runner shows online under the repo. First save the old UUID and secret: copy the unit to
+   `~ci/runner/forgejo-runner.service.instance-wide` and the token to
+   `~ci/runner/runner-token.instance-wide`, mode 600.
+
+   **Forgejo 15.0.3 has no "disabled" state for a runner**: the edit page has no such option. Leave
+   the old instance-wide runner registered but **offline**. Once no process runs with its UUID, it
+   takes no job, and a stray `runs-on: kvm` from another repository queues instead of landing on
+   `ci`. The restart starts the runner's built-in cache server again, which deletes old `node-cache-*`
+   entries (`deleted cache: …` in the journal). That costs one cache miss and nothing else. Delete the
+   old runner only after the measurement passes, because deleting it cannot be undone.
 7. **Measure** (below). If it passes after BELAY's next host job, remove BELAY's old files from `ci`:
    `rm -r ~ci/runner-belay ~ci/.config/systemd/user/forgejo-runner-belay.service`, then
-   `systemctl --user daemon-reload` as `ci`. Delete the old instance-wide runner and
-   `~ci/runner/runner-token.instance-wide`.
+   `systemctl --user daemon-reload` as `ci`. Delete the old instance-wide runner (Site
+   Administration), then `~ci/runner/runner-token.instance-wide` and
+   `~ci/runner/forgejo-runner.service.instance-wide`.
 
 **The measurement.** `scripts/host-runner-isolation-check.sh` runs on the host as `ci`, read-only:
 
@@ -982,17 +1017,40 @@ keeps only a bounded recent event history. The **baseline** run, before the swit
 29136, 29179 and 29253 on MCM's runner, a BELAY job container on MCM's daemon, `runner-belay` under
 `ci`). So each check can see what it looks for. The positive control is on the new users' side:
 `journalctl --user -u forgejo-runner` shows BELAY's container task as `belay-ci`, and its host task
-as `belay-host-ci`, whose daemon holds the built image.
+as `belay-host-ci`, whose daemon holds the built image. Run it as root, with no shell for either user:
+
+```bash
+$ sudo journalctl _UID=$(id -u belay-ci) _SYSTEMD_USER_UNIT=forgejo-runner.service --since <switch> -o cat | grep -E 'task [0-9]+'
+$ sudo journalctl _UID=$(id -u belay-host-ci) _SYSTEMD_USER_UNIT=forgejo-runner.service --since <switch> -o cat | grep -E 'task [0-9]+'
+$ sudo -u belay-host-ci DOCKER_HOST=unix:///run/user/$(id -u belay-host-ci)/docker.sock docker images --digests
+```
+
+**Result of the switch on 2026-11-28** (start 11:31Z, `ci-mcm` re-scoped 12:18Z):
+
+- **BELAY's tasks ran as the new users.** Container tasks 29852–29854 ran on `ci-belay` as
+  `belay-ci`. The host build, task 29851 (`devcontainer-image` #199), ran on `ci-belay-host` as
+  `belay-host-ci`. That daemon holds the pushed digest and a 4.3 GB build cache.
+- **The host build took 1 min 59 s.** That is fast for a cold cache, but the daemon was created
+  empty at 11:40Z. Over the same window `ci`'s daemon recorded no event, so nothing came from MCM's
+  cache.
+- **MCM's runner, re-registered as `ci-mcm`,** ran a dispatched `app-ci` with both container and
+  `kvm` jobs (tasks 29855–29863).
+- **The check reported ISOLATED (6/6 PASS)** with `--since 2026-11-28T11:31:00Z`, after the
+  step 7 cleanup.
 
 **Rollback** (any step fails, or BELAY's build breaks):
 
 - **After step 4, 4b or 5:** run `systemctl --user disable --now forgejo-runner` as `belay-ci`, and
   again as `belay-host-ci`. As `ci`, run `systemctl --user enable --now forgejo-runner-belay`. The
   files are still there (step 3 kept them). Both copies hold the same UUID and secret, so only one
-  may run at a time. BELAY reverts its PR (one revert) and disables `ci-belay-host` in its runner list.
+  may run at a time. BELAY reverts its PR (one revert) and deletes `ci-belay-host` from its runner
+  list. Forgejo 15.0.3 cannot disable a runner, but `ci-belay-host` is new, so deleting it loses
+  nothing.
 - **After step 6:** this also needs `kvm` back on an instance-wide runner, or BELAY's reverted host job
-  queues for ever. Re-enable the old runner in Site Administration. Restore its UUID in the `ci` unit
-  and `runner-token.instance-wide` as `runner-token`, then restart. Disable the repo-scoped one.
+  queues for ever. Copy `forgejo-runner.service.instance-wide` back over the `ci` unit and
+  `runner-token.instance-wide` over `runner-token`, then `daemon-reload` and restart. The old
+  registration comes back online, because it was only offline. Leave the repo-scoped one offline. If
+  the old runner has already been deleted (step 7), create a new runner in Site Administration instead.
 - **Leave alone:** `belay-ci`'s and `belay-host-ci`'s users, daemons and data can stay until a retry. They hold nothing of MCM's.
 
 **What stays shared after the switch:** the host's disk (both daemons' data roots are on `/`, so

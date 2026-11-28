@@ -3,10 +3,10 @@ type: Runbook
 title: Homelab server setup (CI/CD + production host)
 description: The phase-ordered from-scratch bring-up runbook for the single physical homelab host running two segregated rootless Docker daemons (CI and prod), Forgejo as source-of-truth forge with its own OCI and generic package registries and a registry-retention job whose weekly run only reports while deleting needs a committed apply mode plus an apply dispatch, a RustFS-backed Nx remote cache whose feature-080 store cutovers are complete and whose temporary migration tooling has since been deleted, a config-as-code nightly host backup whose post-spec-084 restore format the 2026-10-31 restore drill proved, and Komodo for CD to production — summarized phase by phase (0 through 17 plus the quick-reference appendix), with the load-bearing gotchas and the two risks the hardening phase consciously defers.
 resource: docs/runbooks/Server-Setup-Runbook.md
-resource-sha256: ee8615f7c96df0bfe95dd66ef11300e4f1313a687df58e37dc3b8d100b69e83c
+resource-sha256: b8a6c779b1c35f9b5073c9040f8bf116193765cc4f9eeb15c59bac5014865399
 tags: [infrastructure, homelab, rootless-docker, forgejo, registry, komodo, rustfs, backups, runbook]
 generated: { by: "openwiki/0.7.1", at: "2026-11-07T15:45:38.591Z" }
-timestamp: 2026-11-27T23:29:35.460Z
+timestamp: 2026-11-28T13:26:37.995Z
 ---
 
 # Homelab server setup (CI/CD + production host)
@@ -99,11 +99,16 @@ stacks are deployed), so a partial rebuild cannot skip ahead. The phases, in ord
   - schedule the switch for Saturday 10:00–13:00 UTC (Sunday as the fallback), clear of every MCM
     cron and of BELAY's 13:17 security run, with both projects holding merges and pushes;
   - BELAY's PR re-points `runs-on` and `DOCKER_HOST` and updates its guards and docs, as one revert;
-  - re-scope MCM's runner, keeping the old registration disabled, not deleted, until verified.
+  - re-scope MCM's runner, keeping the old registration offline, not deleted, until verified.
+    Forgejo 15.0.3 has no "disabled" state for a runner;
+  - give each new daemon the Phase 5.3 `daemon.json` plus the forge registry's
+    `insecure-registries` entry. `ci`'s file has only that entry, so a copy of it would miss the log
+    rotation and `live-restore`.
 
   It also holds the rollback per step, and the read-only measurement
   `scripts/host-runner-isolation-check.sh --since <switch>`. Its baseline before the switch failed 3 of
-  6 checks. Separate daemons do **not** separate ports, because each user's rootlesskit binds the host.
+  6 checks. The switch ran on 2026-11-28. BELAY's tasks ran as `belay-ci` and `belay-host-ci`, MCM's
+  runner became the repo-scoped `ci-mcm`, and the check reported ISOLATED (6/6). Separate daemons do **not** separate ports, because each user's rootlesskit binds the host.
   So BELAY, which publishes none today, has **19100–19199** reserved, beside MCM prod's 19000–19099 and
   MCM CI's fixed ports.
 - **8 — Self-hosted Nx remote cache, RustFS-backed (feature 080).** The open-source Rust
